@@ -16,16 +16,14 @@ import {
 } from '../game/tileOwnership';
 import { Tile } from '../game/Tile';
 import { FONT_FAMILY } from '../skins/registry';
-import { drawBackground } from '../game/renderers/BackgroundRenderer';
+import { drawBackground, renderGridAmbient } from '../game/renderers/BackgroundRenderer';
 import { styleHintCompleted, styleHintEmpty, styleHintSolved } from '../game/renderers/HintRenderer';
 import {
   drawTileDeactivated,
-  drawTileFoundPending,
-  drawTileIdle,
-  drawTileSelected
+  applyLetterStyle,
+  drawTileFace
 } from '../game/renderers/TileRenderer';
 import type { Answer, PuzzlePart } from '../types/puzzle';
-import { drawTileFace, drawTileGlow, applyLetterStyle } from '../game/renderers/TileRenderer';
 
 type GameWordMatch = {
   answerWord: string;
@@ -50,6 +48,10 @@ type HintRow = {
     partIndex: number;
     charIndex: number;
   }>;
+};
+
+type TileFaceFx = {
+  textureKey: string;
 };
 
 type WinStats = {
@@ -93,6 +95,7 @@ export class GameScene extends Phaser.Scene {
   answerWordToDisplay: Map<string, string> = new Map();
   partIdsByAnswerDisplay: Map<string, string[]> = new Map();
   ownershipState!: TileOwnershipState;
+  private tileFaceTextures: Map<Tile, TileFaceFx> = new Map();
 
   activeChain: Tile[] = [];
   inputManager!: InputManager<GameWordMatch>;
@@ -117,7 +120,7 @@ export class GameScene extends Phaser.Scene {
   winPopup: Phaser.GameObjects.Container | null = null;
   skin: Skin = getSkinById('void');
 
-  private tileGlows: Map<Tile, Phaser.GameObjects.Graphics> = new Map();
+  private tileGlows: Map<Tile, Phaser.FX.Glow> = new Map();
 
   async create(data?: { puzzleIndex?: number }) {
     const activeSkinId = await getActiveSkinId();
@@ -133,17 +136,26 @@ export class GameScene extends Phaser.Scene {
 
     // Update text styles using skin colors:
 
-    this.levelText = this.add.text(80, 50, `Level ${levelNumber}`, {
+    this.add.text(42, 50, '☰', {
+      color: this.skin.chrome.menuColor,
+      fontFamily: "'Space Mono', ui-monospace, monospace",
+      fontSize: '26px'
+    }).setOrigin(0.5);
+
+    this.levelText = this.add.text(this.scale.width / 2, 50, `Level ${levelNumber}`, {
       color: this.skin.chrome.levelColor,
       fontFamily: "'Space Mono', ui-monospace, monospace",
-      fontSize: '24px'
-    }).setOrigin(0, 0.5);
+      fontSize: '22px'
+    }).setOrigin(0.5, 0.5);
 
     this.timerText = this.add.text(this.scale.width - 80, 50, '0:00', {
       color: this.skin.chrome.timerColor,
       fontFamily: "'Space Mono', ui-monospace, monospace",
       fontSize: '28px'
     }).setOrigin(1, 0.5);
+
+    const titleGlow = Phaser.Display.Color.HexStringToColor(this.skin.chrome.titleGlowColor);
+    const titleGlowColor = `rgba(${titleGlow.red},${titleGlow.green},${titleGlow.blue},${this.skin.chrome.titleGlowAlpha})`;
 
     this.add.text(this.scale.width / 2, 110, t(this.puzzle.name), {
       color: this.skin.chrome.titleColor,
@@ -153,7 +165,7 @@ export class GameScene extends Phaser.Scene {
       wordWrap: { width: 900 },
       shadow: {
         offsetX: 0, offsetY: 0,
-        color: this.skin.chrome.titleGlowColor,
+        color: titleGlowColor,
         blur: 40, fill: true
       }
     }).setOrigin(0.5);
@@ -179,6 +191,13 @@ export class GameScene extends Phaser.Scene {
     this.boardRight = this.boardLeft + gridW;
     this.boardBottom = this.boardTop + gridH;
 
+    renderGridAmbient(
+      this,
+      this.boardLeft + gridW / 2,
+      this.boardTop + gridH / 2,
+      this.skin
+    );
+
     this.tileGrid = buildGridTiles(this.puzzle.grid);
     this.allTiles = this.tileGrid.flat();
     this.tileByCoord.clear();
@@ -190,13 +209,14 @@ export class GameScene extends Phaser.Scene {
     this.tileSprites.clear();
     this.tileLetters.clear();
     this.tileGlows.clear();
+    this.tileFaceTextures.clear();
 
     for (const tile of this.allTiles) {
       const x = this.boardLeft + tile.col * this.CELL_SIZE + this.CELL_SIZE / 2;
       const y = this.boardTop + tile.row * this.CELL_SIZE + this.CELL_SIZE / 2;
       const container = this.add.container(x, y).setDepth(10);
-      const faceGfx = this.add.graphics();
-      const glowGfx = this.add.graphics();
+      const faceGfx = this.add.image(0, 0, '__MISSING');
+      faceGfx.setData('size', this.TILE_VISUAL);
       const letter = this.add.text(0, 1, tile.letter, {
         fontFamily: "'Space Mono', ui-monospace, monospace",
         fontSize: `${Math.round(this.TILE_VISUAL * 0.49)}px`,
@@ -205,12 +225,10 @@ export class GameScene extends Phaser.Scene {
       }).setOrigin(0.5, 0.5);
 
       drawTileFace(faceGfx, this.skin.tiles.idle, this.TILE_VISUAL);
-      glowGfx.clear(); // glow hidden at idle
 
-      container.add([glowGfx, faceGfx, letter]);
+      container.add([faceGfx, letter]);
 
-      // Store glow and face separately for state changes
-      this.tileGlows.set(tile, glowGfx);
+      this.tileFaceTextures.set(tile, { textureKey: faceGfx.texture.key });
       this.tileSprites.set(tile, container);
       this.tileLetters.set(tile, letter);
     }
@@ -318,10 +336,11 @@ export class GameScene extends Phaser.Scene {
 
     const maxRowWidth = this.scale.width - 120;
     const rowGap = 22;
-    const answerGap = 30;
-    const partGap = 20;
-    const cellSize = Math.round(this.TILE_VISUAL * 0.32);
-    const cellGap = Math.round(this.CELL_SIZE * 0.04);
+    const slotW = Math.round(this.TILE_VISUAL * 0.34);
+    const slotH = Math.round(this.TILE_VISUAL * 0.50);
+    const cellGap = Math.max(3, Math.round(this.CELL_SIZE * 0.03));
+    const partGap = Math.round(slotW * 0.55);
+    const answerGap = Math.round(slotW * 1.2);
     const startX = (this.scale.width - maxRowWidth) / 2;
 
     let cursorX = startX;
@@ -331,7 +350,7 @@ export class GameScene extends Phaser.Scene {
 
     for (const answer of answers) {
       const partWidths = answer.parts.map((part) => {
-        return part.word.length * cellSize + (part.word.length - 1) * cellGap;
+        return part.word.length * slotW + (part.word.length - 1) * cellGap;
       });
       const width = partWidths.reduce((sum, w) => sum + w, 0) + partGap * (partWidths.length - 1);
 
@@ -340,7 +359,7 @@ export class GameScene extends Phaser.Scene {
         cursorX = startX;
       }
 
-      const centerY = sectionTop + rowIndex * (cellSize + rowGap);
+      const centerY = sectionTop + rowIndex * (slotH + rowGap);
       const row: HintRow = { 
         answer, 
         cells: [], 
@@ -351,20 +370,21 @@ export class GameScene extends Phaser.Scene {
       let cellX = cursorX;
       answer.parts.forEach((part, partIndex) => {
         for (let charIndex = 0; charIndex < part.word.length; charIndex++) {
-          const centerX = cellX + cellSize / 2;
+          const centerX = cellX + slotW / 2;
           const bg = this.add.graphics().setPosition(centerX, centerY);
-          bg.setData('size', cellSize);
-          bg.setData('radius', Math.round(cellSize * 0.2));
+          bg.setData('width', slotW);
+          bg.setData('height', slotH);
+          bg.setData('radius', Math.round(slotW * 0.22));
           styleHintEmpty(bg, this.skin);
 
           const text = this.add.text(centerX, centerY, '', {
             color: this.skin.hints.empty.letterColor,
             fontFamily: FONT_FAMILY,
-            fontSize: `${Math.round(cellSize * 0.52)}px`
+            fontSize: `${Math.round(slotH * 0.46)}px`
           }).setOrigin(0.5);
 
           row.cells.push({ bg, text, partIndex, charIndex });
-          cellX += cellSize + cellGap;
+          cellX += slotW + cellGap;
         }
 
         if (partIndex < answer.parts.length - 1) {
@@ -483,11 +503,10 @@ export class GameScene extends Phaser.Scene {
     const letter = this.tileLetters.get(tile);
     if (!sprite || !letter) return;
 
-    const faceGfx = sprite.list[1] as Phaser.GameObjects.Graphics;
-    const glowGfx = sprite.list[0] as Phaser.GameObjects.Graphics;
+    const faceGfx = sprite.list[0] as Phaser.GameObjects.Graphics;
     this.foundPendingTiles.add(tile);
-    drawTileFoundPending(faceGfx, letter, this.skin);
-    glowGfx.clear();
+    drawTileFace(faceGfx, this.skin.tiles.foundPending, this.TILE_VISUAL);
+    applyLetterStyle(letter, this.skin.tiles.foundPending);
     sprite.setAlpha(0.75);
     letter.setAlpha(0.8);
   }
@@ -650,14 +669,12 @@ export class GameScene extends Phaser.Scene {
 
     const container = this.tileSprites.get(tile);
     const letter    = this.tileLetters.get(tile);
-    const glowGfx   = this.tileGlows.get(tile);
     if (!container) return;
 
-    const faceGfx = container.list[1] as Phaser.GameObjects.Graphics;
+    const faceGfx = container.list[0] as Phaser.GameObjects.Graphics | Phaser.GameObjects.Image;
     const state = on ? this.skin.tiles.selected : this.skin.tiles.idle;
 
     drawTileFace(faceGfx, state, this.TILE_VISUAL);
-    if (glowGfx) drawTileGlow(glowGfx, state, this.TILE_VISUAL);
     if (letter)  applyLetterStyle(letter, state);
 
     if (on) {
@@ -1083,12 +1100,14 @@ export class GameScene extends Phaser.Scene {
     this.pathHeadGraphics.clear();
 
     const p = this.skin.path;
-    const radius = this.CELL_SIZE * 0.15 * scale;
+    const bodyWidth = this.CELL_SIZE * 0.09;
+    const coreWidth = this.CELL_SIZE * 0.028;
+    const radius = bodyWidth * 0.5 * scale;
     this.pathHeadGraphics.fillStyle(color, p.endpoint.alpha * alpha);
     this.pathHeadGraphics.fillCircle(x, y, radius);
 
     this.pathHeadGraphics.fillStyle(color, Math.min(1, p.core.alpha * alpha));
-    this.pathHeadGraphics.fillCircle(x, y, Math.max(2, radius * 0.42));
+    this.pathHeadGraphics.fillCircle(x, y, Math.max(2, coreWidth * 0.75) * scale);
   }
 
   formatElapsedTime(elapsedSec: number): string {

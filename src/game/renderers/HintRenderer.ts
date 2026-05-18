@@ -8,16 +8,26 @@ function drawRoundedHint(
   borderColor: number,
   borderAlpha: number
 ) {
-  const size = (bg.getData('size') as number | undefined) ?? 52;
-  const radius = (bg.getData('radius') as number | undefined) ?? Math.round(size * 0.18);
-  const half = size * 0.5;
+  const width =
+    (bg.getData('width') as number | undefined) ??
+    (bg.getData('size') as number | undefined) ??
+    52;
+  const height =
+    (bg.getData('height') as number | undefined) ??
+    (bg.getData('size') as number | undefined) ??
+    52;
+  const radius =
+    (bg.getData('radius') as number | undefined) ??
+    Math.round(Math.min(width, height) * 0.18);
+  const halfW = width * 0.5;
+  const halfH = height * 0.5;
 
   bg.clear();
   bg.fillStyle(fillColor, fillAlpha);
-  bg.fillRoundedRect(-half, -half, size, size, radius);
-  const borderThick = Math.max(2, Math.round(size * 0.04));
+  bg.fillRoundedRect(-halfW, -halfH, width, height, radius);
+  const borderThick = Math.max(2, Math.round(Math.min(width, height) * 0.08));
   bg.lineStyle(borderThick, borderColor, borderAlpha);
-  bg.strokeRoundedRect(-half, -half, size, size, radius);
+  bg.strokeRoundedRect(-halfW, -halfH, width, height, radius);
 }
 
 export function styleHintEmpty(bg: Phaser.GameObjects.Graphics, skin: SkinDefinition) {

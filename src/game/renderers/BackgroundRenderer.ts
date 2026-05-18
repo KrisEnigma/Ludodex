@@ -6,31 +6,34 @@ export function renderBackground(
   skin: SkinDefinition
 ): void {
   const { width, height } = scene.scale;
-  const bg = scene.add.graphics().setDepth(0);
+  const bg = scene.add.rectangle(width / 2, height / 2, width, height, skin.background.centerColor)
+    .setDepth(0)
+    .setOrigin(0.5);
 
-  // Base dark fill
-  bg.fillStyle(skin.background.edgeColor, 1);
-  bg.fillRect(0, 0, width, height);
+  (bg as any).postFX.addVignette(0.5, 0.42, 0.85, 0.55, skin.background.edgeColor);
 
-  // Radial gradient — lighter center
-  bg.fillStyle(skin.background.centerColor, 1);
-  bg.fillEllipse(width / 2, height * 0.42, width * 0.78, height * 0.68);
-
-  // Softer inner ellipse
-  bg.fillStyle(
-    Phaser.Display.Color.ValueToColor(skin.background.centerColor).lighten(4).color,
-    0.5
-  );
-  bg.fillEllipse(width / 2, height * 0.40, width * 0.45, height * 0.38);
-
-  // Noise overlay
-  if (scene.textures.exists('noise')) {
+  // Noise overlay (per skin toggle)
+  if (skin.background.noise && scene.textures.exists('noise')) {
     const noise = scene.add.tileSprite(
       width / 2, height / 2, width, height, 'noise'
     );
     noise.setAlpha(skin.background.noiseAlpha);
     noise.setBlendMode(Phaser.BlendModes.SCREEN);
     noise.setDepth(1);
+  }
+
+  // Scanline overlay (per skin toggle)
+  if (skin.background.scanlines && scene.textures.exists('scanlines')) {
+    const scan = scene.add.tileSprite(
+      width / 2,
+      height / 2,
+      width,
+      height,
+      'scanlines'
+    );
+    scan.setAlpha(skin.background.scanlineAlpha);
+    scan.setBlendMode(Phaser.BlendModes.MULTIPLY);
+    scan.setDepth(1.1);
   }
 }
 
@@ -46,7 +49,7 @@ export function renderGridAmbient(
 ): Phaser.GameObjects.Graphics {
   const gfx = scene.add.graphics().setDepth(2);
   const a = skin.chrome.gridAmbient;
-  [[120, a.alpha], [180, a.alpha * 0.6], [240, a.alpha * 0.3]].forEach(
+  [[150, a.alpha * 0.35], [220, a.alpha * 0.2], [290, a.alpha * 0.1]].forEach(
     ([r, alpha]) => {
       gfx.fillStyle(a.color, alpha as number);
       gfx.fillEllipse(gridCenterX, gridCenterY, (r as number) * 2,

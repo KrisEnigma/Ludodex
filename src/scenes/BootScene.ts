@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { getLoadedPuzzleSource, loadPuzzles } from '../game/PuzzleLoader';
+import { ensureBundledPuzzlesLoaded, getLoadedPuzzleSource, loadPuzzles } from '../game/PuzzleLoader';
 import { scheduleDailyNotification } from '../services/NotificationService';
 import { initAds } from '../services/AdService';
 import { initIAP } from '../services/IAPService';
@@ -22,7 +22,15 @@ export class BootScene extends Phaser.Scene {
       fontSize: '34px'
     }).setOrigin(0.5);
 
-    await loadPuzzles();
+    const loaded = await Promise.race([
+      loadPuzzles().then(() => true).catch(() => false),
+      new Promise<boolean>((resolve) => this.time.delayedCall(2200, () => resolve(false)))
+    ]);
+
+    if (!loaded) {
+      ensureBundledPuzzlesLoaded();
+    }
+
     const source = getLoadedPuzzleSource();
     status.setText(`Puzzles source: ${source}`);
 

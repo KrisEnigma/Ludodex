@@ -9,10 +9,10 @@ export const VOID_SKIN: SkinDefinition = {
   name: 'VOID',
   price: 'free',
   background: {
-    centerColor: 0x101a2a,
-    edgeColor: 0x070d18,
+    centerColor: 0x0d1118,
+    edgeColor: 0x07090e,
     noise: true,
-    noiseAlpha: 0.03,
+    noiseAlpha: 0.025,
     scanlines: false,
     scanlineAlpha: 0
   },
@@ -20,8 +20,8 @@ export const VOID_SKIN: SkinDefinition = {
     idle: {
       gradientTL: 0x1E2236,
       gradientBR: 0x131824,
-      borderColor: 0x252A3E,
-      borderAlpha: 0.7,
+      borderColor: 0xffffff,
+      borderAlpha: 0.07,
       insetAlpha: 0.05,
       shadowAlpha: 0.55,
       letterColor: '#9CA8C4'
@@ -30,7 +30,7 @@ export const VOID_SKIN: SkinDefinition = {
       gradientTL: 0x0D3A42,
       gradientBR: 0x071E26,
       borderColor: 0x00D4E8,
-      borderAlpha: 0.9,
+      borderAlpha: 0.7,
       insetAlpha: 0.08,
       shadowAlpha: 0.6,
       glow: {
@@ -47,7 +47,7 @@ export const VOID_SKIN: SkinDefinition = {
       gradientTL: 0x0A2E1E,
       gradientBR: 0x061A12,
       borderColor: 0x00DC8C,
-      borderAlpha: 0.5,
+      borderAlpha: 0.4,
       insetAlpha: 0.04,
       shadowAlpha: 0.4,
       glow: {
@@ -71,9 +71,9 @@ export const VOID_SKIN: SkinDefinition = {
   hints: {
     empty: {
       fillColor: 0x000000,
-      fillAlpha: 0.52,
-      borderColor: 0x1f2b49,
-      borderAlpha: 0.72,
+      fillAlpha: 0.58,
+      borderColor: 0x4a5672,
+      borderAlpha: 0.28,
       insetAlpha: 0.35,
       letterColor: 'transparent'
     },
@@ -88,17 +88,17 @@ export const VOID_SKIN: SkinDefinition = {
     }
   },
   chrome: {
-    menuColor: '#495777',
-    levelColor: '#495777',
-    timerColor: '#495777',
-    titleColor: '#d7e3f5',
+    menuColor: '#4A5068',
+    levelColor: '#4A5068',
+    timerColor: '#4A5068',
+    titleColor: '#C8D0E0',
     titleGlowColor: '#19D7EF',
-    titleGlowAlpha: 0.18,
-    hintTextColor: '#6a7898',
+    titleGlowAlpha: 0.12,
+    hintTextColor: '#646f86',
     dotActive: 0x19d7ef,
     dotActiveGlow: 0.25,
     dotInactive: 0x1a1d2a,
-    gridAmbient: { color: 0x19d7ef, alpha: 0.06 }
+    gridAmbient: { color: 0x00d4e8, alpha: 0.05 }
   },
   effects: {
     rgbSplit: false,
@@ -153,6 +153,30 @@ export const SYNTHWAVE_SKIN = createSkin(VOID_SKIN, {
       letterColor: '#60E8D8'
     }
   },
+  hints: {
+    solved: {
+      fillColor: 0x00201e,
+      fillAlpha: 1,
+      borderColor: 0x00c8b4,
+      borderAlpha: 0.5,
+      insetAlpha: 0,
+      glow: { color: 0x00c8b4, alpha: 0.25 },
+      letterColor: '#40D8C8'
+    }
+  },
+  chrome: {
+    menuColor: '#4A1A60',
+    levelColor: '#4A1A60',
+    timerColor: '#4A1A60',
+    titleColor: '#D4AAFF',
+    titleGlowColor: '#B400FF',
+    titleGlowAlpha: 0.2,
+    hintTextColor: '#8b66ab',
+    dotActive: 0xcc00ee,
+    dotActiveGlow: 0.25,
+    dotInactive: 0x1a0828,
+    gridAmbient: { color: 0xb400ff, alpha: 0.06 }
+  },
   path: { color: 0xcc00ee },
   effects: {
     rgbSplit: true,
@@ -168,8 +192,8 @@ export const GAMEBOY_SKIN = createSkin(VOID_SKIN, {
   name: 'GAME BOY',
   price: 'skin_pixel',
   background: {
-    centerColor: 0x0d220d,
-    edgeColor: 0x060e06,
+    centerColor: 0x0c2a0c,
+    edgeColor: 0x061606,
     noise: false,
     scanlines: true,
     scanlineAlpha: 0.06
@@ -197,6 +221,30 @@ export const GAMEBOY_SKIN = createSkin(VOID_SKIN, {
       borderColor: 0xaaee00,
       letterColor: '#BBFF44'
     }
+  },
+  hints: {
+    solved: {
+      fillColor: 0x1e4a0a,
+      fillAlpha: 1,
+      borderColor: 0xaaee00,
+      borderAlpha: 0.5,
+      insetAlpha: 0,
+      glow: { color: 0xaaee00, alpha: 0.2 },
+      letterColor: '#BBFF44'
+    }
+  },
+  chrome: {
+    menuColor: '#2A5A1A',
+    levelColor: '#2A5A1A',
+    timerColor: '#2A5A1A',
+    titleColor: '#7CC800',
+    titleGlowColor: '#7CC800',
+    titleGlowAlpha: 0,
+    hintTextColor: '#4e7d27',
+    dotActive: 0xaaee00,
+    dotActiveGlow: 0.2,
+    dotInactive: 0x142414,
+    gridAmbient: { color: 0x78c800, alpha: 0.05 }
   },
   path: {
     color: 0xaaee00,

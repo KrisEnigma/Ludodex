@@ -105,7 +105,7 @@ export class MenuScene extends Phaser.Scene {
     ).setOrigin(0.5);
 
     const solvedSet = new Set(solvedIds);
-    this.selectedLevelIndex = getDailyPuzzleIndex();
+    this.selectedLevelIndex = 0;
 
 
     this.add.rectangle(centerX, levelPanelY, 760, 200, 0x151b26, 1).setStrokeStyle(3, 0x2e3a52).setOrigin(0.5);
@@ -237,19 +237,30 @@ export class MenuScene extends Phaser.Scene {
       fontFamily: FONT_FAMILY,
       fontSize: '42px'
     }).setOrigin(0.5);
-    this.add.rectangle(centerX, playBtnY, 520, 96, 0x1f3d26, 0.5).setStrokeStyle(2, 0x27ae60).setOrigin(0.5);
+    const startBg = this.add
+      .rectangle(centerX, playBtnY, 520, 96, 0x1f3d26, 0.5)
+      .setStrokeStyle(2, 0x27ae60)
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true });
     start.setDepth(2);
 
-    start.setInteractive({ useHandCursor: true }).on('pointerdown', async () => {
+    const startLevel = async () => {
       const skinId = this.skinIds[this.selectedSkinIndex] ?? 'void';
       if (!this.isSkinUnlocked(skinId)) {
         this.restoreStatusText.setText('This skin is locked. Restore purchases to unlock owned skins.');
         return;
       }
 
-      await setActiveSkinId(skinId);
+      try {
+        await setActiveSkinId(skinId);
+      } catch (error) {
+        console.warn('Could not persist active skin selection', error);
+      }
       this.scene.start('GameScene', { puzzleIndex: this.selectedLevelIndex });
-    });
+    };
+
+    start.setInteractive({ useHandCursor: true }).on('pointerdown', startLevel);
+    startBg.on('pointerdown', startLevel);
 
     const replayBtn = this.add
       .rectangle(350, quickActionsY, 340, 82, 0x1f2f3d, 0.7)
@@ -278,7 +289,11 @@ export class MenuScene extends Phaser.Scene {
         return;
       }
 
-      await setActiveSkinId(skinId);
+      try {
+        await setActiveSkinId(skinId);
+      } catch (error) {
+        console.warn('Could not persist active skin selection', error);
+      }
       this.scene.start('GameScene', { puzzleIndex: getDailyPuzzleIndex() });
     });
 
@@ -290,7 +305,11 @@ export class MenuScene extends Phaser.Scene {
       }
 
       const nextIndex = this.findNextUnsolvedIndex(new Set(solvedIds));
-      await setActiveSkinId(skinId);
+      try {
+        await setActiveSkinId(skinId);
+      } catch (error) {
+        console.warn('Could not persist active skin selection', error);
+      }
       this.scene.start('GameScene', { puzzleIndex: nextIndex });
     });
 

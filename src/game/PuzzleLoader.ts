@@ -44,6 +44,17 @@ export async function loadPuzzles(): Promise<Puzzle[]> {
   return parsedPuzzles;
 }
 
+export function ensureBundledPuzzlesLoaded(): Puzzle[] {
+  if (parsedPuzzles.length > 0) {
+    return parsedPuzzles;
+  }
+
+  const bundledRaw = rawPuzzles as unknown as RawPuzzle[];
+  parsedPuzzles = parseRawPuzzles(bundledRaw);
+  puzzleSource = 'bundled';
+  return parsedPuzzles;
+}
+
 export function getLoadedPuzzleSource(): 'remote' | 'cache' | 'bundled' {
   return puzzleSource;
 }
@@ -57,12 +68,17 @@ function parseRawPuzzles(raw: RawPuzzle[]): Puzzle[] {
 }
 
 async function fetchRemoteRawPuzzles(): Promise<RawPuzzle[] | null> {
+  const controller = new AbortController();
+  const timeoutMs = 1800;
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+
   try {
     const response = await fetch(REMOTE_PUZZLES_URL, {
       method: 'GET',
       headers: {
         Accept: 'application/json'
-      }
+      },
+      signal: controller.signal
     });
 
     if (!response.ok) {
@@ -77,6 +93,8 @@ async function fetchRemoteRawPuzzles(): Promise<RawPuzzle[] | null> {
     return data as RawPuzzle[];
   } catch {
     return null;
+  } finally {
+    window.clearTimeout(timeoutId);
   }
 }
 
@@ -122,18 +140,28 @@ export function getDailyPuzzle(puzzles = parsedPuzzles): Puzzle {
     throw new Error('No puzzles loaded. Call loadPuzzles() first.');
   }
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const dayIndex = Math.floor(
-    (today.getTime() - LAUNCH_DATE.getTime()) / 86400000
-  );
-
-  return puzzles[dayIndex % puzzles.length];
+  return getPuzzleAtIndex(getDailyPuzzleIndex(puzzles), puzzles);
 }
 
 export function getDailyPuzzleIndex(puzzles = parsedPuzzles): number {
   if (puzzles.length === 0) {
     throw new Error('No puzzles loaded. Call loadPuzzles() first.');
+  }
+
+  const todayDate = toLocalDateString(new Date());
+  const datedIndex = puzzles.findIndex((puzzle) => puzzle.date === todayDate);
+  if (datedIndex >= 0) {
+    return datedIndex;
+  }
+
+  // Only puzzles with date=null participate in normal daily rotation.
+  const rotationIndices = puzzles
+    .map((puzzle, index) => ({ puzzle, index }))
+    .filter(({ puzzle }) => puzzle.date === null)
+    .map(({ index }) => index);
+
+  if (rotationIndices.length === 0) {
+    return 0;
   }
 
   const today = new Date();
@@ -142,5 +170,13 @@ export function getDailyPuzzleIndex(puzzles = parsedPuzzles): number {
     (today.getTime() - LAUNCH_DATE.getTime()) / 86400000
   );
 
-  return dayIndex % puzzles.length;
+  const poolIndex = ((dayIndex % rotationIndices.length) + rotationIndices.length) % rotationIndices.length;
+  return rotationIndices[poolIndex];
+}
+
+function toLocalDateString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
