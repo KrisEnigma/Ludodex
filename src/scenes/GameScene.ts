@@ -561,7 +561,9 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    this.pathHeadGraphics.clear();
+    if (!isBacktrack) {
+      this.pathHeadGraphics.clear();
+    }
 
     const points = chain
       .map((tile) => {
@@ -592,6 +594,19 @@ export class GameScene extends Phaser.Scene {
       const prevSegmentColors = this.buildSegmentColors(prevPoints);
       // Draw the new (shorter) chain as the base
       this.drawAllSegments(points, segmentColors);
+      // Draw the full removed segment immediately to avoid a one-frame gap before tween updates.
+      this.pathHeadGraphics.clear();
+      if (prevPoints.length >= 2) {
+        this.drawSegment(
+          this.pathHeadGraphics,
+          prevPoints[prevPoints.length - 2],
+          prevPoints[prevPoints.length - 1],
+          prevSegmentColors[prevSegmentColors.length - 1],
+          1,
+          1,
+          1
+        );
+      }
       // Animate the last segment of the previous chain out on the head layer only
       const progress = { t: 1 };
       this.pathSegmentTween = this.tweens.add({
@@ -765,8 +780,7 @@ export class GameScene extends Phaser.Scene {
 
     this.stopNearWordPulse();
     this.stopSingleHeadAnimation();
-    this.pathGraphics.clear();
-    this.pathHeadGraphics.clear();
+    // Do not clear graphics here; let the animation handle it
 
     if (points.length === 0) return;
 
@@ -780,6 +794,7 @@ export class GameScene extends Phaser.Scene {
         duration: 180,
         ease: 'Cubic.In',
         onUpdate: () => {
+          this.pathHeadGraphics.clear();
           this.drawSingleHead(points[0].x, points[0].y, color, pulse.scale, pulse.alpha);
         },
         onComplete: () => {
@@ -799,6 +814,7 @@ export class GameScene extends Phaser.Scene {
       duration: 180,
       ease: 'Cubic.In',
       onUpdate: () => {
+        this.pathGraphics.clear();
         this.drawAllSegments(points, segmentColors, state.widthScale, state.alpha);
       },
       onComplete: () => {
