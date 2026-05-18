@@ -1,9 +1,12 @@
 import { Capacitor } from '@capacitor/core';
 import { Purchases } from '@revenuecat/purchases-capacitor';
 
+const FALLBACK_RC_KEY = 'RC_KEY';
+
 export async function initIAP() {
   if (!Capacitor.isNativePlatform()) return;
-  await Purchases.configure({ apiKey: 'RC_KEY' });
+  const apiKey = import.meta.env.VITE_REVENUECAT_API_KEY?.trim() || FALLBACK_RC_KEY;
+  await Purchases.configure({ apiKey });
 }
 
 export async function hasEntitlement(id: string): Promise<boolean> {

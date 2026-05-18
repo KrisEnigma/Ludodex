@@ -1,8 +1,12 @@
 import Phaser from 'phaser';
+import { Share } from '@capacitor/share';
 import { getDailyPuzzleIndex, getPuzzleAtIndex, getPuzzleCount } from '../game/PuzzleLoader';
 import { t } from '../utils/i18n';
+import { getActiveSkinId, recordPuzzleCompletion, type ProgressSnapshot } from '../services/ProgressService';
+import { maybeShowInterstitial } from '../services/AdService';
 import { buildGridTiles } from '../game/Grid';
 import { puzzleCoordToGridCoord } from '../game/coordMap';
+import { getSkinById, type Skin } from '../game/SkinManager';
 import { InputManager, type PendingAction } from '../game/InputManager';
 import {
   applySolvedPart,
@@ -11,6 +15,15 @@ import {
   type TileOwnershipState
 } from '../game/tileOwnership';
 import { Tile } from '../game/Tile';
+import { FONT_FAMILY } from '../skins/registry';
+import { drawBackground } from '../game/renderers/BackgroundRenderer';
+import { styleHintCompleted, styleHintEmpty, styleHintSolved } from '../game/renderers/HintRenderer';
+import {
+  drawTileDeactivated,
+  drawTileFoundPending,
+  drawTileIdle,
+  drawTileSelected
+} from '../game/renderers/TileRenderer';
 import type { Answer, PuzzlePart } from '../types/puzzle';
 
 type GameWordMatch = {
@@ -28,8 +41,18 @@ type PartEntry = {
 
 type HintRow = {
   answer: Answer;
-  bg: Phaser.GameObjects.Rectangle;
-  text: Phaser.GameObjects.Text;
+  cells: Array<{
+    bg: Phaser.GameObjects.Graphics;
+    text: Phaser.GameObjects.Text;
+    partIndex: number;
+    charIndex: number;
+  }>;
+};
+
+type WinStats = {
+  solvedCount: string;
+  bestTime: string;
+  streak: string;
 };
 
 export class GameScene extends Phaser.Scene {
@@ -54,8 +77,6 @@ export class GameScene extends Phaser.Scene {
   lastPathChain: Tile[] = [];
   CELL_SIZE = 180;
   HIT_RADIUS = 68;
-  PATH_COLOR = 0xaee7ff;
-  PATH_SEGMENT_COLORS = [0xff00c8, 0xae00ff, 0x3a35ff, 0x0f7bff, 0x16c7d4, 0x12c93d];
   boardLeft = 0;
   boardTop = 0;
   boardRight = 0;
@@ -63,6 +84,7 @@ export class GameScene extends Phaser.Scene {
 
   solvedPartIds: Set<string> = new Set();
   solvedAnswers: Set<string> = new Set();
+  foundPendingTiles: Set<Tile> = new Set();
   partEntriesById: Map<string, PartEntry> = new Map();
   answerWordToDisplay: Map<string, string> = new Map();
   partIdsByAnswerDisplay: Map<string, string[]> = new Map();
@@ -89,38 +111,45 @@ export class GameScene extends Phaser.Scene {
   currentPuzzleIndex = 0;
   nearWordPulseScale = 1;
   winPopup: Phaser.GameObjects.Container | null = null;
+  skin: Skin = getSkinById('void');
 
-  create(data?: { puzzleIndex?: number }) {
+  async create(data?: { puzzleIndex?: number }) {
+    const activeSkinId = await getActiveSkinId();
+    this.skin = getSkinById(activeSkinId);
+
     this.currentPuzzleIndex = data?.puzzleIndex ?? getDailyPuzzleIndex();
     this.puzzle = getPuzzleAtIndex(this.currentPuzzleIndex);
     const levelNumber = this.currentPuzzleIndex + 1;
     this.startTimeMs = Date.now();
 
+    this.cameras.main.setBackgroundColor(this.skin.background.edgeColor);
+    drawBackground(this, this.skin);
+
     this.levelText = this.add.text(80, 50, `Level ${levelNumber}`, {
-      color: '#b8b8b8',
-      fontFamily: 'monospace',
-      fontSize: '24px'
+      color: this.skin.chrome.levelColor,
+      fontFamily: FONT_FAMILY,
+      fontSize: '20px'
     }).setOrigin(0, 0.5);
 
     this.timerText = this.add.text(this.scale.width - 80, 50, '0:00', {
-      color: '#ffffff',
-      fontFamily: 'monospace',
-      fontSize: '28px'
+      color: this.skin.chrome.timerColor,
+      fontFamily: FONT_FAMILY,
+      fontSize: '22px'
     }).setOrigin(1, 0.5);
 
     this.add.text(this.scale.width / 2, 110, t(this.puzzle.name), {
-      color: '#ffffff',
-      fontFamily: 'monospace',
-      fontSize: '48px',
+      color: this.skin.chrome.titleColor,
+      fontFamily: FONT_FAMILY,
+      fontSize: '72px',
       align: 'center',
       wordWrap: { width: 900 }
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setShadow(0, 0, this.skin.chrome.titleGlowColor, 8, false, true);
 
     if (this.puzzle.hint) {
       this.add.text(this.scale.width / 2, 175, t(this.puzzle.hint), {
-        color: '#999999',
-        fontFamily: 'monospace',
-        fontSize: '24px',
+        color: this.skin.chrome.hintTextColor,
+        fontFamily: FONT_FAMILY,
+        fontSize: '18px',
         align: 'center',
         wordWrap: { width: 900 }
       }).setOrigin(0.5);
@@ -131,7 +160,7 @@ export class GameScene extends Phaser.Scene {
     const gridW = this.CELL_SIZE * 4;
     const gridH = this.CELL_SIZE * 4;
     this.boardLeft = (this.scale.width - gridW) / 2;
-    this.boardTop = 260;
+    this.boardTop = 330;
     this.boardRight = this.boardLeft + gridW;
     this.boardBottom = this.boardTop + gridH;
 
@@ -150,15 +179,16 @@ export class GameScene extends Phaser.Scene {
       const x = this.boardLeft + tile.col * this.CELL_SIZE + this.CELL_SIZE / 2;
       const y = this.boardTop + tile.row * this.CELL_SIZE + this.CELL_SIZE / 2;
       const container = this.add.container(x, y).setDepth(10);
-      const bg = this.add
-        .rectangle(0, 0, this.CELL_SIZE * 0.92, this.CELL_SIZE * 0.92, 0x2d2d2d, 1)
-        .setOrigin(0.5)
-        .setStrokeStyle(4, 0x555555);
+      const tileSize = this.CELL_SIZE * 0.9;
+      const bg = this.add.graphics();
+      bg.setData('size', tileSize);
+      bg.setData('radius', Math.round(tileSize * 0.24));
       const letter = this.add.text(x, y, tile.letter, {
-        color: '#fff',
-        fontFamily: 'monospace',
-        fontSize: `${this.CELL_SIZE * 0.48}px`
+        color: this.skin.tiles.idle.letterColor,
+        fontFamily: FONT_FAMILY,
+        fontSize: `${this.CELL_SIZE * 0.44}px`
       }).setOrigin(0.5).setDepth(30);
+      drawTileIdle(bg, letter, this.skin);
       container.add(bg);
       this.tileSprites.set(tile, container);
       this.tileLetters.set(tile, letter);
@@ -224,6 +254,7 @@ export class GameScene extends Phaser.Scene {
     this.partIdsByAnswerDisplay.clear();
     this.solvedPartIds.clear();
     this.solvedAnswers.clear();
+    this.foundPendingTiles.clear();
 
     const ownershipEntries: PartOwnershipEntry[] = [];
 
@@ -259,41 +290,65 @@ export class GameScene extends Phaser.Scene {
   }
 
   buildHintRows() {
-    const rowsY = this.boardBottom + 55;
+    const sectionTop = this.boardBottom + 78;
     const answers = [...(this.puzzle.answers as Answer[])].sort((a, b) =>
       a.display.localeCompare(b.display)
     );
 
-    const totalWeight = answers.reduce((sum, answer) => {
-      return sum + answer.display.replace(/ /g, '').length;
-    }, 0);
+    const maxRowWidth = this.scale.width - 120;
+    const rowGap = 22;
+    const answerGap = 30;
+    const partGap = 20;
+    const cellSize = 58;
+    const cellGap = 10;
+    const startX = (this.scale.width - maxRowWidth) / 2;
 
-    const maxWidth = this.scale.width - 120;
-    const gap = 12;
-    const usableWidth = maxWidth - gap * (answers.length - 1);
-    let cursorX = (this.scale.width - maxWidth) / 2;
+    let cursorX = startX;
+    let rowIndex = 0;
 
     this.hintRows = [];
 
     for (const answer of answers) {
-      const weight = answer.display.replace(/ /g, '').length;
-      const width = Math.max(140, Math.floor((usableWidth * weight) / totalWeight));
-      const height = 56;
-      const centerX = cursorX + width / 2;
+      const partWidths = answer.parts.map((part) => {
+        return part.word.length * cellSize + (part.word.length - 1) * cellGap;
+      });
+      const width = partWidths.reduce((sum, w) => sum + w, 0) + partGap * (partWidths.length - 1);
 
-      const bg = this.add
-        .rectangle(centerX, rowsY, width, height, 0x1e1e1e, 1)
-        .setStrokeStyle(2, 0x555555)
-        .setOrigin(0.5);
+      if (cursorX > startX && cursorX + width > startX + maxRowWidth) {
+        rowIndex += 1;
+        cursorX = startX;
+      }
 
-      const text = this.add.text(centerX, rowsY, this.renderAnswerMask(answer), {
-        color: '#cfcfcf',
-        fontFamily: 'monospace',
-        fontSize: '22px'
-      }).setOrigin(0.5);
+      const centerY = sectionTop + rowIndex * (cellSize + rowGap);
+      const row: HintRow = { answer, cells: [] };
 
-      this.hintRows.push({ answer, bg, text });
-      cursorX += width + gap;
+      let cellX = cursorX;
+      answer.parts.forEach((part, partIndex) => {
+        for (let charIndex = 0; charIndex < part.word.length; charIndex++) {
+          const centerX = cellX + cellSize / 2;
+          const bg = this.add.graphics().setPosition(centerX, centerY);
+          bg.setData('size', cellSize);
+          bg.setData('radius', Math.round(cellSize * 0.2));
+          styleHintEmpty(bg, this.skin);
+
+          const text = this.add.text(centerX, centerY, '', {
+            color: this.skin.hints.empty.letterColor,
+            fontFamily: FONT_FAMILY,
+            fontSize: '30px'
+          }).setOrigin(0.5);
+
+          row.cells.push({ bg, text, partIndex, charIndex });
+          cellX += cellSize + cellGap;
+        }
+
+        if (partIndex < answer.parts.length - 1) {
+          cellX += partGap - cellGap;
+        }
+      });
+
+      this.hintRows.push(row);
+      this.refreshHintRow(answer.display);
+      cursorX += width + answerGap;
     }
   }
 
@@ -301,21 +356,25 @@ export class GameScene extends Phaser.Scene {
     return `${answer.display}::${index}`;
   }
 
-  renderAnswerMask(answer: Answer): string {
-    const chunks: string[] = [];
-    answer.parts.forEach((part, index) => {
-      const partId = this.getPartId(answer, index);
-      const solved = this.solvedPartIds.has(partId);
-      chunks.push(solved ? part.word : '_'.repeat(part.word.length));
-    });
-    return chunks.join(' ');
-  }
-
   refreshHintRow(answerDisplay: string) {
     const row = this.hintRows.find((h) => h.answer.display === answerDisplay);
     if (!row) return;
 
-    row.text.setText(this.renderAnswerMask(row.answer));
+    for (const cell of row.cells) {
+      const part = row.answer.parts[cell.partIndex];
+      const partId = this.getPartId(row.answer, cell.partIndex);
+      const solved = this.solvedPartIds.has(partId);
+      cell.text.setText(solved ? part.word[cell.charIndex] ?? '' : '');
+
+      if (solved) {
+        styleHintSolved(cell.bg, this.skin);
+        cell.text.setColor(this.skin.hints.solved.letterColor);
+      } else {
+        styleHintEmpty(cell.bg, this.skin);
+        cell.text.setColor(this.skin.hints.empty.letterColor);
+      }
+    }
+
     const allSolved = row.answer.parts.every((_, index) => {
       const partId = this.getPartId(row.answer, index);
       return this.solvedPartIds.has(partId);
@@ -323,9 +382,10 @@ export class GameScene extends Phaser.Scene {
 
     if (allSolved) {
       this.solvedAnswers.add(answerDisplay);
-      row.bg.setFillStyle(0x22452f, 1);
-      row.bg.setStrokeStyle(2, 0x27ae60);
-      row.text.setColor('#e9ffe9');
+      for (const cell of row.cells) {
+        styleHintCompleted(cell.bg);
+        cell.text.setColor('#e9ffe9');
+      }
     }
   }
 
@@ -364,17 +424,46 @@ export class GameScene extends Phaser.Scene {
         id: entry.id,
         path: entry.path
       });
+      const deactivatedSet = new Set(deactivatedCoords);
 
-      for (const coord of deactivatedCoords) {
-        this.deactivateTile(coord);
+      for (const coord of entry.path) {
+        if (deactivatedSet.has(coord)) {
+          this.deactivateTile(coord);
+        } else {
+          this.markTileFoundPending(coord);
+        }
       }
     }
 
     this.refreshHintRow(match.answerDisplay);
 
     if (this.solvedAnswers.size === this.puzzle.answers.length) {
+      const elapsedSec = Math.floor((Date.now() - this.startTimeMs) / 1000);
+      void recordPuzzleCompletion(this.puzzle.id, elapsedSec)
+        .then((snapshot) => {
+          void maybeShowInterstitial(snapshot.solvedCount);
+          this.updateWinPopupStats(this.formatWinStats(snapshot));
+        })
+        .catch((error) => {
+          console.warn('Failed to persist puzzle progress', error);
+        });
       this.showWinPopup();
     }
+  }
+
+  markTileFoundPending(coord: string) {
+    const tile = this.tileByCoord.get(coord);
+    if (!tile || tile.deactivated) return;
+
+    const sprite = this.tileSprites.get(tile);
+    const letter = this.tileLetters.get(tile);
+    if (!sprite || !letter) return;
+
+    const bg = sprite.list[0] as Phaser.GameObjects.Graphics;
+    this.foundPendingTiles.add(tile);
+    drawTileFoundPending(bg, letter, this.skin);
+    sprite.setAlpha(0.75);
+    letter.setAlpha(0.8);
   }
 
   deactivateTile(coord: string) {
@@ -386,6 +475,11 @@ export class GameScene extends Phaser.Scene {
     if (!sprite) return;
 
     tile.deactivated = true;
+    this.foundPendingTiles.delete(tile);
+    if (letter) {
+      drawTileDeactivated(letter, this.skin);
+    }
+    drawTileDeactivated(sprite, this.skin);
 
     this.tweens.add({
       targets: letter ? [sprite, letter] : [sprite],
@@ -402,7 +496,53 @@ export class GameScene extends Phaser.Scene {
   }
 
   onInvalidWord(_chain: Tile[]) {
-    // TODO: add shake animation and warning haptic.
+    const chain = _chain.filter((tile) => !tile.deactivated);
+    if (chain.length === 0) return;
+
+    const targets: Array<Phaser.GameObjects.Container | Phaser.GameObjects.Text> = [];
+    const baseX = new Map<Phaser.GameObjects.Container | Phaser.GameObjects.Text, number>();
+
+    for (const tile of chain) {
+      const sprite = this.tileSprites.get(tile);
+      const letter = this.tileLetters.get(tile);
+      if (sprite) {
+        targets.push(sprite);
+        baseX.set(sprite, sprite.x);
+      }
+      if (letter) {
+        targets.push(letter);
+        baseX.set(letter, letter.x);
+      }
+    }
+
+    if (targets.length === 0) return;
+
+    for (const target of targets) {
+      this.tweens.killTweensOf(target);
+      const x = baseX.get(target);
+      if (typeof x === 'number') target.x = x;
+    }
+
+    const strength = this.CELL_SIZE * 0.04;
+    this.tweens.addCounter({
+      from: 0,
+      to: 1,
+      duration: 220,
+      onUpdate: (tween) => {
+        const p = tween.getValue() as number;
+        const wave = Math.sin(p * Math.PI * 8) * (1 - p);
+        for (const target of targets) {
+          const x = baseX.get(target);
+          if (typeof x === 'number') target.x = x + wave * strength;
+        }
+      },
+      onComplete: () => {
+        for (const target of targets) {
+          const x = baseX.get(target);
+          if (typeof x === 'number') target.x = x;
+        }
+      }
+    });
   }
 
   onChainChanged(chain: Tile[]) {
@@ -482,26 +622,34 @@ export class GameScene extends Phaser.Scene {
   setHighlight(tile: Tile, on: boolean) {
     const sprite = this.tileSprites.get(tile);
     const letter = this.tileLetters.get(tile);
-    if (!sprite) return;
+    if (!sprite || !letter) return;
     if (tile.deactivated) return;
 
-    const bg = sprite.list[0] as Phaser.GameObjects.Rectangle;
+    const bg = sprite.list[0] as Phaser.GameObjects.Graphics;
 
     if (on) {
-      // Keep tile dark while selected; ribbon is the primary visual indicator.
-      bg.setFillStyle(0x1f1f1f, 1);
+      drawTileSelected(bg, letter, this.skin);
       sprite.setScale(1.08);
       sprite.setAlpha(1);
-      letter?.setScale(1.08);
-      letter?.setAlpha(1);
+      letter.setScale(1.08);
+      letter.setAlpha(1);
       return;
     }
 
-    bg.setFillStyle(0x2d2d2d, 1);
+    if (this.foundPendingTiles.has(tile)) {
+      drawTileFoundPending(bg, letter, this.skin);
+      sprite.setScale(1);
+      sprite.setAlpha(0.75);
+      letter.setScale(1);
+      letter.setAlpha(0.8);
+      return;
+    }
+
+    drawTileIdle(bg, letter, this.skin);
     sprite.setScale(1);
     sprite.setAlpha(1);
-    letter?.setScale(1);
-    letter?.setAlpha(1);
+    letter.setScale(1);
+    letter.setAlpha(1);
   }
 
   redrawPath(chain: Tile[]) {
@@ -552,7 +700,7 @@ export class GameScene extends Phaser.Scene {
         return;
       }
 
-      const color = this.PATH_SEGMENT_COLORS[0];
+      const color = this.skin.path.color;
       this.stopSingleHeadAnimation();
       this.singleHeadTile = tile;
       this.drawSingleHead(sprite.x, sprite.y, color, 1, 1);
@@ -730,7 +878,7 @@ export class GameScene extends Phaser.Scene {
       const tile = this.activeChain[0];
       const sprite = this.tileSprites.get(tile);
       if (!sprite) return;
-      this.drawSingleHead(sprite.x, sprite.y, this.PATH_SEGMENT_COLORS[0], this.nearWordPulseScale, 1);
+      this.drawSingleHead(sprite.x, sprite.y, this.skin.path.color, this.nearWordPulseScale, 1);
       return;
     }
 
@@ -744,25 +892,9 @@ export class GameScene extends Phaser.Scene {
 
   buildSegmentColors(points: { x: number; y: number }[]): number[] {
     const colors: number[] = [];
-    let colorIndex = 0;
-    let prevDx = 0;
-    let prevDy = 0;
-
     for (let i = 1; i < points.length; i++) {
-      const from = points[i - 1];
-      const to = points[i];
-      const dx = Math.sign(to.x - from.x);
-      const dy = Math.sign(to.y - from.y);
-
-      if (i > 1 && (dx !== prevDx || dy !== prevDy)) {
-        colorIndex = (colorIndex + 1) % this.PATH_SEGMENT_COLORS.length;
-      }
-
-      colors.push(this.PATH_SEGMENT_COLORS[colorIndex]);
-      prevDx = dx;
-      prevDy = dy;
+      colors.push(this.skin.path.color);
     }
-
     return colors;
   }
 
@@ -785,7 +917,7 @@ export class GameScene extends Phaser.Scene {
     if (points.length === 0) return;
 
     if (points.length === 1) {
-      const color = this.PATH_SEGMENT_COLORS[0];
+      const color = this.skin.path.color;
       const pulse = { scale: 1, alpha: 1 };
       this.pathDisappearTween = this.tweens.add({
         targets: pulse,
@@ -836,20 +968,40 @@ export class GameScene extends Phaser.Scene {
   ) {
     if (progress <= 0 || widthScale <= 0) return;
 
-    const ribbonWidth = this.CELL_SIZE * 0.50 * widthScale;
-    const ribbonRadius = ribbonWidth * 0.5;
+    const p = this.skin.path;
+    const scale = this.CELL_SIZE / 180;
+    const haloWidth = p.halo.width * scale * widthScale;
+    const bodyWidth = p.body.width * scale * widthScale;
+    const coreWidth = p.core.width * scale * widthScale;
+    const ribbonRadius = Math.max(haloWidth * 0.5, bodyWidth * 0.5);
     const toX = from.x + (to.x - from.x) * progress;
     const toY = from.y + (to.y - from.y) * progress;
 
-    g.lineStyle(ribbonWidth, color, alpha);
+    g.lineStyle(haloWidth, color, p.halo.alpha * alpha);
     g.beginPath();
     g.moveTo(from.x, from.y);
     g.lineTo(toX, toY);
     g.strokePath();
 
-    g.fillStyle(color, alpha);
+    g.lineStyle(bodyWidth, color, p.body.alpha * alpha);
+    g.beginPath();
+    g.moveTo(from.x, from.y);
+    g.lineTo(toX, toY);
+    g.strokePath();
+
+    g.lineStyle(coreWidth, color, p.core.alpha * alpha);
+    g.beginPath();
+    g.moveTo(from.x, from.y);
+    g.lineTo(toX, toY);
+    g.strokePath();
+
+    g.fillStyle(color, p.body.alpha * alpha);
     g.fillCircle(from.x, from.y, ribbonRadius);
     g.fillCircle(toX, toY, ribbonRadius);
+
+    g.fillStyle(color, p.core.alpha * alpha);
+    g.fillCircle(from.x, from.y, Math.max(2, coreWidth * 0.75));
+    g.fillCircle(toX, toY, Math.max(2, coreWidth * 0.75));
   }
 
   drawAllSegments(
@@ -910,15 +1062,38 @@ export class GameScene extends Phaser.Scene {
   drawSingleHead(x: number, y: number, color: number, scale = 1, alpha = 1) {
     this.pathHeadGraphics.clear();
 
-    const radius = this.CELL_SIZE * 0.25 * scale;
-    this.pathHeadGraphics.fillStyle(color, alpha);
+    const p = this.skin.path;
+    const radius = p.endpoint.radius * (this.CELL_SIZE / 180) * 2.2 * scale;
+    this.pathHeadGraphics.fillStyle(color, p.endpoint.alpha * alpha);
     this.pathHeadGraphics.fillCircle(x, y, radius);
+
+    this.pathHeadGraphics.fillStyle(color, Math.min(1, p.core.alpha * alpha));
+    this.pathHeadGraphics.fillCircle(x, y, Math.max(2, radius * 0.42));
   }
 
   formatElapsedTime(elapsedSec: number): string {
     const minutes = Math.floor(elapsedSec / 60);
     const seconds = elapsedSec % 60;
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  }
+
+  formatWinStats(snapshot: ProgressSnapshot): WinStats {
+    return {
+      solvedCount: String(snapshot.solvedCount),
+      bestTime: snapshot.bestTimeSec === null ? '--' : this.formatElapsedTime(snapshot.bestTimeSec),
+      streak: `${snapshot.currentStreak} (best ${snapshot.bestStreak})`
+    };
+  }
+
+  updateWinPopupStats(stats: WinStats) {
+    if (!this.winPopup) return;
+    const solvedText = this.winPopup.getByName('win-stats-solved') as Phaser.GameObjects.Text | null;
+    const bestText = this.winPopup.getByName('win-stats-best') as Phaser.GameObjects.Text | null;
+    const streakText = this.winPopup.getByName('win-stats-streak') as Phaser.GameObjects.Text | null;
+
+    solvedText?.setText(`Solved Total  ${stats.solvedCount}`);
+    bestText?.setText(`Best Time  ${stats.bestTime}`);
+    streakText?.setText(`Streak  ${stats.streak}`);
   }
 
   showWinPopup() {
@@ -938,37 +1113,66 @@ export class GameScene extends Phaser.Scene {
       .setDepth(121);
 
     const title = this.add.text(this.scale.width / 2, this.scale.height / 2 - 140, 'Puzzle Solved', {
-      color: '#27ae60',
-      fontFamily: 'monospace',
+      color: this.skin.hints.solved.letterColor,
+      fontFamily: FONT_FAMILY,
       fontSize: '56px'
     }).setOrigin(0.5).setDepth(122);
 
     const timeLabel = this.add.text(this.scale.width / 2, this.scale.height / 2 - 40, 'Final Time  ' + finalTime, {
       color: '#ffffff',
-      fontFamily: 'monospace',
+      fontFamily: FONT_FAMILY,
       fontSize: '36px'
     }).setOrigin(0.5).setDepth(122);
 
+    const solvedStatsLabel = this.add.text(this.scale.width / 2, this.scale.height / 2 + 22, 'Solved Total  --', {
+      color: '#c6d0dd',
+      fontFamily: FONT_FAMILY,
+      fontSize: '24px'
+    }).setOrigin(0.5).setDepth(122).setName('win-stats-solved');
+
+    const bestTimeLabel = this.add.text(this.scale.width / 2, this.scale.height / 2 + 54, 'Best Time  --', {
+      color: '#c6d0dd',
+      fontFamily: FONT_FAMILY,
+      fontSize: '24px'
+    }).setOrigin(0.5).setDepth(122).setName('win-stats-best');
+
+    const streakLabel = this.add.text(this.scale.width / 2, this.scale.height / 2 + 86, 'Streak  --', {
+      color: '#c6d0dd',
+      fontFamily: FONT_FAMILY,
+      fontSize: '24px'
+    }).setOrigin(0.5).setDepth(122).setName('win-stats-streak');
+
     const restartBtn = this.add
-      .rectangle(this.scale.width / 2 - 170, this.scale.height / 2 + 90, 280, 92, 0x1f2a3d, 1)
+      .rectangle(this.scale.width / 2 - 170, this.scale.height / 2 + 162, 280, 92, 0x1f2a3d, 1)
       .setStrokeStyle(2, 0x4a90d9)
       .setDepth(122)
       .setInteractive({ useHandCursor: true });
-    const restartText = this.add.text(this.scale.width / 2 - 170, this.scale.height / 2 + 90, 'Restart', {
+    const restartText = this.add.text(this.scale.width / 2 - 170, this.scale.height / 2 + 162, 'Restart', {
       color: '#e7f0ff',
-      fontFamily: 'monospace',
+      fontFamily: FONT_FAMILY,
       fontSize: '32px'
     }).setOrigin(0.5).setDepth(123);
 
     const nextBtn = this.add
-      .rectangle(this.scale.width / 2 + 170, this.scale.height / 2 + 90, 280, 92, 0x1f3d26, 1)
+      .rectangle(this.scale.width / 2 + 170, this.scale.height / 2 + 162, 280, 92, 0x1f3d26, 1)
       .setStrokeStyle(2, 0x27ae60)
       .setDepth(122)
       .setInteractive({ useHandCursor: true });
-    const nextText = this.add.text(this.scale.width / 2 + 170, this.scale.height / 2 + 90, 'Next Level', {
+    const nextText = this.add.text(this.scale.width / 2 + 170, this.scale.height / 2 + 162, 'Next Level', {
       color: '#e9ffe9',
-      fontFamily: 'monospace',
+      fontFamily: FONT_FAMILY,
       fontSize: '32px'
+    }).setOrigin(0.5).setDepth(123);
+
+    const shareBtn = this.add
+      .rectangle(this.scale.width / 2, this.scale.height / 2 + 270, 580, 84, 0x2d1f3d, 1)
+      .setStrokeStyle(2, 0x8f5bd1)
+      .setDepth(122)
+      .setInteractive({ useHandCursor: true });
+    const shareText = this.add.text(this.scale.width / 2, this.scale.height / 2 + 270, 'Share Result', {
+      color: '#f0e7ff',
+      fontFamily: FONT_FAMILY,
+      fontSize: '30px'
     }).setOrigin(0.5).setDepth(123);
 
     const group = this.add.container(0, 0, [
@@ -976,16 +1180,40 @@ export class GameScene extends Phaser.Scene {
       panel,
       title,
       timeLabel,
+      solvedStatsLabel,
+      bestTimeLabel,
+      streakLabel,
       restartBtn,
       restartText,
       nextBtn,
-      nextText
+      nextText,
+      shareBtn,
+      shareText
     ]);
     group.setDepth(120);
     this.winPopup = group;
 
     restartBtn.on('pointerdown', () => this.restartCurrentPuzzle());
     nextBtn.on('pointerdown', () => this.goToNextPuzzle());
+    shareBtn.on('pointerdown', () => {
+      void this.shareWinResult(finalTime);
+    });
+  }
+
+  async shareWinResult(finalTime: string) {
+    const message = `I solved ${t(this.puzzle.name)} in ${finalTime} on GlitchSalad.`;
+    try {
+      const canShare = await Share.canShare();
+      if (!canShare.value) return;
+
+      await Share.share({
+        title: 'GlitchSalad',
+        text: message,
+        dialogTitle: 'Share your result'
+      });
+    } catch (error) {
+      console.warn('Share failed', error);
+    }
   }
 
   restartCurrentPuzzle() {
