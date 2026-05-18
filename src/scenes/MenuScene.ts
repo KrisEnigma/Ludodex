@@ -58,16 +58,25 @@ export class MenuScene extends Phaser.Scene {
       }
     }
 
-    this.add.rectangle(540, 960, 1080, 1920, 0x0f1218, 1).setOrigin(0.5);
-    this.add.rectangle(540, 360, 760, 220, 0x151b26, 1).setStrokeStyle(3, 0x2e3a52).setOrigin(0.5);
+    const centerX = 540;
+    const statsPanelY = 360;
+    const skinPanelY = 820;
+    const levelPanelY = 1120;
+    const playBtnY = 1335;
+    const restoreBtnY = 1440;
+    const restoreStatusY = 1510;
+    const quickActionsY = 1620;
 
-    this.add.text(540, 270, 'GlitchSalad', {
+    this.add.rectangle(centerX, 960, 1080, 1920, 0x0f1218, 1).setOrigin(0.5);
+    this.add.rectangle(centerX, statsPanelY, 760, 220, 0x151b26, 1).setStrokeStyle(3, 0x2e3a52).setOrigin(0.5);
+
+    this.add.text(centerX, 270, 'GlitchSalad', {
       color: '#ffffff',
       fontFamily: FONT_FAMILY,
       fontSize: '72px'
     }).setOrigin(0.5);
 
-    this.add.text(540, 355, `Solved ${snapshot.solvedCount}  •  Streak ${snapshot.currentStreak}`, {
+    this.add.text(centerX, 355, `Solved ${snapshot.solvedCount}  •  Streak ${snapshot.currentStreak}`, {
       color: '#9db0cf',
       fontFamily: FONT_FAMILY,
       fontSize: '24px'
@@ -76,14 +85,14 @@ export class MenuScene extends Phaser.Scene {
     const best = snapshot.bestTimeSec === null
       ? '--'
       : `${Math.floor(snapshot.bestTimeSec / 60)}:${String(snapshot.bestTimeSec % 60).padStart(2, '0')}`;
-    this.add.text(540, 395, `Best Time ${best}  •  Best Streak ${snapshot.bestStreak}`, {
+    this.add.text(centerX, 395, `Best Time ${best}  •  Best Streak ${snapshot.bestStreak}`, {
       color: '#9db0cf',
       fontFamily: FONT_FAMILY,
       fontSize: '24px'
     }).setOrigin(0.5);
 
     this.dailyStatusText = this.add.text(
-      540,
+      centerX,
       442,
       dailySolved
         ? `Daily solved in ${dailyTimeLabel}${dailyComparison}`
@@ -99,22 +108,20 @@ export class MenuScene extends Phaser.Scene {
     this.selectedLevelIndex = getDailyPuzzleIndex();
 
 
-    // Move level selector panel further down to avoid overlap
-    const levelPanelY = 1120;
-    this.add.rectangle(540, levelPanelY, 760, 200, 0x151b26, 1).setStrokeStyle(3, 0x2e3a52).setOrigin(0.5);
-    this.add.text(540, levelPanelY - 70, 'Level Selector', {
+    this.add.rectangle(centerX, levelPanelY, 760, 200, 0x151b26, 1).setStrokeStyle(3, 0x2e3a52).setOrigin(0.5);
+    this.add.text(centerX, levelPanelY - 70, 'Level Selector', {
       color: '#d9e8ff',
       fontFamily: FONT_FAMILY,
       fontSize: '30px'
     }).setOrigin(0.5);
 
-    this.levelValueText = this.add.text(540, levelPanelY - 5, '', {
+    this.levelValueText = this.add.text(centerX, levelPanelY - 5, '', {
       color: '#ffffff',
       fontFamily: FONT_FAMILY,
       fontSize: '34px'
     }).setOrigin(0.5);
 
-    this.levelMetaText = this.add.text(540, levelPanelY + 35, '', {
+    this.levelMetaText = this.add.text(centerX, levelPanelY + 35, '', {
       color: '#9db0cf',
       fontFamily: FONT_FAMILY,
       fontSize: '22px'
@@ -134,26 +141,26 @@ export class MenuScene extends Phaser.Scene {
       this.levelMetaText.setColor(solved ? '#8fd7b1' : '#d2d9e6');
     };
 
-    this.add.rectangle(540, 820, 760, 230, 0x151b26, 1).setStrokeStyle(3, 0x2e3a52).setOrigin(0.5);
-    this.add.text(540, 730, 'Selected Skin', {
+    this.add.rectangle(centerX, skinPanelY, 760, 230, 0x151b26, 1).setStrokeStyle(3, 0x2e3a52).setOrigin(0.5);
+    this.add.text(centerX, skinPanelY - 90, 'Selected Skin', {
       color: '#d9e8ff',
       fontFamily: FONT_FAMILY,
       fontSize: '30px'
     }).setOrigin(0.5);
 
-    this.skinNameText = this.add.text(540, 820, '', {
+    this.skinNameText = this.add.text(centerX, skinPanelY, '', {
       color: '#ffffff',
       fontFamily: FONT_FAMILY,
       fontSize: '36px'
     }).setOrigin(0.5);
 
-    this.skinStatusText = this.add.text(540, 860, '', {
+    this.skinStatusText = this.add.text(centerX, skinPanelY + 40, '', {
       color: '#9db0cf',
       fontFamily: FONT_FAMILY,
       fontSize: '22px'
     }).setOrigin(0.5);
 
-    this.restoreStatusText = this.add.text(540, 1315, '', {
+    this.restoreStatusText = this.add.text(centerX, restoreStatusY, '', {
       color: '#9db0cf',
       fontFamily: FONT_FAMILY,
       fontSize: '20px'
@@ -162,20 +169,20 @@ export class MenuScene extends Phaser.Scene {
     this.updateSkinLabel();
 
     const prevBtn = this.add
-      .rectangle(330, 820, 90, 70, 0x23324a, 1)
+      .rectangle(330, skinPanelY, 90, 70, 0x23324a, 1)
       .setStrokeStyle(2, 0x4a90d9)
       .setInteractive({ useHandCursor: true });
-    this.add.text(330, 820, '<', {
+    this.add.text(330, skinPanelY, '<', {
       color: '#e6f1ff',
       fontFamily: FONT_FAMILY,
       fontSize: '36px'
     }).setOrigin(0.5);
 
     const nextSkinBtn = this.add
-      .rectangle(750, 820, 90, 70, 0x23324a, 1)
+      .rectangle(750, skinPanelY, 90, 70, 0x23324a, 1)
       .setStrokeStyle(2, 0x4a90d9)
       .setInteractive({ useHandCursor: true });
-    this.add.text(750, 820, '>', {
+    this.add.text(750, skinPanelY, '>', {
       color: '#e6f1ff',
       fontFamily: FONT_FAMILY,
       fontSize: '36px'
@@ -225,14 +232,12 @@ export class MenuScene extends Phaser.Scene {
     updateLevelSelectorLabel();
 
 
-    // Move play button below level selector
-    const playBtnY = levelPanelY + 110;
-    const start = this.add.text(540, playBtnY, 'Play Selected Level', {
+    const start = this.add.text(centerX, playBtnY, 'Play Selected Level', {
       color: '#4fd08e',
       fontFamily: FONT_FAMILY,
       fontSize: '42px'
     }).setOrigin(0.5);
-    this.add.rectangle(540, playBtnY, 520, 96, 0x1f3d26, 0.5).setStrokeStyle(2, 0x27ae60).setOrigin(0.5);
+    this.add.rectangle(centerX, playBtnY, 520, 96, 0x1f3d26, 0.5).setStrokeStyle(2, 0x27ae60).setOrigin(0.5);
     start.setDepth(2);
 
     start.setInteractive({ useHandCursor: true }).on('pointerdown', async () => {
@@ -247,20 +252,20 @@ export class MenuScene extends Phaser.Scene {
     });
 
     const replayBtn = this.add
-      .rectangle(350, 1385, 340, 82, 0x1f2f3d, 0.7)
+      .rectangle(350, quickActionsY, 340, 82, 0x1f2f3d, 0.7)
       .setStrokeStyle(2, 0x4f7fa8)
       .setInteractive({ useHandCursor: true });
-    const replayText = this.add.text(350, 1385, 'Replay Daily', {
+    const replayText = this.add.text(350, quickActionsY, 'Replay Daily', {
       color: '#dbefff',
       fontFamily: FONT_FAMILY,
       fontSize: '26px'
     }).setOrigin(0.5);
 
     const nextUnsolvedBtn = this.add
-      .rectangle(730, 1385, 340, 82, 0x21332d, 0.7)
+      .rectangle(730, quickActionsY, 340, 82, 0x21332d, 0.7)
       .setStrokeStyle(2, 0x4fa87d)
       .setInteractive({ useHandCursor: true });
-    const nextUnsolvedText = this.add.text(730, 1385, 'Next Unsolved', {
+    const nextUnsolvedText = this.add.text(730, quickActionsY, 'Next Unsolved', {
       color: '#dcfff0',
       fontFamily: FONT_FAMILY,
       fontSize: '26px'
@@ -290,10 +295,10 @@ export class MenuScene extends Phaser.Scene {
     });
 
     const restoreBtn = this.add
-      .rectangle(540, 1248, 520, 78, 0x1f2a3d, 0.65)
+      .rectangle(centerX, restoreBtnY, 520, 78, 0x1f2a3d, 0.65)
       .setStrokeStyle(2, 0x4a90d9)
       .setInteractive({ useHandCursor: true });
-    const restoreText = this.add.text(540, 1248, 'Restore Purchases', {
+    const restoreText = this.add.text(centerX, restoreBtnY, 'Restore Purchases', {
       color: '#e7f0ff',
       fontFamily: FONT_FAMILY,
       fontSize: '30px'
