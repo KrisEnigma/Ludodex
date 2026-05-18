@@ -18,6 +18,9 @@ export class MenuScene extends Phaser.Scene {
   restoreStatusText!: Phaser.GameObjects.Text;
   ownedProductIds = new Set<string>();
   dailyStatusText!: Phaser.GameObjects.Text;
+  selectedLevelIndex = 0;
+  levelValueText!: Phaser.GameObjects.Text;
+  levelMetaText!: Phaser.GameObjects.Text;
 
   constructor() {
     super({ key: 'MenuScene' });
@@ -38,6 +41,7 @@ export class MenuScene extends Phaser.Scene {
     this.ensureSelectedSkinIsUnlocked();
 
     const dailyPuzzle = getDailyPuzzle();
+    const totalPuzzles = getPuzzleCount();
     const dailySolved = solvedIds.includes(dailyPuzzle.id);
     const dailyTimeSec = solvedTimes[dailyPuzzle.id];
     const dailyTimeLabel = Number.isFinite(dailyTimeSec)
@@ -90,6 +94,45 @@ export class MenuScene extends Phaser.Scene {
         fontSize: '22px'
       }
     ).setOrigin(0.5);
+
+    const solvedSet = new Set(solvedIds);
+    this.selectedLevelIndex = getDailyPuzzleIndex();
+
+
+    // Move level selector panel further down to avoid overlap
+    const levelPanelY = 1120;
+    this.add.rectangle(540, levelPanelY, 760, 200, 0x151b26, 1).setStrokeStyle(3, 0x2e3a52).setOrigin(0.5);
+    this.add.text(540, levelPanelY - 70, 'Level Selector', {
+      color: '#d9e8ff',
+      fontFamily: FONT_FAMILY,
+      fontSize: '30px'
+    }).setOrigin(0.5);
+
+    this.levelValueText = this.add.text(540, levelPanelY - 5, '', {
+      color: '#ffffff',
+      fontFamily: FONT_FAMILY,
+      fontSize: '34px'
+    }).setOrigin(0.5);
+
+    this.levelMetaText = this.add.text(540, levelPanelY + 35, '', {
+      color: '#9db0cf',
+      fontFamily: FONT_FAMILY,
+      fontSize: '22px'
+    }).setOrigin(0.5);
+
+    const updateLevelSelectorLabel = () => {
+      const levelNumber = this.selectedLevelIndex + 1;
+      const puzzle = getPuzzleAtIndex(this.selectedLevelIndex);
+      const solved = solvedSet.has(puzzle.id);
+      const solvedTimeSec = solvedTimes[puzzle.id];
+      const timeLabel = Number.isFinite(solvedTimeSec)
+        ? `${Math.floor(solvedTimeSec / 60)}:${String(solvedTimeSec % 60).padStart(2, '0')}`
+        : '--';
+
+      this.levelValueText.setText(`Level ${levelNumber} / ${totalPuzzles}`);
+      this.levelMetaText.setText(solved ? `Solved in ${timeLabel}` : 'Not solved yet');
+      this.levelMetaText.setColor(solved ? '#8fd7b1' : '#d2d9e6');
+    };
 
     this.add.rectangle(540, 820, 760, 230, 0x151b26, 1).setStrokeStyle(3, 0x2e3a52).setOrigin(0.5);
     this.add.text(540, 730, 'Selected Skin', {
@@ -148,12 +191,48 @@ export class MenuScene extends Phaser.Scene {
       this.updateSkinLabel();
     });
 
-    const start = this.add.text(540, 1140, 'Play Daily Puzzle', {
+
+    const prevLevelBtn = this.add
+      .rectangle(330, levelPanelY - 5, 90, 70, 0x23324a, 1)
+      .setStrokeStyle(2, 0x4a90d9)
+      .setInteractive({ useHandCursor: true });
+    this.add.text(330, levelPanelY - 5, '<', {
+      color: '#e6f1ff',
+      fontFamily: FONT_FAMILY,
+      fontSize: '36px'
+    }).setOrigin(0.5);
+
+    const nextLevelBtn = this.add
+      .rectangle(750, levelPanelY - 5, 90, 70, 0x23324a, 1)
+      .setStrokeStyle(2, 0x4a90d9)
+      .setInteractive({ useHandCursor: true });
+    this.add.text(750, levelPanelY - 5, '>', {
+      color: '#e6f1ff',
+      fontFamily: FONT_FAMILY,
+      fontSize: '36px'
+    }).setOrigin(0.5);
+
+    prevLevelBtn.on('pointerdown', () => {
+      this.selectedLevelIndex = (this.selectedLevelIndex - 1 + totalPuzzles) % totalPuzzles;
+      updateLevelSelectorLabel();
+    });
+
+    nextLevelBtn.on('pointerdown', () => {
+      this.selectedLevelIndex = (this.selectedLevelIndex + 1) % totalPuzzles;
+      updateLevelSelectorLabel();
+    });
+
+    updateLevelSelectorLabel();
+
+
+    // Move play button below level selector
+    const playBtnY = levelPanelY + 110;
+    const start = this.add.text(540, playBtnY, 'Play Selected Level', {
       color: '#4fd08e',
       fontFamily: FONT_FAMILY,
       fontSize: '42px'
     }).setOrigin(0.5);
-    this.add.rectangle(540, 1140, 520, 96, 0x1f3d26, 0.5).setStrokeStyle(2, 0x27ae60).setOrigin(0.5);
+    this.add.rectangle(540, playBtnY, 520, 96, 0x1f3d26, 0.5).setStrokeStyle(2, 0x27ae60).setOrigin(0.5);
     start.setDepth(2);
 
     start.setInteractive({ useHandCursor: true }).on('pointerdown', async () => {
@@ -164,7 +243,7 @@ export class MenuScene extends Phaser.Scene {
       }
 
       await setActiveSkinId(skinId);
-      this.scene.start('GameScene');
+      this.scene.start('GameScene', { puzzleIndex: this.selectedLevelIndex });
     });
 
     const replayBtn = this.add
