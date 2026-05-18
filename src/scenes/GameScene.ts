@@ -79,6 +79,7 @@ export class GameScene extends Phaser.Scene {
   singleHeadPulse = { scale: 1, alpha: 1 };
   lastPathChain: Tile[] = [];
   CELL_SIZE = 180;
+  TILE_VISUAL = 0;
   HIT_RADIUS = 68;
   boardLeft = 0;
   boardTop = 0;
@@ -169,6 +170,8 @@ export class GameScene extends Phaser.Scene {
 
     this.CELL_SIZE = Math.floor(Math.min(this.scale.width, this.scale.height) * 0.22);
     this.HIT_RADIUS = this.CELL_SIZE * 0.38;
+    const TILE_VISUAL = Math.round(this.CELL_SIZE * 0.88);
+    this.TILE_VISUAL = TILE_VISUAL;
     const gridW = this.CELL_SIZE * 4;
     const gridH = this.CELL_SIZE * 4;
     this.boardLeft = (this.scale.width - gridW) / 2;
@@ -196,12 +199,12 @@ export class GameScene extends Phaser.Scene {
       const glowGfx = this.add.graphics();
       const letter = this.add.text(0, 1, tile.letter, {
         fontFamily: "'Space Mono', ui-monospace, monospace",
-        fontSize: `${Math.round(this.CELL_SIZE * 0.43)}px`,
+        fontSize: `${Math.round(this.TILE_VISUAL * 0.49)}px`,
         fontStyle: 'bold',
         color: this.skin.tiles.idle.letterColor,
       }).setOrigin(0.5, 0.5);
 
-      drawTileFace(faceGfx, this.skin.tiles.idle, this.CELL_SIZE);
+      drawTileFace(faceGfx, this.skin.tiles.idle, this.TILE_VISUAL);
       glowGfx.clear(); // glow hidden at idle
 
       container.add([glowGfx, faceGfx, letter]);
@@ -317,8 +320,8 @@ export class GameScene extends Phaser.Scene {
     const rowGap = 22;
     const answerGap = 30;
     const partGap = 20;
-    const cellSize = Math.round(this.CELL_SIZE * 0.30);
-    const cellGap = Math.round(cellSize * 0.16);
+    const cellSize = Math.round(this.TILE_VISUAL * 0.32);
+    const cellGap = Math.round(this.CELL_SIZE * 0.04);
     const startX = (this.scale.width - maxRowWidth) / 2;
 
     let cursorX = startX;
@@ -480,9 +483,11 @@ export class GameScene extends Phaser.Scene {
     const letter = this.tileLetters.get(tile);
     if (!sprite || !letter) return;
 
-    const bg = sprite.list[0] as Phaser.GameObjects.Graphics;
+    const faceGfx = sprite.list[1] as Phaser.GameObjects.Graphics;
+    const glowGfx = sprite.list[0] as Phaser.GameObjects.Graphics;
     this.foundPendingTiles.add(tile);
-    drawTileFoundPending(bg, letter, this.skin);
+    drawTileFoundPending(faceGfx, letter, this.skin);
+    glowGfx.clear();
     sprite.setAlpha(0.75);
     letter.setAlpha(0.8);
   }
@@ -651,8 +656,8 @@ export class GameScene extends Phaser.Scene {
     const faceGfx = container.list[1] as Phaser.GameObjects.Graphics;
     const state = on ? this.skin.tiles.selected : this.skin.tiles.idle;
 
-    drawTileFace(faceGfx, state, this.CELL_SIZE);
-    if (glowGfx) drawTileGlow(glowGfx, state, this.CELL_SIZE);
+    drawTileFace(faceGfx, state, this.TILE_VISUAL);
+    if (glowGfx) drawTileGlow(glowGfx, state, this.TILE_VISUAL);
     if (letter)  applyLetterStyle(letter, state);
 
     if (on) {
@@ -985,9 +990,9 @@ export class GameScene extends Phaser.Scene {
     if (progress <= 0 || widthScale <= 0) return;
 
     const p = this.skin.path;
-    const haloWidth = p.halo.width * widthScale;
-    const bodyWidth = p.body.width * widthScale;
-    const coreWidth = p.core.width * widthScale;
+    const haloWidth = (this.CELL_SIZE * 0.27) * widthScale;
+    const bodyWidth = (this.CELL_SIZE * 0.09) * widthScale;
+    const coreWidth = (this.CELL_SIZE * 0.028) * widthScale;
     const ribbonRadius = bodyWidth * 0.5;
     const toX = from.x + (to.x - from.x) * progress;
     const toY = from.y + (to.y - from.y) * progress;
@@ -1078,7 +1083,7 @@ export class GameScene extends Phaser.Scene {
     this.pathHeadGraphics.clear();
 
     const p = this.skin.path;
-    const radius = p.endpoint.radius * (this.CELL_SIZE / 180) * 2.2 * scale;
+    const radius = this.CELL_SIZE * 0.15 * scale;
     this.pathHeadGraphics.fillStyle(color, p.endpoint.alpha * alpha);
     this.pathHeadGraphics.fillCircle(x, y, radius);
 

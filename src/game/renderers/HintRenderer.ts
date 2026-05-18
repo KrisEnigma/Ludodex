@@ -15,7 +15,8 @@ function drawRoundedHint(
   bg.clear();
   bg.fillStyle(fillColor, fillAlpha);
   bg.fillRoundedRect(-half, -half, size, size, radius);
-  bg.lineStyle(2, borderColor, borderAlpha);
+  const borderThick = Math.max(2, Math.round(size * 0.04));
+  bg.lineStyle(borderThick, borderColor, borderAlpha);
   bg.strokeRoundedRect(-half, -half, size, size, radius);
 }
 
