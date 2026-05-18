@@ -18,40 +18,40 @@ export const VOID_SKIN: SkinDefinition = {
   },
   tiles: {
     idle: {
-      gradientTL: 0x1a2240,
-      gradientBR: 0x131b33,
-      borderColor: 0x2d3d63,
-      borderAlpha: 0.78,
+      gradientTL: 0x1E2236,
+      gradientBR: 0x131824,
+      borderColor: 0x252A3E,
+      borderAlpha: 0.7,
       insetAlpha: 0.05,
       shadowAlpha: 0.55,
-      letterColor: '#a5b4d3'
+      letterColor: '#9CA8C4'
     },
     selected: {
-      gradientTL: 0x15546c,
-      gradientBR: 0x0d3343,
-      borderColor: 0x19d7ef,
-      borderAlpha: 0.95,
+      gradientTL: 0x0D3A42,
+      gradientBR: 0x071E26,
+      borderColor: 0x00D4E8,
+      borderAlpha: 0.9,
       insetAlpha: 0.08,
       shadowAlpha: 0.6,
       glow: {
-        color: 0x19d7ef,
-        innerAlpha: 0.52,
-        outerAlpha: 0.2,
+        color: 0x00D4E8,
+        innerAlpha: 0.40,
+        outerAlpha: 0.12,
         innerOffset: 2,
-        outerOffset: 8
+        outerOffset: 6
       },
-      letterColor: '#e8fbff',
-      letterGlow: { color: '#19D7EF', blur: 12 }
+      letterColor: '#DDFAFF',
+      letterGlow: { color: '#00D4E8', blur: 10 }
     },
     foundPending: {
-      gradientTL: 0x0a2e1e,
-      gradientBR: 0x061a12,
-      borderColor: 0x00dc8c,
+      gradientTL: 0x0A2E1E,
+      gradientBR: 0x061A12,
+      borderColor: 0x00DC8C,
       borderAlpha: 0.5,
       insetAlpha: 0.04,
       shadowAlpha: 0.4,
       glow: {
-        color: 0x00dc8c,
+        color: 0x00DC8C,
         innerAlpha: 0.15,
         outerAlpha: 0.05,
         innerOffset: 2,
@@ -62,11 +62,11 @@ export const VOID_SKIN: SkinDefinition = {
     deactivatedAlpha: 0.08
   },
   path: {
-    color: 0x19d7ef,
-    halo: { width: 30, alpha: 0.2 },
-    body: { width: 13, alpha: 0.68 },
-    core: { width: 4.2, alpha: 1 },
-    endpoint: { radius: 10, alpha: 1 }
+    color: 0x00D4E8,
+    halo: { width: 14, alpha: 0.10 },
+    body: { width: 5, alpha: 0.40 },
+    core: { width: 1.5, alpha: 0.90 },
+    endpoint: { radius: 4, alpha: 0.90 }
   },
   hints: {
     empty: {

@@ -302,7 +302,7 @@ export class GameScene extends Phaser.Scene {
 
   updateTimer() {
     const elapsedSec = Math.floor((Date.now() - this.startTimeMs) / 1000);
-    const minutes = Math.floor(elapsedSec / 66);
+    const minutes = Math.floor(elapsedSec / 60);
     const seconds = elapsedSec % 60;
     this.timerText.setText(`${minutes}:${seconds.toString().padStart(2, '0')}`);
   }
@@ -317,8 +317,8 @@ export class GameScene extends Phaser.Scene {
     const rowGap = 22;
     const answerGap = 30;
     const partGap = 20;
-    const cellSize = 58;
-    const cellGap = 10;
+    const cellSize = Math.round(this.CELL_SIZE * 0.30);
+    const cellGap = Math.round(cellSize * 0.16);
     const startX = (this.scale.width - maxRowWidth) / 2;
 
     let cursorX = startX;
@@ -357,7 +357,7 @@ export class GameScene extends Phaser.Scene {
           const text = this.add.text(centerX, centerY, '', {
             color: this.skin.hints.empty.letterColor,
             fontFamily: FONT_FAMILY,
-            fontSize: '30px'
+            fontSize: `${Math.round(cellSize * 0.52)}px`
           }).setOrigin(0.5);
 
           row.cells.push({ bg, text, partIndex, charIndex });
@@ -985,11 +985,10 @@ export class GameScene extends Phaser.Scene {
     if (progress <= 0 || widthScale <= 0) return;
 
     const p = this.skin.path;
-    const scale = this.CELL_SIZE / 180;
-    const haloWidth = p.halo.width * scale * widthScale;
-    const bodyWidth = p.body.width * scale * widthScale;
-    const coreWidth = p.core.width * scale * widthScale;
-    const ribbonRadius = Math.max(haloWidth * 0.5, bodyWidth * 0.5);
+    const haloWidth = p.halo.width * widthScale;
+    const bodyWidth = p.body.width * widthScale;
+    const coreWidth = p.core.width * widthScale;
+    const ribbonRadius = bodyWidth * 0.5;
     const toX = from.x + (to.x - from.x) * progress;
     const toY = from.y + (to.y - from.y) * progress;
 
