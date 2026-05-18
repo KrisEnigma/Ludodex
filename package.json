@@ -1,0 +1,35 @@
+{
+  "name": "glitchsalad",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test:grid": "tsx scripts/test-grid.ts",
+    "test:selection": "tsx scripts/test-selection.ts",
+    "test:ownership": "tsx scripts/test-ownership.ts",
+    "test:deactivation": "tsx scripts/test-deactivation.ts",
+    "validate:puzzles": "ts-node scripts/validate-puzzles.ts",
+    "cap:sync": "cap sync"
+  },
+  "dependencies": {
+    "@capacitor-community/admob": "^7.0.0",
+    "@capacitor/core": "^6.1.2",
+    "@capacitor/haptics": "^6.0.1",
+    "@capacitor/local-notifications": "^6.0.1",
+    "@capacitor/preferences": "^6.0.1",
+    "@capacitor/share": "^6.0.1",
+    "@revenuecat/purchases-capacitor": "9.2.2",
+    "phaser": "^3.90.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.2",
+    "@types/node": "^22.15.30",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.22.0",
+    "typescript": "^6.0.3",
+    "vite": "^6.3.5"
+  }
+}
