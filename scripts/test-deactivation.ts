@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import puzzles from '../src/data/puzzles.json';
 import { parsePuzzle } from '../src/game/PuzzleParser';
-import { buildTileOwnership, applySolvedPart, isFoundPending } from '../src/game/tileOwnership';
+import { buildTileOwnership, applySolvedPart } from '../src/game/tileOwnership';
 import type { RawPuzzle } from '../src/types/puzzle';
 
 function run(): void {
@@ -21,9 +21,9 @@ function run(): void {
 
   const deactivated = applySolvedPart(state, sonic!);
 
-  // SONIC deactivates its non-shared tiles; c2 remains found-pending because CROFT still needs it.
+  // SONIC deactivates only non-shared tiles; c2 remains active because CROFT still owns it.
   assert.deepEqual(deactivated.sort(), ['a1', 'b1', 'c1', 'd1']);
-  assert.equal(isFoundPending(state, 'c2'), true);
+  assert.equal(state.ownership.get('c2')?.size, 1);
 
   console.log('Deactivation integration tests passed.');
 }

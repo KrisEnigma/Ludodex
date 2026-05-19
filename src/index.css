@@ -352,12 +352,6 @@ body {
   z-index: 1;
 }
 
-.tile[data-state="found-pending"] {
-  background: color-mix(in srgb, var(--tile-selected-bg) 86%, var(--tile-bg));
-  color: var(--tile-selected-letter);
-  border-color: color-mix(in srgb, var(--tile-selected-border) 80%, var(--tile-border));
-}
-
 .tile[data-state="deactivated"] {
   transform: scale(0.92);
   opacity: var(--tile-deactivated-opacity);

@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import {
   applySolvedPart,
   buildTileOwnership,
-  isFoundPending,
   type PartOwnershipEntry
 } from '../src/game/tileOwnership';
 
@@ -14,12 +13,9 @@ function run(): void {
 
   const state = buildTileOwnership(entries);
 
-  assert.equal(isFoundPending(state, 'a1'), false);
-  assert.equal(isFoundPending(state, 'b1'), false);
-
   const deactivatedAfterSonic = applySolvedPart(state, entries[0]);
   assert.deepEqual(deactivatedAfterSonic, ['a1', 'c1']);
-  assert.equal(isFoundPending(state, 'b1'), true);
+  assert.equal(state.ownership.get('b1')?.has('LARA'), true);
 
   const deactivatedAfterLara = applySolvedPart(state, entries[1]);
   assert.deepEqual(deactivatedAfterLara.sort(), ['b1', 'b2']);

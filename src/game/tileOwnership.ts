@@ -5,7 +5,6 @@ export type PartOwnershipEntry = {
 
 export type TileOwnershipState = {
   ownership: Map<string, Set<string>>;
-  initialCounts: Map<string, number>;
 };
 
 export function buildTileOwnership(entries: PartOwnershipEntry[]): TileOwnershipState {
@@ -20,12 +19,7 @@ export function buildTileOwnership(entries: PartOwnershipEntry[]): TileOwnership
     }
   }
 
-  const initialCounts = new Map<string, number>();
-  for (const [coord, owners] of ownership.entries()) {
-    initialCounts.set(coord, owners.size);
-  }
-
-  return { ownership, initialCounts };
+  return { ownership };
 }
 
 export function applySolvedPart(
@@ -45,12 +39,4 @@ export function applySolvedPart(
   }
 
   return deactivatedCoords;
-}
-
-export function isFoundPending(state: TileOwnershipState, coord: string): boolean {
-  const owners = state.ownership.get(coord);
-  if (!owners) return false;
-
-  const initial = state.initialCounts.get(coord) ?? 0;
-  return owners.size > 0 && owners.size < initial;
 }
