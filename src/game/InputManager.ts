@@ -22,7 +22,7 @@ export type InputManagerEvents<TMatch = WordMatch> = {
 
 export type InputManagerOptions<TMatch = WordMatch> = {
   tiles: Tile[];
-  hitRadius: number;
+  hitRadius: number | (() => number);
   swipeThreshold?: number;
   getTileCenter: (tile: Tile) => { x: number; y: number };
   validWordLengths: Set<number>;
@@ -35,7 +35,7 @@ export type InputManagerOptions<TMatch = WordMatch> = {
 
 export class InputManager<TMatch = WordMatch> {
   private readonly tiles: Tile[];
-  private readonly hitRadius: number;
+  private readonly hitRadius: number | (() => number);
   private readonly swipeThreshold: number;
   private readonly getTileCenter: (tile: Tile) => { x: number; y: number };
   private readonly validWordLengths: Set<number>;
@@ -253,12 +253,13 @@ export class InputManager<TMatch = WordMatch> {
   }
 
   private tileAtPoint(x: number, y: number): Tile | null {
+    const radius = typeof this.hitRadius === 'function' ? this.hitRadius() : this.hitRadius;
     for (const tile of this.tiles) {
       if (tile.deactivated) continue;
       const center = this.getTileCenter(tile);
       const dx = x - center.x;
       const dy = y - center.y;
-      if (Math.sqrt(dx * dx + dy * dy) <= this.hitRadius) {
+      if (Math.sqrt(dx * dx + dy * dy) <= radius) {
         return tile;
       }
     }

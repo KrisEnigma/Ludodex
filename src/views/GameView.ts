@@ -212,20 +212,24 @@ export class GameView {
 
     this.inputManager = new InputManager<{ partIds: string[] }>({
       tiles: this.allTiles,
-      hitRadius: this.computeHitRadius(),
+      hitRadius: () => this.computeHitRadius(),
       getTileCenter: (tile) => this.getTileCenter(tile),
       validWordLengths,
       findMatch: (word) => this.findPartMatch(word),
       events: {
         onChainChanged: (chain) => this.onChainChanged(chain),
         onInvalidWord: () => {
-          window.setTimeout(() => this.inputManager.clearChain(), 120);
+          // Selection persists after swipe-end so the user can continue by tap or swipe.
         },
         onWordFound: (match) => this.onWordFound(match.partIds)
       }
     });
 
     this.bindPointerEvents();
+    this.element.addEventListener('pointerdown', (event) => {
+      if (this.gridWrap.contains(event.target as Node)) return;
+      this.inputManager.clearChain();
+    });
     this.startTimer();
 
     window.addEventListener('resize', () => {

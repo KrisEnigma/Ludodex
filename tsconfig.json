@@ -13,10 +13,5 @@
     "types": ["node"],
     "ignoreDeprecations": "6.0"
   },
-  "include": ["src", "scripts", "vite.config.ts", "capacitor.config.ts"],
-  "exclude": [
-    "src/scenes/**",
-    "src/game/renderers/**",
-    "src/skins/SkinManager.ts"
-  ]
+  "include": ["src", "scripts", "vite.config.ts", "capacitor.config.ts"]
 }

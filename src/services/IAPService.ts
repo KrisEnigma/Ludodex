@@ -15,6 +15,22 @@ export async function hasEntitlement(id: string): Promise<boolean> {
   return id in customerInfo.entitlements.active;
 }
 
+export async function purchase(productId: string): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) return false;
+
+  const offerings = await Purchases.getOfferings();
+  const pkg = offerings.current?.availablePackages.find(
+    (candidate: { product: { identifier: string } }) => candidate.product.identifier === productId
+  );
+
+  if (!pkg) {
+    throw new Error(`Product ${productId} not found in current offerings`);
+  }
+
+  await Purchases.purchasePackage({ aPackage: pkg });
+  return hasEntitlement(productId);
+}
+
 export async function restorePurchases() {
   if (!Capacitor.isNativePlatform()) return;
   await Purchases.restorePurchases();
