@@ -1,3 +1,84 @@
+// --- Monotonic day-stamp defense ---
+const LAST_SEEN_DAY_STAMP_KEY = 'glitchsalad.last_seen_day_stamp';
+
+function getTodayDayStamp(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+async function readLastSeenDayStamp(): Promise<string | null> {
+  try {
+    const { value } = await Preferences.get({ key: LAST_SEEN_DAY_STAMP_KEY });
+    return value;
+  } catch {
+    return null;
+  }
+}
+
+async function writeLastSeenDayStamp(stamp: string): Promise<void> {
+  try {
+    await Preferences.set({ key: LAST_SEEN_DAY_STAMP_KEY, value: stamp });
+  } catch {
+    // Storage failures degrade gracefully.
+  }
+}
+
+/**
+ * Advances the watermark to today if today is later than the stored value.
+ * Never moves the watermark backward — that's the whole point.
+ * Safe to call on every app open and every solve.
+ */
+async function advanceLastSeenWatermark(): Promise<void> {
+  const today = getTodayDayStamp();
+  const stored = await readLastSeenDayStamp();
+  if (stored === null || today > stored) {
+    await writeLastSeenDayStamp(today);
+  }
+}
+
+/**
+ * Returns true iff the clock has been rolled backward relative to the highest
+ * day this device has ever seen. Used to suppress streak credit on solves
+ * that happened during apparent backward time travel.
+ */
+async function isClockBackwardFromWatermark(): Promise<boolean> {
+  const today = getTodayDayStamp();
+  const stored = await readLastSeenDayStamp();
+  return stored !== null && today < stored;
+}
+const PRISTINE_COUNT_KEY = 'glitchsalad.pristine_count';
+const CONSECUTIVE_PRISTINE_COUNT_KEY = 'glitchsalad.consecutive_pristine_count';
+const ARCHIVE_SOLVES_COUNT_KEY = 'glitchsalad.archive_solves_count';
+export async function getPristineCount(): Promise<number> {
+  const { value } = await Preferences.get({ key: PRISTINE_COUNT_KEY });
+  if (!value) return 0;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+export async function getConsecutivePristineCount(): Promise<number> {
+  const { value } = await Preferences.get({ key: CONSECUTIVE_PRISTINE_COUNT_KEY });
+  if (!value) return 0;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+export async function getArchiveSolvesCount(): Promise<number> {
+  const { value } = await Preferences.get({ key: ARCHIVE_SOLVES_COUNT_KEY });
+  if (!value) return 0;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+// Normalize legacy/invalid star ratings to 0-3 integer
+export function normalizeStarRating(rating: unknown): 0 | 1 | 2 | 3 {
+  const n = typeof rating === 'number' && Number.isFinite(rating) ? Math.round(rating) : 0;
+  if (n < 1) return 0;
+  if (n > 3) return 3;
+  return n as 1 | 2 | 3;
+}
 import { Preferences } from '@capacitor/preferences';
 
 const SOLVED_IDS_KEY = 'solved_ids';
@@ -33,11 +114,17 @@ export async function getSolvedRatings(): Promise<Record<string, number>> {
 }
 
 export type ProgressSnapshot = {
+  /** Unique puzzles solved (solved_ids.length). Used by Volume achievements and the Menu's "Solved" card. */
   solvedCount: number;
+  /** Total solve attempts including replays (puzzles_solved_count). Used by ad cadence only. */
+  totalSolveAttempts: number;
   bestTimeSec: number | null;
   currentStreak: number;
   bestStreak: number;
   lastPlayedDate: string | null;
+  pristineCount: number;
+  consecutivePristineCount: number;
+  archiveSolvesCount: number;
 };
 
 export type StreakStatus = {
@@ -134,20 +221,38 @@ function getBestTimeSec(solvedTimes: SolvedTimesMap): number | null {
 }
 
 export async function getProgressSnapshot(): Promise<ProgressSnapshot> {
-  const [solvedCount, solvedTimes, currentStreak, bestStreak, lastPlayedDate] = await Promise.all([
+  const [
+    solvedIds,
+    totalSolveAttempts,
+    solvedTimes,
+    currentStreak,
+    bestStreak,
+    lastPlayedDate,
+    pristineCount,
+    consecutivePristineCount,
+    archiveSolvesCount
+  ] = await Promise.all([
+    getSolvedIds(),
     getPuzzlesSolvedCount(),
     getSolvedTimes(),
     getCurrentStreak(),
     getBestStreak(),
-    getLastPlayedDate()
+    getLastPlayedDate(),
+    getPristineCount(),
+    getConsecutivePristineCount(),
+    getArchiveSolvesCount()
   ]);
 
   return {
-    solvedCount,
+    solvedCount: solvedIds.length,
+    totalSolveAttempts,
     bestTimeSec: getBestTimeSec(solvedTimes),
     currentStreak,
     bestStreak,
-    lastPlayedDate: lastPlayedDate ? toDayStamp(lastPlayedDate) : null
+    lastPlayedDate: lastPlayedDate ? toDayStamp(lastPlayedDate) : null,
+    pristineCount,
+    consecutivePristineCount,
+    archiveSolvesCount
   };
 }
 
@@ -168,24 +273,50 @@ export async function getStreakStatus(now: Date = new Date()): Promise<StreakSta
 }
 
 import { resetHintData } from './HintService';
+import { resetEarnedAchievements } from './AchievementService';
 
 export async function recordPuzzleCompletion(
   puzzleId: string,
   elapsedSeconds: number,
-  options: { isTodaysDaily: boolean; starRating: 1 | 2 | 3; nowIso?: string }
+  options: { isTodaysDaily: boolean; starRating: 1 | 2 | 3; isTutorial?: boolean; nowIso?: string }
 ): Promise<ProgressSnapshot> {
+  // Tutorial solves bypass all stat writes. Return a snapshot from current state.
+  if (options.isTutorial) {
+    return getProgressSnapshot();
+  }
+
+  // Defense check: capture before any mutations.
+  const streakSuspect = await isClockBackwardFromWatermark();
+
+  // Advance the watermark — no-op if today <= stored, else updates to today.
+  await advanceLastSeenWatermark();
+
   const nowIso = options.nowIso ?? new Date().toISOString();
 
   const solvedSet = new Set(await getSolvedIds());
+  const wasNewlySolved = !solvedSet.has(puzzleId);
   solvedSet.add(puzzleId);
 
-  const [solvedTimes, previousCount, lastPlayedDate, previousStreak, previousBestStreak, ratings] = await Promise.all([
+  const [
+    solvedTimes,
+    previousCount,
+    lastPlayedDate,
+    previousStreak,
+    previousBestStreak,
+    ratings,
+    previousPristineCount,
+    previousConsecutivePristineCount,
+    previousArchiveSolvesCount
+  ] = await Promise.all([
     getSolvedTimes(),
     getPuzzlesSolvedCount(),
     getLastPlayedDate(),
     getCurrentStreak(),
     getBestStreak(),
-    getSolvedRatings()
+    getSolvedRatings(),
+    getPristineCount(),
+    getConsecutivePristineCount(),
+    getArchiveSolvesCount()
   ]);
 
   const existing = solvedTimes[puzzleId];
@@ -193,17 +324,18 @@ export async function recordPuzzleCompletion(
     ? Math.min(existing, elapsedSeconds)
     : elapsedSeconds;
 
-  // Ratings: store best ever (higher is better)
+  // Ratings: store best ever (higher is better).
   const existingRating = ratings[puzzleId];
-  ratings[puzzleId] = (typeof existingRating === 'number' && existingRating > options.starRating)
-    ? existingRating
-    : options.starRating;
+  const previousRating = (typeof existingRating === 'number' && existingRating > 0) ? existingRating : 0;
+  const wasNewRating = options.starRating > previousRating;
+  ratings[puzzleId] = wasNewRating ? options.starRating : previousRating;
 
-  const solvedCount = previousCount + 1;
+  const totalSolveAttempts = previousCount + 1;
   let currentStreak = previousStreak;
   let bestStreak = previousBestStreak;
 
-  if (options.isTodaysDaily) {
+  // Streak update — gated by suspect flag.
+  if (options.isTodaysDaily && !streakSuspect) {
     const todayStamp = toDayStamp(nowIso);
     const lastStamp = lastPlayedDate ? toDayStamp(lastPlayedDate) : null;
 
@@ -219,17 +351,41 @@ export async function recordPuzzleCompletion(
 
     bestStreak = Math.max(previousBestStreak, currentStreak);
   }
+  // If suspect, streak and last_solved_date are not updated (remain as before).
+
+  // Pristine count: increment only when this solve produced a puzzle's first-ever pristine.
+  const isFirstTimePristineForThisPuzzle = wasNewRating && options.starRating === 3;
+  const pristineCount = previousPristineCount + (isFirstTimePristineForThisPuzzle ? 1 : 0);
+
+  // Consecutive pristine count:
+  // - First-time pristine on a puzzle: +1
+  // - Non-pristine first-time solve OR non-pristine first-time-better-rating: reset to 0
+  //   (i.e., wasNewRating && starRating < 3 — the player WAS attempting and failed to pristine)
+  // - Anything else (replays of already-rated puzzles): neutral, no change
+  let consecutivePristineCount = previousConsecutivePristineCount;
+  if (isFirstTimePristineForThisPuzzle) {
+    consecutivePristineCount = previousConsecutivePristineCount + 1;
+  } else if (wasNewRating && options.starRating < 3) {
+    consecutivePristineCount = 0;
+  }
+  // else: neutral.
+
+  // Archive solves count: increment on every non-daily solve (does not require uniqueness — a replay of an archive puzzle still represents archive engagement).
+  const archiveSolvesCount = previousArchiveSolvesCount + (options.isTodaysDaily ? 0 : 1);
 
   const bestTimeSec = getBestTimeSec(solvedTimes);
 
   const writes: Array<Promise<void>> = [
     Preferences.set({ key: SOLVED_IDS_KEY, value: JSON.stringify(Array.from(solvedSet)) }),
     Preferences.set({ key: SOLVED_TIMES_KEY, value: JSON.stringify(solvedTimes) }),
-    Preferences.set({ key: PUZZLES_SOLVED_COUNT_KEY, value: String(solvedCount) }),
-    Preferences.set({ key: SOLVED_RATINGS_KEY, value: JSON.stringify(ratings) })
+    Preferences.set({ key: PUZZLES_SOLVED_COUNT_KEY, value: String(totalSolveAttempts) }),
+    Preferences.set({ key: SOLVED_RATINGS_KEY, value: JSON.stringify(ratings) }),
+    Preferences.set({ key: PRISTINE_COUNT_KEY, value: String(pristineCount) }),
+    Preferences.set({ key: CONSECUTIVE_PRISTINE_COUNT_KEY, value: String(consecutivePristineCount) }),
+    Preferences.set({ key: ARCHIVE_SOLVES_COUNT_KEY, value: String(archiveSolvesCount) })
   ];
 
-  if (options.isTodaysDaily) {
+  if (options.isTodaysDaily && !streakSuspect) {
     writes.push(
       Preferences.set({ key: LAST_PLAYED_DATE_KEY, value: nowIso }),
       Preferences.set({ key: CURRENT_STREAK_KEY, value: String(currentStreak) }),
@@ -240,16 +396,48 @@ export async function recordPuzzleCompletion(
   await Promise.all(writes);
 
   return {
-    solvedCount,
+    solvedCount: solvedSet.size,
+    totalSolveAttempts,
     bestTimeSec,
     currentStreak,
     bestStreak,
-    lastPlayedDate: options.isTodaysDaily ? toDayStamp(nowIso) : (lastPlayedDate ? toDayStamp(lastPlayedDate) : null)
+    lastPlayedDate: options.isTodaysDaily && !streakSuspect ? toDayStamp(nowIso) : (lastPlayedDate ? toDayStamp(lastPlayedDate) : null),
+    pristineCount,
+    consecutivePristineCount,
+    archiveSolvesCount
   };
 }
 
 export async function resetAllProgress(): Promise<void> {
-  await Promise.all(PROGRESS_KEYS.map(key => Preferences.remove({ key })));
+  await Promise.all(PROGRESS_KEYS.map((key) => Preferences.remove({ key })));
   await Preferences.remove({ key: SOLVED_RATINGS_KEY });
+  await Preferences.remove({ key: PRISTINE_COUNT_KEY });
+  await Preferences.remove({ key: CONSECUTIVE_PRISTINE_COUNT_KEY });
+  await Preferences.remove({ key: ARCHIVE_SOLVES_COUNT_KEY });
+  await Preferences.remove({ key: LAST_SEEN_DAY_STAMP_KEY });
   await resetHintData();
+  await resetEarnedAchievements();
+}
+
+/**
+ * Called on app start. Backfills `pristine_count` from `solved_ratings` for users
+ * who upgraded from a version before pristine_count was tracked. Returns a fresh
+ * snapshot for the caller to use.
+ */
+export async function bootstrapProgress(): Promise<ProgressSnapshot> {
+  const currentPristineCount = await getPristineCount();
+  if (currentPristineCount === 0) {
+    const ratings = await getSolvedRatings();
+    const computedCount = Object.values(ratings).filter((r) => r === 3).length;
+    if (computedCount > 0) {
+      await Preferences.set({ key: PRISTINE_COUNT_KEY, value: String(computedCount) });
+    }
+  }
+
+  // Monotonic day-stamp defense: advance the watermark on every app open.
+  // First-ever bootstrap with this version: watermark gets set to today,
+  // and the defense activates against any subsequent backward time travel.
+  await advanceLastSeenWatermark();
+
+  return getProgressSnapshot();
 }

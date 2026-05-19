@@ -7,7 +7,8 @@ import { ensureBundledPuzzlesLoaded } from './game/PuzzleLoader';
 import { initI18n } from './i18n';
 import { applySkin, normalizeSkinId } from './skins/registry';
 import { initIAP } from './services/IAPService';
-import { getActiveSkinId } from './services/ProgressService';
+import { bootstrapProgress, getActiveSkinId, getSolvedTimes } from './services/ProgressService';
+import { retroactivelyUnlockEarnedAchievements } from './services/AchievementService';
 import { Router } from './views/Router';
 
 const app = document.querySelector<HTMLDivElement>('#app');
@@ -26,6 +27,23 @@ void (async () => {
   ensureBundledPuzzlesLoaded();
 
   applySkin(normalizeSkinId(await getActiveSkinId()));
+
+  // Bootstrap progress (with pristine_count backfill), then run the retroactive
+  // achievement scan so upgrading players catch up silently.
+  const snapshot = await bootstrapProgress();
+  const solvedTimes = await getSolvedTimes();
+  const bestTimeSec = (() => {
+    const values = Object.values(solvedTimes).filter((v): v is number => Number.isFinite(v));
+    return values.length === 0 ? null : Math.min(...values);
+  })();
+
+  await retroactivelyUnlockEarnedAchievements({
+    bestStreak: snapshot.bestStreak,
+    solvedCount: snapshot.solvedCount,
+    pristineCount: snapshot.pristineCount,
+    archiveSolvesCount: snapshot.archiveSolvesCount,
+    bestTimeSec
+  });
 
   const router = new Router(app);
   const tutorial = await Preferences.get({ key: 'tutorial_seen' });

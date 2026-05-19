@@ -5,12 +5,31 @@ export type SkinMeta = {
   name: string;
   productId: string | null;
   bundleProductId?: string;
+  /** Three colors driving the preview swatch in Settings: [background, tile, accent]. */
+  previewSwatch: [string, string, string];
 };
 
 export const SKINS: SkinMeta[] = [
-  { id: 'void', name: 'Void', productId: null },
-  { id: 'synthwave', name: 'Synthwave', productId: 'skin_synthwave', bundleProductId: 'skin_bundle' },
-  { id: 'gameboy', name: 'Game Boy', productId: 'skin_pixel', bundleProductId: 'skin_bundle' }
+  {
+    id: 'void',
+    name: 'Void',
+    productId: null,
+    previewSwatch: ['#131824', '#1e2236', '#00d4e8']
+  },
+  {
+    id: 'synthwave',
+    name: 'Synthwave',
+    productId: 'skin_synthwave',
+    bundleProductId: 'skin_bundle',
+    previewSwatch: ['#150620', '#6a0f9a', '#ff2bd6']
+  },
+  {
+    id: 'gameboy',
+    name: 'Game Boy',
+    productId: 'skin_pixel',
+    bundleProductId: 'skin_bundle',
+    previewSwatch: ['#4a5e44', '#6a8060', '#b5d68f']
+  }
 ];
 
 const SKIN_CLASS_PREFIX = 'skin-';

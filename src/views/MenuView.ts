@@ -1,6 +1,6 @@
 import { ensureBundledPuzzlesLoaded, getDailyPuzzleIndex, getDayNumberSinceLaunch, getPuzzleAtIndex, getPuzzleForDay } from '../game/PuzzleLoader';
 import { t } from '../i18n';
-import { getProgressSnapshot, getSolvedIds, getSolvedRatings, getSolvedTimes, getStreakStatus } from '../services/ProgressService';
+import { getProgressSnapshot, getSolvedIds, getSolvedRatings, getSolvedTimes, getStreakStatus, normalizeStarRating } from '../services/ProgressService';
 import { t as tp } from '../utils/i18n';
 import type { RoutePayloads } from './Router';
 import { getMonetizationContext } from '../services/MonetizationContext';
@@ -73,13 +73,25 @@ export class MenuView {
     const streakCard = document.createElement('div');
     streakCard.className = 'stat-card';
     streakCard.dataset.highlight = 'true';
+
+    const streakValueRow = document.createElement('span');
+    streakValueRow.className = 'stat-value-row';
+
+    const streakFire = document.createElement('span');
+    streakFire.className = 'stat-fire-icon';
+    streakFire.textContent = '🔥';
+    streakFire.hidden = true;
+
     const streakValue = document.createElement('span');
     streakValue.className = 'stat-value';
     streakValue.textContent = '0';
+
+    streakValueRow.append(streakFire, streakValue);
+
     const streakLabel = document.createElement('span');
     streakLabel.className = 'stat-label';
     streakLabel.textContent = t('menu.stat_streak');
-    streakCard.append(streakValue, streakLabel);
+    streakCard.append(streakValueRow, streakLabel);
 
     const solvedCard = document.createElement('div');
     solvedCard.className = 'stat-card';
@@ -220,7 +232,15 @@ export class MenuView {
         getStreakStatus()
       ]);
       if (!root.isConnected) return;
-      streakValue.textContent = String(streakStatus.effective);
+      const effective = streakStatus.effective;
+      streakValue.textContent = String(effective);
+      if (effective >= 2) {
+        streakCard.dataset.fire = 'true';
+        streakFire.hidden = false;
+      } else {
+        streakCard.removeAttribute('data-fire');
+        streakFire.hidden = true;
+      }
       solvedValue.textContent = String(snapshot.solvedCount);
       bestValue.textContent = snapshot.bestTimeSec === null ? t('menu.stat_empty') : this.formatElapsed(snapshot.bestTimeSec);
 
@@ -241,7 +261,7 @@ export class MenuView {
           const yesterdayPuzzle = yesterdayEntry.puzzle;
           const isSolved = solvedIds.includes(yesterdayPuzzle.id);
           const time = isSolved ? solvedTimes[yesterdayPuzzle.id] : null;
-          const rating = solvedRatings[yesterdayPuzzle.id] ?? 0;
+          const rating = normalizeStarRating(solvedRatings[yesterdayPuzzle.id]);
           const card = this.buildYesterdayCard(yesterdayNumber, yesterdayPuzzle, isSolved, time, rating);
           card.addEventListener('click', () => {
             callbacks.onPlay({

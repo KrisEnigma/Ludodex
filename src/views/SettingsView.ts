@@ -20,6 +20,138 @@ export class SettingsView {
   private activeSkinId: SkinId = getCurrentSkinId();
   private readonly isNative = Capacitor.isNativePlatform();
 
+  // --- Skin preview state machine ---
+  private previewingSkinId: SkinId | null = null;
+  private skinIdBeforePreview: SkinId | null = null;
+  private previewBanner: HTMLElement | null = null;
+
+  private async enterPreview(skinId: SkinId): Promise<void> {
+    if (this.previewingSkinId === skinId) return;
+
+    if (this.previewingSkinId === null) {
+      // First entry into preview — record what to revert to.
+      this.skinIdBeforePreview = this.activeSkinId;
+    }
+
+    this.previewingSkinId = skinId;
+    applySkin(skinId);
+    this.renderPreviewBanner();
+  }
+
+  private async exitPreview(): Promise<void> {
+    if (this.previewingSkinId === null) return;
+
+    const revertTo = this.skinIdBeforePreview ?? 'void';
+    this.previewingSkinId = null;
+    this.skinIdBeforePreview = null;
+    applySkin(revertTo);
+
+    if (this.previewBanner) {
+      this.previewBanner.remove();
+      this.previewBanner = null;
+    }
+  }
+
+  private async commitPreview(): Promise<void> {
+    if (this.previewingSkinId === null) return;
+
+    const purchased = this.previewingSkinId;
+    this.previewingSkinId = null;
+    this.skinIdBeforePreview = null;
+
+    // The applySkin call already happened during enterPreview; just persist it as active.
+    this.activeSkinId = purchased;
+    await setActiveSkinId(purchased);
+
+    if (this.previewBanner) {
+      this.previewBanner.remove();
+      this.previewBanner = null;
+    }
+
+    this.refreshSkinCards();
+  }
+
+  private renderPreviewBanner(): void {
+    if (this.previewBanner) {
+      this.previewBanner.remove();
+      this.previewBanner = null;
+    }
+    if (this.previewingSkinId === null) return;
+
+    const skin = SKINS.find((s) => s.id === this.previewingSkinId);
+    if (!skin) return;
+
+    const banner = document.createElement('div');
+    banner.className = 'skin-preview-banner';
+    banner.setAttribute('role', 'dialog');
+    banner.setAttribute('aria-live', 'polite');
+
+    const text = document.createElement('div');
+    text.className = 'skin-preview-banner-text';
+    text.textContent = t('settings.skin_preview_banner_title', { name: this.getSkinName(skin.id) });
+
+    const actions = document.createElement('div');
+    actions.className = 'skin-preview-banner-actions';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'skin-preview-banner-cancel button-secondary';
+    cancelBtn.textContent = t('common.cancel');
+    cancelBtn.addEventListener('click', () => {
+      void this.exitPreview();
+    });
+
+    if (this.isNative && skin.productId) {
+      const buyBtn = document.createElement('button');
+      buyBtn.type = 'button';
+      buyBtn.className = 'skin-preview-banner-buy button-primary';
+      buyBtn.textContent = `${t('settings.skin_unlock')} ${this.getPriceLabel(skin.id)}`;
+      buyBtn.addEventListener('click', () => {
+        void this.attemptPurchaseFromPreview(skin);
+      });
+      actions.append(buyBtn, cancelBtn);
+    } else {
+      actions.append(cancelBtn);
+    }
+
+    banner.append(text, actions);
+    document.body.append(banner);
+    this.previewBanner = banner;
+  }
+
+  private async attemptPurchaseFromPreview(skin: SkinMeta): Promise<void> {
+    if (!skin.productId) return;
+
+    this.status.textContent = t('settings.purchase_in_progress', { name: this.getSkinName(skin.id) });
+
+    try {
+      const result = await purchase(skin.productId);
+      const purchased = result.status === 'success';
+
+      if (!purchased && skin.bundleProductId) {
+        const bundleUnlocked = await isOwned(skin.bundleProductId);
+        this.unlockedBySkin.set(skin.id, bundleUnlocked);
+      } else {
+        this.unlockedBySkin.set(skin.id, purchased);
+      }
+
+      await this.refreshEntitlements();
+
+      if (this.unlockedBySkin.get(skin.id)) {
+        await this.commitPreview();
+        this.status.textContent = '';
+      } else {
+        this.status.textContent = t('settings.purchase_not_unlocked');
+        await this.exitPreview();
+      }
+    } catch {
+      this.status.textContent = t('settings.purchase_cancelled_or_unavailable');
+      await this.exitPreview();
+    }
+
+    this.refreshSkinCards();
+  }
+
   constructor(
     private readonly onBack: () => void,
     private readonly onLanguageChange: () => void
@@ -62,7 +194,14 @@ export class SettingsView {
     back.type = 'button';
     back.className = 'view-topbar-back';
     back.textContent = t('settings.back');
-    back.addEventListener('click', this.onBack);
+    back.addEventListener('click', () => {
+      void (async () => {
+        if (this.previewingSkinId !== null) {
+          await this.exitPreview();
+        }
+        this.onBack();
+      })();
+    });
 
     const title = document.createElement('h2');
     title.className = 'view-topbar-title';
@@ -109,6 +248,9 @@ export class SettingsView {
 
   private async onLangButtonClick(lang: Language): Promise<void> {
     if (getLang() === lang) return;
+    if (this.previewingSkinId !== null) {
+      await this.exitPreview();
+    }
     await setLang(lang);
     this.onLanguageChange();
   }
@@ -133,26 +275,27 @@ export class SettingsView {
       const left = document.createElement('span');
       left.className = 'settings-skin-left';
 
-      const name = document.createElement('span');
-      name.className = 'settings-skin-name';
-      name.textContent = this.getSkinName(skin.id);
-
       const preview = document.createElement('span');
       preview.className = 'settings-skin-preview';
-      preview.dataset.skin = skin.id;
       for (let i = 0; i < 3; i += 1) {
         const tile = document.createElement('span');
         tile.className = 'settings-skin-preview-tile';
-        tile.dataset.index = String(i + 1);
+        tile.style.background = skin.previewSwatch[i];
         preview.append(tile);
       }
+      left.append(preview);
 
-      left.append(preview, name);
+      const name = document.createElement('span');
+      name.className = 'settings-skin-name';
+      name.textContent = this.getSkinName(skin.id);
+      left.append(name);
+
+      card.append(left);
 
       const pill = document.createElement('span');
       pill.className = 'settings-skin-pill';
+      card.append(pill);
 
-      card.append(left, pill);
       card.addEventListener('click', () => {
         void this.onSkinCardClick(skin);
       });
@@ -168,38 +311,18 @@ export class SettingsView {
 
   private async onSkinCardClick(skin: SkinMeta): Promise<void> {
     const unlocked = this.unlockedBySkin.get(skin.id) === true;
-    if (unlocked) {
-      await this.setSkin(skin.id);
-      return;
-    }
-
-    if (!this.isNative || !skin.productId) {
-      return;
-    }
-
-    this.status.textContent = t('settings.purchase_in_progress', { name: this.getSkinName(skin.id) });
-    try {
-      const result = await purchase(skin.productId);
-      const purchased = result.status === 'success';
-      if (!purchased && skin.bundleProductId) {
-        const bundleUnlocked = await isOwned(skin.bundleProductId);
-        this.unlockedBySkin.set(skin.id, bundleUnlocked);
-      } else {
-        this.unlockedBySkin.set(skin.id, purchased);
-      }
-
-      await this.refreshEntitlements();
-      if (this.unlockedBySkin.get(skin.id)) {
+      if (unlocked) {
+        // Owned or free skin: apply immediately, no preview.
+        if (this.previewingSkinId !== null) {
+          // If we were previewing and the user tapped an owned skin, exit preview cleanly first.
+          await this.exitPreview();
+        }
         await this.setSkin(skin.id);
-        this.status.textContent = '';
-      } else {
-        this.status.textContent = t('settings.purchase_not_unlocked');
+        return;
       }
-    } catch {
-      this.status.textContent = t('settings.purchase_cancelled_or_unavailable');
-    }
 
-    this.refreshSkinCards();
+      // Locked skin: enter preview. On native, the banner lets the user Buy. On web, the banner just lets them Cancel (preview is browsing only).
+      await this.enterPreview(skin.id);
   }
 
   private async setSkin(skinId: SkinId): Promise<void> {

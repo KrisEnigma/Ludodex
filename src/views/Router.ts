@@ -1,3 +1,4 @@
+// (moved inside Router class below)
 import type { Puzzle } from '../types/puzzle';
 import { ArchiveView } from './ArchiveView';
 import { GameView } from './GameView';
@@ -11,7 +12,7 @@ export type RouteName = 'menu' | 'game' | 'win' | 'settings' | 'archive' | 'how-
 
 export type RoutePayloads = {
   menu: undefined;
-  game: { puzzle: Puzzle; dayNumber: number; isTodaysDaily: boolean };
+  game: { puzzle: Puzzle; dayNumber: number; isTodaysDaily: boolean; isTutorial?: boolean };
   win: WinPayload;
   settings: undefined;
   archive: undefined;
@@ -28,6 +29,15 @@ type AnyRouteEntry = {
 }[RouteName];
 
 export class Router {
+    private mount(element: HTMLElement): void {
+      element.classList.add('view-entering');
+      this.shell.replaceChildren(element);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          element.classList.remove('view-entering');
+        });
+      });
+    }
   private readonly shell: HTMLDivElement;
   private stack: AnyRouteEntry[] = [];
 
@@ -74,8 +84,6 @@ export class Router {
       this.stack.pop();
     }
 
-    const current = this.shell.firstElementChild;
-    if (current) current.remove();
     this.renderCurrent();
   }
 
@@ -91,7 +99,7 @@ export class Router {
           onOpenArchive: () => this.push('archive'),
           onOpenHowToPlay: () => this.push('how-to-play', { fromOnboarding: false })
         });
-        this.shell.replaceChildren(view.element);
+        this.mount(view.element);
         return;
       }
       case 'game': {
@@ -99,14 +107,14 @@ export class Router {
           onWin: (payload) => this.replace('win', payload),
           onMenu: () => this.pop()
         });
-        this.shell.replaceChildren(view.element);
+        this.mount(view.element);
         return;
       }
       case 'win': {
         const view = new WinView(current.payload, this, () => {
           this.pop();
         });
-        this.shell.replaceChildren(view.element);
+        this.mount(view.element);
         return;
       }
       case 'settings': {
@@ -114,7 +122,7 @@ export class Router {
           () => this.pop(),
           () => this.replace('settings')
         );
-        this.shell.replaceChildren(view.element);
+        this.mount(view.element);
         return;
       }
       case 'archive': {
@@ -124,7 +132,7 @@ export class Router {
             this.replace('game', { puzzle, dayNumber, isTodaysDaily: false });
           }
         );
-        this.shell.replaceChildren(view.element);
+        this.mount(view.element);
         return;
       }
       case 'how-to-play': {
@@ -136,7 +144,7 @@ export class Router {
             this.pop();
           }
         });
-        this.shell.replaceChildren(view.element);
+        this.mount(view.element);
         return;
       }
       default:

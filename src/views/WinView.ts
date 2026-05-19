@@ -4,6 +4,8 @@ import { showConfetti } from '../components/Confetti';
 import { t, tn } from '../i18n';
 import { clearPuzzleReveals } from '../services/HintService';
 import type { Router } from './Router';
+import { ACHIEVEMENTS } from '../data/achievements';
+import { showAchievementToasts } from '../components/AchievementToast';
 import type { WinPayload } from './types';
 
 export class WinView {
@@ -156,6 +158,24 @@ export class WinView {
     secondaryRow.append(playAgainButton, doneLink);
 
     this.element.append(headline, title, time, pillRow, stats, shareButton, secondaryRow, nextCountdown);
+
+    if (payload.unlockedAchievements && payload.unlockedAchievements.length > 0) {
+      const items = payload.unlockedAchievements
+        .map((id) => {
+          const def = ACHIEVEMENTS.find((a) => a.id === id);
+          if (!def) return null;
+          return {
+            id: def.id,
+            name: t(def.nameKey as import('../i18n').StringKey),
+            description: t(def.descriptionKey as import('../i18n').StringKey)
+          };
+        })
+        .filter((item) => item !== null);
+
+      if (items.length > 0) {
+        window.setTimeout(() => showAchievementToasts(items as any), 400);
+      }
+    }
   }
 
   private async onPlayAgain(): Promise<void> {

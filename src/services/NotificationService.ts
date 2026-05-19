@@ -1,6 +1,8 @@
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Capacitor } from '@capacitor/core';
+
 import { Preferences } from '@capacitor/preferences';
+import { t } from '../i18n';
 
 const NOTIFICATION_SCHEDULED_KEY = 'notification_scheduled';
 
@@ -23,8 +25,8 @@ export async function scheduleDailyNotification() {
     notifications: [
       {
         id: 1,
-        title: 'New puzzle unlocked',
-        body: "Today's challenge is live. How fast can you solve it?",
+        title: t('notification.daily_title'),
+        body: t('notification.daily_body'),
         schedule: {
           on: { hour: 9, minute: 0 },
           repeats: true,

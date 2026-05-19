@@ -1,6 +1,6 @@
 import { getDayNumberSinceLaunch, getPuzzleForDay } from '../game/PuzzleLoader';
 import { t } from '../i18n';
-import { getSolvedIds, getSolvedTimes, getSolvedRatings } from '../services/ProgressService';
+import { getSolvedIds, getSolvedTimes, getSolvedRatings, normalizeStarRating } from '../services/ProgressService';
 import type { Puzzle } from '../types/puzzle';
 import { t as tp } from '../utils/i18n';
 
@@ -71,7 +71,7 @@ export class ArchiveView {
       const isSolved = solvedIds.includes(puzzle.id);
       const timeValue = solvedTimes[puzzle.id];
       const time = isSolved && Number.isFinite(timeValue) ? timeValue : null;
-      const rating = solvedRatings[puzzle.id] ?? 0;
+      const rating = normalizeStarRating(solvedRatings[puzzle.id]);
       this.listContainer.append(this.renderRow(day, puzzle, isSolved, time, rating));
     }
   }

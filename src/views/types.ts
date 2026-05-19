@@ -10,4 +10,6 @@ export type WinPayload = {
   starRating: 1 | 2 | 3;
   wasNewBest: boolean;
   wasNewRating: boolean;
+  /** Achievement IDs unlocked by the solve that produced this WinPayload. */
+  unlockedAchievements: string[];
 };

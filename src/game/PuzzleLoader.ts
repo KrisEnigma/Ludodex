@@ -3,6 +3,16 @@ import { Preferences } from '@capacitor/preferences';
 import type { Puzzle, RawPuzzle } from '../types/puzzle';
 import { parsePuzzle } from './PuzzleParser';
 
+/**
+ * Daily puzzle releases at device-local midnight, the same model used by Wordle,
+ * NYT Connections, Mini, and Strands. The puzzle becomes available the moment the
+ * calendar date rolls over in the player's timezone. Streak math and the WinView /
+ * Menu countdown timers are anchored to the same boundary.
+ *
+ * Players who want a morning ritual should rely on the daily notification (default
+ * 9:00 local, configurable in future Settings additions) rather than a non-midnight
+ * release time. See AGENTS.md or the design discussion for the full rationale.
+ */
 const LAUNCH_DATE = new Date('2025-01-01T00:00:00');
 const REMOTE_PUZZLES_URL = 'https://cdn.glitchsalad.app/puzzles.json';
 const PUZZLES_REMOTE_KEY = 'puzzles_remote';

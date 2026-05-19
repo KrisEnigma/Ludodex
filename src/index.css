@@ -1,3 +1,186 @@
+/* Achievement Toasts */
+.achievement-toast-container {
+  position: fixed;
+  top: max(80px, env(safe-area-inset-top, 0px) + 60px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 200;
+  pointer-events: none;
+  width: min(320px, calc(100vw - 32px));
+}
+
+.achievement-toast {
+  background: var(--button-bg);
+  border: 1px solid color-mix(in srgb, var(--title-glow) 50%, var(--button-border));
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--title-glow) 25%, transparent);
+  animation: toast-slide-in 320ms cubic-bezier(0.34, 1.4, 0.64, 1) backwards;
+  pointer-events: auto;
+}
+
+.achievement-toast[data-leaving='true'] {
+  animation: toast-slide-out 280ms ease-out forwards;
+}
+
+.achievement-toast-icon {
+  font-size: var(--type-h2);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.achievement-toast-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.achievement-toast-name {
+  font-size: var(--type-body-s);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--title-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.achievement-toast-description {
+  font-size: var(--type-caption);
+  color: var(--chrome-text);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@keyframes toast-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes toast-slide-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .achievement-toast,
+  .achievement-toast[data-leaving='true'] {
+    animation: none !important;
+  }
+}
+/* --- Visual polish blocks --- */
+.menu-get-app {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  font-size: var(--type-label);
+  letter-spacing: 0.14em;
+  color: var(--chrome-text);
+  text-transform: uppercase;
+}
+.game-hint-counter {
+  transition: opacity 200ms, box-shadow 200ms;
+}
+.game-hint-counter[data-state="empty"] {
+  opacity: 0.55;
+}
+.game-hint-counter[data-state="low"] {
+  animation: hint-counter-low-pulse 2000ms ease-in-out infinite;
+}
+@keyframes hint-counter-low-pulse {
+  0%, 100% { box-shadow: none; }
+  50% { box-shadow: 0 0 10px color-mix(in srgb, var(--title-glow) 38%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .game-hint-counter[data-state="low"] {
+    animation: none !important;
+  }
+}
+.hint-slot {
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.14);
+  transition: background 200ms ease, border-color 200ms ease, color 200ms ease, box-shadow 200ms ease;
+}
+.hint-slot[data-filled="true"],
+.hint-row[data-solved="true"] .hint-slot {
+  box-shadow: none;
+}
+@keyframes hint-slot-complete {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+.hint-row[data-just-solved="true"] .hint-slot {
+  animation: hint-slot-complete 220ms cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  animation-delay: var(--cascade-delay, 0ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .hint-row[data-just-solved="true"] .hint-slot {
+    animation: none !important;
+  }
+}
+.stat-card[data-fire="true"] {
+  border-color: color-mix(in srgb, var(--title-glow) 32%, var(--button-border));
+  box-shadow: 0 0 16px color-mix(in srgb, var(--title-glow) 14%, transparent);
+}
+.stat-value-row {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  line-height: 1;
+}
+.stat-fire-icon {
+  font-size: var(--type-caption);
+  line-height: 1;
+  position: relative;
+  top: -1px;
+}
+.view {
+  transition: opacity 180ms ease-out;
+}
+.view.view-entering {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .view {
+    transition: none !important;
+  }
+  .view.view-entering {
+    opacity: 1;
+  }
+}
+/* Shake animation for invalid word */
+.tile-invalid-shake {
+  animation: tile-invalid-shake 320ms cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+@keyframes tile-invalid-shake {
+  10%, 90% { transform: translateX(-2px); }
+  20%, 80% { transform: translateX(4px); }
+  30%, 50%, 70% { transform: translateX(-8px); }
+  40%, 60% { transform: translateX(8px); }
+  100% { transform: none; }
+}
 /* --- HINT COUNTER & STAR SYSTEM --- */
 .hint-counter {
   display: inline-flex;
@@ -724,9 +907,11 @@ body {
 }
 
 .menu-divider {
-  width: 40px;
-  height: 1px;
-  background: color-mix(in srgb, var(--chrome-text) 40%, transparent);
+  width: 64px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, #00d4e8 60%, transparent 100%);
+  opacity: 0.44;
+  border-radius: 2px;
   margin: 0 auto 22px;
 }
 
@@ -770,11 +955,13 @@ body {
 
 .daily-card {
   width: 100%;
-  background: var(--tile-selected-bg);
-  border: 1px solid var(--tile-selected-border);
-  border-radius: 14px;
-  padding: 16px 18px 18px;
+  background: linear-gradient(145deg, #0d3a42 80%, #071e26 100%);
+  border: 2px solid var(--tile-selected-border);
+  border-radius: 16px;
+  padding: 18px 20px 20px;
+  box-shadow: 0 2px 16px 0 #00d4e822;
   cursor: pointer;
+  transition: box-shadow 180ms, border-color 180ms;
 }
 
 .daily-card-head {
@@ -804,7 +991,8 @@ body {
   font-size: var(--type-h4);
   font-weight: 700;
   line-height: 1.2;
-  color: var(--tile-selected-letter);
+  color: var(--title-glow);
+  text-shadow: 0 0 12px #00d4e866;
 }
 
 .daily-card-meta {
@@ -1214,17 +1402,69 @@ body {
   display: block;
 }
 
-.settings-skin-preview[data-skin='void'] .settings-skin-preview-tile[data-index='1'] { background: #131824; }
-.settings-skin-preview[data-skin='void'] .settings-skin-preview-tile[data-index='2'] { background: #1e2236; }
-.settings-skin-preview[data-skin='void'] .settings-skin-preview-tile[data-index='3'] { background: #00d4e8; }
 
-.settings-skin-preview[data-skin='synthwave'] .settings-skin-preview-tile[data-index='1'] { background: #150620; }
-.settings-skin-preview[data-skin='synthwave'] .settings-skin-preview-tile[data-index='2'] { background: #6a0f9a; }
-.settings-skin-preview[data-skin='synthwave'] .settings-skin-preview-tile[data-index='3'] { background: #ff2bd6; }
+/* Skin preview banner */
+.skin-preview-banner {
+  position: fixed;
+  bottom: max(20px, env(safe-area-inset-bottom, 0px) + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(360px, calc(100vw - 32px));
+  background: var(--button-bg);
+  border: 1px solid color-mix(in srgb, var(--title-glow) 50%, var(--button-border));
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--title-glow) 28%, transparent);
+  z-index: 150;
+  animation: skin-preview-banner-slide-up 280ms cubic-bezier(0.34, 1.4, 0.64, 1) backwards;
+}
 
-.settings-skin-preview[data-skin='gameboy'] .settings-skin-preview-tile[data-index='1'] { background: #4a5e44; }
-.settings-skin-preview[data-skin='gameboy'] .settings-skin-preview-tile[data-index='2'] { background: #6a8060; }
-.settings-skin-preview[data-skin='gameboy'] .settings-skin-preview-tile[data-index='3'] { background: #b5d68f; }
+.skin-preview-banner-text {
+  font-size: var(--type-body-s);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--title-color);
+  text-align: center;
+}
+
+.skin-preview-banner-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.skin-preview-banner-actions > button {
+  flex: 1;
+}
+
+.skin-preview-banner-buy {
+  font-size: var(--type-body-s);
+  padding: 10px;
+}
+
+.skin-preview-banner-cancel {
+  font-size: var(--type-body-s);
+  padding: 10px;
+}
+
+@keyframes skin-preview-banner-slide-up {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 16px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skin-preview-banner {
+    animation: none !important;
+  }
+}
 
 .settings-skin-card[data-active='true'] .settings-skin-pill,
 .settings-skin-card[data-active='true'] .settings-skin-name {
@@ -1473,16 +1713,7 @@ body {
 
 /* ──────────── Menu — web-only Get the app row ──────────── */
 .menu-get-app {
-  display: grid;
-  justify-items: center;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  margin-top: 10px;
-  font-size: var(--type-label);
-  letter-spacing: 0.14em;
-  color: var(--chrome-text);
-  text-transform: uppercase;
+}
 }
 
 .menu-get-app-label {

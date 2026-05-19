@@ -1,4 +1,5 @@
 import { InputManager } from '../game/InputManager';
+import { HapticService } from '../services/HapticService';
 import { t } from '../i18n';
 import { Tile } from '../game/Tile';
 import { applySolvedPart, buildTileOwnership, type PartOwnershipEntry, type TileOwnershipState } from '../game/tileOwnership';
@@ -19,6 +20,10 @@ import {
 } from '../services/ProgressService';
 import type { Puzzle } from '../types/puzzle';
 import { t as tp } from '../utils/i18n';
+
+import { ACHIEVEMENTS } from '../data/achievements';
+import { detectAndUnlockAchievements } from '../services/AchievementService';
+import { getDayNumberSinceLaunch } from '../game/PuzzleLoader';
 import type { RoutePayloads } from './Router';
 import type { WinPayload } from './types';
 
@@ -53,6 +58,7 @@ export class GameView {
   private readonly dayNumber: number;
   private readonly puzzle: Puzzle;
   private readonly isTodaysDaily: boolean;
+  private readonly isTutorial: boolean;
   private readonly wordsProgressLabel: HTMLParagraphElement;
   private readonly puzzleId: string;
   private readonly puzzleTitle: string;
@@ -74,13 +80,14 @@ export class GameView {
     payload: RoutePayloads['game'],
     callbacks: { onWin: (payload: WinPayload) => void; onMenu: () => void }
   ) {
-    const { puzzle, dayNumber, isTodaysDaily } = payload;
+    const { puzzle, dayNumber, isTodaysDaily, isTutorial } = payload;
 
     this.onWin = callbacks.onWin;
-  this.onMenu = callbacks.onMenu;
+    this.onMenu = callbacks.onMenu;
     this.dayNumber = dayNumber;
     this.puzzle = puzzle;
     this.isTodaysDaily = isTodaysDaily;
+    this.isTutorial = isTutorial ?? false;
     this.puzzleId = puzzle.id;
     this.puzzleTitle = tp(puzzle.name, puzzle.id);
 
@@ -102,7 +109,6 @@ export class GameView {
     // Hint counter UI
     this.hintCounterEl = document.createElement('div');
     this.hintCounterEl.className = 'game-hint-counter';
-    this.hintCounterEl.dataset.empty = 'false';
     const hintIcon = document.createElement('span');
     hintIcon.className = 'game-hint-counter-icon';
     hintIcon.textContent = '💡';
@@ -269,9 +275,17 @@ export class GameView {
       events: {
         onChainChanged: (chain) => this.onChainChanged(chain),
         onInvalidWord: () => {
-          // Selection persists after swipe-end so the user can continue by tap or swipe.
+          // Shake animation and haptic feedback
+          HapticService.notification('warning');
+          this.gridWrap.classList.remove('tile-invalid-shake');
+          // Force reflow to restart animation
+          void this.gridWrap.offsetWidth;
+          this.gridWrap.classList.add('tile-invalid-shake');
         },
-        onWordFound: (match) => this.onWordFound(match.partIds)
+        onWordFound: (match) => {
+          HapticService.impactMedium();
+          this.onWordFound(match.partIds);
+        }
       }
     });
 
@@ -374,7 +388,13 @@ export class GameView {
 
   private updateHintCounter(): void {
     this.hintCounterCount.textContent = String(this.hintsRemaining);
-    this.hintCounterEl.dataset.empty = String(this.hintsRemaining <= 0);
+    if (this.hintsRemaining <= 0) {
+      this.hintCounterEl.dataset.state = 'empty';
+    } else if (this.hintsRemaining === 1) {
+      this.hintCounterEl.dataset.state = 'low';
+    } else {
+      this.hintCounterEl.dataset.state = 'normal';
+    }
   }
 
   private async showOutOfHintsModal(): Promise<void> {
@@ -540,8 +560,12 @@ export class GameView {
 
     if (prevLen === 0 && newLen >= 1) {
       this.selectionsStarted += 1;
+      HapticService.selection();
     } else if (newLen > 0 && newLen < prevLen) {
       this.undosPerformed += 1;
+      HapticService.impactLight();
+    } else if (newLen > prevLen) {
+      HapticService.impactLight();
     }
     this.previousChainLength = newLen;
 
@@ -676,10 +700,30 @@ export class GameView {
       const solved = answerPartIds.every((id) => this.solvedPartIds.has(id));
       if (solved) {
         const row = this.hintRowsByDisplay.get(firstEntry.answerDisplay);
-        if (row) row.dataset.solved = 'true';
+        if (row) {
+          row.dataset.solved = 'true';
+          this.triggerCascade(row);
+        }
         this.updateWordsProgressLabel();
       }
     }
+
+  }
+
+  private triggerCascade(row: HTMLDivElement): void {
+    const slots = row.querySelectorAll<HTMLElement>('.hint-slot');
+    slots.forEach((slot, index) => {
+      slot.style.setProperty('--cascade-delay', `${index * 60}ms`);
+    });
+    row.dataset.justSolved = 'true';
+
+    // Total animation time = (slots.length - 1) * 60ms delay + 220ms duration
+    const totalMs = (slots.length - 1) * 60 + 220 + 40;
+    window.setTimeout(() => {
+      if (!row.isConnected) return;
+      row.removeAttribute('data-just-solved');
+      slots.forEach((slot) => slot.style.removeProperty('--cascade-delay'));
+    }, totalMs);
 
     for (const tile of this.allTiles) {
       this.applyTileVisualState(tile);
@@ -727,12 +771,32 @@ export class GameView {
 
         const snapshot = await recordPuzzleCompletion(this.puzzleId, elapsedSeconds, {
           isTodaysDaily: this.isTodaysDaily,
-          starRating
+          starRating,
+          isTutorial: this.isTutorial
         });
 
         await clearPuzzleReveals(this.puzzleId);
 
-        await maybeShowInterstitial(snapshot.solvedCount);
+        let unlockedAchievements: string[] = [];
+        if (!this.isTutorial) {
+          unlockedAchievements = await detectAndUnlockAchievements({
+            currentStreak: snapshot.currentStreak,
+            solvedCount: snapshot.solvedCount,
+            pristineCount: snapshot.pristineCount,
+            consecutivePristineCount: snapshot.consecutivePristineCount,
+            archiveSolvesCount: snapshot.archiveSolvesCount,
+            bestTimeSec: snapshot.bestTimeSec,
+            elapsedSeconds,
+            starRating,
+            isTodaysDaily: this.isTodaysDaily,
+            wasNewRating,
+            hourLocal: new Date().getHours(),
+            dayNumberSolved: this.dayNumber,
+            currentDayNumber: getDayNumberSinceLaunch()
+          });
+        }
+
+        await maybeShowInterstitial(snapshot.totalSolveAttempts);
 
         this.onWin({
           puzzleId: this.puzzleId,
@@ -745,7 +809,8 @@ export class GameView {
           isTodaysDaily: this.isTodaysDaily,
           starRating,
           wasNewBest,
-          wasNewRating
+          wasNewRating,
+          unlockedAchievements
         });
       } catch (err) {
         console.warn('[GameView] onPuzzleSolved failed', err);
@@ -766,7 +831,8 @@ export class GameView {
           isTodaysDaily: this.isTodaysDaily,
           starRating: this.getStarRating(),
           wasNewBest: false,
-          wasNewRating: false
+          wasNewRating: false,
+          unlockedAchievements: []
         });
       }
     })();
