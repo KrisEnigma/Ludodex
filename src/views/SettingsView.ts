@@ -147,7 +147,7 @@ export class SettingsView {
         preview.append(tile);
       }
 
-      left.append(name, preview);
+      left.append(preview, name);
 
       const pill = document.createElement('span');
       pill.className = 'settings-skin-pill';

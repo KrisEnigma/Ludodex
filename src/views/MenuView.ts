@@ -196,7 +196,11 @@ export class MenuView {
       playStoreLink.className = 'menu-get-app-link';
       playStoreLink.textContent = t('settings.store_play_store');
 
-      getAppRow.append(label, appStoreLink, dot, playStoreLink);
+      const links = document.createElement('span');
+      links.className = 'menu-get-app-links';
+      links.append(appStoreLink, dot, playStoreLink);
+
+      getAppRow.append(label, links);
     }
 
     const countdownIntervalId = window.setInterval(() => {
