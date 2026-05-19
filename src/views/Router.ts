@@ -96,7 +96,7 @@ export class Router {
       }
       case 'game': {
         const view = new GameView(current.payload, {
-          onWin: (payload) => this.push('win', payload),
+          onWin: (payload) => this.replace('win', payload),
           onMenu: () => this.pop()
         });
         this.shell.replaceChildren(view.element);
@@ -104,7 +104,7 @@ export class Router {
       }
       case 'win': {
         const view = new WinView(current.payload, this, () => {
-          this.popToRoot();
+          this.pop();
         });
         this.shell.replaceChildren(view.element);
         return;

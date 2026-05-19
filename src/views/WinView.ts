@@ -1,6 +1,8 @@
 import { Share } from '@capacitor/share';
 import { getPuzzleById } from '../game/PuzzleLoader';
+import { showConfetti } from '../components/Confetti';
 import { t, tn } from '../i18n';
+import { clearPuzzleReveals } from '../services/HintService';
 import type { Router } from './Router';
 import type { WinPayload } from './types';
 
@@ -15,10 +17,21 @@ export class WinView {
 
     this.element = document.createElement('div');
     this.element.className = 'view win-view';
+    this.element.dataset.stars = String(payload.starRating);
+
+    if (payload.starRating === 3) {
+      window.setTimeout(() => {
+        showConfetti({
+          count: 60,
+          duration: 7000,
+          colors: ['var(--title-glow)', 'var(--title-color)']
+        });
+      }, 600);
+    }
 
     const headline = document.createElement('div');
     headline.className = 'win-headline';
-    headline.dataset.stars = String(payload.starRating);
+    headline.dataset.pristine = String(payload.starRating === 3);
 
     const starsRow = document.createElement('div');
     starsRow.className = 'win-stars';
@@ -112,7 +125,9 @@ export class WinView {
     playAgainButton.type = 'button';
     playAgainButton.className = 'win-play-again';
     playAgainButton.textContent = t('win.play_again');
-    playAgainButton.addEventListener('click', () => this.onPlayAgain());
+    playAgainButton.addEventListener('click', () => {
+      void this.onPlayAgain();
+    });
 
     const doneLink = document.createElement('button');
     doneLink.type = 'button';
@@ -125,15 +140,20 @@ export class WinView {
     this.element.append(headline, title, time, pillRow, stats, shareButton, secondaryRow);
   }
 
-  private onPlayAgain(): void {
+  private async onPlayAgain(): Promise<void> {
     const puzzle = getPuzzleById(this.payload.puzzleId);
     if (!puzzle) {
       console.warn('[WinView] could not find puzzle to replay', this.payload.puzzleId);
       return;
     }
 
-    this.router.popToRoot();
-    this.router.push('game', {
+    try {
+      await clearPuzzleReveals(this.payload.puzzleId);
+    } catch (err) {
+      console.warn('[WinView] failed to clear hint reveals before replay', err);
+    }
+
+    this.router.replace('game', {
       puzzle,
       dayNumber: this.payload.dayNumber,
       isTodaysDaily: this.payload.isTodaysDaily

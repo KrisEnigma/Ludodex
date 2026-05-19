@@ -2,9 +2,21 @@ import { InputManager } from '../game/InputManager';
 import { t } from '../i18n';
 import { Tile } from '../game/Tile';
 import { applySolvedPart, buildTileOwnership, isFoundPending, type PartOwnershipEntry, type TileOwnershipState } from '../game/tileOwnership';
-import { showConfirmModal } from '../components/Modal';
+import { showConfirmModal, showInfoModal } from '../components/Modal';
 import { maybeShowInterstitial } from '../services/AdService';
-import { getSolvedTimes, recordPuzzleCompletion } from '../services/ProgressService';
+import {
+  ensureDailyGrant,
+  consumeHint,
+  getPuzzleReveals,
+  addPuzzleReveal,
+  clearPuzzleReveals
+} from '../services/HintService';
+import {
+  getSolvedIds,
+  getSolvedRatings,
+  getSolvedTimes,
+  recordPuzzleCompletion
+} from '../services/ProgressService';
 import type { Puzzle } from '../types/puzzle';
 import { t as tp } from '../utils/i18n';
 import type { RoutePayloads } from './Router';
@@ -51,7 +63,10 @@ export class GameView {
   private timerInterval: number | null = null;
   private selectionsStarted = 0;
   private undosPerformed = 0;
-  private readonly hintsUsed = 0;
+  private hintsUsed: number = 0;
+  private hintsRemaining: number = 0;
+  private hintCounterEl!: HTMLElement;
+  private hintCounterCount!: HTMLElement;
   private previousChainLength = 0;
   private solved = false;
 
@@ -72,6 +87,7 @@ export class GameView {
     this.element = document.createElement('div');
     this.element.className = 'view game-view';
 
+
     const header = document.createElement('div');
     header.className = 'header';
 
@@ -83,6 +99,18 @@ export class GameView {
       void this.handleExit();
     });
 
+    // Hint counter UI
+    this.hintCounterEl = document.createElement('div');
+    this.hintCounterEl.className = 'game-hint-counter';
+    this.hintCounterEl.dataset.empty = 'false';
+    const hintIcon = document.createElement('span');
+    hintIcon.className = 'game-hint-counter-icon';
+    hintIcon.textContent = '💡';
+    this.hintCounterCount = document.createElement('span');
+    this.hintCounterCount.className = 'game-hint-counter-count';
+    this.hintCounterCount.textContent = '3';
+    this.hintCounterEl.append(hintIcon, this.hintCounterCount);
+
     const levelLabel = document.createElement('span');
     levelLabel.className = 'header-level';
     levelLabel.textContent = t('game.day_label', { n: this.dayNumber });
@@ -91,7 +119,7 @@ export class GameView {
     this.timerLabel.className = 'header-timer';
     this.timerLabel.textContent = '0:00';
 
-    header.append(menuButton, levelLabel, this.timerLabel);
+    header.append(menuButton, this.hintCounterEl, levelLabel, this.timerLabel);
 
     const title = document.createElement('h2');
     title.className = 'view-title';
@@ -181,15 +209,12 @@ export class GameView {
           row.appendChild(gap);
         }
 
-        for (let i = 0; i < part.word.length; i++) {
-          const slot = document.createElement('span');
-          slot.className = 'hint-slot';
-          slot.dataset.filled = 'false';
-          slot.textContent = '_';
-          row.appendChild(slot);
-          slotsForPart.push(slot);
-        }
 
+        for (let i = 0; i < part.word.length; i++) {
+          const slot = this.buildLetterSlot(partId, i, part.word[i]);
+          row.appendChild(slot);
+          slotsForPart.push(slot as HTMLSpanElement);
+        }
         this.hintSlotsByPartId.set(partId, slotsForPart);
       });
 
@@ -251,6 +276,15 @@ export class GameView {
       if (this.gridWrap.contains(event.target as Node)) return;
       this.inputManager.clearChain();
     });
+
+    // Hints: ensure daily grant, restore reveals, update counter
+    void (async () => {
+      const state = await ensureDailyGrant();
+      this.hintsRemaining = state.hintsRemaining;
+      this.updateHintCounter();
+      await this.restoreHintReveals();
+    })();
+
     this.startTimer();
 
     window.addEventListener('resize', () => {
@@ -262,6 +296,109 @@ export class GameView {
     description.textContent = t('game.instructions');
 
     this.element.append(header, title, this.wordsProgressLabel, this.gridWrap, hints, description);
+  }
+
+  private buildLetterSlot(partId: string, letterIndex: number, letter: string): HTMLElement {
+    const slot = document.createElement('div');
+    slot.className = 'part-letter';
+    slot.dataset.partId = partId;
+    slot.dataset.letterIndex = String(letterIndex);
+    slot.dataset.revealed = 'false';
+    slot.dataset.letter = letter;
+
+    const fillBar = document.createElement('div');
+    fillBar.className = 'part-letter-fill';
+
+    const text = document.createElement('span');
+    text.className = 'part-letter-text';
+    text.textContent = letter;
+
+    slot.append(fillBar, text);
+
+    slot.addEventListener('pointerdown', (e) => this.onHintSlotPointerDown(e, slot));
+    slot.addEventListener('pointerup', () => this.onHintSlotPointerEnd(slot));
+    slot.addEventListener('pointerleave', () => this.onHintSlotPointerEnd(slot));
+    slot.addEventListener('pointercancel', () => this.onHintSlotPointerEnd(slot));
+    slot.addEventListener('animationend', (e) => this.onHintSlotAnimationEnd(e, slot));
+
+    return slot;
+  }
+
+  private async onHintSlotPointerDown(event: PointerEvent, slot: HTMLElement): Promise<void> {
+    if (slot.dataset.revealed === 'true') return;
+    if (this.solved) return;
+
+    if (this.hintsRemaining <= 0) {
+      event.preventDefault();
+      await this.showOutOfHintsModal();
+      return;
+    }
+
+    event.preventDefault();
+    slot.classList.add('holding');
+  }
+
+  private onHintSlotPointerEnd(slot: HTMLElement): void {
+    slot.classList.remove('holding');
+  }
+
+  private async onHintSlotAnimationEnd(event: AnimationEvent, slot: HTMLElement): Promise<void> {
+    if (event.animationName !== 'hint-fill') return;
+    if (slot.dataset.revealed === 'true') return;
+    slot.classList.remove('holding');
+    await this.revealSlot(slot);
+  }
+
+  private async revealSlot(slot: HTMLElement): Promise<void> {
+    const partId = slot.dataset.partId;
+    const letterIndex = Number(slot.dataset.letterIndex);
+    if (!partId || !Number.isFinite(letterIndex)) return;
+
+    slot.dataset.revealed = 'true';
+    this.hintsUsed += 1;
+
+    const state = await consumeHint();
+    this.hintsRemaining = state.hintsRemaining;
+    this.updateHintCounter();
+
+    await addPuzzleReveal(this.puzzleId, { partId, letterIndex });
+  }
+
+  private updateHintCounter(): void {
+    this.hintCounterCount.textContent = String(this.hintsRemaining);
+    this.hintCounterEl.dataset.empty = String(this.hintsRemaining <= 0);
+  }
+
+  private async showOutOfHintsModal(): Promise<void> {
+    await showInfoModal({
+      title: t('hint.out_title'),
+      body: t('hint.out_body'),
+      closeLabel: t('hint.out_close')
+    });
+  }
+
+  private async restoreHintReveals(): Promise<void> {
+    const solvedIds = await getSolvedIds();
+    if (solvedIds.includes(this.puzzleId)) {
+      try {
+        await clearPuzzleReveals(this.puzzleId);
+      } catch {
+        // Ignore cleanup failures; this is a defensive path.
+      }
+      this.hintsUsed = 0;
+      return;
+    }
+
+    const reveals = await getPuzzleReveals(this.puzzleId);
+    this.hintsUsed = reveals.length;
+    for (const reveal of reveals) {
+      const slot = this.element.querySelector<HTMLElement>(
+        `.part-letter[data-part-id="${CSS.escape(reveal.partId)}"][data-letter-index="${reveal.letterIndex}"]`
+      );
+      if (slot) {
+        slot.dataset.revealed = 'true';
+      }
+    }
   }
 
   private startTimer(): void {
@@ -547,11 +684,14 @@ export class GameView {
     }
   }
 
-  private isPristine(): boolean {
-    return (
+
+  private getStarRating(): 1 | 2 | 3 {
+    const cleanExecution =
       this.undosPerformed === 0 &&
-      this.selectionsStarted === this.puzzle.answers.length
-    );
+      this.selectionsStarted === this.puzzle.answers.length;
+    const noHints = this.hintsUsed === 0;
+    const stars = 1 + (cleanExecution ? 1 : 0) + (noHints ? 1 : 0);
+    return stars as 1 | 2 | 3;
   }
 
   private onPuzzleSolved(): void {
@@ -561,18 +701,28 @@ export class GameView {
 
     const elapsedSeconds = this.getElapsedSeconds();
     this.timerLabel.textContent = this.formatElapsed(elapsedSeconds);
-    const wasPristine = this.isPristine();
+    const starRating = this.getStarRating();
+
+    // void haptic.pristineWin() or haptic.win() if available
 
     void (async () => {
       try {
+        const previousRatings = await getSolvedRatings();
+        const previousRating = previousRatings[this.puzzleId] ?? 0;
+        const wasNewRating = starRating > previousRating;
+
         const previousTimes = await getSolvedTimes();
         const previousValues = Object.values(previousTimes).filter((v): v is number => Number.isFinite(v));
         const previousBest = previousValues.length === 0 ? null : Math.min(...previousValues);
         const wasNewBest = previousBest !== null && elapsedSeconds < previousBest;
 
         const snapshot = await recordPuzzleCompletion(this.puzzleId, elapsedSeconds, {
-          isTodaysDaily: this.isTodaysDaily
+          isTodaysDaily: this.isTodaysDaily,
+          starRating
         });
+
+        await clearPuzzleReveals(this.puzzleId);
+
         await maybeShowInterstitial(snapshot.solvedCount);
 
         this.onWin({
@@ -583,10 +733,19 @@ export class GameView {
           currentStreak: snapshot.currentStreak,
           dayNumber: this.dayNumber,
           hintsUsed: this.hintsUsed,
-          wasPristine,
-          wasNewBest
+          isTodaysDaily: this.isTodaysDaily,
+          starRating,
+          wasNewBest,
+          wasNewRating
         });
-      } catch {
+      } catch (err) {
+        console.warn('[GameView] onPuzzleSolved failed', err);
+        try {
+          await clearPuzzleReveals(this.puzzleId);
+        } catch {
+          // Ignore cleanup failures in fallback path.
+        }
+
         this.onWin({
           puzzleId: this.puzzleId,
           puzzleTitle: this.puzzleTitle,
@@ -595,8 +754,10 @@ export class GameView {
           currentStreak: 0,
           dayNumber: this.dayNumber,
           hintsUsed: this.hintsUsed,
-          wasPristine,
-          wasNewBest: false
+          isTodaysDaily: this.isTodaysDaily,
+          starRating: this.getStarRating(),
+          wasNewBest: false,
+          wasNewRating: false
         });
       }
     })();
