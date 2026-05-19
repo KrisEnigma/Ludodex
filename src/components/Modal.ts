@@ -1,3 +1,64 @@
+export type InfoModalOptions = {
+  title: string;
+  body: string;
+  closeLabel: string;
+};
+
+export function showInfoModal(options: InfoModalOptions): Promise<void> {
+  return new Promise<void>((resolve) => {
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop';
+
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+
+    const titleEl = document.createElement('h3');
+    titleEl.className = 'modal-title';
+    titleEl.textContent = options.title;
+
+    const bodyEl = document.createElement('p');
+    bodyEl.className = 'modal-body';
+    bodyEl.textContent = options.body;
+
+    const buttonRow = document.createElement('div');
+    buttonRow.className = 'modal-buttons';
+
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'modal-button modal-button-confirm';
+    closeBtn.textContent = options.closeLabel;
+
+    let settled = false;
+    const settle = (): void => {
+      if (settled) return;
+      settled = true;
+      backdrop.removeEventListener('click', onBackdropClick);
+      document.removeEventListener('keydown', onKeyDown);
+      backdrop.remove();
+      resolve();
+    };
+
+    const onBackdropClick = (event: MouseEvent): void => {
+      if (event.target === backdrop) settle();
+    };
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape' || event.key === 'Enter') settle();
+    };
+
+    closeBtn.addEventListener('click', settle);
+    backdrop.addEventListener('click', onBackdropClick);
+    document.addEventListener('keydown', onKeyDown);
+
+    buttonRow.append(closeBtn);
+    modal.append(titleEl, bodyEl, buttonRow);
+    backdrop.append(modal);
+    document.body.append(backdrop);
+
+    closeBtn.focus();
+  });
+}
 export type ConfirmModalOptions = {
   title: string;
   body: string;

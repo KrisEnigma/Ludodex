@@ -6,6 +6,8 @@ export type WinPayload = {
   currentStreak: number;
   dayNumber: number;
   hintsUsed: number;
-  wasPristine: boolean;
+  isTodaysDaily: boolean;
+  starRating: 1 | 2 | 3;
   wasNewBest: boolean;
+  wasNewRating: boolean;
 };

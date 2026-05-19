@@ -1,6 +1,6 @@
 import { getDayNumberSinceLaunch, getPuzzleForDay } from '../game/PuzzleLoader';
 import { t } from '../i18n';
-import { getSolvedIds, getSolvedTimes } from '../services/ProgressService';
+import { getSolvedIds, getSolvedTimes, getSolvedRatings } from '../services/ProgressService';
 import type { Puzzle } from '../types/puzzle';
 import { t as tp } from '../utils/i18n';
 
@@ -56,9 +56,10 @@ export class ArchiveView {
       return;
     }
 
-    const [solvedIds, solvedTimes] = await Promise.all([
+    const [solvedIds, solvedTimes, solvedRatings] = await Promise.all([
       getSolvedIds(),
-      getSolvedTimes()
+      getSolvedTimes(),
+      getSolvedRatings()
     ]);
 
     if (!this.element.isConnected) return;
@@ -70,7 +71,8 @@ export class ArchiveView {
       const isSolved = solvedIds.includes(puzzle.id);
       const timeValue = solvedTimes[puzzle.id];
       const time = isSolved && Number.isFinite(timeValue) ? timeValue : null;
-      this.listContainer.append(this.renderRow(day, puzzle, isSolved, time));
+      const rating = solvedRatings[puzzle.id] ?? 0;
+      this.listContainer.append(this.renderRow(day, puzzle, isSolved, time, rating));
     }
   }
 
@@ -78,7 +80,8 @@ export class ArchiveView {
     day: number,
     puzzle: Puzzle,
     isSolved: boolean,
-    time: number | null
+    time: number | null,
+    rating: number
   ): HTMLElement {
     const row = document.createElement('button');
     row.type = 'button';
@@ -89,13 +92,22 @@ export class ArchiveView {
     label.className = 'archive-row-label';
     label.textContent = t('archive.day_row', { n: day, title: tp(puzzle.name, puzzle.id) });
 
+    const stars = document.createElement('span');
+    stars.className = 'archive-row-stars';
+    if (isSolved && rating >= 1 && rating <= 3) {
+      stars.textContent = '★'.repeat(rating) + '☆'.repeat(3 - rating);
+      stars.dataset.rating = String(rating);
+    } else {
+      stars.textContent = '';
+    }
+
     const status = document.createElement('span');
     status.className = 'archive-row-status';
     status.textContent = isSolved && time !== null
-      ? `${this.formatTime(time)} ✓`
+      ? this.formatTime(time)
       : t('archive.unsolved');
 
-    row.append(label, status);
+    row.append(label, stars, status);
     row.addEventListener('click', () => {
       this.onPlay(puzzle, day);
     });
