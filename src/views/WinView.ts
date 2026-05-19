@@ -65,6 +65,24 @@ export class WinView {
     time.className = 'win-time';
     time.textContent = formatTime(payload.elapsedSeconds);
 
+    const nextCountdown = document.createElement('p');
+    nextCountdown.className = 'win-next-countdown';
+    nextCountdown.hidden = !payload.isTodaysDaily;
+    if (payload.isTodaysDaily) {
+      const updateCountdown = (): void => {
+        if (!this.element.isConnected) return;
+        nextCountdown.textContent = `${t('menu.daily_next_in', { time: formatTimeUntilMidnight() })}`;
+      };
+      updateCountdown();
+      const countdownId = window.setInterval(() => {
+        if (!this.element.isConnected) {
+          window.clearInterval(countdownId);
+          return;
+        }
+        updateCountdown();
+      }, 1000);
+    }
+
     const newBest = document.createElement('div');
     newBest.className = 'win-new-best';
     newBest.textContent = t('win.new_best');
@@ -137,7 +155,7 @@ export class WinView {
 
     secondaryRow.append(playAgainButton, doneLink);
 
-    this.element.append(headline, title, time, pillRow, stats, shareButton, secondaryRow);
+    this.element.append(headline, title, time, pillRow, stats, shareButton, secondaryRow, nextCountdown);
   }
 
   private async onPlayAgain(): Promise<void> {
@@ -205,6 +223,17 @@ function formatTime(totalSeconds: number): string {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+function formatTimeUntilMidnight(): string {
+  const now = new Date();
+  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const diffMs = Math.max(0, tomorrow.getTime() - now.getTime());
+  const totalSeconds = Math.floor(diffMs / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
 async function shareWin(payload: WinPayload): Promise<void> {
