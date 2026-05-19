@@ -119,7 +119,7 @@ export class GameView {
     this.timerLabel.className = 'header-timer';
     this.timerLabel.textContent = '0:00';
 
-    header.append(menuButton, this.hintCounterEl, levelLabel, this.timerLabel);
+    header.append(menuButton, levelLabel, this.hintCounterEl, this.timerLabel);
 
     const title = document.createElement('h2');
     title.className = 'view-title';

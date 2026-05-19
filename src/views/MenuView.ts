@@ -166,10 +166,12 @@ export class MenuView {
 
     footerActions.append(archiveButton, howToPlayButton);
 
-    // Add web-only "Get the app" footer
+    let getAppRow: HTMLDivElement | null = null;
+
+    // Add web-only "Get the app" footer on its own line.
     const context = getMonetizationContext();
     if (!context.isNative) {
-      const getAppRow = document.createElement('div');
+      getAppRow = document.createElement('div');
       getAppRow.className = 'menu-get-app';
 
       const label = document.createElement('span');
@@ -195,7 +197,6 @@ export class MenuView {
       playStoreLink.textContent = t('settings.store_play_store');
 
       getAppRow.append(label, appStoreLink, dot, playStoreLink);
-      footerActions.append(getAppRow);
     }
 
     const countdownIntervalId = window.setInterval(() => {
@@ -251,6 +252,9 @@ export class MenuView {
     })();
 
     this.element.append(topBar, logo, divider, statsStrip, dailySection, footerActions);
+    if (getAppRow) {
+      this.element.append(getAppRow);
+    }
   }
 
   private buildYesterdayCard(
@@ -295,7 +299,11 @@ export class MenuView {
       status.append(unsolved);
     }
 
-    card.append(tag, title, status);
+    const chevron = document.createElement('span');
+    chevron.className = 'yesterday-card-chevron';
+    chevron.textContent = '→';
+
+    card.append(tag, title, status, chevron);
     return card;
   }
 
@@ -336,9 +344,11 @@ export class MenuView {
   private formatTimeUntilMidnight(): string {
     const now = new Date();
     const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-    const totalMinutes = Math.max(0, Math.floor((tomorrow.getTime() - now.getTime()) / 60000));
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    return `${hours}h ${minutes.toString().padStart(2, '0')}m`;
+    const diffMs = Math.max(0, tomorrow.getTime() - now.getTime());
+    const totalSeconds = Math.floor(diffMs / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   }
 }

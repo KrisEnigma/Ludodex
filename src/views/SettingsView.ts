@@ -130,14 +130,29 @@ export class SettingsView {
       card.className = 'settings-skin-card';
       card.dataset.skin = skin.id;
 
+      const left = document.createElement('span');
+      left.className = 'settings-skin-left';
+
       const name = document.createElement('span');
       name.className = 'settings-skin-name';
       name.textContent = this.getSkinName(skin.id);
 
+      const preview = document.createElement('span');
+      preview.className = 'settings-skin-preview';
+      preview.dataset.skin = skin.id;
+      for (let i = 0; i < 3; i += 1) {
+        const tile = document.createElement('span');
+        tile.className = 'settings-skin-preview-tile';
+        tile.dataset.index = String(i + 1);
+        preview.append(tile);
+      }
+
+      left.append(name, preview);
+
       const pill = document.createElement('span');
       pill.className = 'settings-skin-pill';
 
-      card.append(name, pill);
+      card.append(left, pill);
       card.addEventListener('click', () => {
         void this.onSkinCardClick(skin);
       });
@@ -222,13 +237,14 @@ export class SettingsView {
     button.type = 'button';
     button.className = 'action-button secondary-button settings-restore';
     button.textContent = t('settings.restore_purchases');
+
+    if (!this.isNative) {
+      button.hidden = true;
+      return button;
+    }
+
     button.addEventListener('click', () => {
       void (async () => {
-        if (!this.isNative) {
-          this.status.textContent = t('settings.restore_device_only');
-          return;
-        }
-
         this.status.textContent = t('settings.restoring_purchases');
         try {
           await restorePurchases();
@@ -311,6 +327,8 @@ export class SettingsView {
 
       if (isActive) {
         pill.textContent = t('settings.skin_active');
+      } else if (!this.isNative && skin.id !== 'void') {
+        pill.textContent = t('settings.web_only_skin_label');
       } else if (!isUnlocked) {
         pill.textContent = `${t('settings.skin_unlock')} ${this.getPriceLabel(skin.id)}`;
       } else {
