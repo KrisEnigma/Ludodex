@@ -1,0 +1,54 @@
+- generic [ref=e8]:
+  - generic [ref=e9]:
+    - button "Menu" [ref=e10] [cursor=pointer]
+    - generic [ref=e11]: Level 4
+    - generic [ref=e12]: 0:01
+  - heading "Street Fighters" [level=2] [ref=e13]
+  - generic [ref=e14]:
+    - generic [ref=e15]:
+      - generic [ref=e16]: K
+      - generic [ref=e17]: A
+      - generic [ref=e18]: R
+      - generic [ref=e19]: "Y"
+      - generic [ref=e20]: U
+      - generic [ref=e21]: E
+      - generic [ref=e22]: H
+      - generic [ref=e23]: U
+      - generic [ref=e24]: M
+      - generic [ref=e25]: C
+      - generic [ref=e26]: "N"
+      - generic [ref=e27]: L
+      - generic [ref=e28]: A
+      - generic [ref=e29]: D
+      - generic [ref=e30]: O
+      - generic [ref=e31]: I
+    - img
+  - generic [ref=e32]:
+    - generic [ref=e33]:
+      - generic [ref=e34]: _
+      - generic [ref=e35]: _
+      - generic [ref=e36]: _
+      - generic [ref=e37]: _
+    - generic [ref=e38]:
+      - generic [ref=e39]: _
+      - generic [ref=e40]: _
+      - generic [ref=e41]: _
+      - generic [ref=e42]: _
+      - generic [ref=e43]: _
+    - generic [ref=e44]:
+      - generic [ref=e45]: _
+      - generic [ref=e46]: _
+      - generic [ref=e47]: _
+      - generic [ref=e48]: _
+      - generic [ref=e50]: _
+      - generic [ref=e51]: _
+    - generic [ref=e52]:
+      - generic [ref=e53]: _
+      - generic [ref=e54]: _
+      - generic [ref=e55]: _
+    - generic [ref=e56]:
+      - generic [ref=e57]: _
+      - generic [ref=e58]: _
+      - generic [ref=e59]: _
+  - paragraph [ref=e60]: Swipe adjacent letters to find all words.
+  - button "Simulate Win" [ref=e61] [cursor=pointer]

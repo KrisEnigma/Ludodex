@@ -24,10 +24,10 @@ function run(): void {
   const grid = buildGridTiles(puzzle.grid);
 
   // Expected orientation for current puzzle:
-  // first row: STLO
-  // first col: SONI
-  assert.equal(rowString(grid, 0), 'STLO', 'Top row should be STLO');
-  assert.equal(colString(grid, 0), 'SONI', 'First column should be SONI');
+  // first row: SONI
+  // first col: STLO
+  assert.equal(rowString(grid, 0), 'SONI', 'Top row should be SONI');
+  assert.equal(colString(grid, 0), 'STLO', 'First column should be STLO');
 
   // Sanity check coordinates are consistent with tile placement.
   assert.equal(grid[0][0].coord, 'a1', 'Top-left tile should be a1');

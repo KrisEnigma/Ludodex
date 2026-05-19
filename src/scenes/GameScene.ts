@@ -5,7 +5,6 @@ import { t } from '../utils/i18n';
 import { getActiveSkinId, recordPuzzleCompletion, type ProgressSnapshot } from '../services/ProgressService';
 import { maybeShowInterstitial } from '../services/AdService';
 import { buildGridTiles } from '../game/Grid';
-import { puzzleCoordToGridCoord } from '../game/coordMap';
 import { getSkinById, type Skin } from '../game/SkinManager';
 import { InputManager, type PendingAction } from '../game/InputManager';
 import {
@@ -305,7 +304,7 @@ export class GameScene extends Phaser.Scene {
           id,
           answerDisplay: answer.display,
           word: part.word,
-          path: part.path.map((coord) => puzzleCoordToGridCoord(coord))
+          path: part.path
         };
 
         this.partEntriesById.set(id, entry);
