@@ -214,27 +214,74 @@ body {
   opacity: 0.62;
 }
 
-.action-button {
-  border: 1px solid var(--button-border);
-  border-radius: 10px;
-  background: var(--button-bg);
-  color: var(--button-text);
+.button-primary,
+.action-button,
+.button-secondary,
+.secondary-button,
+.button-tertiary {
   font-family: inherit;
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  padding: 10px 14px;
-  cursor: pointer;
+  border-radius: 10px;
 }
 
-.action-button:hover {
-  background: var(--button-hover-bg);
+.button-primary {
+  width: 100%;
+  border: none;
+  background: var(--primary-action-bg);
+  color: var(--primary-action-text);
+  padding: 13px;
+}
+
+.action-button {
+  width: 100%;
+  border: none;
+  background: var(--primary-action-bg);
+  color: var(--primary-action-text);
+  padding: 13px;
+}
+
+.button-secondary {
+  border: 1px solid var(--button-border);
+  background: transparent;
+  color: var(--button-text);
+  padding: 12px;
 }
 
 .secondary-button {
-  width: 100%;
+  border: 1px solid var(--button-border);
   background: transparent;
+  color: var(--button-text);
+  padding: 12px;
+}
+
+.button-tertiary {
+  border: none;
+  background: transparent;
+  color: var(--chrome-text);
+  padding: 2px 0 0;
+  letter-spacing: 0.12em;
+  font-size: 12px;
+}
+
+.button-primary,
+.button-secondary,
+.button-tertiary {
+  cursor: pointer;
+}
+
+.button-primary:hover {
+  filter: brightness(1.03);
+}
+
+.button-secondary:hover {
+  background: var(--button-hover-bg);
+}
+
+.button-tertiary:hover {
+  color: var(--title-color);
 }
 
 .header {
@@ -844,17 +891,7 @@ body {
 .daily-play-button {
   width: 100%;
   margin-top: 16px;
-  background: var(--primary-action-bg);
-  color: var(--primary-action-text);
-  border: none;
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 700;
   letter-spacing: 0.18em;
-  text-transform: uppercase;
-  padding: 13px;
-  border-radius: 10px;
-  cursor: pointer;
 }
 
 .menu-footer-actions {
@@ -865,14 +902,8 @@ body {
 }
 
 .menu-footer-action {
-  font-size: 12px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--chrome-text);
-  background: transparent;
-  border: none;
   font-family: inherit;
-  cursor: pointer;
+  letter-spacing: 0.14em;
   padding: 0;
 }
 
@@ -951,15 +982,8 @@ body {
 }
 
 .win-done-link {
-  border: none;
-  background: transparent;
-  color: var(--chrome-text);
   font-family: 'Space Mono', monospace;
-  text-transform: uppercase;
   letter-spacing: 0.12em;
-  font-size: 12px;
-  padding: 2px 0 0;
-  cursor: pointer;
 }
 
 .win-done-link:hover {
@@ -1144,16 +1168,7 @@ body {
 
 .win-share-button {
   margin-top: 16px;
-  width: 100%;
-  border: none;
-  background: var(--primary-action-bg);
-  color: var(--primary-action-text);
-  font-size: 14px;
-  font-weight: 700;
   letter-spacing: 0.14em;
-  text-transform: uppercase;
-  padding: 13px;
-  border-radius: 10px;
 }
 
 .win-next-countdown {

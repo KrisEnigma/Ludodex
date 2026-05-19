@@ -130,7 +130,7 @@ export class WinView {
 
     const shareButton = document.createElement('button');
     shareButton.type = 'button';
-    shareButton.className = 'action-button win-share-button';
+    shareButton.className = 'win-share-button button-primary';
     shareButton.textContent = t('win.share_button');
     shareButton.addEventListener('click', () => {
       void shareWin(payload);
@@ -141,7 +141,7 @@ export class WinView {
 
     const playAgainButton = document.createElement('button');
     playAgainButton.type = 'button';
-    playAgainButton.className = 'win-play-again';
+    playAgainButton.className = 'win-play-again button-secondary';
     playAgainButton.textContent = t('win.play_again');
     playAgainButton.addEventListener('click', () => {
       void this.onPlayAgain();
@@ -149,7 +149,7 @@ export class WinView {
 
     const doneLink = document.createElement('button');
     doneLink.type = 'button';
-    doneLink.className = 'win-done-link';
+    doneLink.className = 'win-done-link button-tertiary';
     doneLink.textContent = t('win.done_link');
     doneLink.addEventListener('click', onDone);
 

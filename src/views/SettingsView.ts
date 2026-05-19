@@ -235,7 +235,7 @@ export class SettingsView {
   private renderRestoreButton(): HTMLElement {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'action-button secondary-button settings-restore';
+    button.className = 'settings-restore button-secondary';
     button.textContent = t('settings.restore_purchases');
 
     if (!this.isNative) {

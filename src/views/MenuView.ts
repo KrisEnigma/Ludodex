@@ -132,7 +132,7 @@ export class MenuView {
 
     const dailyPlayButton = document.createElement('button');
     dailyPlayButton.type = 'button';
-    dailyPlayButton.className = 'daily-play-button';
+    dailyPlayButton.className = 'daily-play-button button-primary';
     dailyPlayButton.textContent = t('menu.daily_play');
     dailyPlayButton.addEventListener('click', (event) => {
       event.stopPropagation();
@@ -150,7 +150,7 @@ export class MenuView {
 
     const archiveButton = document.createElement('button');
     archiveButton.type = 'button';
-    archiveButton.className = 'menu-footer-action';
+    archiveButton.className = 'menu-footer-action button-tertiary';
     archiveButton.textContent = t('menu.footer_archive');
     archiveButton.addEventListener('click', () => {
       callbacks.onOpenArchive();
@@ -158,7 +158,7 @@ export class MenuView {
 
     const howToPlayButton = document.createElement('button');
     howToPlayButton.type = 'button';
-    howToPlayButton.className = 'menu-footer-action';
+    howToPlayButton.className = 'menu-footer-action button-tertiary';
     howToPlayButton.textContent = t('menu.footer_how_to_play');
     howToPlayButton.addEventListener('click', () => {
       callbacks.onOpenHowToPlay();
