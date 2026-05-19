@@ -1,37 +1,91 @@
 import { Capacitor } from '@capacitor/core';
-import { Purchases } from '@revenuecat/purchases-capacitor';
+import { getMonetizationContext } from './MonetizationContext';
 
 const FALLBACK_RC_KEY = 'RC_KEY';
 
-export async function initIAP() {
-  if (!Capacitor.isNativePlatform()) return;
-  const apiKey = import.meta.env.VITE_REVENUECAT_API_KEY?.trim() || FALLBACK_RC_KEY;
-  await Purchases.configure({ apiKey });
+export type PurchaseStatus = 'success' | 'cancelled' | 'failed' | 'unavailable';
+
+export type PurchaseResult = {
+  status: PurchaseStatus;
+  productId: string;
+  reason?: string;
+};
+
+export type ProductInfo = {
+  id: string;
+  /** Localized, formatted price string from the store (e.g. "$0.99", "0,99 €"). */
+  priceLabel: string;
+  /** Fallback price label used when the store SDK has not loaded a value. */
+  fallbackPriceLabel: string;
+};
+
+const FALLBACK_CATALOG: Record<string, ProductInfo> = {
+  remove_ads:      { id: 'remove_ads',      priceLabel: '$1.99', fallbackPriceLabel: '$1.99' },
+  skin_synthwave:  { id: 'skin_synthwave',  priceLabel: '$0.99', fallbackPriceLabel: '$0.99' },
+  skin_pixel:      { id: 'skin_pixel',      priceLabel: '$0.99', fallbackPriceLabel: '$0.99' },
+  skin_bundle:     { id: 'skin_bundle',     priceLabel: '$1.99', fallbackPriceLabel: '$1.99' }
+};
+
+export async function initIAP(): Promise<void> {
+  const ctx = getMonetizationContext();
+  if (!ctx.isNative) return;
+  // TODO(native): Initialize RevenueCat SDK with platform-specific public API key.
+  //   import { Purchases } from '@revenuecat/purchases-capacitor';
+  //   await Purchases.configure({ apiKey: ctx.platform === 'ios' ? IOS_KEY : ANDROID_KEY });
 }
 
-export async function hasEntitlement(id: string): Promise<boolean> {
-  if (!Capacitor.isNativePlatform()) return false;
-  const { customerInfo } = await Purchases.getCustomerInfo();
-  return id in customerInfo.entitlements.active;
+export async function isOwned(productId: string): Promise<boolean> {
+  const ctx = getMonetizationContext();
+  if (!ctx.isNative) return false;
+  // TODO(native): Query entitlements from RevenueCat.
+  //   const info = await Purchases.getCustomerInfo();
+  //   return info.customerInfo.entitlements.active[productId] !== undefined;
+  return false;
 }
 
-export async function purchase(productId: string): Promise<boolean> {
-  if (!Capacitor.isNativePlatform()) return false;
+export async function listProducts(): Promise<ProductInfo[]> {
+  const ctx = getMonetizationContext();
+  if (!ctx.isNative) return [];
+  // TODO(native): Fetch real product info from the store via RevenueCat.
+  //   const offerings = await Purchases.getOfferings();
+  //   ...map to ProductInfo with real localized prices...
+  return Object.values(FALLBACK_CATALOG);
+}
 
-  const offerings = await Purchases.getOfferings();
-  const pkg = offerings.current?.availablePackages.find(
-    (candidate: { product: { identifier: string } }) => candidate.product.identifier === productId
-  );
-
-  if (!pkg) {
-    throw new Error(`Product ${productId} not found in current offerings`);
+export async function getProductInfo(productId: string): Promise<ProductInfo | null> {
+  const products = await listProducts();
+  if (products.length > 0) {
+    return products.find(p => p.id === productId) ?? null;
   }
-
-  await Purchases.purchasePackage({ aPackage: pkg });
-  return hasEntitlement(productId);
+  return FALLBACK_CATALOG[productId] ?? null;
 }
 
-export async function restorePurchases() {
-  if (!Capacitor.isNativePlatform()) return;
-  await Purchases.restorePurchases();
+export async function purchase(productId: string): Promise<PurchaseResult> {
+  const ctx = getMonetizationContext();
+  if (!ctx.isNative) {
+    return { status: 'unavailable', productId, reason: 'web' };
+  }
+  // TODO(native): Trigger RevenueCat purchase flow.
+  //   try {
+  //     const result = await Purchases.purchaseProduct({ productIdentifier: productId });
+  //     return { status: 'success', productId };
+  //   } catch (err) { ...map to PurchaseStatus... }
+  return { status: 'failed', productId, reason: 'not-implemented' };
+}
+
+export async function restorePurchases(): Promise<PurchaseResult[]> {
+  const ctx = getMonetizationContext();
+  if (!ctx.isNative) return [];
+  // TODO(native): Restore via RevenueCat.
+  //   const info = await Purchases.restorePurchases();
+  //   ...map entitlements to PurchaseResult[]...
+  return [];
+}
+
+/** @deprecated Use `isOwned(productId)` per call instead. Kept for SettingsView's current shape. */
+export async function listOwnedProductIds(): Promise<string[]> {
+  const ctx = getMonetizationContext();
+  if (!ctx.isNative) return [];
+  // TODO(native): Map active entitlements to product IDs.
+  return [];
 }

@@ -1,9 +1,11 @@
 import { Capacitor } from '@capacitor/core';
 import { AdMob, InterstitialAdPluginEvents } from '@capacitor-community/admob';
-import { hasEntitlement } from './IAPService';
+import { isOwned } from './IAPService';
+import { getMonetizationContext } from './MonetizationContext';
 
 const TEST_INTERSTITIAL_ANDROID = 'ca-app-pub-3940256099942544/1033173712';
 const TEST_INTERSTITIAL_IOS = 'ca-app-pub-3940256099942544/4411468910';
+const PRODUCT_REMOVE_ADS = 'remove_ads';
 
 function shouldUseTestAds(): boolean {
   const value = import.meta.env.VITE_ADMOB_USE_TEST_IDS;
@@ -49,62 +51,25 @@ async function prepareInterstitialIfNeeded() {
   }
 }
 
-export async function initAds() {
-  if (!Capacitor.isNativePlatform()) return;
-  if (initialized) return;
-
-  await AdMob.initialize({
-    initializeForTesting: shouldUseTestAds(),
-    testingDevices: []
-  });
-
-  await AdMob.addListener(InterstitialAdPluginEvents.Loaded, () => {
-    interstitialReady = true;
-  });
-
-  await AdMob.addListener(InterstitialAdPluginEvents.FailedToLoad, () => {
-    interstitialReady = false;
-  });
-
-  await AdMob.addListener(InterstitialAdPluginEvents.FailedToShow, () => {
-    interstitialReady = false;
-  });
-
-  await AdMob.addListener(InterstitialAdPluginEvents.Dismissed, () => {
-    interstitialReady = false;
-    void prepareInterstitialIfNeeded();
-  });
-
-  initialized = true;
-  await prepareInterstitialIfNeeded();
+export async function initAds(): Promise<void> {
+  const ctx = getMonetizationContext();
+  if (!ctx.isNative) return;
+  // TODO(native): Initialize @capacitor-community/admob.
+  //   await AdMob.initialize({ initializeForTesting: __DEV__ });
+  //   Trigger UMP consent flow (EU/UK GDPR) and, on iOS, ATT prompt.
 }
 
-export async function maybeShowInterstitial(solvedCount: number) {
-  if (!Capacitor.isNativePlatform()) return;
-  if (!initialized) {
-    await initAds();
-  }
+export async function maybeShowInterstitial(solvedCount: number): Promise<void> {
+  const ctx = getMonetizationContext();
+  if (!ctx.canShowAds) return;
+  if (solvedCount <= 0) return;
+  if (solvedCount % 2 !== 0) return;
+  if (await isOwned(PRODUCT_REMOVE_ADS)) return;
+  // TODO(native): Prepare + show interstitial.
+  //   await AdMob.prepareInterstitial({ adId: AD_UNIT_INTERSTITIAL_* });
+  //   await AdMob.showInterstitial();
+}
 
-  const adsRemoved = await hasEntitlement('remove_ads');
-  if (adsRemoved) return;
-
-  // Show an interstitial after every 2 completed puzzles.
-  if (solvedCount <= 0 || solvedCount % 2 !== 0) return;
-
-  if (!interstitialReady) {
-    await prepareInterstitialIfNeeded();
-  }
-
-  if (!interstitialReady) return;
-
-  try {
-    await AdMob.showInterstitial();
-    // Loaded state will reset on dismiss listener; this keeps preloading robust.
-    interstitialReady = false;
-    await prepareInterstitialIfNeeded();
-  } catch (error) {
-    interstitialReady = false;
-    console.warn('AdMob showInterstitial failed', error);
-    await prepareInterstitialIfNeeded();
-  }
+export function canShowAds(): boolean {
+  return getMonetizationContext().canShowAds;
 }

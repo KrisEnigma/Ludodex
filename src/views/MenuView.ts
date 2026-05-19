@@ -1,19 +1,33 @@
-import { Capacitor } from '@capacitor/core';
-import { ensureBundledPuzzlesLoaded, getDailyPuzzleIndex, getPuzzleAtIndex } from '../game/PuzzleLoader';
-import { applySkin, getCurrentSkinId, SKINS, type SkinId, type SkinMeta } from '../skins/registry';
-import { hasEntitlement, purchase, restorePurchases } from '../services/IAPService';
-import { getProgressSnapshot, setActiveSkinId } from '../services/ProgressService';
-import { t } from '../utils/i18n';
+import { ensureBundledPuzzlesLoaded, getDailyPuzzleIndex, getDayNumberSinceLaunch, getPuzzleAtIndex } from '../game/PuzzleLoader';
+import { t } from '../i18n';
+import { getProgressSnapshot, getSolvedIds } from '../services/ProgressService';
+import { t as tp } from '../utils/i18n';
+import type { RoutePayloads } from './Router';
+import { getMonetizationContext } from '../services/MonetizationContext';
+import { STORE_URLS } from '../config/legalUrls';
+
+type MenuCallbacks = {
+  onPlay: (payload: RoutePayloads['game']) => void;
+  onOpenSettings: () => void;
+  onOpenArchive: () => void;
+  onOpenHowToPlay: () => void;
+};
 
 export class MenuView {
   readonly element: HTMLDivElement;
 
-  constructor(onPlay: () => void) {
+  constructor(callbacks: MenuCallbacks) {
     const puzzles = ensureBundledPuzzlesLoaded();
     const dailyIndex = getDailyPuzzleIndex(puzzles);
     const dailyPuzzle = getPuzzleAtIndex(dailyIndex, puzzles);
-    const dayNumber = dailyIndex + 1;
-    const puzzleTitle = t(dailyPuzzle.name, dailyPuzzle.id);
+    const dayNumber = getDayNumberSinceLaunch();
+    const puzzleTitle = tp(dailyPuzzle.name, dailyPuzzle.id);
+
+    const gamePayload: RoutePayloads['game'] = {
+      puzzle: dailyPuzzle,
+      dayNumber,
+      isTodaysDaily: true
+    };
 
     this.element = document.createElement('div');
     this.element.className = 'view menu-view';
@@ -24,13 +38,16 @@ export class MenuView {
 
     const dayChip = document.createElement('span');
     dayChip.className = 'menu-day-chip';
-    dayChip.textContent = `Day ${dayNumber}`;
+    dayChip.textContent = t('menu.day_chip', { n: dayNumber });
 
     const settingsButton = document.createElement('button');
     settingsButton.type = 'button';
     settingsButton.className = 'menu-icon-button';
     settingsButton.textContent = '⚙';
-    settingsButton.setAttribute('aria-label', 'Settings');
+    settingsButton.setAttribute('aria-label', t('menu.settings_aria'));
+    settingsButton.addEventListener('click', () => {
+      callbacks.onOpenSettings();
+    });
 
     topBar.append(dayChip, settingsButton);
 
@@ -39,11 +56,11 @@ export class MenuView {
 
     const logoTop = document.createElement('span');
     logoTop.className = 'menu-logo-top';
-    logoTop.textContent = 'GLITCH';
+    logoTop.textContent = t('menu.brand_glitch');
 
     const logoBottom = document.createElement('span');
     logoBottom.className = 'menu-logo-bottom';
-    logoBottom.textContent = 'SALAD';
+    logoBottom.textContent = t('menu.brand_salad');
 
     logo.append(logoTop, logoBottom);
 
@@ -61,7 +78,7 @@ export class MenuView {
     streakValue.textContent = '0';
     const streakLabel = document.createElement('span');
     streakLabel.className = 'stat-label';
-    streakLabel.textContent = 'Streak';
+    streakLabel.textContent = t('menu.stat_streak');
     streakCard.append(streakValue, streakLabel);
 
     const solvedCard = document.createElement('div');
@@ -71,17 +88,17 @@ export class MenuView {
     solvedValue.textContent = '0';
     const solvedLabel = document.createElement('span');
     solvedLabel.className = 'stat-label';
-    solvedLabel.textContent = 'Solved';
+    solvedLabel.textContent = t('menu.stat_solved');
     solvedCard.append(solvedValue, solvedLabel);
 
     const bestCard = document.createElement('div');
     bestCard.className = 'stat-card';
     const bestValue = document.createElement('span');
     bestValue.className = 'stat-value';
-    bestValue.textContent = '--';
+    bestValue.textContent = t('menu.stat_empty');
     const bestLabel = document.createElement('span');
     bestLabel.className = 'stat-label';
-    bestLabel.textContent = 'Best';
+    bestLabel.textContent = t('menu.stat_best');
     bestCard.append(bestValue, bestLabel);
 
     statsStrip.append(streakCard, solvedCard, bestCard);
@@ -94,11 +111,11 @@ export class MenuView {
 
     const dailyTag = document.createElement('span');
     dailyTag.className = 'daily-card-tag';
-    dailyTag.textContent = 'Today';
+    dailyTag.textContent = t('menu.daily_tag_today');
 
     const countdownEl = document.createElement('span');
     countdownEl.className = 'daily-card-countdown';
-    countdownEl.textContent = `Next in ${this.formatTimeUntilMidnight()}`;
+    countdownEl.textContent = t('menu.daily_next_in', { time: this.formatTimeUntilMidnight() });
 
     dailyCardHead.append(dailyTag, countdownEl);
 
@@ -113,14 +130,14 @@ export class MenuView {
     const dailyPlayButton = document.createElement('button');
     dailyPlayButton.type = 'button';
     dailyPlayButton.className = 'daily-play-button';
-    dailyPlayButton.textContent = '▶ Play';
+    dailyPlayButton.textContent = t('menu.daily_play');
     dailyPlayButton.addEventListener('click', (event) => {
       event.stopPropagation();
-      onPlay();
+      callbacks.onPlay(gamePayload);
     });
 
     dailyCard.addEventListener('click', () => {
-      onPlay();
+      callbacks.onPlay(gamePayload);
     });
     dailyCard.append(dailyCardHead, dailyTitle, dailyMeta, dailyPlayButton);
 
@@ -130,217 +147,78 @@ export class MenuView {
     const archiveButton = document.createElement('button');
     archiveButton.type = 'button';
     archiveButton.className = 'menu-footer-action';
-    archiveButton.textContent = 'Archive';
+    archiveButton.textContent = t('menu.footer_archive');
+    archiveButton.addEventListener('click', () => {
+      callbacks.onOpenArchive();
+    });
 
     const howToPlayButton = document.createElement('button');
     howToPlayButton.type = 'button';
     howToPlayButton.className = 'menu-footer-action';
-    howToPlayButton.textContent = 'How to play';
+    howToPlayButton.textContent = t('menu.footer_how_to_play');
+    howToPlayButton.addEventListener('click', () => {
+      callbacks.onOpenHowToPlay();
+    });
 
     footerActions.append(archiveButton, howToPlayButton);
 
-    const settingsPanel = document.createElement('div');
-    settingsPanel.className = 'settings-panel';
-    settingsPanel.hidden = true;
+    // Add web-only "Get the app" footer
+    const context = getMonetizationContext();
+    if (!context.isNative) {
+      const getAppRow = document.createElement('div');
+      getAppRow.className = 'menu-get-app';
 
-    const skinLabel = document.createElement('p');
-    skinLabel.className = 'view-subtitle';
-    skinLabel.textContent = 'Choose a skin';
+      const label = document.createElement('span');
+      label.className = 'menu-get-app-label';
+      label.textContent = t('menu.get_app_label');
 
-    const status = document.createElement('p');
-    status.className = 'skin-status';
-    status.textContent = '';
+      const appStoreLink = document.createElement('a');
+      appStoreLink.href = STORE_URLS.appStore;
+      appStoreLink.target = '_blank';
+      appStoreLink.rel = 'noopener noreferrer';
+      appStoreLink.className = 'menu-get-app-link';
+      appStoreLink.textContent = t('settings.store_app_store');
 
-    const skinPicker = document.createElement('div');
-    skinPicker.className = 'skin-picker';
+      const dot = document.createElement('span');
+      dot.className = 'menu-get-app-divider';
+      dot.textContent = '·';
 
-    let activeSkinId = getCurrentSkinId();
-    const skinButtons = new Map<SkinId, HTMLButtonElement>();
-    const skinNames = new Map<SkinId, HTMLSpanElement>();
-    const skinBadges = new Map<SkinId, HTMLSpanElement>();
-    const unlockedBySkin = new Map<SkinId, boolean>();
+      const playStoreLink = document.createElement('a');
+      playStoreLink.href = STORE_URLS.playStore;
+      playStoreLink.target = '_blank';
+      playStoreLink.rel = 'noopener noreferrer';
+      playStoreLink.className = 'menu-get-app-link';
+      playStoreLink.textContent = t('settings.store_play_store');
 
-    for (const skin of SKINS) {
-      unlockedBySkin.set(skin.id, skin.productId === null);
+      getAppRow.append(label, appStoreLink, dot, playStoreLink);
+      footerActions.append(getAppRow);
     }
-
-    const isNative = Capacitor.isNativePlatform();
-    if (!isNative) {
-      for (const skin of SKINS) {
-        unlockedBySkin.set(skin.id, true);
-      }
-    }
-
-    const refreshButtonStates = (): void => {
-      for (const skin of SKINS) {
-        const button = skinButtons.get(skin.id);
-        if (!button) continue;
-
-        const unlocked = unlockedBySkin.get(skin.id) === true;
-        const active = activeSkinId === skin.id;
-        const nameLabel = skinNames.get(skin.id);
-        const badgeLabel = skinBadges.get(skin.id);
-        if (!nameLabel || !badgeLabel) continue;
-
-        button.dataset.active = String(active);
-        button.dataset.locked = String(!unlocked);
-
-        nameLabel.textContent = skin.name;
-        if (skin.productId === null) {
-          badgeLabel.textContent = 'FREE';
-          badgeLabel.dataset.kind = 'free';
-        } else if (unlocked) {
-          badgeLabel.textContent = 'OWNED';
-          badgeLabel.dataset.kind = 'owned';
-        } else {
-          badgeLabel.textContent = 'LOCKED';
-          badgeLabel.dataset.kind = 'locked';
-        }
-      }
-    };
-
-    const refreshEntitlements = async (): Promise<void> => {
-      if (!isNative) return;
-
-      await Promise.all(
-        SKINS.map(async (skin) => {
-          if (!skin.productId) {
-            unlockedBySkin.set(skin.id, true);
-            return;
-          }
-
-          let unlocked = await hasEntitlement(skin.productId);
-          if (!unlocked && skin.bundleProductId) {
-            unlocked = await hasEntitlement(skin.bundleProductId);
-          }
-
-          unlockedBySkin.set(skin.id, unlocked);
-        })
-      );
-
-      refreshButtonStates();
-    };
-
-    const setSkin = async (skinId: SkinId): Promise<void> => {
-      activeSkinId = skinId;
-      applySkin(skinId);
-      await setActiveSkinId(skinId);
-      refreshButtonStates();
-    };
-
-    const tryUnlockSkin = async (skin: SkinMeta): Promise<boolean> => {
-      if (!isNative || !skin.productId) return false;
-
-      status.textContent = `Purchasing ${skin.name}...`;
-      try {
-        const purchased = await purchase(skin.productId);
-        if (!purchased && skin.bundleProductId) {
-          const bundleUnlocked = await hasEntitlement(skin.bundleProductId);
-          if (bundleUnlocked) {
-            await refreshEntitlements();
-            status.textContent = '';
-            return true;
-          }
-        }
-
-        if (purchased) {
-          await refreshEntitlements();
-          status.textContent = '';
-          return true;
-        }
-
-        status.textContent = 'Purchase did not unlock skin';
-        return false;
-      } catch {
-        status.textContent = 'Purchase cancelled or unavailable';
-        return false;
-      }
-    };
-
-    for (const skin of SKINS) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'skin-button';
-      button.dataset.active = String(skin.id === activeSkinId);
-      button.dataset.locked = 'false';
-
-      const name = document.createElement('span');
-      name.className = 'skin-name';
-
-      const badge = document.createElement('span');
-      badge.className = 'skin-badge';
-
-      button.append(name, badge);
-      button.addEventListener('click', () => {
-        void (async () => {
-          const unlocked = unlockedBySkin.get(skin.id) === true;
-          if (unlocked) {
-            await setSkin(skin.id);
-            status.textContent = '';
-            return;
-          }
-
-          const unlockedNow = await tryUnlockSkin(skin);
-          if (unlockedNow) {
-            await setSkin(skin.id);
-          }
-        })();
-      });
-
-      skinButtons.set(skin.id, button);
-      skinNames.set(skin.id, name);
-      skinBadges.set(skin.id, badge);
-      skinPicker.append(button);
-    }
-
-    const restoreButton = document.createElement('button');
-    restoreButton.type = 'button';
-    restoreButton.className = 'action-button secondary-button';
-    restoreButton.textContent = 'Restore Purchases';
-    restoreButton.addEventListener('click', () => {
-      void (async () => {
-        if (!isNative) {
-          status.textContent = 'Restore available on device builds';
-          return;
-        }
-
-        status.textContent = 'Restoring purchases...';
-        try {
-          await restorePurchases();
-          await refreshEntitlements();
-          status.textContent = '';
-        } catch {
-          status.textContent = 'Restore failed';
-        }
-      })();
-    });
-
-    settingsButton.addEventListener('click', () => {
-      settingsPanel.hidden = !settingsPanel.hidden;
-    });
 
     const countdownIntervalId = window.setInterval(() => {
       if (!root.isConnected) {
         window.clearInterval(countdownIntervalId);
         return;
       }
-      countdownEl.textContent = `Next in ${this.formatTimeUntilMidnight()}`;
+      countdownEl.textContent = t('menu.daily_next_in', { time: this.formatTimeUntilMidnight() });
     }, 60_000);
 
-    refreshButtonStates();
-    void refreshEntitlements();
-
     void (async () => {
-      const snapshot = await getProgressSnapshot();
+      const [snapshot, solvedIds] = await Promise.all([
+        getProgressSnapshot(),
+        getSolvedIds()
+      ]);
       if (!root.isConnected) return;
       streakValue.textContent = String(snapshot.currentStreak);
       solvedValue.textContent = String(snapshot.solvedCount);
-      bestValue.textContent = snapshot.bestTimeSec === null ? '--' : this.formatElapsed(snapshot.bestTimeSec);
+      bestValue.textContent = snapshot.bestTimeSec === null ? t('menu.stat_empty') : this.formatElapsed(snapshot.bestTimeSec);
+
+      if (solvedIds.includes(dailyPuzzle.id)) {
+        dailyCard.dataset.solved = 'true';
+        dailyPlayButton.textContent = t('menu.daily_play_again');
+      }
     })();
 
-    settingsPanel.append(skinLabel, skinPicker, status, restoreButton);
-
-    this.element.append(topBar, logo, divider, statsStrip, dailyCard, footerActions, settingsPanel);
+    this.element.append(topBar, logo, divider, statsStrip, dailyCard, footerActions);
   }
 
   private formatElapsed(totalSeconds: number): string {

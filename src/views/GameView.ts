@@ -1,10 +1,13 @@
-import { getDailyPuzzleIndex, getPuzzleAtIndex, ensureBundledPuzzlesLoaded } from '../game/PuzzleLoader';
 import { InputManager } from '../game/InputManager';
+import { t } from '../i18n';
 import { Tile } from '../game/Tile';
 import { applySolvedPart, buildTileOwnership, isFoundPending, type PartOwnershipEntry, type TileOwnershipState } from '../game/tileOwnership';
+import { showConfirmModal } from '../components/Modal';
 import { maybeShowInterstitial } from '../services/AdService';
-import { recordPuzzleCompletion } from '../services/ProgressService';
-import { t } from '../utils/i18n';
+import { getSolvedTimes, recordPuzzleCompletion } from '../services/ProgressService';
+import type { Puzzle } from '../types/puzzle';
+import { t as tp } from '../utils/i18n';
+import type { RoutePayloads } from './Router';
 import type { WinPayload } from './types';
 
 type PartEntry = {
@@ -34,22 +37,37 @@ export class GameView {
   private readonly inputManager: InputManager<{ partIds: string[] }>;
   private readonly ownershipState: TileOwnershipState;
   private readonly onWin: (payload: WinPayload) => void;
+  private readonly onMenu: () => void;
+  private readonly dayNumber: number;
+  private readonly puzzle: Puzzle;
+  private readonly isTodaysDaily: boolean;
+  private readonly wordsProgressLabel: HTMLParagraphElement;
   private readonly puzzleId: string;
   private readonly puzzleTitle: string;
   private readonly timerLabel: HTMLSpanElement;
-  private readonly startTimeMs: number;
-  private timerIntervalId: number | null = null;
+  private timerStartedAt = 0;
+  private timerPausedAt: number | null = null;
+  private timerTotalPausedMs = 0;
+  private timerInterval: number | null = null;
+  private selectionsStarted = 0;
+  private undosPerformed = 0;
+  private readonly hintsUsed = 0;
+  private previousChainLength = 0;
   private solved = false;
 
-  constructor(onWin: (payload: WinPayload) => void, onMenu?: () => void) {
-    const puzzles = ensureBundledPuzzlesLoaded();
-    const dailyIndex = getDailyPuzzleIndex(puzzles);
-    const puzzle = getPuzzleAtIndex(dailyIndex, puzzles);
+  constructor(
+    payload: RoutePayloads['game'],
+    callbacks: { onWin: (payload: WinPayload) => void; onMenu: () => void }
+  ) {
+    const { puzzle, dayNumber, isTodaysDaily } = payload;
 
-    this.onWin = onWin;
+    this.onWin = callbacks.onWin;
+  this.onMenu = callbacks.onMenu;
+    this.dayNumber = dayNumber;
+    this.puzzle = puzzle;
+    this.isTodaysDaily = isTodaysDaily;
     this.puzzleId = puzzle.id;
-    this.puzzleTitle = t(puzzle.name, puzzle.id);
-    this.startTimeMs = Date.now();
+    this.puzzleTitle = tp(puzzle.name, puzzle.id);
 
     this.element = document.createElement('div');
     this.element.className = 'view game-view';
@@ -60,15 +78,14 @@ export class GameView {
     const menuButton = document.createElement('button');
     menuButton.type = 'button';
     menuButton.className = 'header-menu-button';
-    menuButton.textContent = 'Menu';
+    menuButton.textContent = t('game.back');
     menuButton.addEventListener('click', () => {
-      this.stopTimer();
-      onMenu?.();
+      void this.handleExit();
     });
 
     const levelLabel = document.createElement('span');
     levelLabel.className = 'header-level';
-    levelLabel.textContent = `Level ${dailyIndex + 1}`;
+    levelLabel.textContent = t('game.day_label', { n: this.dayNumber });
 
     this.timerLabel = document.createElement('span');
     this.timerLabel.className = 'header-timer';
@@ -79,6 +96,10 @@ export class GameView {
     const title = document.createElement('h2');
     title.className = 'view-title';
     title.textContent = this.puzzleTitle;
+
+    this.wordsProgressLabel = document.createElement('p');
+    this.wordsProgressLabel.className = 'view-subtitle';
+    this.updateWordsProgressLabel();
 
     this.gridWrap = document.createElement('div');
     this.gridWrap.className = 'grid-wrap';
@@ -238,25 +259,95 @@ export class GameView {
 
     const description = document.createElement('p');
     description.className = 'view-subtitle';
-    description.textContent = 'Swipe adjacent letters to find all words.';
+    description.textContent = t('game.instructions');
 
-    this.element.append(header, title, this.gridWrap, hints, description);
+    this.element.append(header, title, this.wordsProgressLabel, this.gridWrap, hints, description);
   }
 
   private startTimer(): void {
-    this.timerIntervalId = window.setInterval(() => {
-      this.timerLabel.textContent = this.formatElapsed(this.getElapsedSeconds());
-    }, 250);
+    this.timerStartedAt = Date.now();
+    this.timerPausedAt = null;
+    this.timerTotalPausedMs = 0;
+    this.timerInterval = window.setInterval(() => this.tickTimer(), 100);
+    document.addEventListener('visibilitychange', this.handleVisibilityChange);
+    window.addEventListener('blur', this.handleBlur);
+    window.addEventListener('focus', this.handleFocus);
   }
 
   private stopTimer(): void {
-    if (this.timerIntervalId === null) return;
-    window.clearInterval(this.timerIntervalId);
-    this.timerIntervalId = null;
+    if (this.timerInterval !== null) {
+      window.clearInterval(this.timerInterval);
+      this.timerInterval = null;
+    }
+    document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+    window.removeEventListener('blur', this.handleBlur);
+    window.removeEventListener('focus', this.handleFocus);
+  }
+
+  private pauseTimer(): void {
+    if (this.timerPausedAt !== null || this.timerInterval === null) return;
+    this.timerPausedAt = Date.now();
+  }
+
+  private resumeTimer(): void {
+    if (this.timerPausedAt === null) return;
+    this.timerTotalPausedMs += Date.now() - this.timerPausedAt;
+    this.timerPausedAt = null;
+    this.tickTimer();
   }
 
   private getElapsedSeconds(): number {
-    return Math.floor((Date.now() - this.startTimeMs) / 1000);
+    const referenceNow = this.timerPausedAt ?? Date.now();
+    const rawElapsedMs = referenceNow - this.timerStartedAt - this.timerTotalPausedMs;
+    return Math.max(0, Math.floor(rawElapsedMs / 1000));
+  }
+
+  private tickTimer(): void {
+    this.timerLabel.textContent = this.formatElapsed(this.getElapsedSeconds());
+  }
+
+  private handleVisibilityChange = (): void => {
+    if (document.hidden) {
+      this.pauseTimer();
+      return;
+    }
+    this.resumeTimer();
+  };
+
+  private handleBlur = (): void => {
+    this.pauseTimer();
+  };
+
+  private handleFocus = (): void => {
+    this.resumeTimer();
+  };
+
+  private async handleExit(): Promise<void> {
+    if (this.solved) {
+      this.stopTimer();
+      this.onMenu();
+      return;
+    }
+
+    const hasProgress = this.solvedPartIds.size > 0 || this.selectionsStarted > 0 || this.getElapsedSeconds() >= 5;
+    if (!hasProgress) {
+      this.stopTimer();
+      this.onMenu();
+      return;
+    }
+
+    const confirmed = await showConfirmModal({
+      title: t('dialog.exit_title'),
+      body: t('dialog.exit_body'),
+      confirmLabel: t('dialog.exit_confirm'),
+      cancelLabel: t('common.cancel'),
+      destructive: true
+    });
+
+    if (!confirmed) return;
+
+    this.stopTimer();
+    this.onMenu();
   }
 
   private formatElapsed(totalSeconds: number): string {
@@ -298,6 +389,16 @@ export class GameView {
   }
 
   private onChainChanged(chain: Tile[]): void {
+    const prevLen = this.previousChainLength;
+    const newLen = chain.length;
+
+    if (prevLen === 0 && newLen >= 1) {
+      this.selectionsStarted += 1;
+    } else if (newLen > 0 && newLen < prevLen) {
+      this.undosPerformed += 1;
+    }
+    this.previousChainLength = newLen;
+
     this.selectedTiles.clear();
     for (const tile of chain) {
       this.selectedTiles.add(tile);
@@ -430,6 +531,7 @@ export class GameView {
       if (solved) {
         const row = this.hintRowsByDisplay.get(firstEntry.answerDisplay);
         if (row) row.dataset.solved = 'true';
+        this.updateWordsProgressLabel();
       }
     }
 
@@ -445,6 +547,13 @@ export class GameView {
     }
   }
 
+  private isPristine(): boolean {
+    return (
+      this.undosPerformed === 0 &&
+      this.selectionsStarted === this.puzzle.answers.length
+    );
+  }
+
   private onPuzzleSolved(): void {
     if (this.solved) return;
     this.solved = true;
@@ -452,10 +561,18 @@ export class GameView {
 
     const elapsedSeconds = this.getElapsedSeconds();
     this.timerLabel.textContent = this.formatElapsed(elapsedSeconds);
+    const wasPristine = this.isPristine();
 
     void (async () => {
       try {
-        const snapshot = await recordPuzzleCompletion(this.puzzleId, elapsedSeconds);
+        const previousTimes = await getSolvedTimes();
+        const previousValues = Object.values(previousTimes).filter((v): v is number => Number.isFinite(v));
+        const previousBest = previousValues.length === 0 ? null : Math.min(...previousValues);
+        const wasNewBest = previousBest !== null && elapsedSeconds < previousBest;
+
+        const snapshot = await recordPuzzleCompletion(this.puzzleId, elapsedSeconds, {
+          isTodaysDaily: this.isTodaysDaily
+        });
         await maybeShowInterstitial(snapshot.solvedCount);
 
         this.onWin({
@@ -463,7 +580,11 @@ export class GameView {
           puzzleTitle: this.puzzleTitle,
           elapsedSeconds,
           solvedCount: snapshot.solvedCount,
-          currentStreak: snapshot.currentStreak
+          currentStreak: snapshot.currentStreak,
+          dayNumber: this.dayNumber,
+          hintsUsed: this.hintsUsed,
+          wasPristine,
+          wasNewBest
         });
       } catch {
         this.onWin({
@@ -471,7 +592,11 @@ export class GameView {
           puzzleTitle: this.puzzleTitle,
           elapsedSeconds,
           solvedCount: 0,
-          currentStreak: 0
+          currentStreak: 0,
+          dayNumber: this.dayNumber,
+          hintsUsed: this.hintsUsed,
+          wasPristine,
+          wasNewBest: false
         });
       }
     })();
@@ -497,5 +622,17 @@ export class GameView {
     }
 
     el.dataset.state = 'idle';
+  }
+
+  private updateWordsProgressLabel(): void {
+    const total = this.puzzle.answers.length;
+    let found = 0;
+    for (const answer of this.puzzle.answers) {
+      const partIds = this.partIdsByAnswer.get(answer.display) ?? [];
+      if (partIds.length > 0 && partIds.every((id) => this.solvedPartIds.has(id))) {
+        found += 1;
+      }
+    }
+    this.wordsProgressLabel.textContent = t('game.words_progress', { found, total });
   }
 }

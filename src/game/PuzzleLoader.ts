@@ -154,11 +154,7 @@ export function getDailyPuzzleIndex(puzzles = parsedPuzzles): number {
     return datedIndex;
   }
 
-  // Only puzzles with date=null participate in normal daily rotation.
-  const rotationIndices = puzzles
-    .map((puzzle, index) => ({ puzzle, index }))
-    .filter(({ puzzle }) => puzzle.date === null)
-    .map(({ index }) => index);
+  const rotationIndices = getRotationIndices(puzzles);
 
   if (rotationIndices.length === 0) {
     return 0;
@@ -174,9 +170,57 @@ export function getDailyPuzzleIndex(puzzles = parsedPuzzles): number {
   return rotationIndices[poolIndex];
 }
 
+export function getPuzzleForDay(
+  dayNumber: number,
+  puzzles: Puzzle[] = parsedPuzzles
+): { puzzle: Puzzle; index: number } | null {
+  if (dayNumber < 1) return null;
+  if (puzzles.length === 0) return null;
+
+  const targetDate = getDateForDayNumber(dayNumber);
+  const targetDateString = toLocalDateString(targetDate);
+  const datedIndex = puzzles.findIndex((puzzle) => puzzle.date === targetDateString);
+  if (datedIndex >= 0) {
+    return { puzzle: puzzles[datedIndex], index: datedIndex };
+  }
+
+  const rotationIndices = getRotationIndices(puzzles);
+  if (rotationIndices.length === 0) return null;
+
+  const poolIndex = (dayNumber - 1) % rotationIndices.length;
+  const puzzleIndex = rotationIndices[poolIndex];
+  const puzzle = puzzles[puzzleIndex];
+  if (!puzzle) return null;
+
+  return { puzzle, index: puzzleIndex };
+}
+
+export function getDayNumberSinceLaunch(now: Date = new Date()): number {
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  const launch = new Date(LAUNCH_DATE);
+  launch.setHours(0, 0, 0, 0);
+  const days = Math.floor((today.getTime() - launch.getTime()) / 86400000);
+  return Math.max(1, days + 1);
+}
+
 function toLocalDateString(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+function getRotationIndices(puzzles: Puzzle[]): number[] {
+  return puzzles
+    .map((puzzle, index) => ({ puzzle, index }))
+    .filter(({ puzzle }) => puzzle.date === null)
+    .map(({ index }) => index);
+}
+
+function getDateForDayNumber(dayNumber: number): Date {
+  const date = new Date(LAUNCH_DATE);
+  date.setHours(0, 0, 0, 0);
+  date.setDate(date.getDate() + (dayNumber - 1));
+  return date;
 }

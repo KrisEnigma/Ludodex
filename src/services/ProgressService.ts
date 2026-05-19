@@ -10,6 +10,15 @@ const ACTIVE_SKIN_KEY = 'active_skin';
 
 type SolvedTimesMap = Record<string, number>;
 
+const PROGRESS_KEYS = [
+  'solved_ids',
+  'solved_times',
+  'puzzles_solved_count',
+  'current_streak',
+  'best_streak',
+  'last_played_date'
+] as const;
+
 export type ProgressSnapshot = {
   solvedCount: number;
   bestTimeSec: number | null;
@@ -120,8 +129,10 @@ export async function getProgressSnapshot(): Promise<ProgressSnapshot> {
 export async function recordPuzzleCompletion(
   puzzleId: string,
   elapsedSeconds: number,
-  nowIso: string = new Date().toISOString()
+  options: { isTodaysDaily: boolean; nowIso?: string }
 ): Promise<ProgressSnapshot> {
+  const nowIso = options.nowIso ?? new Date().toISOString();
+
   const solvedSet = new Set(await getSolvedIds());
   solvedSet.add(puzzleId);
 
@@ -133,34 +144,49 @@ export async function recordPuzzleCompletion(
     getBestStreak()
   ]);
 
-  solvedTimes[puzzleId] = elapsedSeconds;
+  const existing = solvedTimes[puzzleId];
+  solvedTimes[puzzleId] = (typeof existing === 'number' && Number.isFinite(existing))
+    ? Math.min(existing, elapsedSeconds)
+    : elapsedSeconds;
 
   const solvedCount = previousCount + 1;
+  let currentStreak = previousStreak;
+  let bestStreak = previousBestStreak;
 
-  const todayStamp = toDayStamp(nowIso);
-  const lastStamp = lastPlayedDate ? toDayStamp(lastPlayedDate) : null;
+  if (options.isTodaysDaily) {
+    const todayStamp = toDayStamp(nowIso);
+    const lastStamp = lastPlayedDate ? toDayStamp(lastPlayedDate) : null;
 
-  let currentStreak = 1;
-  if (lastStamp) {
-    const diff = dayDiff(lastStamp, todayStamp);
-    if (diff === 0) {
-      currentStreak = Math.max(1, previousStreak);
-    } else if (diff === 1) {
-      currentStreak = Math.max(1, previousStreak + 1);
+    currentStreak = 1;
+    if (lastStamp) {
+      const diff = dayDiff(lastStamp, todayStamp);
+      if (diff === 0) {
+        currentStreak = Math.max(1, previousStreak);
+      } else if (diff === 1) {
+        currentStreak = Math.max(1, previousStreak + 1);
+      }
     }
+
+    bestStreak = Math.max(previousBestStreak, currentStreak);
   }
 
-  const bestStreak = Math.max(previousBestStreak, currentStreak);
   const bestTimeSec = getBestTimeSec(solvedTimes);
 
-  await Promise.all([
+  const writes: Array<Promise<void>> = [
     Preferences.set({ key: SOLVED_IDS_KEY, value: JSON.stringify(Array.from(solvedSet)) }),
     Preferences.set({ key: SOLVED_TIMES_KEY, value: JSON.stringify(solvedTimes) }),
-    Preferences.set({ key: PUZZLES_SOLVED_COUNT_KEY, value: String(solvedCount) }),
-    Preferences.set({ key: LAST_PLAYED_DATE_KEY, value: nowIso }),
-    Preferences.set({ key: CURRENT_STREAK_KEY, value: String(currentStreak) }),
-    Preferences.set({ key: BEST_STREAK_KEY, value: String(bestStreak) })
-  ]);
+    Preferences.set({ key: PUZZLES_SOLVED_COUNT_KEY, value: String(solvedCount) })
+  ];
+
+  if (options.isTodaysDaily) {
+    writes.push(
+      Preferences.set({ key: LAST_PLAYED_DATE_KEY, value: nowIso }),
+      Preferences.set({ key: CURRENT_STREAK_KEY, value: String(currentStreak) }),
+      Preferences.set({ key: BEST_STREAK_KEY, value: String(bestStreak) })
+    );
+  }
+
+  await Promise.all(writes);
 
   return {
     solvedCount,
@@ -168,4 +194,8 @@ export async function recordPuzzleCompletion(
     currentStreak,
     bestStreak
   };
+}
+
+export async function resetAllProgress(): Promise<void> {
+  await Promise.all(PROGRESS_KEYS.map(key => Preferences.remove({ key })));
 }

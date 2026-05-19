@@ -1,30 +1,144 @@
-import { MenuView } from './MenuView';
+import type { Puzzle } from '../types/puzzle';
+import { ArchiveView } from './ArchiveView';
 import { GameView } from './GameView';
+import { HowToPlayView } from './HowToPlayView';
+import { MenuView } from './MenuView';
+import { SettingsView } from './SettingsView';
 import { WinView } from './WinView';
 import type { WinPayload } from './types';
 
+export type RouteName = 'menu' | 'game' | 'win' | 'settings' | 'archive' | 'how-to-play';
+
+export type RoutePayloads = {
+  menu: undefined;
+  game: { puzzle: Puzzle; dayNumber: number; isTodaysDaily: boolean };
+  win: WinPayload;
+  settings: undefined;
+  archive: undefined;
+  'how-to-play': { fromOnboarding: boolean };
+};
+
+type RouteEntry<T extends RouteName = RouteName> = {
+  name: T;
+  payload: RoutePayloads[T];
+};
+
+type AnyRouteEntry = {
+  [K in RouteName]: { name: K; payload: RoutePayloads[K] }
+}[RouteName];
+
 export class Router {
-  private readonly app: HTMLDivElement;
   private readonly shell: HTMLDivElement;
+  private stack: AnyRouteEntry[] = [];
 
   constructor(app: HTMLDivElement) {
-    this.app = app;
     this.shell = document.createElement('div');
     this.shell.className = 'app-shell';
-    this.app.replaceChildren(this.shell);
+    app.replaceChildren(this.shell);
   }
 
-  goToMenu(): void {
-    this.shell.replaceChildren(new MenuView(() => this.goToGame()).element);
+  push<T extends RouteName>(route: T, payload?: RoutePayloads[T]): void {
+    this.stack.push({
+      name: route,
+      payload: (payload ?? this.defaultPayload(route)) as RoutePayloads[T]
+    } as AnyRouteEntry);
+    this.renderCurrent();
   }
 
-  goToGame(): void {
-    this.shell.replaceChildren(
-      new GameView((payload) => this.goToWin(payload), () => this.goToMenu()).element
-    );
+  replace<T extends RouteName>(route: T, payload?: RoutePayloads[T]): void {
+    const next: RouteEntry<T> = {
+      name: route,
+      payload: (payload ?? this.defaultPayload(route)) as RoutePayloads[T]
+    };
+
+    if (this.stack.length === 0) {
+      this.stack.push(next as AnyRouteEntry);
+    } else {
+      this.stack[this.stack.length - 1] = next as AnyRouteEntry;
+    }
+
+    this.renderCurrent();
   }
 
-  goToWin(payload: WinPayload): void {
-    this.shell.replaceChildren(new WinView(payload, () => this.goToMenu()).element);
+  pop(): void {
+    if (this.stack.length <= 1) {
+      return;
+    }
+    this.stack.pop();
+    this.renderCurrent();
+  }
+
+  private renderCurrent(): void {
+    const current = this.stack[this.stack.length - 1];
+    if (!current) return;
+
+    switch (current.name) {
+      case 'menu': {
+        const view = new MenuView({
+          onPlay: (payload) => this.push('game', payload),
+          onOpenSettings: () => this.push('settings'),
+          onOpenArchive: () => this.push('archive'),
+          onOpenHowToPlay: () => this.push('how-to-play', { fromOnboarding: false })
+        });
+        this.shell.replaceChildren(view.element);
+        return;
+      }
+      case 'game': {
+        const view = new GameView(current.payload, {
+          onWin: (payload) => this.push('win', payload),
+          onMenu: () => this.pop()
+        });
+        this.shell.replaceChildren(view.element);
+        return;
+      }
+      case 'win': {
+        const view = new WinView(current.payload, () => {
+          this.stack = [{ name: 'menu', payload: undefined }];
+          this.renderCurrent();
+        });
+        this.shell.replaceChildren(view.element);
+        return;
+      }
+      case 'settings': {
+        const view = new SettingsView(
+          () => this.pop(),
+          () => this.replace('settings')
+        );
+        this.shell.replaceChildren(view.element);
+        return;
+      }
+      case 'archive': {
+        const view = new ArchiveView(
+          () => this.pop(),
+          (puzzle, dayNumber) => {
+            this.replace('game', { puzzle, dayNumber, isTodaysDaily: false });
+          }
+        );
+        this.shell.replaceChildren(view.element);
+        return;
+      }
+      case 'how-to-play': {
+        const payload = current.payload ?? { fromOnboarding: false };
+        const view = new HowToPlayView(payload, () => {
+          if (payload.fromOnboarding) {
+            this.replace('menu');
+          } else {
+            this.pop();
+          }
+        });
+        this.shell.replaceChildren(view.element);
+        return;
+      }
+      default:
+        return;
+    }
+  }
+
+  private defaultPayload<T extends RouteName>(route: T): RoutePayloads[T] {
+    if (route === 'menu') return undefined as RoutePayloads[T];
+    if (route === 'settings') return undefined as RoutePayloads[T];
+    if (route === 'archive') return undefined as RoutePayloads[T];
+    if (route === 'how-to-play') return { fromOnboarding: false } as RoutePayloads[T];
+    throw new Error(`Route ${route} requires a payload`);
   }
 }
