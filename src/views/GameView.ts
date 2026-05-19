@@ -1,7 +1,7 @@
 import { InputManager } from '../game/InputManager';
 import { t } from '../i18n';
 import { Tile } from '../game/Tile';
-import { applySolvedPart, buildTileOwnership, isFoundPending, type PartOwnershipEntry, type TileOwnershipState } from '../game/tileOwnership';
+import { applySolvedPart, buildTileOwnership, type PartOwnershipEntry, type TileOwnershipState } from '../game/tileOwnership';
 import { showConfirmModal, showInfoModal } from '../components/Modal';
 import { maybeShowInterstitial } from '../services/AdService';
 import {
@@ -783,11 +783,6 @@ export class GameView {
 
     if (this.selectedTiles.has(tile)) {
       el.dataset.state = 'selected';
-      return;
-    }
-
-    if (isFoundPending(this.ownershipState, tile.coord)) {
-      el.dataset.state = 'found-pending';
       return;
     }
 
