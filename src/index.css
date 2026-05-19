@@ -184,6 +184,36 @@ body {
   color: var(--chrome-text);
 }
 
+.game-title-row {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 10px;
+}
+
+.game-title-row .view-title {
+  margin: 0;
+}
+
+.game-words-progress {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--chrome-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.game-instructions {
+  margin: 2px 0 0;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--chrome-text);
+  opacity: 0.62;
+}
+
 .action-button {
   border: 1px solid var(--button-border);
   border-radius: 10px;

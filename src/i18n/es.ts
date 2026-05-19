@@ -42,7 +42,7 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'settings.section_language': 'Idioma',
   'settings.section_skin': 'Skin',
   'settings.section_about': 'Acerca de',
-  'settings.about_credit': 'Hecho en Chile',
+  'settings.about_credit': 'Por KrisEnigma',
   'settings.version': 'GlitchSalad v{version}',
 
   // Skin names - same in both languages

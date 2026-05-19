@@ -121,13 +121,17 @@ export class GameView {
 
     header.append(menuButton, levelLabel, this.hintCounterEl, this.timerLabel);
 
+    const titleRow = document.createElement('div');
+    titleRow.className = 'game-title-row';
+
     const title = document.createElement('h2');
     title.className = 'view-title';
     title.textContent = this.puzzleTitle;
 
     this.wordsProgressLabel = document.createElement('p');
-    this.wordsProgressLabel.className = 'view-subtitle';
+    this.wordsProgressLabel.className = 'game-words-progress';
     this.updateWordsProgressLabel();
+    titleRow.append(title, this.wordsProgressLabel);
 
     this.gridWrap = document.createElement('div');
     this.gridWrap.className = 'grid-wrap';
@@ -291,11 +295,18 @@ export class GameView {
       this.redrawPath(this.inputManager.getChain());
     });
 
-    const description = document.createElement('p');
-    description.className = 'view-subtitle';
-    description.textContent = t('game.instructions');
+    const tutorialLabel = document.createElement('p');
+    tutorialLabel.className = 'game-instructions';
+    tutorialLabel.textContent = t('game.instructions');
 
-    this.element.append(header, title, this.wordsProgressLabel, this.gridWrap, hints, description);
+    const rootEl = this.element;
+    void (async () => {
+      const solvedIds = await getSolvedIds();
+      if (!rootEl.isConnected) return;
+      if (solvedIds.length > 0) tutorialLabel.hidden = true;
+    })();
+
+    this.element.append(header, titleRow, this.gridWrap, hints, tutorialLabel);
   }
 
   private buildLetterSlot(partId: string, letterIndex: number, letter: string): HTMLElement {

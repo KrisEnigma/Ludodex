@@ -40,7 +40,7 @@ export const strings = {
   'settings.section_language': 'Language',
   'settings.section_skin': 'Skin',
   'settings.section_about': 'About',
-  'settings.about_credit': 'Made in Chile',
+  'settings.about_credit': 'By KrisEnigma',
   'settings.version': 'GlitchSalad v{version}',
 
   // Skin display names
