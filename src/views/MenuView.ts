@@ -1,22 +1,147 @@
 import { Capacitor } from '@capacitor/core';
+import { ensureBundledPuzzlesLoaded, getDailyPuzzleIndex, getPuzzleAtIndex } from '../game/PuzzleLoader';
 import { applySkin, getCurrentSkinId, SKINS, type SkinId, type SkinMeta } from '../skins/registry';
 import { hasEntitlement, purchase, restorePurchases } from '../services/IAPService';
-import { setActiveSkinId } from '../services/ProgressService';
+import { getProgressSnapshot, setActiveSkinId } from '../services/ProgressService';
+import { t } from '../utils/i18n';
 
 export class MenuView {
   readonly element: HTMLDivElement;
 
   constructor(onPlay: () => void) {
+    const puzzles = ensureBundledPuzzlesLoaded();
+    const dailyIndex = getDailyPuzzleIndex(puzzles);
+    const dailyPuzzle = getPuzzleAtIndex(dailyIndex, puzzles);
+    const dayNumber = dailyIndex + 1;
+    const puzzleTitle = t(dailyPuzzle.name, dailyPuzzle.id);
+
     this.element = document.createElement('div');
     this.element.className = 'view menu-view';
+    const root = this.element;
 
-    const subtitle = document.createElement('p');
-    subtitle.className = 'view-subtitle';
-    subtitle.textContent = 'Main Menu';
+    const topBar = document.createElement('div');
+    topBar.className = 'menu-top-bar';
 
-    const title = document.createElement('h1');
-    title.className = 'view-title';
-    title.textContent = 'GlitchSalad';
+    const dayChip = document.createElement('span');
+    dayChip.className = 'menu-day-chip';
+    dayChip.textContent = `Day ${dayNumber}`;
+
+    const settingsButton = document.createElement('button');
+    settingsButton.type = 'button';
+    settingsButton.className = 'menu-icon-button';
+    settingsButton.textContent = '⚙';
+    settingsButton.setAttribute('aria-label', 'Settings');
+
+    topBar.append(dayChip, settingsButton);
+
+    const logo = document.createElement('div');
+    logo.className = 'menu-logo';
+
+    const logoTop = document.createElement('span');
+    logoTop.className = 'menu-logo-top';
+    logoTop.textContent = 'GLITCH';
+
+    const logoBottom = document.createElement('span');
+    logoBottom.className = 'menu-logo-bottom';
+    logoBottom.textContent = 'SALAD';
+
+    logo.append(logoTop, logoBottom);
+
+    const divider = document.createElement('div');
+    divider.className = 'menu-divider';
+
+    const statsStrip = document.createElement('div');
+    statsStrip.className = 'stats-strip';
+
+    const streakCard = document.createElement('div');
+    streakCard.className = 'stat-card';
+    streakCard.dataset.highlight = 'true';
+    const streakValue = document.createElement('span');
+    streakValue.className = 'stat-value';
+    streakValue.textContent = '0';
+    const streakLabel = document.createElement('span');
+    streakLabel.className = 'stat-label';
+    streakLabel.textContent = 'Streak';
+    streakCard.append(streakValue, streakLabel);
+
+    const solvedCard = document.createElement('div');
+    solvedCard.className = 'stat-card';
+    const solvedValue = document.createElement('span');
+    solvedValue.className = 'stat-value';
+    solvedValue.textContent = '0';
+    const solvedLabel = document.createElement('span');
+    solvedLabel.className = 'stat-label';
+    solvedLabel.textContent = 'Solved';
+    solvedCard.append(solvedValue, solvedLabel);
+
+    const bestCard = document.createElement('div');
+    bestCard.className = 'stat-card';
+    const bestValue = document.createElement('span');
+    bestValue.className = 'stat-value';
+    bestValue.textContent = '--';
+    const bestLabel = document.createElement('span');
+    bestLabel.className = 'stat-label';
+    bestLabel.textContent = 'Best';
+    bestCard.append(bestValue, bestLabel);
+
+    statsStrip.append(streakCard, solvedCard, bestCard);
+
+    const dailyCard = document.createElement('div');
+    dailyCard.className = 'daily-card';
+
+    const dailyCardHead = document.createElement('div');
+    dailyCardHead.className = 'daily-card-head';
+
+    const dailyTag = document.createElement('span');
+    dailyTag.className = 'daily-card-tag';
+    dailyTag.textContent = 'Today';
+
+    const countdownEl = document.createElement('span');
+    countdownEl.className = 'daily-card-countdown';
+    countdownEl.textContent = `Next in ${this.formatTimeUntilMidnight()}`;
+
+    dailyCardHead.append(dailyTag, countdownEl);
+
+    const dailyTitle = document.createElement('h2');
+    dailyTitle.className = 'daily-card-title';
+    dailyTitle.textContent = puzzleTitle;
+
+    const dailyMeta = document.createElement('p');
+    dailyMeta.className = 'daily-card-meta';
+    dailyMeta.textContent = `${dailyPuzzle.category} · ${dailyPuzzle.difficulty}`;
+
+    const dailyPlayButton = document.createElement('button');
+    dailyPlayButton.type = 'button';
+    dailyPlayButton.className = 'daily-play-button';
+    dailyPlayButton.textContent = '▶ Play';
+    dailyPlayButton.addEventListener('click', (event) => {
+      event.stopPropagation();
+      onPlay();
+    });
+
+    dailyCard.addEventListener('click', () => {
+      onPlay();
+    });
+    dailyCard.append(dailyCardHead, dailyTitle, dailyMeta, dailyPlayButton);
+
+    const footerActions = document.createElement('div');
+    footerActions.className = 'menu-footer-actions';
+
+    const archiveButton = document.createElement('button');
+    archiveButton.type = 'button';
+    archiveButton.className = 'menu-footer-action';
+    archiveButton.textContent = 'Archive';
+
+    const howToPlayButton = document.createElement('button');
+    howToPlayButton.type = 'button';
+    howToPlayButton.className = 'menu-footer-action';
+    howToPlayButton.textContent = 'How to play';
+
+    footerActions.append(archiveButton, howToPlayButton);
+
+    const settingsPanel = document.createElement('div');
+    settingsPanel.className = 'settings-panel';
+    settingsPanel.hidden = true;
 
     const skinLabel = document.createElement('p');
     skinLabel.className = 'view-subtitle';
@@ -187,18 +312,49 @@ export class MenuView {
         } catch {
           status.textContent = 'Restore failed';
         }
-      });
+      })();
     });
+
+    settingsButton.addEventListener('click', () => {
+      settingsPanel.hidden = !settingsPanel.hidden;
+    });
+
+    const countdownIntervalId = window.setInterval(() => {
+      if (!root.isConnected) {
+        window.clearInterval(countdownIntervalId);
+        return;
+      }
+      countdownEl.textContent = `Next in ${this.formatTimeUntilMidnight()}`;
+    }, 60_000);
 
     refreshButtonStates();
     void refreshEntitlements();
 
-    const playButton = document.createElement('button');
-    playButton.type = 'button';
-    playButton.className = 'action-button';
-    playButton.textContent = 'Play Daily Puzzle';
-    playButton.addEventListener('click', onPlay);
+    void (async () => {
+      const snapshot = await getProgressSnapshot();
+      if (!root.isConnected) return;
+      streakValue.textContent = String(snapshot.currentStreak);
+      solvedValue.textContent = String(snapshot.solvedCount);
+      bestValue.textContent = snapshot.bestTimeSec === null ? '--' : this.formatElapsed(snapshot.bestTimeSec);
+    })();
 
-    this.element.append(subtitle, title, skinLabel, skinPicker, status, restoreButton, playButton);
+    settingsPanel.append(skinLabel, skinPicker, status, restoreButton);
+
+    this.element.append(topBar, logo, divider, statsStrip, dailyCard, footerActions, settingsPanel);
+  }
+
+  private formatElapsed(totalSeconds: number): string {
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  }
+
+  private formatTimeUntilMidnight(): string {
+    const now = new Date();
+    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const totalMinutes = Math.max(0, Math.floor((tomorrow.getTime() - now.getTime()) / 60000));
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours}h ${minutes.toString().padStart(2, '0')}m`;
   }
 }

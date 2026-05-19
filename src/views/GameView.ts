@@ -240,15 +240,7 @@ export class GameView {
     description.className = 'view-subtitle';
     description.textContent = 'Swipe adjacent letters to find all words.';
 
-    const completeButton = document.createElement('button');
-    completeButton.type = 'button';
-    completeButton.className = 'action-button';
-    completeButton.textContent = 'Simulate Win';
-    completeButton.addEventListener('click', () => {
-      this.onPuzzleSolved();
-    });
-
-    this.element.append(header, title, this.gridWrap, hints, description, completeButton);
+    this.element.append(header, title, this.gridWrap, hints, description);
   }
 
   private startTimer(): void {

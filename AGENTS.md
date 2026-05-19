@@ -1,953 +1,817 @@
-# GlitchSalad — Copilot Agent Build Prompt
+# GlitchSalad — Copilot Agent build prompt
 
-## Concept
-A daily word puzzle game themed entirely around gaming knowledge.
-The player is shown a 4x4 grid of letters and a set of hint boxes
-showing the lengths of hidden words. By swiping adjacent tiles,
-they trace paths that spell out themed words (e.g. "Video Game
-Heroes" → LARA CROFT, MARIO, SONIC). When a word is found, its
-tiles are marked. Tiles fully deactivate (animate out) only once
-ALL words sharing that tile have been found. Puzzle is solved
-when all words are found and all tiles are deactivated.
+A daily word puzzle for the LatAm / Spanish-speaking market, themed around gaming knowledge. Mechanic clones WordSalad (Bleppo Games): a 4×4 grid of letters where the player swipes adjacent letters to spell themed words. Tiles can be shared between words and only deactivate once *all* words that include them are found.
+
+This document is the complete rewrite spec. The previous attempt used Phaser 3 + Capacitor 6 and is being scrapped down to its engine-agnostic logic.
 
 ---
 
-## Tech Stack
-- Game engine: Phaser 3 (TypeScript)
-- Native wrapper: Capacitor 6
-- Build tool: Vite
-- Ads: @capacitor-community/admob
-- IAP: @revenuecat/purchases-capacitor
-- Persistence: @capacitor/preferences
-- Notifications: @capacitor/local-notifications
-- Haptics: @capacitor/haptics
-- Share: @capacitor/share
+## 1. Tech stack decision
+
+**Capacitor 8 + DOM/CSS/SVG + TypeScript + Vite. Vanilla TS — no React, no Phaser, no game engine.**
+
+Reasoning: this is a UI app with one custom touch gesture, not a game engine workload. Between user inputs the screen is static. The needed animations (tile scale-out, color shift, polyline draw, popup) are exactly what CSS does well. The mockup we built (`glitchsalad_mockup_v6`) is already the game visually — port the mockup, don't reinvent it.
+
+Concrete stack:
+
+- `@capacitor/core@8` + `@capacitor/cli@8` + `@capacitor/ios@8` + `@capacitor/android@8`
+- `@capacitor/preferences@8`, `@capacitor/local-notifications@8`, `@capacitor/haptics@8`, `@capacitor/share@8`, `@capacitor/app@8`, `@capacitor/status-bar@8`
+- `@capacitor-community/admob` (latest)
+- `@revenuecat/purchases-capacitor` (latest)
+- `typescript@5.x`, `vite@5.x`
+- No React. No Phaser. No frontend framework. Pure DOM with TypeScript classes.
 
 ---
 
-## Project Structure
+## 2. Project structure
+
 ```
 glitchsalad/
 ├── src/
-│   ├── main.ts
-│   ├── scenes/
-│   │   ├── BootScene.ts
-│   │   ├── MenuScene.ts
-│   │   ├── GameScene.ts
-│   │   └── WinScene.ts
+│   ├── main.ts                    # DOM bootstrap, mounts Router into #app
+│   ├── index.css                  # global styles, font import, root layout
+│   ├── skins/
+│   │   ├── skins.css              # one block per skin: .skin-void {...}, .skin-synthwave {...}
+│   │   └── registry.ts            # skin metadata: id, name, IAP product ID, free?
+│   ├── views/
+│   │   ├── Router.ts              # swaps a single child of #app between views
+│   │   ├── MenuView.ts            # main menu (play, skins, stats)
+│   │   ├── GameView.ts            # the puzzle screen
+│   │   └── WinView.ts             # win modal contents
+│   ├── components/
+│   │   ├── Grid.ts                # 4×4 DOM grid + SVG path overlay
+│   │   ├── Tile.ts                # ★ ENGINE-AGNOSTIC LOGIC, PORT VERBATIM
+│   │   ├── HintRow.ts             # hint slots for one answer entry
+│   │   ├── Header.ts              # hamburger | LEVEL N | timer + streak dots
+│   │   └── WinPopup.ts            # win modal DOM
 │   ├── game/
-│   │   ├── Grid.ts
-│   │   ├── Tile.ts
-│   │   ├── PuzzleLoader.ts
-│   │   └── SkinManager.ts
+│   │   ├── InputManager.ts        # ★ ENGINE-AGNOSTIC, PORT VERBATIM
+│   │   ├── PuzzleParser.ts        # ★ PORT VERBATIM
+│   │   ├── PuzzleLoader.ts        # ★ PORT VERBATIM (date-math daily selection)
+│   │   ├── tileOwnership.ts       # ★ PORT VERBATIM (shared-tile deactivation)
+│   │   └── Grid.ts                # ⚠ REWRITE (fix coordinate bug, see §4)
 │   ├── services/
-│   │   ├── AdService.ts
-│   │   ├── IAPService.ts
-│   │   ├── ProgressService.ts
-│   │   └── NotificationService.ts
+│   │   ├── AdService.ts           # ★ PORT VERBATIM (AdMob wrapper)
+│   │   ├── IAPService.ts          # ★ PORT VERBATIM (RevenueCat wrapper)
+│   │   ├── ProgressService.ts     # ★ PORT VERBATIM (preferences keys)
+│   │   └── NotificationService.ts # ★ PORT VERBATIM
+│   ├── utils/
+│   │   ├── i18n.ts                # ★ PORT VERBATIM
+│   │   ├── merge-helper.ts        # ★ PORT VERBATIM
+│   │   └── types.ts               # ★ PORT VERBATIM
 │   ├── data/
-│   │   └── puzzles.json
-│   └── skins/
-│       └── skins.ts
-├── capacitor.config.ts
-├── vite.config.ts
-└── package.json
+│   │   └── puzzles.json           # ★ PORT VERBATIM (4 starter puzzles)
+│   └── types/
+│       └── puzzle.ts              # ★ PORT VERBATIM
+├── scripts/
+│   ├── validate-puzzles.ts        # ★ PORT VERBATIM
+│   ├── test-grid.ts               # ⚠ UPDATE EXPECTATIONS (see §4)
+│   ├── test-selection.ts          # ★ PORT VERBATIM
+│   ├── test-ownership.ts          # ★ PORT VERBATIM
+│   └── test-deactivation.ts       # ★ PORT VERBATIM
+├── index.html                     # ⚠ REWRITE (mobile viewport, font preload, #app root)
+├── capacitor.config.ts            # ★ PORT (update versions, app ID stays app.glitchsalad.game)
+├── vite.config.ts                 # new
+├── tsconfig.json                  # new
+└── package.json                   # new (drop phaser, drop Capacitor 6 versions)
 ```
 
+### Files to delete from the previous attempt
+
+```
+src/scenes/                        # all four Phaser scenes
+src/game/renderers/                # all five canvas renderers
+src/game/SkinManager.ts            # Phaser thin wrapper
+src/game/coordMap.ts               # transpose workaround, no longer needed
+src/skins/SkinManager.ts           # Phaser event-based
+src/skins/skins.ts                 # legacy duplicate
+src/main.ts                        # Phaser bootstrap
+index.html                         # Phaser canvas mount
+```
+
+Drop `phaser` and any `@types/phaser` from `package.json`.
+
 ---
 
-## Grid Rules
-- Always 4x4 (16 tiles)
-- Each tile is identified by [row, col] (0-indexed)
-- Adjacency is 8-directional (orthogonal + diagonal)
-- Tiles CAN be shared between multiple words
-- A tile deactivates (animates out) only when ALL words
-  that include that tile have been found
-- Ideally all 16 tiles are part of at least one word
-  (no filler tiles), but filler is allowed if needed
+## 3. Architecture overview
+
+- Single-page app. Vite builds to `dist/`. Capacitor `npx cap copy` syncs `dist/` into the iOS/Android shells.
+- Root element is `<div id="app">` in `index.html`. A `Router` class mounts exactly one view (`MenuView`, `GameView`, `WinView`) as its only child.
+- Each view is a plain TS class that creates DOM in its constructor and exposes update methods. No frameworks, no virtual DOM, no JSX. Imperative.
+- Skins are CSS classes on `document.documentElement`. Switching skin = toggling a class. Every visual color reads from a CSS custom property; the skin class defines those properties.
+- The 4×4 grid is a CSS Grid of 16 `<div class="tile">` elements. Tile state lives in `data-state="idle|selected|found-pending|deactivated"`. CSS rules style each state.
+- The path connecting selected tiles is an absolutely-positioned `<svg>` sibling of the grid (NOT a child — must render above scaled selected tiles). Two `<path>` layers: halo (wide, translucent) + core (thin, bright).
+- Touch handling: Pointer Events on the grid container, never per-tile. Use `setPointerCapture` so movement is tracked even if the pointer leaves the element. Hit detection is a circular distance check from the pointer to each tile's center, with a dead zone between hitboxes.
 
 ---
 
-## Puzzle Data Format — replace previous section entirely
+## 4. Coordinate system — CRITICAL FIX
 
-### Schema
+The previous attempt had a bug. The puzzle data format uses **column-letter + row-number** (`a1` = column a, row 1 = top-left; `b3` = column b, row 3). The previous `Grid.ts` swapped this and used row-letter + column-number, then patched over the bug with a `coordMap.ts` transpose. We are fixing it for real and deleting `coordMap.ts`.
+
+### Correct convention
+
+A tile at visual position `[row, col]` has coordinate:
+
+```typescript
+const coord = `${String.fromCharCode(97 + col)}${row + 1}`;
+// row=0, col=0 → "a1"  (top-left)
+// row=0, col=3 → "d1"  (top-right)
+// row=3, col=0 → "a4"  (bottom-left)
+// row=3, col=3 → "d4"  (bottom-right)
+```
+
+### Grid letters under the correct mapping
+
+Tracing the four words in the first puzzle (`videogameheroes`) — SONIC, LARA CROFT, MARIO — gives this canonical grid:
+
+```
+        col0  col1  col2  col3
+row0:    S     O     N     I
+row1:    T     F     C     R
+row2:    L     A     O     A
+row3:    O     I     R     M
+```
+
+Three shared tiles:
+- `c2` (col 2, row 1) = C, shared by SONIC + CROFT
+- `c4` (col 2, row 3) = R, shared by LARA + MARIO
+- `d3` (col 3, row 2) = A, shared by LARA + MARIO
+
+### Things to fix
+
+1. **`src/game/Grid.ts`** — when assigning the `coord` for each tile, use `String.fromCharCode(97 + col)${row + 1}`. The existing `Tile.ts` getter already uses this formula, so just align Grid with Tile.
+2. **Delete `src/game/coordMap.ts`** entirely.
+3. **Find every call site** of `puzzleCoordToGridCoord(coord)` and replace with `coord` directly. (Most are in `tileOwnership.ts` and `Grid.ts`.)
+4. **`scripts/test-grid.ts`** — update expectations: `rowString(0) === "SONI"` and `colString(0) === "STLO"`. The old expectations (`STLO` for row 0) reflected the buggy mapping.
+
+---
+
+## 5. Puzzle data format
+
+Port verbatim from the previous repo. Spec for reference:
 
 ```typescript
 // src/types/puzzle.ts
-
-type Locale = 'en' | 'es';
-
-type LocalizedString = {
-  en: string;               // required — fallback for all locales
-  es?: string;              // optional — add per language as needed
-};
-
-type Difficulty = 'easy' | 'medium' | 'hard';
-
-type Series = {
-  id: string;               // e.g. "fromsoftware"
-  part: number;             // e.g. 1
-};
-
-type RawPuzzle = {
-  id: string;               // unique slug, lowercase, no spaces
-  name: LocalizedString;    // level title, translated
-  category: string;         // e.g. "characters" | "titles" | "studios"
-                            //      "franchises" | "consoles" | "composers"
-                            //      "genres" | "decades"
-  difficulty: Difficulty;
-  date: string | null;      // "YYYY-MM-DD" — overrides daily rotation
-                            // null = enter normal rotation
-  series: Series | null;    // multi-part themed collections
-  premium: boolean;         // reserved for future paid puzzle packs
-  hint: LocalizedString | null; // optional flavor text shown before solving
-  filler?: Record<string, string>; // tiles not belonging to any word
-                                   // e.g. { "b2": "X" }
-  data: Record<string, string>;    // word paths — see format below
-};
-```
-
-### Path format
-
-Coordinate system: column letter (a–d, left→right) + row number (1–4, top→bottom).
-
-```
-     a    b    c    d
-1  [a1] [b1] [c1] [d1]
-2  [a2] [b2] [c2] [d2]
-3  [a3] [b3] [c3] [d3]
-4  [a4] [b4] [c4] [d4]
-```
-
-Each word's value is a continuous string of 2-char coordinate pairs.
-For multi-word answers, the path covers all words concatenated —
-split positions are derived from word lengths in the display name.
-
-```javascript
-// puzzles.json — example entry
-{
-  "id": "videogameheroes",
-  "name": {
-    "en": "Video Game Heroes",
-    "es": "Héroes de Videojuegos"
-  },
-  "category": "characters",
-  "difficulty": "medium",
-  "date": null,
-  "series": null,
-  "premium": false,
-  "hint": {
-    "en": "Classic heroes from three different decades",
-    "es": "Héroes clásicos de tres décadas distintas"
-  },
-  "data": {
-    "SONIC":      "a1b1c1d1c2",
-    "LARA CROFT": "a3b3c4d3c2d2c3b2a2",
-    "MARIO":      "d4d3c4b4a4"
-  }
-}
-```
-
-### Parser
-
-```typescript
-// src/game/PuzzleParser.ts
-
-import type { RawPuzzle, Puzzle, Answer, PuzzlePart } from '../types/puzzle';
-
-export function parsePuzzle(raw: RawPuzzle): Puzzle {
-  const grid: Record<string, string> = {};
-  const answers: Answer[] = [];
-
-  for (const [display, pathStr] of Object.entries(raw.data)) {
-    const coords = pathStr.match(/.{2}/g);
-    if (!coords) throw new Error(`Invalid path string for "${display}"`);
-
-    const wordParts = display.split(' ');
-    const wordLengths = wordParts.map(w => w.length);
-    const totalExpected = wordLengths.reduce((a, b) => a + b, 0);
-
-    if (coords.length !== totalExpected) {
-      throw new Error(
-        `Path length mismatch for "${display}": ` +
-        `expected ${totalExpected}, got ${coords.length}`
-      );
-    }
-
-    // Map coordinates → letters, catch tile conflicts
-    const allLetters = display.replace(/ /g, '').split('');
-    coords.forEach((coord, i) => {
-      const letter = allLetters[i];
-      if (grid[coord] && grid[coord] !== letter) {
-        throw new Error(
-          `Tile ${coord} conflict in "${display}": ` +
-          `"${grid[coord]}" already set, trying to set "${letter}"`
-        );
-      }
-      grid[coord] = letter;
-    });
-
-    // Validate adjacency
-    for (let i = 1; i < coords.length; i++) {
-      if (!areTilesAdjacent(coords[i - 1], coords[i])) {
-        throw new Error(
-          `Non-adjacent tiles in "${display}": ` +
-          `${coords[i - 1]} → ${coords[i]}`
-        );
-      }
-    }
-
-    // Split path into per-word parts
-    let offset = 0;
-    const parts: PuzzlePart[] = wordParts.map((word) => {
-      const path = coords.slice(offset, offset + word.length);
-      offset += word.length;
-      return { word, path };
-    });
-
-    answers.push({ display, parts });
-  }
-
-  // Apply filler tiles
-  if (raw.filler) {
-    for (const [coord, letter] of Object.entries(raw.filler)) {
-      if (grid[coord]) {
-        throw new Error(
-          `Filler tile ${coord} conflicts with word tile "${grid[coord]}"`
-        );
-      }
-      grid[coord] = letter;
-    }
-  }
-
-  // Warn on incomplete grid coverage
-  const covered = Object.keys(grid).length;
-  if (covered < 16) {
-    console.warn(
-      `Puzzle "${raw.id}" covers ${covered}/16 tiles. ` +
-      `Add filler for the remaining ${16 - covered}.`
-    );
-  }
-
-  return {
-    id: raw.id,
-    name: raw.name,
-    category: raw.category,
-    difficulty: raw.difficulty,
-    date: raw.date,
-    series: raw.series,
-    premium: raw.premium,
-    hint: raw.hint,
-    grid,
-    answers,
+interface Puzzle {
+  id: string;                          // e.g. "videogameheroes"
+  date?: string;                       // optional pinned date "YYYY-MM-DD"
+  i18n: {
+    en: { title: string; hint: string };
+    es: { title: string; hint: string };
   };
+  answers: Answer[];
 }
 
-function areTilesAdjacent(a: string, b: string): boolean {
-  const col = (c: string) => c.charCodeAt(0) - 97; // a=0 b=1 c=2 d=3
-  const row = (c: string) => parseInt(c[1]) - 1;   // 1=0 2=1 3=2 4=3
-  return (
-    Math.abs(col(a) - col(b)) <= 1 &&
-    Math.abs(row(a) - row(b)) <= 1 &&
-    a !== b
-  );
+interface Answer {
+  displayKey: string;                  // canonical key, e.g. "LARA_CROFT"
+  i18n: {
+    en: { display: string };           // "LARA CROFT"
+    es: { display: string };           // "LARA CROFT"
+  };
+  parts: Part[];                       // multi-word answers have N parts
+}
+
+interface Part {
+  word: string;                        // letters only, no spaces: "LARA", "CROFT"
+  path: string;                        // 2-char pairs concatenated: "a3b3c4d3"
 }
 ```
 
-### Localization helper
+Paths are parsed by `PuzzleParser.ts` into `[row, col][]` arrays. Adjacency between consecutive cells is 8-directional (orthogonal + diagonal).
+
+The first 4 puzzles ship bundled: `videogameheroes`, `chess`, `planets`, `street_fighters`. `videogameheroes` is pinned to `2025-01-01` (launch date) so it's always day 1.
+
+---
+
+## 6. Tile ownership and deactivation
+
+Port `src/game/tileOwnership.ts` verbatim. Spec for reference:
+
+At puzzle load, build a map from each tile coordinate to the set of word parts that include it:
 
 ```typescript
-// src/utils/i18n.ts
-
-import type { LocalizedString, Locale } from '../types/puzzle';
-
-let currentLocale: Locale = 'en';
-
-export function setLocale(locale: Locale) {
-  currentLocale = locale;
-}
-
-export function t(str: LocalizedString | null, fallback = ''): string {
-  if (!str) return fallback;
-  return str[currentLocale] ?? str.en ?? fallback;
-}
-
-// Usage in GameScene:
-// this.titleText.setText(t(puzzle.name));
-// this.hintText.setText(t(puzzle.hint));
+type TileOwnership = Map<string, Set<string>>;  // "row,col" → Set<partKey>
 ```
 
-### Offline validator script
+When a part is found, remove its key from every tile it touched. When a tile's set becomes empty, that tile fully deactivates. The tile stays visible (in `found-pending` state) as long as another unfound part still needs it.
 
-Run this before committing any new puzzles.json entries.
-It catches all structural errors without launching the game.
+This is what makes the shared tiles work cleanly: finding SONIC marks the `C` at (1, 2) as `found-pending` but doesn't remove it, because CROFT still needs that `C`.
+
+---
+
+## 7. Grid rendering (DOM)
+
+The grid container is a CSS Grid:
+
+```html
+<div class="grid-wrap">
+  <div class="grid" id="grid">
+    <div class="tile" data-row="0" data-col="0" data-state="idle">S</div>
+    <div class="tile" data-row="0" data-col="1" data-state="idle">O</div>
+    <!-- ... 14 more ... -->
+  </div>
+  <svg class="path-overlay" id="path-overlay" viewBox="0 0 100 100" preserveAspectRatio="none">
+    <path class="path-halo" d="" />
+    <path class="path-core" d="" />
+  </svg>
+</div>
+```
+
+```css
+.grid-wrap {
+  position: relative;
+  width: min(86vw, 360px);
+  aspect-ratio: 1;
+  margin: 0 auto;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+}
+.tile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Space Mono', monospace;
+  font-size: clamp(28px, 7vw, 38px);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: var(--tile-bg);
+  color: var(--tile-letter);
+  border: 1px solid var(--tile-border);
+  border-radius: 14px;
+  transition: transform 140ms ease-out, opacity 220ms ease-out, background 180ms ease-out, color 180ms ease-out, box-shadow 180ms ease-out;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: none;
+}
+.tile[data-state="selected"] {
+  background: var(--tile-selected-bg);
+  color: var(--tile-selected-letter);
+  border-color: var(--tile-selected-border);
+  box-shadow: 0 0 18px var(--tile-selected-glow);
+  transform: scale(1.07);
+  z-index: 1;
+}
+.tile[data-state="found-pending"] {
+  background: var(--tile-found-bg);
+  color: var(--tile-found-letter);
+  border-color: var(--tile-found-border);
+}
+.tile[data-state="deactivated"] {
+  transform: scale(0);
+  opacity: 0;
+  pointer-events: none;
+}
+.path-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;        /* MUST be above .tile[selected] which has z-index: 1 */
+  overflow: visible;
+}
+.path-halo {
+  fill: none;
+  stroke: var(--path-color);
+  stroke-opacity: 0.25;
+  stroke-width: 18;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.path-core {
+  fill: none;
+  stroke: var(--path-color);
+  stroke-opacity: 0.95;
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+```
+
+Render rules:
+
+- `Grid.ts` mounts the 16 tile divs in row-major order and stores references.
+- A tile's letter and `data-row`/`data-col` attributes never change after creation. Only `data-state` and `style.transform`/`style.opacity` change.
+- The SVG path is redrawn on every chain change. The viewBox is normalized to the grid container's bounding rect (0,0 to W,H in pixels) and the path is built from tile center coordinates.
+
+---
+
+## 8. Input system — the part that has to feel right
+
+Port `src/game/InputManager.ts` verbatim. It's a clean state machine (`IDLE` / `PENDING` / `SWIPING`) that takes a `getTileCenter(row, col): {x, y}` callback. Wire it to DOM by:
+
+1. Attach pointer listeners to the `.grid-wrap` container (NOT individual tiles).
+2. On `pointerdown`, call `element.setPointerCapture(e.pointerId)` so subsequent `pointermove` and `pointerup` events come to us even if the finger leaves the container.
+3. Convert each pointer event's `clientX`/`clientY` to grid-local coordinates by subtracting the container's `getBoundingClientRect()` origin.
+4. Pass that local point to `InputManager.onPointerMove(x, y)`. The InputManager runs the hit-detection and state machine, and emits events: `chainChanged`, `wordSubmitted(letters)`, `cancel`.
+
+### Hit detection
+
+A tile's hitbox is a **circle**, not its full square cell. This is the difference between "feels solid" and "feels jittery".
 
 ```typescript
-// scripts/validate-puzzles.ts
-// Run with: npx ts-node scripts/validate-puzzles.ts
+const CELL = container.clientWidth / 4;
+const HIT_RADIUS = CELL * 0.38;        // ~24% dead zone between adjacent hitboxes
 
-import puzzles from '../src/data/puzzles.json';
-import { parsePuzzle } from '../src/game/PuzzleParser';
-import type { RawPuzzle } from '../src/types/puzzle';
-
-const VALID_CATEGORIES = [
-  'characters', 'titles', 'studios', 'franchises',
-  'consoles', 'composers', 'genres', 'decades'
-];
-
-const VALID_DIFFICULTIES = ['easy', 'medium', 'hard'];
-
-let errors = 0;
-
-for (const raw of puzzles as RawPuzzle[]) {
-  const tag = `[${raw.id}]`;
-
-  try {
-    // Schema checks
-    if (!raw.id)   throw new Error('Missing id');
-    if (!raw.name?.en) throw new Error('Missing name.en');
-    if (!VALID_CATEGORIES.includes(raw.category))
-      throw new Error(`Invalid category: "${raw.category}"`);
-    if (!VALID_DIFFICULTIES.includes(raw.difficulty))
-      throw new Error(`Invalid difficulty: "${raw.difficulty}"`);
-    if (raw.date && !/^\d{4}-\d{2}-\d{2}$/.test(raw.date))
-      throw new Error(`Invalid date format: "${raw.date}"`);
-    if (raw.hint && !raw.hint.en)
-      throw new Error('hint exists but missing hint.en');
-
-    // Parse (catches path, adjacency, conflict errors)
-    parsePuzzle(raw);
-
-    console.log(`✓ ${tag} ${raw.name.en}`);
-  } catch (e: any) {
-    console.error(`✗ ${tag} ${e.message}`);
-    errors++;
-  }
-}
-
-console.log(`\n${puzzles.length - errors}/${puzzles.length} puzzles valid`);
-if (errors > 0) process.exit(1);
-```
-
----
-
-## Tile Sharing — Engine Logic
-At puzzle load time, compute a tile ownership map:
-
-```typescript
-// tileOwnership[row][col] = Set of word part IDs using that tile
-// Example: tileOwnership[2][1] = { "SONIC", "CROFT" }
-
-function buildTileOwnership(answers: Answer[]): TileOwnership {
-  const map: TileOwnership = {};
-  for (const answer of answers) {
-    for (const part of answer.parts) {
-      for (const [row, col] of part.path) {
-        const key = `${row},${col}`;
-        if (!map[key]) map[key] = new Set();
-        map[key].add(part.word);
-      }
-    }
-  }
-  return map;
-}
-```
-
-When a word part is found:
-1. Remove it from the ownership set of each tile it uses
-2. If a tile's ownership set becomes empty → deactivate that tile
-3. Animate deactivated tiles: scale down + fade out
-
----
-
-## Word Validation Logic
-When player releases swipe:
-1. Collect the ordered sequence of tiles swiped
-2. Extract letter string from tile sequence
-3. Check if string matches any unfound word part
-4. Adjacency check: each consecutive tile pair must be
-   within 1 step in both row and col (8-directional)
-5. No revisiting already-deactivated tiles within one swipe
-6. Tiles that are found-but-not-yet-deactivated (shared)
-   remain swipeable for remaining words that need them
-7. On valid match: mark part as found, trigger deactivation
-   check, update hint boxes
-8. On invalid: shake the traced path briefly, release
-
----
-
-## UI Layout (GameScene)
-Top to bottom within the screen:
-
-```
-┌─────────────────────────┐
-│  Level 42               │  ← small, top left
-│  Video Game Heroes      │  ← title, prominent
-│  0:47  ────────────     │  ← timer, top right
-│                         │
-│  [ S ][ T ][ L ][ O ]   │
-│  [ O ][ F ][ A ][ I ]   │  ← 4x4 grid, centered
-│  [ N ][ C ][ O ][ R ]   │
-│  [ I ][ R ][ A ][ M ]   │
-│                         │
-│  ┌──────────┐ ┌─────┐ ┌─────┐  │
-│  │ 4  + 5   │ │  5  │ │  5  │  │ ← hint boxes
-│  └──────────┘ └─────┘ └─────┘  │
-└─────────────────────────┘
-```
-
-Hint boxes:
-- Ordered alphabetically by the answer's display name
-- Width of each box = proportional to total letter count
-- Multi-word answers show parts separated by a space gap:
-  [ _ _ _ _ ] [ _ _ _ _ _ ] for "LARA CROFT" (4+5)
-  shown as one combined box with a visible gap in the middle
-- When a part is found, its blank slots fill with letters
-- When all parts of an answer are found, the full box
-  lights up with the solved skin color
-- Example progression for "LARA CROFT":
-  Before:     [ _ _ _ _   _ _ _ _ _ ]
-  LARA found: [ L A R A   _ _ _ _ _ ]
-  Both found: [ L A R A   C R O F T ] ← highlight
-
-Timer:
-- Counts up from 0:00
-- Displayed top right
-- Stored with solved puzzle for stats (no time limit)
-
----
-
-## Daily Puzzle Selection
-```typescript
-// PuzzleLoader.ts
-const LAUNCH_DATE = new Date('2025-01-01T00:00:00');
-
-export function getDailyPuzzle(puzzles: Puzzle[]): Puzzle {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const dayIndex = Math.floor(
-    (today.getTime() - LAUNCH_DATE.getTime()) / 86400000
-  );
-  return puzzles[dayIndex % puzzles.length];
-}
-```
-
-Future upgrade path: on BootScene, attempt to fetch
-`https://cdn.glitchsalad.app/puzzles.json`. If successful,
-cache in preferences under key `puzzles_remote`. Fall back
-to bundled puzzles.json if fetch fails or is unavailable.
-
----
-
-## Skin System
-```typescript
-// skins/skins.ts
-export const SKINS: Record<string, Skin> = {
-  default: {
-    id: 'default',
-    name: 'Default',
-    price: 'free',
-    tileFill: 0x2d2d2d,
-    tileStroke: 0x555555,
-    tileActive: 0x4a90d9,
-    tileSolved: 0x27ae60,
-    tileDeactivated: 0x1a1a1a,
-    letterColor: '#ffffff',
-    background: 0x1a1a1a,
-    font: 'monospace'
-  },
-  synthwave: {
-    id: 'synthwave',
-    name: 'Synthwave',
-    price: 'skin_synthwave',   // RevenueCat product ID
-    tileFill: 0x1a0533,
-    tileStroke: 0xff00ff,
-    tileActive: 0xff00ff,
-    tileSolved: 0x00ffff,
-    tileDeactivated: 0x0d0d1a,
-    letterColor: '#00ffff',
-    background: 0x0d0d1a,
-    font: 'monospace'
-  },
-  pixel: {
-    id: 'pixel',
-    name: 'Game Boy',
-    price: 'skin_pixel',
-    tileFill: 0x0f380f,
-    tileStroke: 0x306230,
-    tileActive: 0x8bac0f,
-    tileSolved: 0x306230,
-    tileDeactivated: 0x071607,
-    letterColor: '#9bbc0f',
-    background: 0x0f380f,
-    font: 'monospace'
-  },
-  darkfantasy: {
-    id: 'darkfantasy',
-    name: 'Dark Souls',
-    price: 'skin_darkfantasy',
-    tileFill: 0x1c1007,
-    tileStroke: 0x8b6914,
-    tileActive: 0x8b6914,
-    tileSolved: 0x4a3000,
-    tileDeactivated: 0x0a0704,
-    letterColor: '#c9a84c',
-    background: 0x0d0a06,
-    font: 'serif'
-  }
-}
-```
-
----
-
-## IAP Products
-Configure in App Store Connect + Google Play Console,
-map in RevenueCat dashboard:
-
-| Product ID         | Type             | Price  |
-|--------------------|------------------|--------|
-| remove_ads         | Non-consumable   | $1.99  |
-| skin_synthwave     | Non-consumable   | $0.99  |
-| skin_pixel         | Non-consumable   | $0.99  |
-| skin_darkfantasy   | Non-consumable   | $0.99  |
-| skin_bundle        | Non-consumable   | $1.99  |
-
-```typescript
-// IAPService.ts
-import { Purchases } from '@revenuecat/purchases-capacitor';
-import { Capacitor } from '@capacitor/core';
-
-export async function initIAP() {
-  if (!Capacitor.isNativePlatform()) return;
-  await Purchases.configure({ apiKey: 'RC_KEY' });
-}
-
-export async function hasEntitlement(id: string): Promise<boolean> {
-  if (!Capacitor.isNativePlatform()) return false;
-  const { customerInfo } = await Purchases.getCustomerInfo();
-  return id in customerInfo.entitlements.active;
-}
-
-export async function restorePurchases() {
-  if (!Capacitor.isNativePlatform()) return;
-  await Purchases.restorePurchases();
-}
-```
-
----
-
-## Ads (AdMob)
-- Show interstitial after every 2 completed puzzles
-- Never show if `remove_ads` entitlement is active
-- Guard all calls with `Capacitor.isNativePlatform()`
-- Preload next interstitial immediately after showing one
-- Use test ad IDs during development
-
----
-
-## Progress Persistence
-Keys stored via @capacitor/preferences:
-
-| Key                    | Type       | Description                        |
-|------------------------|------------|------------------------------------|
-| solved_ids             | number[]   | Puzzle IDs completed               |
-| solved_times           | object     | Map of puzzle ID → completion time |
-| active_skin            | string     | Current skin ID                    |
-| puzzles_solved_count   | number     | Total count (for ad frequency)     |
-| last_played_date       | string     | ISO date string                    |
-| notification_scheduled | boolean    | Whether daily notif is set up      |
-| puzzles_remote         | string     | Cached remote puzzles JSON         |
-
----
-
-## Daily Notification
-Schedule once on first launch, repeats daily at 9am.
-
-```typescript
-import { LocalNotifications } from '@capacitor/local-notifications';
-
-export async function scheduleDailyNotification() {
-  const perm = await LocalNotifications.requestPermissions();
-  if (perm.display !== 'granted') return;
-
-  const pending = await LocalNotifications.getPending();
-  if (pending.notifications.length > 0) return;
-
-  await LocalNotifications.schedule({
-    notifications: [{
-      id: 1,
-      title: "New puzzle unlocked",
-      body: "Today's challenge is live. How fast can you solve it?",
-      schedule: {
-        on: { hour: 9, minute: 0 },
-        repeats: true,
-        allowWhileIdle: true
-      }
-    }]
-  });
-}
-```
-
----
-
-## Build Order (MVP)
-1. Vite + Phaser 3 + Capacitor scaffold
-2. Static test puzzle rendered on 4x4 grid
-3. Swipe input with 8-directional adjacency validation
-4. Word validation against puzzle data
-5. Tile deactivation logic (ownership map)
-6. Hint boxes with letter-count display + fill on solve
-7. Win condition → WinScene with time + share
-8. PuzzleLoader with date-math daily selection
-9. ProgressService (solved IDs, streak, ad counter)
-10. SkinManager + default skin
-11. AdService with interstitial frequency logic
-12. IAPService in sandbox mode
-13. Skin selector in MenuScene
-14. NotificationService
-15. BootScene: remote puzzle fetch attempt + fallback
-
----
-
-## Copilot Notes
-- All game objects are Phaser GameObjects on canvas — zero DOM elements
-
-## Input System — Feel and Precision
-
-### Core principle
-All pointer events are handled at the SCENE level, not on
-individual tiles. This gives full control over what counts
-as a valid interaction at every moment.
-
-```typescript
-// GameScene.ts — wire up in create()
-this.input.on('pointerdown', this.onPointerDown, this);
-this.input.on('pointermove', this.onPointerMove, this);
-this.input.on('pointerup', this.onPointerUp, this);
-```
-
----
-
-### Hitbox — circular, not full tile
-Each tile occupies a square cell but its INTERACTIVE AREA
-is a circle centered on the tile, with radius = 38% of cell
-size. This creates a deliberate dead zone (~24% gap) between
-adjacent tile hitboxes, preventing accidental activations
-while swiping across the grid.
-
-```typescript
-const CELL_SIZE = Math.floor(Math.min(screenW, screenH) * 0.22);
-const HIT_RADIUS = CELL_SIZE * 0.38;
-
-function getTileAtPoint(x: number, y: number): Tile | null {
-  for (const tile of allTiles) {
-    if (tile.deactivated) continue;
-    const dx = x - tile.centerX;
-    const dy = y - tile.centerY;
-    if (Math.sqrt(dx * dx + dy * dy) <= HIT_RADIUS) return tile;
+function getTileAt(x: number, y: number): Tile | null {
+  for (const t of tiles) {
+    if (t.state === 'deactivated') continue;
+    const c = getTileCenter(t.row, t.col);
+    const d = Math.hypot(x - c.x, y - c.y);
+    if (d <= HIT_RADIUS) return t;
   }
   return null;
 }
 ```
 
-The visual tile (rounded rectangle) can be larger than the
-hitbox — it fills more of the cell for a clean look, but
-selection is governed purely by the circle.
+### Behaviors the state machine implements (these are non-negotiable for feel)
 
----
+| Situation | Behavior |
+|---|---|
+| Pointer enters adjacent tile's hitbox | Add to chain, light haptic |
+| Pointer enters second-to-last tile in chain | Backtrack: remove last tile, light haptic |
+| Pointer enters non-adjacent tile's hitbox | Cancel entire chain |
+| Pointer in dead zone between tiles | Hold current chain, do nothing |
+| Pointer exits grid container's padded bounds | Cancel chain |
+| Pointer on already-selected tile (not second-to-last) | Ignore — no add, no cancel (user is wiggling) |
+| `pointerup` on valid word | Submit, animate found-pending |
+| `pointerup` on invalid word | Brief shake, warning haptic, clear chain after 300 ms |
+| Multi-touch | Ignore secondary pointers (only track `pointerId === 0`) |
 
-### Selection state machine
-Four states. Only valid transitions are allowed:
+The state machine is already written. Just wire `getTileCenter` to read DOM positions.
 
-```
-IDLE → SELECTING (pointerdown on a tile)
-SELECTING → SELECTING (valid adjacent tile added)
-SELECTING → SELECTING (backtrack removes last tile)
-SELECTING → IDLE (pointerup → submit attempt)
-SELECTING → IDLE (cancel: outside board or non-adjacent)
-IDLE → IDLE (tap on deactivated tile → do nothing)
-```
+### `getTileCenter`
 
----
-
-### pointerdown
 ```typescript
-onPointerDown(pointer: Phaser.Input.Pointer) {
-  const tile = getTileAtPoint(pointer.x, pointer.y);
-  if (!tile) return; // tapped dead zone or outside board — ignore
-
-  this.state = 'SELECTING';
-  this.chain = [tile];
-  tile.setHighlight(true);
-  this.haptics.impact({ style: ImpactStyle.Light });
-  this.redrawPath();
+function getTileCenter(row: number, col: number): { x: number; y: number } {
+  const el = tiles[row][col].element;
+  const rect = el.getBoundingClientRect();
+  const gridRect = container.getBoundingClientRect();
+  return {
+    x: rect.left + rect.width / 2 - gridRect.left,
+    y: rect.top + rect.height / 2 - gridRect.top,
+  };
 }
 ```
 
----
+Recompute on `resize` and on `orientationchange` — the InputManager caches centers but invalidates the cache when told.
 
-### pointermove — the most critical method
+### Path drawing
+
+On every `chainChanged` event, rebuild the SVG path `d` attribute:
+
 ```typescript
-onPointerMove(pointer: Phaser.Input.Pointer) {
-  if (this.state !== 'SELECTING') return;
-  if (!pointer.isDown) return;
-
-  const tile = getTileAtPoint(pointer.x, pointer.y);
-  const last = this.chain[this.chain.length - 1];
-
-  // In dead zone between tiles — hold current selection, do nothing
-  if (!tile) {
-    // But if pointer leaves the board boundary entirely → cancel
-    if (this.isOutsideBoard(pointer.x, pointer.y)) {
-      this.cancelSelection();
-    }
-    return;
-  }
-
-  // Already the last tile — hovering, no change
-  if (tile === last) return;
-
-  // Backtracking: pointer re-entered second-to-last tile
-  // Remove last tile from chain instead of adding a new one
-  const prevIndex = this.chain.indexOf(tile);
-  if (prevIndex === this.chain.length - 2) {
-    const removed = this.chain.pop();
-    removed?.setHighlight(false);
-    this.haptics.impact({ style: ImpactStyle.Light });
-    this.redrawPath();
-    return;
-  }
-
-  // Tile already in chain but not second-to-last → ignore
-  // (don't cancel, don't add — player may be wiggling)
-  if (prevIndex >= 0) return;
-
-  // Not adjacent to last selected tile → cancel entire selection
-  if (!isAdjacent(last, tile)) {
-    this.cancelSelection();
-    return;
-  }
-
-  // Valid adjacent tile — add to chain
-  this.chain.push(tile);
-  tile.setHighlight(true);
-  this.haptics.impact({ style: ImpactStyle.Light });
-  this.redrawPath();
+function buildPathD(chain: Tile[]): string {
+  if (chain.length < 1) return '';
+  const points = chain.map(t => getTileCenter(t.row, t.col));
+  let d = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 1; i < points.length; i++) d += ` L ${points[i].x} ${points[i].y}`;
+  return d;
 }
 ```
 
-**Why not cancel on non-adjacent instead of just ignoring?**
-The gap between hitboxes means the pointer can briefly be
-over a non-adjacent tile's zone if the player swipes fast
-at an angle. Canceling there feels broken. Only cancel if
-the pointer clearly crosses into a non-adjacent tile that is
-itself within HIT_RADIUS — meaning the player intentionally
-landed on a wrong tile.
+Set the same `d` on both `.path-halo` and `.path-core`.
 
 ---
 
-### pointerup — submit or cancel
-```typescript
-onPointerUp(pointer: Phaser.Input.Pointer) {
-  if (this.state !== 'SELECTING') return;
-  if (this.chain.length === 0) return;
+## 9. Visual spec (from mockup v6, VOID skin)
 
-  const word = this.chain.map(t => t.letter).join('');
-  const match = this.findWordMatch(word);
+This is the free, default skin and the reference look for the whole game.
 
-  if (match) {
-    this.onWordFound(match);
-  } else {
-    this.shakeChain();         // brief horizontal tween on each tile
-    this.haptics.notification({ type: NotificationType.Warning });
-    this.time.delayedCall(300, () => this.clearChain());
-  }
+### Layout
+
+- App fills viewport. Centered column max-width 390px on desktop, full-width on mobile.
+- Page background: radial gradient from `#0d1118` at center to `#07090e` at edges, fixed.
+- Vertical stack inside the column: Header (60 px) → Streak dots row (32 px) → Title (50 px) → Grid (≈360 px) → Hint rows (auto).
+- Gaps between sections: 16 px.
+
+### Header
+
+Single row, 3 columns: `[hamburger]` left, `LEVEL 1` center, `0:47` right.
+
+```css
+.header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 16px 18px;
+  color: var(--chrome-text);
+  font-family: 'Space Mono', monospace;
+  font-size: 14px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.header .level { justify-self: center; }
+.header .timer { justify-self: end; font-variant-numeric: tabular-nums; }
+```
+
+### Streak dots
+
+Row of 7 small dots, 8 px diameter, 8 px gap. First N are filled (`--dot-active`), rest are empty (`--dot-inactive`). N = current streak modulo 7.
+
+### Title
+
+Puzzle theme display, centered, 22 px, weight 700, letter-spacing 0.04em, color `var(--title-color)`, with a subtle text-shadow glow of `var(--title-glow)` at 0.4 opacity (`text-shadow: 0 0 12px ...`).
+
+### Grid
+
+See §7. The mockup uses tile background `linear-gradient(145deg, #1e2236, #131824)` for idle and `linear-gradient(145deg, #0d3a42, #071e26)` for selected, with selected glow `#00D4E8` at 40% opacity, scale 1.07. Letter color `#cfd6e1` idle, `#9af0ff` selected.
+
+### Hint rows
+
+One row per answer entry, sorted alphabetically by `displayKey`. Each row is a flex container of slot boxes:
+
+```css
+.hint-row {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  margin-top: 6px;
+}
+.hint-row .word-gap {
+  width: 12px;       /* visual separator between words in multi-word answers */
+}
+.hint-slot {
+  width: 22px;
+  height: 30px;
+  border-radius: 6px;
+  background: var(--hint-empty-bg);
+  border: 1px solid var(--hint-empty-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: transparent;
+  font-family: 'Space Mono', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  transition: background 200ms ease, border-color 200ms ease, color 200ms ease;
+}
+.hint-slot[data-filled="true"] {
+  color: var(--hint-solved-letter);
+}
+.hint-row[data-solved="true"] .hint-slot {
+  background: var(--hint-solved-bg);
+  border-color: var(--hint-solved-border);
 }
 ```
 
+Multi-word answers (like `LARA CROFT`): one `.hint-row` containing slots for "LARA", a `.word-gap`, then slots for "CROFT". Filling LARA fills its 4 slots; filling CROFT fills the remaining 5. The whole row only switches to `data-solved="true"` once **all parts** are found.
+
+### Win state
+
+When all answers are found, show a centered modal (DOM, no canvas). Display: theme title, time taken, current streak, two buttons (`Share`, `Done`). Share uses `@capacitor/share`.
+
+### Things explicitly cut from the mockup
+
+- Background scanlines
+- Background noise texture
+- RGB-split on deactivation
+- Vignette
+- Near-word pulse
+- Ribbon-disappear effect on deactivate
+- Third path layer (we keep halo + core, drop the inner "body" layer)
+
+These were sources of GPU jank and visual noise. Keep clean cyan-on-dark.
+
 ---
 
-### Tap — single tile at a time
-Tapping individual tiles builds the chain without holding.
-This is the same code path: pointerdown adds the first tile,
-pointerup immediately tries to submit it (fails for single
-letter, shakes), and the chain is NOT cleared — it stays.
+## 10. Skin system
 
-Wait — that breaks single-tap mode. Handle it like this:
+Three skins ship, monetized as IAP:
+
+| Skin ID | Name | Price | RevenueCat product ID |
+|---|---|---|---|
+| `void` | Void | free | — |
+| `synthwave` | Synthwave | $0.99 | `skin_synthwave` |
+| `gameboy` | Game Boy | $0.99 | `skin_pixel` |
+| (bundle) | All skins | $1.99 | `skin_bundle` |
+
+A skin is **only** a set of CSS custom property values. No JS configuration, no per-skin behavior toggles.
+
+### `src/skins/registry.ts`
 
 ```typescript
-onPointerUp(pointer: Phaser.Input.Pointer) {
-  const wasTap = pointer.getDuration() < 200
-               && pointer.getDistance() < 10;
+export interface SkinMeta {
+  id: string;
+  name: string;
+  productId: string | null;       // null = free
+  bundleProductId?: string;       // entitlement that also unlocks this skin
+}
 
-  if (wasTap && this.chain.length > 0) {
-    // Single tap — keep chain, don't submit yet
-    // Submit only if the new tile was added (handled in pointerdown)
-    // and word length matches a valid target length
-    const word = this.chain.map(t => t.letter).join('');
-    const possibleMatch = this.couldBeValidWord(word);
-    if (!possibleMatch) {
-      // Chain can't possibly form any word — clear it
-      this.shakeChain();
-      this.time.delayedCall(300, () => this.clearChain());
-    }
-    // Otherwise leave chain active for more taps
-    return;
-  }
+export const SKINS: SkinMeta[] = [
+  { id: 'void',      name: 'Void',      productId: null },
+  { id: 'synthwave', name: 'Synthwave', productId: 'skin_synthwave', bundleProductId: 'skin_bundle' },
+  { id: 'gameboy',   name: 'Game Boy',  productId: 'skin_pixel',     bundleProductId: 'skin_bundle' },
+];
+```
 
-  // Swipe end — always attempt submit
-  this.attemptSubmit();
+### `src/skins/skins.css`
+
+```css
+:root {
+  /* default = void */
+  --bg-center: #0d1118;
+  --bg-edge: #07090e;
+  --tile-bg: linear-gradient(145deg, #1e2236, #131824);
+  --tile-border: #2a3148;
+  --tile-letter: #cfd6e1;
+  --tile-selected-bg: linear-gradient(145deg, #0d3a42, #071e26);
+  --tile-selected-border: #00D4E8;
+  --tile-selected-letter: #9af0ff;
+  --tile-selected-glow: #00D4E866;
+  --tile-found-bg: linear-gradient(145deg, #143844, #0a1f26);
+  --tile-found-border: #1d6a78;
+  --tile-found-letter: #6fc4d4;
+  --path-color: #00D4E8;
+  --hint-empty-bg: #14182230;
+  --hint-empty-border: #2a3148;
+  --hint-solved-bg: #1e4d2b;
+  --hint-solved-border: #2faa55;
+  --hint-solved-letter: #b5f2c4;
+  --chrome-text: #8590a7;
+  --title-color: #cfd6e1;
+  --title-glow: #00D4E8;
+  --dot-active: #00D4E8;
+  --dot-inactive: #2a3148;
+}
+
+.skin-synthwave {
+  --bg-center: #1a0826;
+  --bg-edge: #0a0414;
+  --tile-bg: linear-gradient(145deg, #2a0d3c, #150620);
+  --tile-border: #4a1f6a;
+  --tile-letter: #f8d8ff;
+  --tile-selected-bg: linear-gradient(145deg, #ff2bd6, #6a0f9a);
+  --tile-selected-border: #ff7af0;
+  --tile-selected-letter: #ffffff;
+  --tile-selected-glow: #ff2bd699;
+  --tile-found-bg: linear-gradient(145deg, #3c1450, #1a0828);
+  --tile-found-border: #7a2ca8;
+  --tile-found-letter: #d895f0;
+  --path-color: #ff2bd6;
+  --hint-empty-bg: #15062030;
+  --hint-empty-border: #4a1f6a;
+  --hint-solved-bg: #ff2bd6;
+  --hint-solved-border: #ff7af0;
+  --hint-solved-letter: #ffffff;
+  --chrome-text: #c89cdb;
+  --title-color: #f8d8ff;
+  --title-glow: #ff2bd6;
+  --dot-active: #ff2bd6;
+  --dot-inactive: #4a1f6a;
+}
+
+.skin-gameboy {
+  --bg-center: #2d402d;
+  --bg-edge: #1a2a1a;
+  --tile-bg: linear-gradient(145deg, #6a8060, #4a5e44);
+  --tile-border: #2d3e2d;
+  --tile-letter: #0d1a0d;
+  --tile-selected-bg: linear-gradient(145deg, #b5d68f, #7ea05c);
+  --tile-selected-border: #1a2a1a;
+  --tile-selected-letter: #0d1a0d;
+  --tile-selected-glow: #b5d68f99;
+  --tile-found-bg: linear-gradient(145deg, #3d5238, #2a3e26);
+  --tile-found-border: #1a2a1a;
+  --tile-found-letter: #8aa872;
+  --path-color: #0d1a0d;
+  --hint-empty-bg: #1a2a1a40;
+  --hint-empty-border: #2d3e2d;
+  --hint-solved-bg: #b5d68f;
+  --hint-solved-border: #1a2a1a;
+  --hint-solved-letter: #0d1a0d;
+  --chrome-text: #8aa872;
+  --title-color: #b5d68f;
+  --title-glow: #b5d68f;
+  --dot-active: #b5d68f;
+  --dot-inactive: #2d3e2d;
 }
 ```
 
-`couldBeValidWord(prefix)` — returns true if any unfound
-word starts with this exact letter sequence (using the
-known paths). Gives tap mode a safety net.
-
----
-
-### Path line rendering
-Draw a line connecting the centers of all tiles in the chain.
-Use a Phaser Graphics object, cleared and redrawn on every
-chain change.
+### Switching skins
 
 ```typescript
-redrawPath() {
-  this.pathGraphics.clear();
-  if (this.chain.length < 2) return;
-
-  this.pathGraphics.lineStyle(CELL_SIZE * 0.18, 0x4a90d9, 0.7);
-  this.pathGraphics.beginPath();
-  this.pathGraphics.moveTo(this.chain[0].centerX, this.chain[0].centerY);
-
-  for (let i = 1; i < this.chain.length; i++) {
-    this.pathGraphics.lineTo(
-      this.chain[i].centerX,
-      this.chain[i].centerY
-    );
-  }
-  this.pathGraphics.strokePath();
+function applySkin(skinId: string) {
+  document.documentElement.classList.remove('skin-void', 'skin-synthwave', 'skin-gameboy');
+  if (skinId !== 'void') document.documentElement.classList.add(`skin-${skinId}`);
 }
 ```
 
-Draw the path BELOW the tile layer so tiles render on top.
+### IAP gating
+
+When the user taps a locked skin in the menu, call `IAPService.purchase(productId)`. On success, persist their selection and call `applySkin`. On app start, check entitlements against `SKINS[].productId` and `bundleProductId` to determine which skins are unlocked.
 
 ---
 
-### Tile visual states
-Each tile has four visual states. Tween between them,
-never set values instantly:
+## 11. Capacitor 8 setup
 
-| State         | Scale | Alpha | Fill color         |
-|---------------|-------|-------|--------------------|
-| idle          | 1.0   | 1.0   | skin.tileFill      |
-| selected      | 1.08  | 1.0   | skin.tileActive    |
-| found-pending | 1.0   | 0.6   | skin.tileSolved    |
-| deactivated   | 0.0   | 0.0   | — (gone)           |
-
-"found-pending" = tile is part of a found word but still
-visible because another word shares it. It dims but stays.
-Fully deactivates when the last word using it is found.
-
----
-
-### Deactivation animation — "glitch out"
-When a tile deactivates, it should feel satisfying and
-on-brand for GlitchSalad:
+`capacitor.config.ts`:
 
 ```typescript
-glitchOut(tile: Tile) {
-  // 1. Brief RGB split: offset duplicates of the tile
-  //    (use two temporary image copies, offset ±4px in x,
-  //    tinted red and cyan, fade in 40ms then fade out)
-  // 2. Flicker: rapid alpha oscillation 3 times over 80ms
-  // 3. Scale to 0 + fade: tween scale 1→0 and alpha 1→0
-  //    over 120ms with ease-in
-  // 4. Destroy the tile game object
+import type { CapacitorConfig } from '@capacitor/cli';
 
-  const duration = 240;
-  this.tweens.add({
-    targets: tile,
-    scaleX: 0,
-    scaleY: 0,
-    alpha: 0,
-    duration: duration * 0.5,
-    delay: duration * 0.5,
-    ease: 'Cubic.In',
-    onComplete: () => tile.destroy()
+const config: CapacitorConfig = {
+  appId: 'app.glitchsalad.game',
+  appName: 'GlitchSalad',
+  webDir: 'dist',
+  ios: {
+    contentInset: 'always',
+  },
+  android: {
+    allowMixedContent: false,
+  },
+  plugins: {
+    LocalNotifications: {
+      smallIcon: 'ic_stat_icon',
+      iconColor: '#00D4E8',
+    },
+    SplashScreen: {
+      launchShowDuration: 800,
+      backgroundColor: '#07090e',
+      showSpinner: false,
+    },
+  },
+};
+
+export default config;
+```
+
+Capacitor 8 requires Xcode 16+ and Android Studio Otter (2025.2.1)+. Bump `minSdkVersion` and `iOSDeploymentTarget` per the v8 migration guide.
+
+---
+
+## 12. Services — port verbatim, just bump versions
+
+### IAPService (RevenueCat)
+
+The previous repo's `src/services/IAPService.ts` is already correct in shape:
+
+```typescript
+import { Purchases } from '@revenuecat/purchases-capacitor';
+import { Capacitor } from '@capacitor/core';
+
+export const PRODUCTS = {
+  REMOVE_ADS: 'remove_ads',
+  SKIN_SYNTHWAVE: 'skin_synthwave',
+  SKIN_PIXEL: 'skin_pixel',
+  SKIN_BUNDLE: 'skin_bundle',
+} as const;
+
+export async function initIAP(apiKey: string) {
+  if (!Capacitor.isNativePlatform()) return;
+  await Purchases.configure({ apiKey });
+}
+
+export async function hasEntitlement(productId: string): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) return false;
+  const { customerInfo } = await Purchases.getCustomerInfo();
+  return productId in customerInfo.entitlements.active;
+}
+
+export async function purchase(productId: string): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) return false;
+  const { offerings } = await Purchases.getOfferings();
+  const pkg = offerings.current?.availablePackages.find(
+    p => p.product.identifier === productId
+  );
+  if (!pkg) throw new Error(`Product ${productId} not found in offerings`);
+  await Purchases.purchasePackage({ aPackage: pkg });
+  return hasEntitlement(productId);
+}
+
+export async function restore() {
+  if (!Capacitor.isNativePlatform()) return;
+  await Purchases.restorePurchases();
+}
+```
+
+### AdService (AdMob)
+
+```typescript
+import { AdMob } from '@capacitor-community/admob';
+import { Capacitor } from '@capacitor/core';
+import { hasEntitlement, PRODUCTS } from './IAPService';
+
+const INTERSTITIAL_ID_IOS = 'ca-app-pub-XXX/XXX';
+const INTERSTITIAL_ID_ANDROID = 'ca-app-pub-XXX/XXX';
+const PUZZLES_PER_AD = 2;
+
+export async function initAds() {
+  if (!Capacitor.isNativePlatform()) return;
+  await AdMob.initialize({ testingDevices: [], initializeForTesting: false });
+  await prepareInterstitial();
+}
+
+async function prepareInterstitial() {
+  const adId = Capacitor.getPlatform() === 'ios' ? INTERSTITIAL_ID_IOS : INTERSTITIAL_ID_ANDROID;
+  await AdMob.prepareInterstitial({ adId });
+}
+
+export async function maybeShowInterstitial(puzzlesSolvedCount: number) {
+  if (!Capacitor.isNativePlatform()) return;
+  if (await hasEntitlement(PRODUCTS.REMOVE_ADS)) return;
+  if (puzzlesSolvedCount % PUZZLES_PER_AD !== 0) return;
+  await AdMob.showInterstitial();
+  await prepareInterstitial();
+}
+```
+
+### NotificationService — daily 9 AM
+
+```typescript
+import { LocalNotifications } from '@capacitor/local-notifications';
+import { Preferences } from '@capacitor/preferences';
+
+export async function scheduleDaily() {
+  const { value } = await Preferences.get({ key: 'notification_scheduled' });
+  if (value === 'true') return;
+
+  const perm = await LocalNotifications.requestPermissions();
+  if (perm.display !== 'granted') return;
+
+  await LocalNotifications.schedule({
+    notifications: [{
+      id: 1,
+      title: 'Nuevo puzzle disponible',
+      body: 'Tu reto diario de GlitchSalad está listo.',
+      schedule: { on: { hour: 9, minute: 0 }, repeats: true, allowWhileIdle: true },
+    }],
   });
-  // RGB flicker handled separately with timeline
+
+  await Preferences.set({ key: 'notification_scheduled', value: 'true' });
 }
 ```
 
----
+### ProgressService — preferences keys
 
-### Cancel selection
-```typescript
-cancelSelection() {
-  this.chain.forEach(t => t.setHighlight(false));
-  this.chain = [];
-  this.pathGraphics.clear();
-  this.state = 'IDLE';
-}
-```
-
-Called when:
-- Pointer leaves board boundary during swipe
-- Pointer lands on a non-adjacent tile during swipe
-- pointerup with invalid word after shake delay
-
-NOT called:
-- Pointer is in dead zone between tiles (hold state)
-- Pointer returns to previous tile in chain (backtrack instead)
+| Key | Type | Purpose |
+|---|---|---|
+| `solved_ids` | `string[]` JSON | Puzzle IDs the user has completed |
+| `solved_times` | `Record<id, seconds>` JSON | Time-to-solve per puzzle |
+| `puzzles_solved_count` | `number` | Total count (drives ad cadence) |
+| `active_skin` | `string` | Current skin ID |
+| `last_played_date` | ISO date string | For streak tracking |
+| `current_streak` | `number` | Consecutive daily plays |
+| `best_streak` | `number` | All-time best |
+| `notification_scheduled` | `'true' \| 'false'` | One-time setup flag |
+| `puzzles_remote` | JSON string | Cached remote puzzles (future CDN drop) |
 
 ---
 
-### isOutsideBoard()
-```typescript
-isOutsideBoard(x: number, y: number): boolean {
-  const padding = CELL_SIZE * 0.5; // generous margin
-  return x < boardLeft - padding
-      || x > boardRight + padding
-      || y < boardTop - padding
-      || y > boardBottom + padding;
-}
-```
+## 13. MVP build order
 
-Give a generous padding so a fast swipe that exits the board
-by a few pixels doesn't immediately cancel. Only cancel
-if clearly outside.
+Build incrementally, verifying each step before moving on:
+
+1. **Scaffold.** Vite + TypeScript + Capacitor 8. `index.html` with `<div id="app">`. Mount a placeholder.
+2. **Port engine-agnostic logic.** Copy `Tile.ts`, `InputManager.ts`, `PuzzleParser.ts`, `PuzzleLoader.ts`, `tileOwnership.ts`, `utils/*`, `services/*`, `types/puzzle.ts`, `data/puzzles.json`, all `scripts/test-*.ts`. Drop their Phaser imports if any sneak through.
+3. **Fix Grid.ts coordinates** (§4). Delete `coordMap.ts`. Update `scripts/test-grid.ts` expectations. Run `validate-puzzles.ts` and `test-grid.ts` — both must pass.
+4. **Render a static puzzle.** GameView mounts: header (hardcoded text), 4×4 grid, hint rows. Visually it should match mockup v6.
+5. **Wire input.** Pointer events on the grid container, `setPointerCapture`, hit detection, InputManager state machine. Selection highlights work, path SVG draws between selected tiles.
+6. **Word validation.** On `pointerup`, check letter sequence against unfound parts. On match, transition tiles to `found-pending`.
+7. **Deactivation.** When a tile's ownership set empties, set `data-state="deactivated"`. CSS transition handles the visual.
+8. **Hint rows.** Fill slots as parts are found. Light up row when all parts of an answer complete.
+9. **Timer + win condition.** Count up from 0:00, freeze on win. Show WinView modal.
+10. **Daily puzzle selection.** Use `PuzzleLoader.ts` date math from `LAUNCH_DATE = '2025-01-01'`.
+11. **Progress persistence.** Save solved IDs, times, streak. Restore on app start.
+12. **Skins.** Skin picker in MenuView. Apply skin class on root. Persist `active_skin`.
+13. **AdMob.** Interstitial every 2 solved puzzles, gated by `remove_ads`.
+14. **RevenueCat IAP.** Wire skin purchases, restore button, entitlement check.
+15. **Daily notifications.** Schedule on first launch.
+16. **Capacitor builds.** `npx cap add ios && npx cap add android`, copy, test on device.
+
+Each step has visible output. If step N feels wrong, the bug is in step N — don't pile features on a broken base.
 
 ---
 
-### Haptic feedback timing
-- Tile added to chain: Light impact
-- Backtrack (tile removed): Light impact (same, feels natural)
-- Word found: Medium impact + short delay + Medium impact
-- Invalid word: Warning notification
-- Puzzle solved: Heavy impact + 200ms delay + Heavy impact
+## 14. Critical "don'ts"
+
+These are the patterns that killed performance in the previous DOM attempt. Avoid all of them:
+
+- **Don't use React.** Imperative gesture state doesn't benefit from declarative re-rendering. React with frequent state updates on pointermove will tank the frame rate, exactly what burned us before.
+- **Don't attach pointer listeners per-tile.** All input goes on the grid container.
+- **Don't animate with `setInterval` or `setTimeout` loops.** Use CSS transitions. The browser already animates them on the compositor.
+- **Don't use `backdrop-filter`, `filter: blur()`, or heavy `box-shadow` blur values on many elements.** They force the GPU to recomposite. The mockup uses one subtle box-shadow on selected tiles (only 1 tile at a time) and that's it.
+- **Don't recalculate tile centers on every pointermove.** Cache them; invalidate on resize / orientationchange.
+- **Don't trigger layout in pointermove handlers.** Reading `getBoundingClientRect()` once per pointer interaction (in pointerdown) is fine. Reading it 60× per second on pointermove forces synchronous layout.
+- **Don't use third-party gesture libraries.** Pointer Events are well-supported on every target platform; the InputManager state machine already handles every edge case.
+- **Don't render the path with DOM elements.** SVG paths only. The browser can update an SVG `d` attribute 60 times per second cheaply.
+- **Don't ship copyrighted skin assets disguised as IAP.** "Game Boy" and "Synthwave" are aesthetic genres, not branded IP. No Nintendo green, no Trapper Keeper logos, no recognizable franchise palettes.
 
 ---
 
-### Multi-touch
-Ignore all secondary pointers. Only track pointer index 0.
-```typescript
-onPointerDown(pointer: Phaser.Input.Pointer) {
-  if (pointer.id !== 0) return;
-  // ...
-}
-```
+## 15. Notes for the agent
 
-- All Capacitor plugin calls wrapped in isNativePlatform() guards
-- Skin is passed into GameScene via scene init data object,
-  never read mid-game
-- Tile ownership map is computed once at puzzle load,
-  not recalculated during gameplay
-- Multi-word answers (like "LARA CROFT") are found part by
-  part — each part validated independently, same answer entry
-- Hint boxes sorted alphabetically on puzzle load,
-  order never changes during gameplay
-- puzzles.json must be pre-validated offline before committing —
-  build a separate Node.js validator script that checks every
-  puzzle for: valid adjacency on all paths, correct grid letters,
-  no out-of-bounds coordinates
+- Run `npm run validate` (script that runs `validate-puzzles.ts`, `test-grid.ts`, `test-selection.ts`, `test-ownership.ts`, `test-deactivation.ts`) after every change to the game logic. All five must stay green.
+- Always test on a real device for input feel. Desktop browser DevTools touch emulation is a rough approximation, not the truth.
+- When in doubt about visuals, open `glitchsalad_mockup_v6.html` and copy the CSS values exactly. The mockup is the source of truth for the VOID skin look.
+- Capacitor plugin calls must be guarded by `Capacitor.isNativePlatform()` so web builds don't throw. The web build is useful for fast iteration; only IAP, ads, and notifications need to no-op on web.
+- `package.json` should not contain `phaser`, `@types/phaser`, or any Capacitor 6 versions. Verify before shipping.
+
+That's the full spec. Build incrementally, keep the green tests green, and the result will match the mockup.

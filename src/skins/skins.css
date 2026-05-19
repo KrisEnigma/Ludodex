@@ -27,6 +27,8 @@
   --tile-found-letter: #cfd6e1;
   --tile-deactivated-opacity: 0.55;
   --path-color: #00d4e8;
+  --primary-action-bg: #00d4e8;
+  --primary-action-text: #07090e;
   --hint-empty-bg: rgba(20, 24, 34, 0.19);
   --hint-empty-border: #2a3148;
   --hint-empty-letter: transparent;
@@ -67,6 +69,8 @@
   --tile-found-border: #7a2ca8;
   --tile-found-letter: #d895f0;
   --path-color: #ff2bd6;
+  --primary-action-bg: #ff2bd6;
+  --primary-action-text: #ffffff;
   --hint-empty-bg: rgba(21, 6, 32, 0.19);
   --hint-empty-border: #4a1f6a;
   --hint-solved-bg: #ff2bd6;
@@ -106,6 +110,8 @@
   --tile-found-border: #1a2a1a;
   --tile-found-letter: #8aa872;
   --path-color: #0d1a0d;
+  --primary-action-bg: #b5d68f;
+  --primary-action-text: #0d1a0d;
   --hint-empty-bg: rgba(26, 42, 26, 0.25);
   --hint-empty-border: #2d3e2d;
   --hint-solved-bg: #b5d68f;
