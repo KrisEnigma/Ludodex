@@ -88,7 +88,7 @@ export class HowToPlayView {
 
     const nextBtn = document.createElement('button');
     nextBtn.type = 'button';
-    nextBtn.className = 'action-button how-to-play-nav-next';
+    nextBtn.className = 'button-primary how-to-play-nav-next';
     nextBtn.textContent = isLast ? t('how_to_play.got_it') : t('how_to_play.next');
     nextBtn.addEventListener('click', () => {
       if (isLast) {

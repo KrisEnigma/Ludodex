@@ -99,6 +99,14 @@
 }
 :root {
   color-scheme: dark;
+  --type-display-xl: 76px;
+  --type-display-l: 64px;
+  --type-display-m: 56px;
+  --type-h1: 24px;
+  --type-h2: 18px;
+  --type-body: 14px;
+  --type-caption: 12px;
+  --type-label: 11px;
 }
 
 * {
@@ -169,7 +177,7 @@ body {
 
 .view-title {
   margin: 0;
-  font-size: 22px;
+  font-size: var(--type-h1);
   font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--title-color);
@@ -178,7 +186,7 @@ body {
 
 .view-subtitle {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--type-caption);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--chrome-text);
@@ -198,7 +206,7 @@ body {
 
 .game-words-progress {
   margin: 0;
-  font-size: 12px;
+  font-size: var(--type-caption);
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--chrome-text);
@@ -207,7 +215,7 @@ body {
 
 .game-instructions {
   margin: 2px 0 0;
-  font-size: 11px;
+  font-size: var(--type-label);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--chrome-text);
@@ -215,12 +223,10 @@ body {
 }
 
 .button-primary,
-.action-button,
 .button-secondary,
-.secondary-button,
 .button-tertiary {
   font-family: inherit;
-  font-size: 14px;
+  font-size: var(--type-body);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -235,22 +241,7 @@ body {
   padding: 13px;
 }
 
-.action-button {
-  width: 100%;
-  border: none;
-  background: var(--primary-action-bg);
-  color: var(--primary-action-text);
-  padding: 13px;
-}
-
 .button-secondary {
-  border: 1px solid var(--button-border);
-  background: transparent;
-  color: var(--button-text);
-  padding: 12px;
-}
-
-.secondary-button {
   border: 1px solid var(--button-border);
   background: transparent;
   color: var(--button-text);
@@ -263,7 +254,7 @@ body {
   color: var(--chrome-text);
   padding: 2px 0 0;
   letter-spacing: 0.12em;
-  font-size: 12px;
+  font-size: var(--type-caption);
 }
 
 .button-primary,
@@ -959,7 +950,7 @@ body {
   font-family: 'Space Mono', monospace;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  font-size: 11px;
+  font-size: var(--type-label);
   background: color-mix(in srgb, var(--primary-action-bg) 22%, transparent);
   border: 1px solid color-mix(in srgb, var(--primary-action-bg) 60%, transparent);
   color: var(--title-color);
@@ -973,7 +964,7 @@ body {
   gap: 8px;
   flex-wrap: wrap;
   color: var(--chrome-text);
-  font-size: 13px;
+  font-size: var(--type-caption);
   letter-spacing: 0.02em;
 }
 
@@ -1015,7 +1006,7 @@ body {
   border: none;
   color: var(--chrome-text);
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--type-caption);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   cursor: pointer;
@@ -1024,7 +1015,7 @@ body {
 
 .view-topbar-title {
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--type-caption);
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--title-color);
@@ -1046,7 +1037,7 @@ body {
 }
 
 .settings-section-heading {
-  font-size: 11px;
+  font-size: var(--type-label);
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--chrome-text);
@@ -1065,7 +1056,7 @@ body {
   border: 1px solid var(--button-border);
   padding: 12px;
   font-family: inherit;
-  font-size: 13px;
+  font-size: var(--type-body);
   cursor: pointer;
 }
 
@@ -1075,7 +1066,7 @@ body {
 }
 
 .win-view .view-title {
-  font-size: 22px;
+  font-size: var(--type-h1);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-align: center;
@@ -1093,7 +1084,7 @@ body {
 .win-view .win-stars {
   display: flex;
   gap: 16px;
-  font-size: 76px;
+  font-size: var(--type-display-xl);
   line-height: 1;
   letter-spacing: 0.02em;
   justify-content: center;
@@ -1130,7 +1121,7 @@ body {
 .win-headline[data-pristine="true"] .win-headline-label,
 .win-headline-label {
   font-family: inherit;
-  font-size: 18px;
+  font-size: var(--type-h2);
   font-weight: 700;
   letter-spacing: 0.28em;
   text-transform: uppercase;
@@ -1140,7 +1131,7 @@ body {
 }
 
 .win-time {
-  font-size: 64px;
+  font-size: var(--type-display-l);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--title-color);
