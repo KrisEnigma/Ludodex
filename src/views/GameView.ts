@@ -299,21 +299,14 @@ export class GameView {
   }
 
   private buildLetterSlot(partId: string, letterIndex: number, letter: string): HTMLElement {
-    const slot = document.createElement('div');
-    slot.className = 'part-letter';
+    const slot = document.createElement('span');
+    slot.className = 'hint-slot';
     slot.dataset.partId = partId;
     slot.dataset.letterIndex = String(letterIndex);
     slot.dataset.revealed = 'false';
+    slot.dataset.filled = 'false';
     slot.dataset.letter = letter;
-
-    const fillBar = document.createElement('div');
-    fillBar.className = 'part-letter-fill';
-
-    const text = document.createElement('span');
-    text.className = 'part-letter-text';
-    text.textContent = letter;
-
-    slot.append(fillBar, text);
+    slot.textContent = letter;
 
     slot.addEventListener('pointerdown', (e) => this.onHintSlotPointerDown(e, slot));
     slot.addEventListener('pointerup', () => this.onHintSlotPointerEnd(slot));
@@ -335,17 +328,20 @@ export class GameView {
     }
 
     event.preventDefault();
-    slot.classList.add('holding');
+    slot.dataset.revealing = 'true';
   }
 
   private onHintSlotPointerEnd(slot: HTMLElement): void {
-    slot.classList.remove('holding');
+    if (slot.dataset.revealed !== 'true') {
+      delete slot.dataset.revealing;
+    }
   }
 
   private async onHintSlotAnimationEnd(event: AnimationEvent, slot: HTMLElement): Promise<void> {
-    if (event.animationName !== 'hint-fill') return;
+    if (event.animationName !== 'hint-reveal-fill') return;
     if (slot.dataset.revealed === 'true') return;
-    slot.classList.remove('holding');
+    if (slot.dataset.revealing !== 'true') return;
+    delete slot.dataset.revealing;
     await this.revealSlot(slot);
   }
 
@@ -355,6 +351,7 @@ export class GameView {
     if (!partId || !Number.isFinite(letterIndex)) return;
 
     slot.dataset.revealed = 'true';
+    slot.dataset.filled = 'true';
     this.hintsUsed += 1;
 
     const state = await consumeHint();
@@ -393,10 +390,11 @@ export class GameView {
     this.hintsUsed = reveals.length;
     for (const reveal of reveals) {
       const slot = this.element.querySelector<HTMLElement>(
-        `.part-letter[data-part-id="${CSS.escape(reveal.partId)}"][data-letter-index="${reveal.letterIndex}"]`
+        `.hint-slot[data-part-id="${CSS.escape(reveal.partId)}"][data-letter-index="${reveal.letterIndex}"]`
       );
       if (slot) {
         slot.dataset.revealed = 'true';
+        slot.dataset.filled = 'true';
       }
     }
   }
