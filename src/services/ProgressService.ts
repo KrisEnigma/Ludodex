@@ -10,6 +10,7 @@ const ACTIVE_SKIN_KEY = 'active_skin';
 
 type SolvedTimesMap = Record<string, number>;
 
+
 const PROGRESS_KEYS = [
   'solved_ids',
   'solved_times',
@@ -19,11 +20,29 @@ const PROGRESS_KEYS = [
   'last_played_date'
 ] as const;
 
+const SOLVED_RATINGS_KEY = 'solved_ratings';
+
+export async function getSolvedRatings(): Promise<Record<string, number>> {
+  const raw = await Preferences.get({ key: SOLVED_RATINGS_KEY });
+  if (!raw.value) return {};
+  try {
+    return JSON.parse(raw.value) as Record<string, number>;
+  } catch {
+    return {};
+  }
+}
+
 export type ProgressSnapshot = {
   solvedCount: number;
   bestTimeSec: number | null;
   currentStreak: number;
   bestStreak: number;
+  lastPlayedDate: string | null;
+};
+
+export type StreakStatus = {
+  effective: number;
+  brokenAt: number | null;
 };
 
 function safeParse<T>(value: string | null, fallback: T): T {
@@ -91,6 +110,10 @@ export async function setActiveSkinId(skinId: string): Promise<void> {
 
 function toDayStamp(isoLike: string): string {
   const d = new Date(isoLike);
+  return formatDateKey(d);
+}
+
+function formatDateKey(d: Date): string {
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
@@ -111,43 +134,70 @@ function getBestTimeSec(solvedTimes: SolvedTimesMap): number | null {
 }
 
 export async function getProgressSnapshot(): Promise<ProgressSnapshot> {
-  const [solvedCount, solvedTimes, currentStreak, bestStreak] = await Promise.all([
+  const [solvedCount, solvedTimes, currentStreak, bestStreak, lastPlayedDate] = await Promise.all([
     getPuzzlesSolvedCount(),
     getSolvedTimes(),
     getCurrentStreak(),
-    getBestStreak()
+    getBestStreak(),
+    getLastPlayedDate()
   ]);
 
   return {
     solvedCount,
     bestTimeSec: getBestTimeSec(solvedTimes),
     currentStreak,
-    bestStreak
+    bestStreak,
+    lastPlayedDate: lastPlayedDate ? toDayStamp(lastPlayedDate) : null
   };
 }
+
+export async function getStreakStatus(now: Date = new Date()): Promise<StreakStatus> {
+  const snapshot = await getProgressSnapshot();
+  if (snapshot.currentStreak <= 0 || !snapshot.lastPlayedDate) {
+    return { effective: 0, brokenAt: null };
+  }
+
+  const today = formatDateKey(now);
+  const yesterday = formatDateKey(new Date(now.getTime() - 86_400_000));
+
+  if (snapshot.lastPlayedDate === today || snapshot.lastPlayedDate === yesterday) {
+    return { effective: snapshot.currentStreak, brokenAt: null };
+  }
+
+  return { effective: 0, brokenAt: snapshot.currentStreak };
+}
+
+import { resetHintData } from './HintService';
 
 export async function recordPuzzleCompletion(
   puzzleId: string,
   elapsedSeconds: number,
-  options: { isTodaysDaily: boolean; nowIso?: string }
+  options: { isTodaysDaily: boolean; starRating: 1 | 2 | 3; nowIso?: string }
 ): Promise<ProgressSnapshot> {
   const nowIso = options.nowIso ?? new Date().toISOString();
 
   const solvedSet = new Set(await getSolvedIds());
   solvedSet.add(puzzleId);
 
-  const [solvedTimes, previousCount, lastPlayedDate, previousStreak, previousBestStreak] = await Promise.all([
+  const [solvedTimes, previousCount, lastPlayedDate, previousStreak, previousBestStreak, ratings] = await Promise.all([
     getSolvedTimes(),
     getPuzzlesSolvedCount(),
     getLastPlayedDate(),
     getCurrentStreak(),
-    getBestStreak()
+    getBestStreak(),
+    getSolvedRatings()
   ]);
 
   const existing = solvedTimes[puzzleId];
   solvedTimes[puzzleId] = (typeof existing === 'number' && Number.isFinite(existing))
     ? Math.min(existing, elapsedSeconds)
     : elapsedSeconds;
+
+  // Ratings: store best ever (higher is better)
+  const existingRating = ratings[puzzleId];
+  ratings[puzzleId] = (typeof existingRating === 'number' && existingRating > options.starRating)
+    ? existingRating
+    : options.starRating;
 
   const solvedCount = previousCount + 1;
   let currentStreak = previousStreak;
@@ -175,7 +225,8 @@ export async function recordPuzzleCompletion(
   const writes: Array<Promise<void>> = [
     Preferences.set({ key: SOLVED_IDS_KEY, value: JSON.stringify(Array.from(solvedSet)) }),
     Preferences.set({ key: SOLVED_TIMES_KEY, value: JSON.stringify(solvedTimes) }),
-    Preferences.set({ key: PUZZLES_SOLVED_COUNT_KEY, value: String(solvedCount) })
+    Preferences.set({ key: PUZZLES_SOLVED_COUNT_KEY, value: String(solvedCount) }),
+    Preferences.set({ key: SOLVED_RATINGS_KEY, value: JSON.stringify(ratings) })
   ];
 
   if (options.isTodaysDaily) {
@@ -192,10 +243,13 @@ export async function recordPuzzleCompletion(
     solvedCount,
     bestTimeSec,
     currentStreak,
-    bestStreak
+    bestStreak,
+    lastPlayedDate: options.isTodaysDaily ? toDayStamp(nowIso) : (lastPlayedDate ? toDayStamp(lastPlayedDate) : null)
   };
 }
 
 export async function resetAllProgress(): Promise<void> {
   await Promise.all(PROGRESS_KEYS.map(key => Preferences.remove({ key })));
+  await Preferences.remove({ key: SOLVED_RATINGS_KEY });
+  await resetHintData();
 }

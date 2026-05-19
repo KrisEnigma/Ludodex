@@ -1,6 +1,6 @@
-import { ensureBundledPuzzlesLoaded, getDailyPuzzleIndex, getDayNumberSinceLaunch, getPuzzleAtIndex } from '../game/PuzzleLoader';
+import { ensureBundledPuzzlesLoaded, getDailyPuzzleIndex, getDayNumberSinceLaunch, getPuzzleAtIndex, getPuzzleForDay } from '../game/PuzzleLoader';
 import { t } from '../i18n';
-import { getProgressSnapshot, getSolvedIds } from '../services/ProgressService';
+import { getProgressSnapshot, getSolvedIds, getSolvedRatings, getSolvedTimes, getStreakStatus } from '../services/ProgressService';
 import { t as tp } from '../utils/i18n';
 import type { RoutePayloads } from './Router';
 import { getMonetizationContext } from '../services/MonetizationContext';
@@ -106,6 +106,9 @@ export class MenuView {
     const dailyCard = document.createElement('div');
     dailyCard.className = 'daily-card';
 
+    const dailySection = document.createElement('div');
+    dailySection.className = 'menu-daily-section';
+
     const dailyCardHead = document.createElement('div');
     dailyCardHead.className = 'daily-card-head';
 
@@ -140,6 +143,7 @@ export class MenuView {
       callbacks.onPlay(gamePayload);
     });
     dailyCard.append(dailyCardHead, dailyTitle, dailyMeta, dailyPlayButton);
+    dailySection.append(dailyCard);
 
     const footerActions = document.createElement('div');
     footerActions.className = 'menu-footer-actions';
@@ -203,22 +207,124 @@ export class MenuView {
     }, 60_000);
 
     void (async () => {
-      const [snapshot, solvedIds] = await Promise.all([
+      const [snapshot, solvedIds, solvedTimes, solvedRatings, streakStatus] = await Promise.all([
         getProgressSnapshot(),
-        getSolvedIds()
+        getSolvedIds(),
+        getSolvedTimes(),
+        getSolvedRatings(),
+        getStreakStatus()
       ]);
       if (!root.isConnected) return;
-      streakValue.textContent = String(snapshot.currentStreak);
+      streakValue.textContent = String(streakStatus.effective);
       solvedValue.textContent = String(snapshot.solvedCount);
       bestValue.textContent = snapshot.bestTimeSec === null ? t('menu.stat_empty') : this.formatElapsed(snapshot.bestTimeSec);
+
+      if (streakStatus.brokenAt !== null) {
+        const banner = this.buildStreakLossBanner(streakStatus.brokenAt);
+        root.insertBefore(banner, dailySection);
+      }
 
       if (solvedIds.includes(dailyPuzzle.id)) {
         dailyCard.dataset.solved = 'true';
         dailyPlayButton.textContent = t('menu.daily_play_again');
       }
+
+      const yesterdayNumber = dayNumber - 1;
+      if (yesterdayNumber >= 1) {
+        const yesterdayEntry = getPuzzleForDay(yesterdayNumber, puzzles);
+        if (yesterdayEntry) {
+          const yesterdayPuzzle = yesterdayEntry.puzzle;
+          const isSolved = solvedIds.includes(yesterdayPuzzle.id);
+          const time = isSolved ? solvedTimes[yesterdayPuzzle.id] : null;
+          const rating = solvedRatings[yesterdayPuzzle.id] ?? 0;
+          const card = this.buildYesterdayCard(yesterdayNumber, yesterdayPuzzle, isSolved, time, rating);
+          card.addEventListener('click', () => {
+            callbacks.onPlay({
+              puzzle: yesterdayPuzzle,
+              dayNumber: yesterdayNumber,
+              isTodaysDaily: false
+            });
+          });
+          dailySection.append(card);
+        }
+      }
     })();
 
-    this.element.append(topBar, logo, divider, statsStrip, dailyCard, footerActions);
+    this.element.append(topBar, logo, divider, statsStrip, dailySection, footerActions);
+  }
+
+  private buildYesterdayCard(
+    dayNumber: number,
+    puzzle: RoutePayloads['game']['puzzle'],
+    isSolved: boolean,
+    time: number | null,
+    rating: number
+  ): HTMLButtonElement {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'yesterday-card';
+    card.dataset.status = isSolved ? 'solved' : 'unsolved';
+
+    const tag = document.createElement('div');
+    tag.className = 'yesterday-card-tag';
+    tag.textContent = t('menu.yesterday_tag', { n: dayNumber });
+
+    const title = document.createElement('div');
+    title.className = 'yesterday-card-title';
+    title.textContent = tp(puzzle.name, puzzle.id);
+
+    const status = document.createElement('div');
+    status.className = 'yesterday-card-status';
+
+    if (isSolved) {
+      const stars = document.createElement('span');
+      stars.className = 'yesterday-card-stars';
+      stars.textContent = rating >= 1 && rating <= 3 ? this.renderStars(rating) : '—';
+
+      const timeEl = document.createElement('span');
+      timeEl.className = 'yesterday-card-time';
+      timeEl.textContent = typeof time === 'number' && Number.isFinite(time)
+        ? this.formatElapsed(time)
+        : t('menu.stat_empty');
+
+      status.append(stars, timeEl);
+    } else {
+      const unsolved = document.createElement('span');
+      unsolved.className = 'yesterday-card-unsolved';
+      unsolved.textContent = t('menu.yesterday_unsolved');
+      status.append(unsolved);
+    }
+
+    card.append(tag, title, status);
+    return card;
+  }
+
+  private buildStreakLossBanner(brokenAt: number): HTMLElement {
+    const banner = document.createElement('div');
+    banner.className = 'streak-loss-banner';
+
+    const icon = document.createElement('span');
+    icon.className = 'streak-loss-icon';
+    icon.textContent = '🔥';
+
+    const text = document.createElement('span');
+    text.className = 'streak-loss-text';
+    text.textContent = t('menu.streak_loss', { n: brokenAt });
+
+    const dismiss = document.createElement('button');
+    dismiss.type = 'button';
+    dismiss.className = 'streak-loss-dismiss';
+    dismiss.setAttribute('aria-label', t('menu.streak_loss_dismiss'));
+    dismiss.textContent = '✕';
+    dismiss.addEventListener('click', () => banner.remove());
+
+    banner.append(icon, text, dismiss);
+    return banner;
+  }
+
+  private renderStars(rating: number): string {
+    const bounded = Math.max(0, Math.min(3, rating));
+    return '★'.repeat(bounded) + '☆'.repeat(3 - bounded);
   }
 
   private formatElapsed(totalSeconds: number): string {

@@ -135,6 +135,13 @@ export function getPuzzleAtIndex(index: number, puzzles = parsedPuzzles): Puzzle
   return puzzles[normalized];
 }
 
+export function getPuzzleById(
+  puzzleId: string,
+  puzzles: Puzzle[] = parsedPuzzles
+): Puzzle | null {
+  return puzzles.find((p) => p.id === puzzleId) ?? null;
+}
+
 export function getDailyPuzzle(puzzles = parsedPuzzles): Puzzle {
   if (puzzles.length === 0) {
     throw new Error('No puzzles loaded. Call loadPuzzles() first.');

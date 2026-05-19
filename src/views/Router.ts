@@ -68,6 +68,17 @@ export class Router {
     this.renderCurrent();
   }
 
+  popToRoot(): void {
+    if (this.stack.length === 0) return;
+    while (this.stack.length > 1) {
+      this.stack.pop();
+    }
+
+    const current = this.shell.firstElementChild;
+    if (current) current.remove();
+    this.renderCurrent();
+  }
+
   private renderCurrent(): void {
     const current = this.stack[this.stack.length - 1];
     if (!current) return;
@@ -92,9 +103,8 @@ export class Router {
         return;
       }
       case 'win': {
-        const view = new WinView(current.payload, () => {
-          this.stack = [{ name: 'menu', payload: undefined }];
-          this.renderCurrent();
+        const view = new WinView(current.payload, this, () => {
+          this.popToRoot();
         });
         this.shell.replaceChildren(view.element);
         return;

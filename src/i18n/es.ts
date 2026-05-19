@@ -55,6 +55,9 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'game.day_label': 'Día {n}',
   'game.words_progress': '{found}/{total}',
   'game.instructions': 'Desliza letras adyacentes para encontrar todas las palabras.',
+  'hint.out_title': 'Sin pistas',
+  'hint.out_body': 'Ya usaste todas las pistas de hoy. Vuelve mañana para más.',
+  'hint.out_close': 'Aceptar',
 
   // Win view
   'win.pristine_label': 'Impecable',
@@ -66,6 +69,8 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'win.stat_hint_other': '💡 {n} pistas',
   'win.share_button': 'Compartir',
   'win.done_link': 'Listo',
+  'win.new_rating': 'Nuevo nivel',
+  'win.play_again': 'Jugar otra vez',
 
   // Share string
   'share.header': 'GlitchSalad #{day} — {title}',
@@ -77,6 +82,8 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'share.stat_day_streak': '🔥 Racha de {n} días',
   'share.stat_solved_count': '{n} resueltos',
   'share.footer': 'glitchsalad.app',
+  'share.pristine_in': 'Impecable en {time}',
+  'share.solved_in': 'Resuelto en {time}',
 
   // Archive
   'archive.title': 'Archivo',
@@ -120,4 +127,8 @@ export const strings: Record<keyof typeof enStrings, string> = {
 
   // Menu — web-only CTA
   'menu.get_app_label': 'Descarga la app',
+  'menu.yesterday_tag': 'AYER · DÍA {n}',
+  'menu.yesterday_unsolved': 'Sin jugar',
+  'menu.streak_loss': 'Tu racha de {n} días terminó. Resuelve el de hoy para empezar otra vez.',
+  'menu.streak_loss_dismiss': 'Cerrar',
 };

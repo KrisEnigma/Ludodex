@@ -1,28 +1,42 @@
 import { Share } from '@capacitor/share';
+import { getPuzzleById } from '../game/PuzzleLoader';
 import { t, tn } from '../i18n';
+import type { Router } from './Router';
 import type { WinPayload } from './types';
 
 export class WinView {
   readonly element: HTMLDivElement;
+  private readonly payload: WinPayload;
+  private readonly router: Router;
 
-  constructor(payload: WinPayload, onDone: () => void) {
+  constructor(payload: WinPayload, router: Router, onDone: () => void) {
+    this.payload = payload;
+    this.router = router;
+
     this.element = document.createElement('div');
     this.element.className = 'view win-view';
 
     const headline = document.createElement('div');
     headline.className = 'win-headline';
-    headline.dataset.pristine = String(payload.wasPristine);
+    headline.dataset.stars = String(payload.starRating);
 
-    if (payload.wasPristine) {
-      const icon = document.createElement('span');
-      icon.className = 'win-headline-icon';
-      icon.textContent = '🏆';
+    const starsRow = document.createElement('div');
+    starsRow.className = 'win-stars';
+    for (let i = 1; i <= 3; i += 1) {
+      const star = document.createElement('span');
+      star.className = 'win-star';
+      star.dataset.filled = String(i <= payload.starRating);
+      star.dataset.position = String(i);
+      star.textContent = '★';
+      starsRow.append(star);
+    }
+    headline.append(starsRow);
 
+    if (payload.starRating === 3) {
       const label = document.createElement('span');
       label.className = 'win-headline-label';
       label.textContent = t('win.pristine_label');
-
-      headline.append(icon, label);
+      headline.append(label);
     } else {
       const subtitle = document.createElement('p');
       subtitle.className = 'view-subtitle';
@@ -42,6 +56,15 @@ export class WinView {
     newBest.className = 'win-new-best';
     newBest.textContent = t('win.new_best');
     newBest.hidden = !payload.wasNewBest;
+
+    const newRating = document.createElement('div');
+    newRating.className = 'win-new-rating';
+    newRating.textContent = t('win.new_rating');
+    newRating.hidden = !payload.wasNewRating;
+
+    const pillRow = document.createElement('div');
+    pillRow.className = 'win-pill-row';
+    pillRow.append(newBest, newRating);
 
     const stats = document.createElement('div');
     stats.className = 'win-stats-line';
@@ -82,21 +105,53 @@ export class WinView {
       void shareWin(payload);
     });
 
+    const secondaryRow = document.createElement('div');
+    secondaryRow.className = 'win-secondary-row';
+
+    const playAgainButton = document.createElement('button');
+    playAgainButton.type = 'button';
+    playAgainButton.className = 'win-play-again';
+    playAgainButton.textContent = t('win.play_again');
+    playAgainButton.addEventListener('click', () => this.onPlayAgain());
+
     const doneLink = document.createElement('button');
     doneLink.type = 'button';
     doneLink.className = 'win-done-link';
     doneLink.textContent = t('win.done_link');
     doneLink.addEventListener('click', onDone);
 
-    this.element.append(headline, title, time, newBest, stats, shareButton, doneLink);
+    secondaryRow.append(playAgainButton, doneLink);
+
+    this.element.append(headline, title, time, pillRow, stats, shareButton, secondaryRow);
   }
+
+  private onPlayAgain(): void {
+    const puzzle = getPuzzleById(this.payload.puzzleId);
+    if (!puzzle) {
+      console.warn('[WinView] could not find puzzle to replay', this.payload.puzzleId);
+      return;
+    }
+
+    this.router.popToRoot();
+    this.router.push('game', {
+      puzzle,
+      dayNumber: this.payload.dayNumber,
+      isTodaysDaily: this.payload.isTodaysDaily
+    });
+  }
+}
+
+function renderStars(rating: 1 | 2 | 3): string {
+  return '★'.repeat(rating) + '☆'.repeat(3 - rating);
 }
 
 function buildShareText(payload: WinPayload): string {
   const time = formatTime(payload.elapsedSeconds);
+  const stars = renderStars(payload.starRating);
 
-  const headlineKey = payload.wasPristine ? 'share.line_pristine' : 'share.line_solved';
-  const headline = t(headlineKey, { time });
+  const actionLabel = payload.starRating === 3
+    ? t('share.pristine_in', { time })
+    : t('share.solved_in', { time });
 
   const hintsSuffix = payload.hintsUsed > 0
     ? (payload.hintsUsed === 1
@@ -105,7 +160,7 @@ function buildShareText(payload: WinPayload): string {
     : '';
   const newBestSuffix = payload.wasNewBest ? t('share.suffix_new_best') : '';
 
-  const performanceLine = `${headline}${hintsSuffix}${newBestSuffix}`;
+  const performanceLine = `${stars} ${actionLabel}${hintsSuffix}${newBestSuffix}`;
 
   const statsParts: string[] = [];
   if (payload.currentStreak >= 2) {

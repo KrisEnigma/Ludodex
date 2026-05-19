@@ -53,6 +53,9 @@ export const strings = {
   'game.day_label': 'Day {n}',
   'game.words_progress': '{found}/{total}',
   'game.instructions': 'Swipe adjacent letters to find all words.',
+  'hint.out_title': 'No hints left',
+  'hint.out_body': 'You have used all hints for today. Come back tomorrow for more.',
+  'hint.out_close': 'OK',
 
   // Win view
   'win.pristine_label': 'Pristine',
@@ -64,6 +67,8 @@ export const strings = {
   'win.stat_hint_other': '💡 {n} hints',
   'win.share_button': 'Share',
   'win.done_link': 'Done',
+  'win.new_rating': 'New rating',
+  'win.play_again': 'Play again',
 
   // Share string
   'share.header': 'GlitchSalad #{day} — {title}',
@@ -75,6 +80,8 @@ export const strings = {
   'share.stat_day_streak': '🔥 Day {n} streak',
   'share.stat_solved_count': '{n} solved',
   'share.footer': 'glitchsalad.app',
+  'share.pristine_in': 'Pristine in {time}',
+  'share.solved_in': 'Solved in {time}',
 
   // Archive
   'archive.title': 'Archive',
@@ -118,4 +125,8 @@ export const strings = {
 
   // Menu — web-only CTA
   'menu.get_app_label': 'Get the app',
+  'menu.yesterday_tag': 'YESTERDAY · DAY {n}',
+  'menu.yesterday_unsolved': 'Not played',
+  'menu.streak_loss': 'Your {n}-day streak ended. Solve today to start fresh.',
+  'menu.streak_loss_dismiss': 'Dismiss',
 } as const;
