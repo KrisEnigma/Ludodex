@@ -10,7 +10,6 @@ export const strings = {
   'achievements.back': '← Menu',
   'achievements.unlocked_summary': '{earned}/{total} unlocked',
   'achievements.earned_on': 'Earned on {date}',
-  'achievements.locked': 'Locked',
   // Achievements
   'menu.achievements_aria': 'Achievements',
   'achievements.title': 'Achievements',

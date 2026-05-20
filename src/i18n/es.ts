@@ -11,7 +11,6 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'achievements.back': '← Menú',
   'achievements.unlocked_summary': '{earned}/{total} desbloqueados',
   'achievements.earned_on': 'Obtenido el {date}',
-  'achievements.locked': 'Bloqueado',
   // Achievements
   'menu.achievements_aria': 'Logros',
   'achievements.title': 'Logros',

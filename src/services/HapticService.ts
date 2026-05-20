@@ -1,44 +1,35 @@
-// Add Haptics type to window for TS
-declare global {
-  interface Window {
-    Haptics?: {
-      impact?: (opts: { style: 'light' | 'medium' | 'heavy' }) => void;
-      selectionChanged?: () => void;
-      notification?: (opts: { type: 'success' | 'warning' | 'error' }) => void;
-    };
-  }
-}
 import { Capacitor } from '@capacitor/core';
+import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 
-// Defensive haptics abstraction for both web and native
 export class HapticService {
-  static impactLight() {
-    if (Capacitor.isNativePlatform() && window.Haptics?.impact) {
-      window.Haptics.impact({ style: 'light' });
-    }
+  static impactLight(): void {
+    if (!Capacitor.isNativePlatform()) return;
+    void Haptics.impact({ style: ImpactStyle.Light }).catch(() => {});
   }
 
-  static impactMedium() {
-    if (Capacitor.isNativePlatform() && window.Haptics?.impact) {
-      window.Haptics.impact({ style: 'medium' });
-    }
+  static impactMedium(): void {
+    if (!Capacitor.isNativePlatform()) return;
+    void Haptics.impact({ style: ImpactStyle.Medium }).catch(() => {});
   }
 
-  static impactHeavy() {
-    if (Capacitor.isNativePlatform() && window.Haptics?.impact) {
-      window.Haptics.impact({ style: 'heavy' });
-    }
+  static impactHeavy(): void {
+    if (!Capacitor.isNativePlatform()) return;
+    void Haptics.impact({ style: ImpactStyle.Heavy }).catch(() => {});
   }
 
-  static selection() {
-    if (Capacitor.isNativePlatform() && window.Haptics?.selectionChanged) {
-      window.Haptics.selectionChanged();
-    }
+  static selection(): void {
+    if (!Capacitor.isNativePlatform()) return;
+    void Haptics.selectionChanged().catch(() => {});
   }
 
-  static notification(type: 'success' | 'warning' | 'error') {
-    if (Capacitor.isNativePlatform() && window.Haptics?.notification) {
-      window.Haptics.notification({ type });
-    }
+  static notification(type: 'success' | 'warning' | 'error'): void {
+    if (!Capacitor.isNativePlatform()) return;
+    const ntype =
+      type === 'success'
+        ? NotificationType.Success
+        : type === 'warning'
+          ? NotificationType.Warning
+          : NotificationType.Error;
+    void Haptics.notification({ type: ntype }).catch(() => {});
   }
 }

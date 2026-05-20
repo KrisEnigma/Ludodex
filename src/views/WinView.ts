@@ -99,35 +99,39 @@ export class WinView {
     pillRow.className = 'win-pill-row';
     pillRow.append(newBest, newRating);
 
-    const stats = document.createElement('div');
-    stats.className = 'win-stats-line';
-
     const showStreak = payload.currentStreak >= 2;
     const showSolved = payload.solvedCount >= 2;
     const showHints = payload.hintsUsed > 0;
+    const hasStats = showStreak || showSolved || showHints;
 
-    if (showStreak) {
-      const s = document.createElement('span');
-      s.textContent = t('win.stat_day_streak', { n: payload.currentStreak });
-      stats.append(s);
-    }
-    if (showStreak && showSolved) {
-      const dot = document.createElement('span');
-      dot.textContent = '·';
-      stats.append(dot);
-    }
-    if (showSolved) {
-      const s = document.createElement('span');
-      s.textContent = t('win.stat_solved_count', { n: payload.solvedCount });
-      stats.append(s);
-    }
-    if (showHints) {
-      const dot = document.createElement('span');
-      dot.textContent = '·';
-      stats.append(dot);
-      const h = document.createElement('span');
-      h.textContent = tn('win.stat_hint', payload.hintsUsed);
-      stats.append(h);
+    let stats: HTMLDivElement | null = null;
+    if (hasStats) {
+      stats = document.createElement('div');
+      stats.className = 'win-stats-line';
+
+      if (showStreak) {
+        const s = document.createElement('span');
+        s.textContent = t('win.stat_day_streak', { n: payload.currentStreak });
+        stats.append(s);
+      }
+      if (showStreak && showSolved) {
+        const dot = document.createElement('span');
+        dot.textContent = '·';
+        stats.append(dot);
+      }
+      if (showSolved) {
+        const s = document.createElement('span');
+        s.textContent = t('win.stat_solved_count', { n: payload.solvedCount });
+        stats.append(s);
+      }
+      if (showHints) {
+        const dot = document.createElement('span');
+        dot.textContent = '·';
+        stats.append(dot);
+        const h = document.createElement('span');
+        h.textContent = tn('win.stat_hint', payload.hintsUsed);
+        stats.append(h);
+      }
     }
 
     const shareButton = document.createElement('button');
@@ -168,7 +172,7 @@ export class WinView {
       time,
       pillRow,
       ...(achievementsSection ? [achievementsSection] : []),
-      stats,
+      ...(stats ? [stats] : []),
       shareButton,
       secondaryRow,
       nextCountdown

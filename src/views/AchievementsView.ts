@@ -130,13 +130,15 @@ export class AchievementsView {
     description.className = 'achievement-row-description';
     description.textContent = t(definition.descriptionKey as StringKey);
 
-    const status = document.createElement('div');
-    status.className = 'achievement-row-status';
-    status.textContent = earned
-      ? t('achievements.earned_on', { date: this.formatEarnedDate(earned.earnedAt) })
-      : t('achievements.locked');
+    text.append(name, description);
 
-    text.append(name, description, status);
+    if (earned) {
+      const status = document.createElement('div');
+      status.className = 'achievement-row-status';
+      status.textContent = t('achievements.earned_on', { date: this.formatEarnedDate(earned.earnedAt) });
+      text.append(status);
+    }
+
     row.append(icon, text);
     return row;
   }
