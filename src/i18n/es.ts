@@ -82,7 +82,7 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'hint.out_close': 'Aceptar',
 
   // Win view
-  'win.achievements_unlocked': '¡Logro desbloqueado!',
+  'win.achievements_unlocked': 'Logros desbloqueados',
   'win.pristine_label': 'Impecable',
   'win.solved_subtitle': '¡Resuelto!',
   'win.new_best': 'Nuevo récord',

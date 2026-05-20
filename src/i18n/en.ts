@@ -81,7 +81,7 @@ export const strings = {
   'hint.out_close': 'OK',
 
   // Win view
-  'win.achievements_unlocked': 'Achievement unlocked!',
+  'win.achievements_unlocked': 'Achievements unlocked',
   'win.pristine_label': 'Pristine',
   'win.solved_subtitle': 'Puzzle solved',
   'win.new_best': 'New best',
