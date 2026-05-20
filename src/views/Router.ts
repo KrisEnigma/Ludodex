@@ -1,5 +1,6 @@
 // (moved inside Router class below)
 import type { Puzzle } from '../types/puzzle';
+import { trackRoute } from '../services/SentryService';
 
 import { ArchiveView } from './ArchiveView';
 import { GameView } from './GameView';
@@ -55,6 +56,7 @@ export class Router {
       name: route,
       payload: (payload ?? this.defaultPayload(route)) as RoutePayloads[T]
     } as AnyRouteEntry);
+    trackRoute(route, 'push');
     this.renderCurrent();
   }
 
@@ -70,6 +72,7 @@ export class Router {
       this.stack[this.stack.length - 1] = next as AnyRouteEntry;
     }
 
+    trackRoute(route, 'replace');
     this.renderCurrent();
   }
 
@@ -78,6 +81,8 @@ export class Router {
       return;
     }
     this.stack.pop();
+    const current = this.stack[this.stack.length - 1];
+    if (current) trackRoute(current.name, 'pop');
     this.renderCurrent();
   }
 

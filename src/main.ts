@@ -9,6 +9,7 @@ import { applySkin, normalizeSkinId } from './skins/registry';
 import { initIAP } from './services/IAPService';
 import { bootstrapProgress, getActiveSkinId, getSolvedTimes } from './services/ProgressService';
 import { retroactivelyUnlockEarnedAchievements } from './services/AchievementService';
+import { initSentry } from './services/SentryService';
 import { Router } from './views/Router';
 
 const app = document.querySelector<HTMLDivElement>('#app');
@@ -17,6 +18,8 @@ if (!app) {
 }
 
 void (async () => {
+  initSentry();
+
   try {
     await initIAP();
   } catch {
