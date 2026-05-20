@@ -160,7 +160,12 @@ export class SettingsView {
     this.element.className = 'view settings-view';
 
     for (const skin of SKINS) {
-      this.unlockedBySkin.set(skin.id, skin.productId === null || !this.isNative);
+      // On web, all skins are shown as "Web only — get the app" if not unlocked
+      if (!this.isNative && skin.productId) {
+        this.unlockedBySkin.set(skin.id, false);
+      } else {
+        this.unlockedBySkin.set(skin.id, skin.productId === null || !this.isNative);
+      }
     }
 
     this.status = document.createElement('p');
@@ -306,7 +311,46 @@ export class SettingsView {
     }
 
     section.append(heading, cards);
+
+    if (!this.isNative) {
+      section.append(this.renderSkinSectionWebCta());
+    }
+
     return section;
+  }
+
+  private renderSkinSectionWebCta(): HTMLElement {
+    const row = document.createElement('div');
+    row.className = 'settings-skin-web-cta';
+
+    const label = document.createElement('span');
+    label.className = 'settings-skin-web-cta-label';
+    label.textContent = t('settings.more_skins_in_app');
+
+    const links = document.createElement('span');
+    links.className = 'settings-skin-web-cta-links';
+
+    const appStoreLink = document.createElement('a');
+    appStoreLink.href = STORE_URLS.appStore;
+    appStoreLink.target = '_blank';
+    appStoreLink.rel = 'noopener noreferrer';
+    appStoreLink.className = 'store-link';
+    appStoreLink.textContent = t('settings.store_app_store');
+
+    const dot = document.createElement('span');
+    dot.className = 'store-link-divider';
+    dot.textContent = '·';
+
+    const playStoreLink = document.createElement('a');
+    playStoreLink.href = STORE_URLS.playStore;
+    playStoreLink.target = '_blank';
+    playStoreLink.rel = 'noopener noreferrer';
+    playStoreLink.className = 'store-link';
+    playStoreLink.textContent = t('settings.store_play_store');
+
+    links.append(appStoreLink, dot, playStoreLink);
+    row.append(label, links);
+    return row;
   }
 
   private async onSkinCardClick(skin: SkinMeta): Promise<void> {
@@ -450,9 +494,7 @@ export class SettingsView {
 
       if (isActive) {
         pill.textContent = t('settings.skin_active');
-      } else if (!this.isNative && skin.id !== 'void') {
-        pill.textContent = t('settings.web_only_skin_label');
-      } else if (!isUnlocked) {
+      } else if (this.isNative && !isUnlocked) {
         pill.textContent = `${t('settings.skin_unlock')} ${this.getPriceLabel(skin.id)}`;
       } else {
         pill.textContent = '';

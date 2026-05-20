@@ -1,3 +1,4 @@
+import { createIcon } from '../components/icons';
 import { ensureBundledPuzzlesLoaded, getDailyPuzzleIndex, getDayNumberSinceLaunch, getPuzzleAtIndex, getPuzzleForDay } from '../game/PuzzleLoader';
 import { t } from '../i18n';
 import { getProgressSnapshot, getSolvedIds, getSolvedRatings, getSolvedTimes, getStreakStatus, normalizeStarRating } from '../services/ProgressService';
@@ -11,6 +12,7 @@ type MenuCallbacks = {
   onOpenSettings: () => void;
   onOpenArchive: () => void;
   onOpenHowToPlay: () => void;
+  onOpenAchievements: () => void;
 };
 
 export class MenuView {
@@ -40,16 +42,32 @@ export class MenuView {
     dayChip.className = 'menu-day-chip';
     dayChip.textContent = t('menu.day_chip', { n: dayNumber });
 
+
+    // Trophy (achievements) button
+    const trophyButton = document.createElement('button');
+    trophyButton.type = 'button';
+    trophyButton.className = 'menu-icon-button';
+    trophyButton.appendChild(createIcon('trophy'));
+    trophyButton.setAttribute('aria-label', t('menu.achievements_aria'));
+    trophyButton.addEventListener('click', () => {
+      callbacks.onOpenAchievements();
+    });
+
     const settingsButton = document.createElement('button');
     settingsButton.type = 'button';
     settingsButton.className = 'menu-icon-button';
-    settingsButton.textContent = '⚙';
+    settingsButton.appendChild(createIcon('settings'));
     settingsButton.setAttribute('aria-label', t('menu.settings_aria'));
     settingsButton.addEventListener('click', () => {
       callbacks.onOpenSettings();
     });
 
-    topBar.append(dayChip, settingsButton);
+    // Top bar actions group
+    const topBarActions = document.createElement('div');
+    topBarActions.className = 'menu-top-bar-actions';
+    topBarActions.append(trophyButton, settingsButton);
+
+    topBar.append(dayChip, topBarActions);
 
     const logo = document.createElement('div');
     logo.className = 'menu-logo';
@@ -323,9 +341,10 @@ export class MenuView {
       status.append(unsolved);
     }
 
+
     const chevron = document.createElement('span');
     chevron.className = 'yesterday-card-chevron';
-    chevron.textContent = '→';
+    chevron.appendChild(createIcon('chevron-right'));
 
     card.append(tag, title, status, chevron);
     return card;
@@ -343,11 +362,12 @@ export class MenuView {
     text.className = 'streak-loss-text';
     text.textContent = t('menu.streak_loss', { n: brokenAt });
 
+
     const dismiss = document.createElement('button');
     dismiss.type = 'button';
     dismiss.className = 'streak-loss-dismiss';
     dismiss.setAttribute('aria-label', t('menu.streak_loss_dismiss'));
-    dismiss.textContent = '✕';
+    dismiss.appendChild(createIcon('dismiss'));
     dismiss.addEventListener('click', () => banner.remove());
 
     banner.append(icon, text, dismiss);

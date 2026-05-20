@@ -1,3 +1,146 @@
+/* ──────────── WinView — Inline Achievements Section ──────────── */
+.win-achievements-section {
+  width: 100%;
+  margin: 22px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.win-achievements-heading {
+  font-size: var(--type-h3);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--title-glow);
+  margin-bottom: 6px;
+  text-shadow: 0 0 8px color-mix(in srgb, var(--title-glow) 30%, transparent);
+  text-align: center;
+}
+.win-achievement-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--button-bg);
+  border: 1.5px solid var(--title-glow);
+  border-radius: 10px;
+  padding: 10px 16px;
+  box-shadow: 0 2px 12px 0 color-mix(in srgb, var(--title-glow) 12%, transparent);
+  min-width: 0;
+  max-width: 340px;
+  width: 100%;
+  opacity: 0.98;
+  animation: win-achievement-fade-in 0.44s cubic-bezier(0.34, 1.4, 0.64, 1) backwards;
+}
+.win-achievement-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--title-glow);
+  margin-right: 0;
+  opacity: 0.96;
+}
+.win-achievement-details {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.win-achievement-name {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--title-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.win-achievement-description {
+  font-size: var(--type-caption);
+  color: var(--chrome-text);
+  opacity: 0.85;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@keyframes win-achievement-fade-in {
+  from { opacity: 0; transform: translateY(18px) scale(0.98); }
+  to { opacity: 0.98; transform: none; }
+}
+/* Inline SVG icons */
+.icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+}
+
+.achievement-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--button-bg);
+  border: 1px solid var(--button-border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: var(--type-body-s);
+  color: var(--button-text);
+  opacity: 0.92;
+  transition: background 180ms, border-color 180ms, color 180ms, opacity 180ms;
+}
+
+.achievement-row[data-earned="true"] {
+  border-color: var(--title-glow);
+  color: var(--title-color);
+  opacity: 1;
+  background: color-mix(in srgb, var(--title-glow) 8%, var(--button-bg));
+}
+
+.achievement-row-icon {
+  font-size: var(--type-h2);
+  margin-right: 6px;
+  flex-shrink: 0;
+  opacity: 0.92;
+}
+
+.achievement-row-details {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.achievement-row-name {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.achievement-row-description {
+  font-size: var(--type-caption);
+  color: var(--chrome-text);
+  opacity: 0.85;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.achievement-row-date {
+  font-size: var(--type-caption);
+  color: var(--title-glow);
+  margin-left: 10px;
+  white-space: nowrap;
+  opacity: 0.85;
+}
+
+.menu-top-bar-actions {
+  display: flex;
+  gap: 2px;
+}
 /* Achievement Toasts */
 .achievement-toast-container {
   position: fixed;
@@ -725,14 +868,23 @@ body {
 }
 
 .menu-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: transparent;
   border: none;
+  border-radius: 8px;
   color: var(--chrome-text);
-  font-size: 22px;
-  line-height: 1;
   cursor: pointer;
-  padding: 4px 6px;
+  padding: 4px;
+  min-width: 28px;
+  min-height: 28px;
   font-family: inherit;
+}
+
+.menu-icon-button:hover {
+  color: var(--title-color);
+  background: var(--button-hover-bg);
 }
 
 .menu-logo {
@@ -1033,14 +1185,6 @@ body {
 
 .settings-panel[hidden] {
   display: none;
-}
-
-.win-headline {
-  min-height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
 }
 
 .win-headline-icon {
@@ -1472,8 +1616,38 @@ body {
 }
 
 .settings-skin-card[data-locked='true'] {
-  border-style: dashed;
-  opacity: 0.85;
+  }
+
+  .settings-skin-web-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding-top: 14px;
+  border-top: 1px dashed color-mix(in srgb, var(--button-border) 60%, transparent);
+  font-size: var(--type-label);
+  letter-spacing: 0.14em;
+  color: var(--chrome-text);
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.settings-skin-web-cta-label {
+  opacity: 0.7;
+  white-space: nowrap;
+}
+
+.settings-skin-web-cta-links {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-transform: none;
+  letter-spacing: 0.06em;
+  background: transparent;
+  border: none;
+  padding: 0;
+  border-radius: 0;
 }
 
 .settings-skin-name {
@@ -1711,10 +1885,6 @@ body {
   opacity: 0.5;
 }
 
-/* ──────────── Menu — web-only Get the app row ──────────── */
-.menu-get-app {
-}
-}
 
 .menu-get-app-label {
   opacity: 0.55;

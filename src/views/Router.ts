@@ -1,14 +1,16 @@
 // (moved inside Router class below)
 import type { Puzzle } from '../types/puzzle';
+
 import { ArchiveView } from './ArchiveView';
 import { GameView } from './GameView';
 import { HowToPlayView } from './HowToPlayView';
 import { MenuView } from './MenuView';
 import { SettingsView } from './SettingsView';
 import { WinView } from './WinView';
+import { AchievementsView } from './AchievementsView';
 import type { WinPayload } from './types';
 
-export type RouteName = 'menu' | 'game' | 'win' | 'settings' | 'archive' | 'how-to-play';
+export type RouteName = 'menu' | 'game' | 'win' | 'settings' | 'archive' | 'how-to-play' | 'achievements';
 
 export type RoutePayloads = {
   menu: undefined;
@@ -17,6 +19,7 @@ export type RoutePayloads = {
   settings: undefined;
   archive: undefined;
   'how-to-play': { fromOnboarding: boolean };
+  achievements: undefined;
 };
 
 type RouteEntry<T extends RouteName = RouteName> = {
@@ -97,11 +100,17 @@ export class Router {
           onPlay: (payload) => this.push('game', payload),
           onOpenSettings: () => this.push('settings'),
           onOpenArchive: () => this.push('archive'),
-          onOpenHowToPlay: () => this.push('how-to-play', { fromOnboarding: false })
+          onOpenHowToPlay: () => this.push('how-to-play', { fromOnboarding: false }),
+          onOpenAchievements: () => this.push('achievements'),
         });
         this.mount(view.element);
         return;
       }
+            case 'achievements': {
+              const view = new AchievementsView(() => this.pop());
+              this.mount(view.element);
+              return;
+            }
       case 'game': {
         const view = new GameView(current.payload, {
           onWin: (payload) => this.replace('win', payload),
@@ -157,6 +166,7 @@ export class Router {
     if (route === 'settings') return undefined as RoutePayloads[T];
     if (route === 'archive') return undefined as RoutePayloads[T];
     if (route === 'how-to-play') return { fromOnboarding: false } as RoutePayloads[T];
+    if (route === 'achievements') return undefined as RoutePayloads[T];
     throw new Error(`Route ${route} requires a payload`);
   }
 }

@@ -1,4 +1,25 @@
 export const strings = {
+  // AchievementsView category labels
+  'achievement_category.streak': 'Streak',
+  'achievement_category.volume': 'Solves',
+  'achievement_category.mastery': 'Pristine',
+  'achievement_category.speed': 'Speed',
+  'achievement_category.consistency': 'Consistency',
+  'achievement_category.variety': 'Variety',
+  // AchievementsView
+  'achievements.back': '← Menu',
+  'achievements.unlocked_summary': '{earned}/{total} unlocked',
+  'achievements.earned_on': 'Earned on {date}',
+  'achievements.locked': 'Locked',
+  // Achievements
+  'menu.achievements_aria': 'Achievements',
+  'achievements.title': 'Achievements',
+  'achievements.category.streak': 'Streak',
+  'achievements.category.solve': 'Solves',
+  'achievements.category.pristine': 'Pristine',
+  'achievements.category.speed': 'Speed',
+  'achievements.category.archive': 'Archive',
+  'achievements.category.special': 'Special',
   // Menu - top bar / chrome
   'menu.day_chip': 'Day {n}',
   'menu.settings_aria': 'Settings',
@@ -40,6 +61,7 @@ export const strings = {
   'settings.back': '← Menu',
   'settings.section_language': 'Language',
   'settings.section_skin': 'Skin',
+    'settings.more_skins_in_app': 'More skins in the app',
   'settings.section_about': 'About',
   'settings.about_credit': 'By KrisEnigma',
   'settings.version': 'GlitchSalad v{version}',
@@ -59,6 +81,7 @@ export const strings = {
   'hint.out_close': 'OK',
 
   // Win view
+  'win.achievements_unlocked': 'Achievement unlocked!',
   'win.pristine_label': 'Pristine',
   'win.solved_subtitle': 'Puzzle solved',
   'win.new_best': 'New best',
@@ -118,7 +141,6 @@ export const strings = {
   'dialog.reset_progress_confirm': 'Reset',
 
   // Settings — web-only affordances
-  'settings.web_only_skin_label': 'Web only — get the app',
   'settings.store_app_store': 'App Store',
   'settings.store_play_store': 'Google Play',
   'settings.privacy_policy': 'Privacy policy',

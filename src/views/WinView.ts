@@ -1,11 +1,11 @@
 import { Share } from '@capacitor/share';
+import { createIcon } from '../components/icons';
 import { getPuzzleById } from '../game/PuzzleLoader';
 import { showConfetti } from '../components/Confetti';
 import { t, tn } from '../i18n';
 import { clearPuzzleReveals } from '../services/HintService';
 import type { Router } from './Router';
 import { ACHIEVEMENTS } from '../data/achievements';
-import { showAchievementToasts } from '../components/AchievementToast';
 import type { WinPayload } from './types';
 
 export class WinView {
@@ -157,25 +157,69 @@ export class WinView {
 
     secondaryRow.append(playAgainButton, doneLink);
 
-    this.element.append(headline, title, time, pillRow, stats, shareButton, secondaryRow, nextCountdown);
+    const achievementsSection =
+      payload.unlockedAchievements && payload.unlockedAchievements.length > 0
+        ? this.renderAchievementsSection(payload.unlockedAchievements)
+        : null;
 
-    if (payload.unlockedAchievements && payload.unlockedAchievements.length > 0) {
-      const items = payload.unlockedAchievements
-        .map((id) => {
-          const def = ACHIEVEMENTS.find((a) => a.id === id);
-          if (!def) return null;
-          return {
-            id: def.id,
-            name: t(def.nameKey as import('../i18n').StringKey),
-            description: t(def.descriptionKey as import('../i18n').StringKey)
-          };
-        })
-        .filter((item) => item !== null);
+    const children: HTMLElement[] = [
+      headline,
+      title,
+      time,
+      pillRow,
+      ...(achievementsSection ? [achievementsSection] : []),
+      stats,
+      shareButton,
+      secondaryRow,
+      nextCountdown
+    ];
 
-      if (items.length > 0) {
-        window.setTimeout(() => showAchievementToasts(items as any), 400);
-      }
+    this.element.append(...children);
+
+  }
+
+  private renderAchievementsSection(unlockedAchievementIds: string[]): HTMLElement | null {
+    const unlockedDefs = unlockedAchievementIds
+      .map((id) => ACHIEVEMENTS.find((achievement) => achievement.id === id))
+      .filter((def): def is typeof ACHIEVEMENTS[number] => !!def);
+
+    if (unlockedDefs.length === 0) return null;
+
+    const achievementsSection = document.createElement('section');
+    achievementsSection.className = 'win-achievements-section';
+
+    const heading = document.createElement('div');
+    heading.className = 'win-achievements-heading';
+    heading.textContent = t('win.achievements_unlocked');
+    achievementsSection.append(heading);
+
+    for (const def of unlockedDefs) {
+      achievementsSection.append(this.renderAchievementCard(def));
     }
+
+    return achievementsSection;
+  }
+
+  private renderAchievementCard(def: typeof ACHIEVEMENTS[number]): HTMLElement {
+    const card = document.createElement('div');
+    card.className = 'win-achievement-card';
+
+    const icon = document.createElement('div');
+    icon.className = 'win-achievement-card-icon';
+    icon.append(createIcon('trophy'));
+    card.append(icon);
+
+    const details = document.createElement('div');
+    details.className = 'win-achievement-details';
+    const name = document.createElement('div');
+    name.className = 'win-achievement-name';
+    name.textContent = t(def.nameKey as import('../i18n').StringKey);
+    const desc = document.createElement('div');
+    desc.className = 'win-achievement-description';
+    desc.textContent = t(def.descriptionKey as import('../i18n').StringKey);
+    details.append(name, desc);
+    card.append(details);
+    return card;
   }
 
   private async onPlayAgain(): Promise<void> {

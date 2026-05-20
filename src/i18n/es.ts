@@ -1,6 +1,26 @@
 import type { strings as enStrings } from './en';
-
 export const strings: Record<keyof typeof enStrings, string> = {
+  // AchievementsView category labels
+  'achievement_category.streak': 'Racha',
+  'achievement_category.volume': 'Resueltos',
+  'achievement_category.mastery': 'Impecable',
+  'achievement_category.speed': 'Velocidad',
+  'achievement_category.consistency': 'Consistencia',
+  'achievement_category.variety': 'Variedad',
+  // AchievementsView
+  'achievements.back': '← Menú',
+  'achievements.unlocked_summary': '{earned}/{total} desbloqueados',
+  'achievements.earned_on': 'Obtenido el {date}',
+  'achievements.locked': 'Bloqueado',
+  // Achievements
+  'menu.achievements_aria': 'Logros',
+  'achievements.title': 'Logros',
+  'achievements.category.streak': 'Racha',
+  'achievements.category.solve': 'Resueltos',
+  'achievements.category.pristine': 'Impecable',
+  'achievements.category.speed': 'Velocidad',
+  'achievements.category.archive': 'Archivo',
+  'achievements.category.special': 'Especial',
   // Menu - top bar / chrome
   'menu.day_chip': 'Día {n}',
   'menu.settings_aria': 'Ajustes',
@@ -42,6 +62,7 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'settings.back': '← Menú',
   'settings.section_language': 'Idioma',
   'settings.section_skin': 'Skin',
+    'settings.more_skins_in_app': 'Más skins en la app',
   'settings.section_about': 'Acerca de',
   'settings.about_credit': 'Por KrisEnigma',
   'settings.version': 'GlitchSalad v{version}',
@@ -61,6 +82,7 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'hint.out_close': 'Aceptar',
 
   // Win view
+  'win.achievements_unlocked': '¡Logro desbloqueado!',
   'win.pristine_label': 'Impecable',
   'win.solved_subtitle': '¡Resuelto!',
   'win.new_best': 'Nuevo récord',
@@ -120,7 +142,6 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'dialog.reset_progress_confirm': 'Restablecer',
 
   // Settings — web-only affordances
-  'settings.web_only_skin_label': 'Solo web — descarga la app',
   'settings.store_app_store': 'App Store',
   'settings.store_play_store': 'Google Play',
   'settings.privacy_policy': 'Política de privacidad',
