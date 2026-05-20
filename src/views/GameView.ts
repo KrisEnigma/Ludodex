@@ -291,10 +291,25 @@ export class GameView {
     });
 
     this.bindPointerEvents();
-    this.element.addEventListener('pointerdown', (event) => {
+    // Outside-grid deselection: any pointerdown not on the grid clears the active
+    // chain. Attached to `document` (capture phase) instead of `this.element` so it
+    // catches taps anywhere on the page — including header buttons, modals that
+    // haven't opened yet, and the area around the app shell. Capture phase runs
+    // before any descendant handler can stop propagation.
+    //
+    // Self-cleaning: when the GameView is replaced and this.element is detached,
+    // the next pointerdown removes the listener.
+    const handleOutsidePointerDown = (event: PointerEvent): void => {
+      if (!this.element.isConnected) {
+        document.removeEventListener('pointerdown', handleOutsidePointerDown, true);
+        return;
+      }
+      if (this.solved) return;
       if (this.gridWrap.contains(event.target as Node)) return;
+      if (this.inputManager.getChain().length === 0) return;
       this.inputManager.clearChain();
-    });
+    };
+    document.addEventListener('pointerdown', handleOutsidePointerDown, true);
 
     // Hints: ensure daily grant, restore reveals, update counter
     void (async () => {
