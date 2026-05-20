@@ -1,5 +1,6 @@
 // (moved inside Router class below)
 import type { Puzzle } from '../types/puzzle';
+import { track } from '../services/AnalyticsService';
 import { trackRoute } from '../services/SentryService';
 
 import { ArchiveView } from './ArchiveView';
@@ -57,6 +58,7 @@ export class Router {
       payload: (payload ?? this.defaultPayload(route)) as RoutePayloads[T]
     } as AnyRouteEntry);
     trackRoute(route, 'push');
+    this.trackViewIfRelevant(route);
     this.renderCurrent();
   }
 
@@ -73,6 +75,7 @@ export class Router {
     }
 
     trackRoute(route, 'replace');
+    this.trackViewIfRelevant(route);
     this.renderCurrent();
   }
 
@@ -173,5 +176,12 @@ export class Router {
     if (route === 'how-to-play') return { fromOnboarding: false } as RoutePayloads[T];
     if (route === 'achievements') return undefined as RoutePayloads[T];
     throw new Error(`Route ${route} requires a payload`);
+  }
+
+  private trackViewIfRelevant(routeName: RouteName): void {
+    const relevant: RouteName[] = ['settings', 'archive', 'achievements', 'how-to-play'];
+    if (relevant.includes(routeName)) {
+      track('view_opened', { view_name: routeName });
+    }
   }
 }

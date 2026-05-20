@@ -2,6 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import { getLang, setLang, t, type Language } from '../i18n';
 import { applySkin, getCurrentSkinId, SKINS, type SkinId, type SkinMeta } from '../skins/registry';
 import { isOwned, purchase, restorePurchases } from '../services/IAPService';
+import { track, updateLocale, setPaidStatus } from '../services/AnalyticsService';
 import { getActiveSkinId, resetAllProgress, setActiveSkinId } from '../services/ProgressService';
 import { getMonetizationContext } from '../services/MonetizationContext';
 import { LEGAL_URLS, STORE_URLS } from '../config/legalUrls';
@@ -35,12 +36,14 @@ export class SettingsView {
 
     this.previewingSkinId = skinId;
     applySkin(skinId);
+    track('skin_preview_entered', { skin_id: skinId });
     this.renderPreviewBanner();
   }
 
   private async exitPreview(): Promise<void> {
     if (this.previewingSkinId === null) return;
 
+    const cancelledSkin = this.previewingSkinId;
     const revertTo = this.skinIdBeforePreview ?? 'void';
     this.previewingSkinId = null;
     this.skinIdBeforePreview = null;
@@ -50,6 +53,8 @@ export class SettingsView {
       this.previewBanner.remove();
       this.previewBanner = null;
     }
+
+    track('skin_preview_cancelled', { skin_id: cancelledSkin });
   }
 
   private async commitPreview(): Promise<void> {
@@ -122,10 +127,11 @@ export class SettingsView {
   private async attemptPurchaseFromPreview(skin: SkinMeta): Promise<void> {
     if (!skin.productId) return;
 
+    track('skin_preview_buy_tapped', { skin_id: skin.id, product_id: skin.productId });
     this.status.textContent = t('settings.purchase_in_progress', { name: this.getSkinName(skin.id) });
 
     try {
-      const result = await purchase(skin.productId);
+      const result = await purchase(skin.productId, 'skin_preview');
       const purchased = result.status === 'success';
 
       if (!purchased && skin.bundleProductId) {
@@ -138,6 +144,11 @@ export class SettingsView {
       await this.refreshEntitlements();
 
       if (this.unlockedBySkin.get(skin.id)) {
+        const owned: string[] = [];
+        for (const s of SKINS) {
+          if (s.productId && this.unlockedBySkin.get(s.id)) owned.push(s.productId);
+        }
+        setPaidStatus(owned.length > 0, owned);
         await this.commitPreview();
         this.status.textContent = '';
       } else {
@@ -257,6 +268,7 @@ export class SettingsView {
       await this.exitPreview();
     }
     await setLang(lang);
+    updateLocale();
     this.onLanguageChange();
   }
 
@@ -379,7 +391,7 @@ export class SettingsView {
   private async refreshEntitlements(): Promise<void> {
     if (!this.isNative) {
       for (const skin of SKINS) {
-        this.unlockedBySkin.set(skin.id, true);
+        this.unlockedBySkin.set(skin.id, skin.productId === null);
       }
       return;
     }
@@ -412,10 +424,16 @@ export class SettingsView {
 
     button.addEventListener('click', () => {
       void (async () => {
+        track('iap_restore_tapped');
         this.status.textContent = t('settings.restoring_purchases');
         try {
           await restorePurchases();
           await this.refreshEntitlements();
+          const owned: string[] = [];
+          for (const s of SKINS) {
+            if (s.productId && this.unlockedBySkin.get(s.id)) owned.push(s.productId);
+          }
+          setPaidStatus(owned.length > 0, owned);
           this.refreshSkinCards();
           this.status.textContent = '';
         } catch {

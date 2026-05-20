@@ -1,5 +1,6 @@
 import { Preferences } from '@capacitor/preferences';
 import { t } from '../i18n';
+import { track } from '../services/AnalyticsService';
 
 const TUTORIAL_KEY = 'tutorial_seen';
 
@@ -35,6 +36,11 @@ export class HowToPlayView {
     const step = this.steps[this.current];
     const isLast = this.current === this.steps.length - 1;
 
+    track('tutorial_step_viewed', {
+      step: this.current + 1,
+      from_onboarding: this.payload.fromOnboarding
+    });
+
     const topBar = document.createElement('div');
     topBar.className = 'how-to-play-topbar';
 
@@ -44,6 +50,7 @@ export class HowToPlayView {
     if (this.payload.fromOnboarding) {
       navAction.textContent = t('how_to_play.close');
       navAction.addEventListener('click', () => {
+        track('tutorial_skipped', { at_step: this.current + 1 });
         void this.complete();
       });
     } else {
@@ -104,6 +111,10 @@ export class HowToPlayView {
   }
 
   private async complete(): Promise<void> {
+    track('tutorial_completed', {
+      from_onboarding: this.payload.fromOnboarding,
+      completed_at_step: this.current + 1
+    });
     await Preferences.set({ key: TUTORIAL_KEY, value: 'true' });
     this.onFinish();
   }

@@ -1,4 +1,5 @@
 import { Capacitor } from '@capacitor/core';
+import { track } from './AnalyticsService';
 import { getMonetizationContext } from './MonetizationContext';
 
 const FALLBACK_RC_KEY = 'RC_KEY';
@@ -60,17 +61,33 @@ export async function getProductInfo(productId: string): Promise<ProductInfo | n
   return FALLBACK_CATALOG[productId] ?? null;
 }
 
-export async function purchase(productId: string): Promise<PurchaseResult> {
+export async function purchase(
+  productId: string,
+  source: 'skin_preview' | 'unknown' = 'unknown'
+): Promise<PurchaseResult> {
+  track('iap_purchase_started', { product_id: productId, source });
   const ctx = getMonetizationContext();
   if (!ctx.isNative) {
-    return { status: 'unavailable', productId, reason: 'web' };
+    const result = { status: 'unavailable', productId, reason: 'web' } as const;
+    track('iap_purchase_failed', {
+      product_id: productId,
+      reason: result.reason,
+      source
+    });
+    return result;
   }
   // TODO(native): Trigger RevenueCat purchase flow.
   //   try {
   //     const result = await Purchases.purchaseProduct({ productIdentifier: productId });
   //     return { status: 'success', productId };
   //   } catch (err) { ...map to PurchaseStatus... }
-  return { status: 'failed', productId, reason: 'not-implemented' };
+  const result = { status: 'failed', productId, reason: 'not-implemented' } as const;
+  track('iap_purchase_failed', {
+    product_id: productId,
+    reason: result.reason ?? result.status,
+    source
+  });
+  return result;
 }
 
 export async function restorePurchases(): Promise<PurchaseResult[]> {

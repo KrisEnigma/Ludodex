@@ -24,6 +24,7 @@ import { t as tp } from '../utils/i18n';
 import { ACHIEVEMENTS } from '../data/achievements';
 import { detectAndUnlockAchievements } from '../services/AchievementService';
 import { getDayNumberSinceLaunch } from '../game/PuzzleLoader';
+import { track } from '../services/AnalyticsService';
 import type { RoutePayloads } from './Router';
 import type { WinPayload } from './types';
 
@@ -321,6 +322,14 @@ export class GameView {
     })();
 
     this.element.append(header, titleRow, this.gridWrap, hints, tutorialLabel);
+
+    track('puzzle_started', {
+      puzzle_id: this.puzzleId,
+      day_number: this.dayNumber,
+      is_archive: !this.isTodaysDaily,
+      is_tutorial: this.isTutorial,
+      is_replay: false
+    });
   }
 
   private buildLetterSlot(partId: string, letterIndex: number, letter: string): HTMLElement {
@@ -382,6 +391,12 @@ export class GameView {
     const state = await consumeHint();
     this.hintsRemaining = state.hintsRemaining;
     this.updateHintCounter();
+
+    track('hint_used', {
+      puzzle_id: this.puzzleId,
+      hints_used_this_puzzle: this.hintsUsed,
+      hints_remaining: this.hintsRemaining
+    });
 
     await addPuzzleReveal(this.puzzleId, { partId, letterIndex });
   }
@@ -511,6 +526,17 @@ export class GameView {
     });
 
     if (!confirmed) return;
+
+    const totalParts = this.partEntriesById.size;
+    const solvedParts = this.solvedPartIds.size;
+    track('puzzle_abandoned', {
+      puzzle_id: this.puzzleId,
+      day_number: this.dayNumber,
+      elapsed_sec: this.getElapsedSeconds(),
+      progress_pct: totalParts === 0 ? 0 : Math.round((solvedParts / totalParts) * 100),
+      is_archive: !this.isTodaysDaily,
+      hints_used: this.hintsUsed
+    });
 
     this.stopTimer();
     this.onMenu();
@@ -795,6 +821,18 @@ export class GameView {
             currentDayNumber: getDayNumberSinceLaunch()
           });
         }
+
+        track('puzzle_solved', {
+          puzzle_id: this.puzzleId,
+          day_number: this.dayNumber,
+          elapsed_sec: elapsedSeconds,
+          star_rating: starRating,
+          hints_used: this.hintsUsed,
+          is_archive: !this.isTodaysDaily,
+          is_tutorial: this.isTutorial,
+          was_new_best: wasNewBest,
+          was_new_rating: wasNewRating
+        });
 
         await maybeShowInterstitial(snapshot.totalSolveAttempts);
 

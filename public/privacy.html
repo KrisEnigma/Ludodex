@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#07090e" />
+    <meta name="description" content="GlitchSalad privacy policy" />
+    <title>GlitchSalad Privacy Policy</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #07090e;
+        --bg2: #121a27;
+        --card: rgba(17, 24, 36, 0.92);
+        --text: #d6dce6;
+        --muted: #8b96aa;
+        --accent: #00d4e8;
+        --border: #263247;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+        color: var(--text);
+        background: radial-gradient(circle at top, var(--bg2), var(--bg) 58%);
+      }
+
+      main {
+        width: min(860px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 32px 0 64px;
+      }
+
+      article {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 28px 22px;
+        box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+      }
+
+      h1,
+      h2 {
+        margin: 0 0 12px;
+      }
+
+      h1 {
+        font-size: clamp(28px, 5vw, 40px);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      h2 {
+        margin-top: 28px;
+        font-size: 18px;
+        letter-spacing: 0.06em;
+        color: var(--accent);
+      }
+
+      p,
+      li {
+        font-size: 14px;
+        line-height: 1.68;
+      }
+
+      ul {
+        padding-left: 20px;
+      }
+
+      .meta {
+        color: var(--muted);
+        margin: 6px 0;
+      }
+
+      a {
+        color: var(--accent);
+      }
+
+      strong {
+        color: #fff;
+      }
+
+      code {
+        font-family: inherit;
+        font-size: 0.95em;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <article>
+        <header>
+          <h1>Privacy Policy</h1>
+          <p class="meta"><strong>Effective date:</strong> [SET BEFORE LAUNCH]</p>
+          <p class="meta"><strong>Last updated:</strong> [SET BEFORE LAUNCH]</p>
+        </header>
+
+        <p>
+          GlitchSalad ("the app", "we", "us") is a daily word puzzle game built by KrisEnigma.
+          This policy explains what data the app handles, where it goes, and what choices you have.
+        </p>
+        <p>We keep this short on purpose. The app is built to need very little about you.</p>
+
+        <section>
+          <h2>Who we are</h2>
+          <p>
+            GlitchSalad is operated by KrisEnigma, an independent developer based in Santiago,
+            Chile. You can reach us at <strong>support@glitchsalad.app</strong> for any privacy
+            question.
+          </p>
+        </section>
+
+        <section>
+          <h2>What we store on your device</h2>
+          <p>
+            Most of what the app remembers is stored locally on your phone or browser, and never
+            leaves your device unless you choose to share it. That includes:
+          </p>
+          <ul>
+            <li>Which puzzles you've solved and how fast</li>
+            <li>Your current streak and best streak</li>
+            <li>Your star ratings per puzzle and pristine count</li>
+            <li>How many hints you've used and which puzzles you've revealed letters in</li>
+            <li>Which achievements you've unlocked and when</li>
+            <li>Your language preference (English or Spanish)</li>
+            <li>Your selected skin</li>
+            <li>Whether you've seen the tutorial</li>
+          </ul>
+          <p>
+            This data is held by your device's secure key-value storage (Apple Preferences on iOS,
+            SharedPreferences on Android, localStorage on web). It is not transmitted to us or to
+            anyone else. You can wipe all of it at any time by long-pressing the version number in
+            Settings and confirming "Reset progress", or by uninstalling the app.
+          </p>
+        </section>
+
+        <section>
+          <h2>What we send over the network</h2>
+          <p>
+            The app talks to a small number of third-party services. Each has its own privacy
+            policy linked below.
+          </p>
+
+          <p>
+            <strong>Puzzle data hosting (all platforms).</strong> The app fetches its daily puzzle
+            list from <code>cdn.glitchsalad.app</code>, hosted on Cloudflare Pages. Cloudflare
+            receives standard request metadata (your IP address, your device's User-Agent string,
+            the time of the request). We do not send any account info, progress, or identifiers
+            with this request.
+          </p>
+
+          <p>
+            <strong>Advertising — AdMob (iOS and Android only).</strong> If you have not purchased
+            "Remove Ads", the app shows an interstitial ad from Google AdMob every two solved
+            puzzles. AdMob collects information including your device's advertising identifier, IP
+            address, ad interactions, and approximate location to deliver and measure ads. On first
+            launch in regions covered by GDPR or similar laws, the app shows Google's User
+            Messaging Platform consent prompt so you can choose between personalised and
+            non-personalised ads. On iOS, the app also requests App Tracking Transparency
+            permission as required by Apple. You can disable ads entirely by purchasing "Remove
+            Ads" inside the app, or by enabling "Limit Ad Tracking" (iOS) or "Opt out of Ads
+            Personalization" (Android) in your device settings. AdMob's privacy policy:
+            <a href="https://policies.google.com/privacy">https://policies.google.com/privacy</a>.
+          </p>
+
+          <p>
+            <strong>In-app purchases — RevenueCat (iOS and Android only).</strong> Purchases are
+            processed by Apple App Store or Google Play. RevenueCat sits between us and the stores
+            to verify entitlements (whether you own "Remove Ads", a skin, or the bundle).
+            RevenueCat generates an anonymous user ID tied to your device and stores your purchase
+            history. We do not send your name, email, or any personal info to RevenueCat — only
+            the anonymous ID and your purchase events. RevenueCat's privacy policy:
+            <a href="https://www.revenuecat.com/privacy">https://www.revenuecat.com/privacy</a>.
+          </p>
+
+          <p>
+            <strong>Crash reporting — Sentry (all platforms).</strong> When the app crashes or
+            hits an unexpected error, we collect a stack trace, your app version, your device model
+            and OS version, and the recent in-app actions ("breadcrumbs") that led up to the error.
+            We do not include the content of your puzzle attempts, your progress data, or any
+            identifier that ties the report back to you specifically. Reports are retained for 30
+            days and used solely to fix bugs. Sentry's privacy policy:
+            <a href="https://sentry.io/privacy/">https://sentry.io/privacy/</a>.
+          </p>
+
+          <p>
+            <strong>Product analytics — PostHog (all platforms).</strong> To understand how
+            players move through the app and what improvements actually matter, we send anonymous
+            usage events to PostHog. The events cover: which views you open, when you start and
+            complete puzzles, when you preview or purchase a skin, when you unlock an achievement,
+            when you skip or complete the tutorial. Each event is tied to a randomly generated
+            anonymous identifier stored on your device — never your name, email, or anything
+            personally identifying. We do not use PostHog for advertising or share any data with
+            third parties. PostHog's privacy policy:
+            <a href="https://posthog.com/privacy">https://posthog.com/privacy</a>.
+          </p>
+
+          <p>
+            <strong>Achievements (iOS and Android only).</strong> When you unlock an achievement,
+            the app reports it to Apple's Game Center (iOS) or Google Play Games (Android) so it
+            appears in your platform-level gaming profile. The reported data is the achievement
+            identifier only. Apple's and Google's gaming privacy practices apply:
+            <a href="https://www.apple.com/legal/privacy/en-ww/">https://www.apple.com/legal/privacy/en-ww/</a>
+            and
+            <a href="https://policies.google.com/privacy">https://policies.google.com/privacy</a>.
+          </p>
+
+          <p>
+            <strong>Notifications (iOS and Android only).</strong> The app schedules a local daily
+            reminder using your device's notification system. The reminder is generated and shown
+            by your device — no notification content leaves your device.
+          </p>
+
+          <p>
+            That's the full list of network calls. There are no analytics SDKs, no advertising
+            trackers beyond AdMob, no fingerprinting, no email lists.
+          </p>
+        </section>
+
+        <section>
+          <h2>What we never collect</h2>
+          <p>
+            To be explicit: GlitchSalad does not ask for or store your name, your email address,
+            your phone number, your contacts, your photos, your microphone, your camera, your
+            precise location, your health data, your contacts, your browsing history outside the
+            app, or any account login. There are no user accounts at all.
+          </p>
+        </section>
+
+        <section>
+          <h2>Children</h2>
+          <p>
+            The app is rated 4+ on iOS and "Everyone" on Google Play. We do not knowingly collect
+            personal information from children under 13 (or the equivalent minimum age in your
+            jurisdiction). On iOS, if your device is part of a Family Sharing group with Ask to Buy
+            enabled, in-app purchases are gated through a parent or guardian. If you believe a
+            child has used the app under conditions that would require parental consent, contact us
+            and we will delete any associated data on request — though as described above, that
+            data is normally only present on the child's own device.
+          </p>
+        </section>
+
+        <section>
+          <h2>Your rights</h2>
+          <p>
+            Because GlitchSalad does not maintain user accounts or store personal data on our
+            servers, most data-access requests are satisfied by you, on your device:
+          </p>
+          <ul>
+            <li>
+              <strong>Access:</strong> every piece of data the app stores about your play is
+              visible inside the app itself (Settings, achievements view, archive).
+            </li>
+            <li>
+              <strong>Erase:</strong> long-press the version number in Settings → "Reset
+              progress", or uninstall the app. Both actions are immediate and irreversible.
+            </li>
+            <li>
+              <strong>Restrict ads / purchase tracking:</strong> use your device's privacy settings
+              to limit ad personalisation. Purchase "Remove Ads" to eliminate AdMob requests
+              entirely.
+            </li>
+          </ul>
+          <p>
+            If you are in the EU/UK (GDPR), California (CCPA/CPRA), Brazil (LGPD), or Chile (Ley
+            19.628) and want to make a formal request about data held by our third-party processors
+            (AdMob, RevenueCat, Sentry, PostHog), contact us at the address below and we will
+            forward your request to the relevant processor.
+          </p>
+        </section>
+
+        <section>
+          <h2>Data retention</h2>
+          <p>
+            Local device data persists until you reset it or uninstall. Third-party processors
+            retain data according to their own policies (linked above) — typically: AdMob up to 14
+            months for analytics, RevenueCat for the lifetime of the anonymous ID, Sentry for 30
+            days.
+          </p>
+        </section>
+
+        <section>
+          <h2>International data transfers</h2>
+          <p>
+            The third-party services listed above are operated by U.S. companies and may transfer
+            data outside your country of residence. Each processor has its own safeguards (Standard
+            Contractual Clauses for EU transfers, etc.) documented in their privacy policies.
+          </p>
+        </section>
+
+        <section>
+          <h2>Changes to this policy</h2>
+          <p>
+            If we change what data the app handles, we update this page and bump the "Last
+            updated" date. Material changes will also be noted in the app's "What's new" text on
+            the next release.
+          </p>
+        </section>
+
+        <section>
+          <h2>Contact</h2>
+          <p>Privacy questions: <strong>support@glitchsalad.app</strong></p>
+          <p>Operator: <strong>KrisEnigma, Santiago, Chile</strong></p>
+        </section>
+      </article>
+    </main>
+  </body>
+</html>

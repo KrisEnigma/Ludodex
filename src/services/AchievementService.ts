@@ -1,5 +1,6 @@
 import { Preferences } from '@capacitor/preferences';
 import { ACHIEVEMENTS, type SnapshotContext, type SolveContext } from '../data/achievements';
+import { track } from './AnalyticsService';
 import { getMonetizationContext } from './MonetizationContext';
 
 const EARNED_KEY = 'glitchsalad.achievements_earned';
@@ -55,6 +56,13 @@ export async function detectAndUnlockAchievements(ctx: SolveContext): Promise<st
     earned.push({ id: def.id, earnedAt: now });
     earnedIds.add(def.id);
     newlyUnlocked.push(def.id);
+    track('achievement_unlocked', {
+      achievement_id: def.id,
+      category: def.category,
+      current_streak: ctx.currentStreak,
+      solved_count: ctx.solvedCount,
+      pristine_count: ctx.pristineCount
+    });
     void unlockNative(def.id);
   }
 

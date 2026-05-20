@@ -9,6 +9,7 @@ import { applySkin, normalizeSkinId } from './skins/registry';
 import { initIAP } from './services/IAPService';
 import { bootstrapProgress, getActiveSkinId, getSolvedTimes } from './services/ProgressService';
 import { retroactivelyUnlockEarnedAchievements } from './services/AchievementService';
+import { initAnalytics, track, updateLocale } from './services/AnalyticsService';
 import { initSentry } from './services/SentryService';
 import { Router } from './views/Router';
 
@@ -19,6 +20,7 @@ if (!app) {
 
 void (async () => {
   initSentry();
+  initAnalytics();
 
   try {
     await initIAP();
@@ -27,6 +29,7 @@ void (async () => {
   }
 
   await initI18n();
+  updateLocale();
   ensureBundledPuzzlesLoaded();
 
   applySkin(normalizeSkinId(await getActiveSkinId()));
@@ -34,6 +37,7 @@ void (async () => {
   // Bootstrap progress (with pristine_count backfill), then run the retroactive
   // achievement scan so upgrading players catch up silently.
   const snapshot = await bootstrapProgress();
+  track('app_opened', { is_first_open: snapshot.solvedCount === 0 });
   const solvedTimes = await getSolvedTimes();
   const bestTimeSec = (() => {
     const values = Object.values(solvedTimes).filter((v): v is number => Number.isFinite(v));
