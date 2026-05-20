@@ -82,9 +82,6 @@ export class MenuView {
 
     logo.append(logoTop, logoBottom);
 
-    const divider = document.createElement('div');
-    divider.className = 'menu-divider';
-
     const statsStrip = document.createElement('div');
     statsStrip.className = 'stats-strip';
 
@@ -97,7 +94,7 @@ export class MenuView {
 
     const streakFire = document.createElement('span');
     streakFire.className = 'stat-fire-icon';
-    streakFire.textContent = '🔥';
+    streakFire.append(createIcon('flame'));
     streakFire.hidden = true;
 
     const streakValue = document.createElement('span');
@@ -293,7 +290,7 @@ export class MenuView {
       }
     })();
 
-    this.element.append(topBar, logo, divider, statsStrip, dailySection, footerActions);
+    this.element.append(topBar, logo, statsStrip, dailySection, footerActions);
     if (getAppRow) {
       this.element.append(getAppRow);
     }
@@ -311,8 +308,11 @@ export class MenuView {
     card.className = 'yesterday-card';
     card.dataset.status = isSolved ? 'solved' : 'unsolved';
 
+    const content = document.createElement('div');
+    content.className = 'yesterday-card-content';
+
     const tag = document.createElement('div');
-    tag.className = 'yesterday-card-tag';
+    tag.className = 'yesterday-card-label';
     tag.textContent = t('menu.yesterday_tag', { n: dayNumber });
 
     const title = document.createElement('div');
@@ -346,7 +346,8 @@ export class MenuView {
     chevron.className = 'yesterday-card-chevron';
     chevron.appendChild(createIcon('chevron-right'));
 
-    card.append(tag, title, status, chevron);
+    content.append(tag, title, status);
+    card.append(content, chevron);
     return card;
   }
 
@@ -356,7 +357,7 @@ export class MenuView {
 
     const icon = document.createElement('span');
     icon.className = 'streak-loss-icon';
-    icon.textContent = '🔥';
+    icon.append(createIcon('flame'));
 
     const text = document.createElement('span');
     text.className = 'streak-loss-text';

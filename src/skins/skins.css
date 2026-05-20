@@ -32,9 +32,9 @@
   --hint-empty-bg: rgba(20, 24, 34, 0.19);
   --hint-empty-border: #2a3148;
   --hint-empty-letter: transparent;
-  --hint-solved-bg: #1e4d2b;
-  --hint-solved-border: #2faa55;
-  --hint-solved-letter: #b5f2c4;
+  --hint-solved-bg: #0d3a42;
+  --hint-solved-border: #00d4e8;
+  --hint-solved-letter: #9af0ff;
   --skin-button-bg: rgba(19, 24, 36, 0.8);
   --skin-button-border: #2a3148;
   --skin-button-text: #cfd6e1;

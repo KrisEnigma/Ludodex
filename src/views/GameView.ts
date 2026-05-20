@@ -1,6 +1,7 @@
 import { InputManager } from '../game/InputManager';
 import { HapticService } from '../services/HapticService';
 import { t } from '../i18n';
+import { createIcon } from '../components/icons';
 import { Tile } from '../game/Tile';
 import { applySolvedPart, buildTileOwnership, type PartOwnershipEntry, type TileOwnershipState } from '../game/tileOwnership';
 import { showConfirmModal, showInfoModal } from '../components/Modal';
@@ -50,7 +51,9 @@ export class GameView {
   private readonly partIdsByWord = new Map<string, string[]>();
   private readonly partIdsByAnswer = new Map<string, string[]>();
   private readonly fullAnswerWordToPartIds = new Map<string, string[]>();
+  private readonly answerFullPaths = new Map<string, string[]>();
   private readonly solvedPartIds = new Set<string>();
+  private readonly solvedAnswerDisplays = new Set<string>();
   private readonly allTiles: Tile[];
   private readonly inputManager: InputManager<{ partIds: string[] }>;
   private readonly ownershipState: TileOwnershipState;
@@ -60,7 +63,6 @@ export class GameView {
   private readonly puzzle: Puzzle;
   private readonly isTodaysDaily: boolean;
   private readonly isTutorial: boolean;
-  private readonly wordsProgressLabel: HTMLParagraphElement;
   private readonly puzzleId: string;
   private readonly puzzleTitle: string;
   private readonly timerLabel: HTMLSpanElement;
@@ -68,8 +70,9 @@ export class GameView {
   private timerPausedAt: number | null = null;
   private timerTotalPausedMs = 0;
   private timerInterval: number | null = null;
-  private selectionsStarted = 0;
-  private undosPerformed = 0;
+  private chainsStarted = 0;
+  private wrongLetterAdds = 0;
+  private wordsFound = 0;
   private hintsUsed: number = 0;
   private hintsRemaining: number = 0;
   private hintCounterEl!: HTMLElement;
@@ -112,7 +115,7 @@ export class GameView {
     this.hintCounterEl.className = 'game-hint-counter';
     const hintIcon = document.createElement('span');
     hintIcon.className = 'game-hint-counter-icon';
-    hintIcon.textContent = '💡';
+    hintIcon.append(createIcon('bulb'));
     this.hintCounterCount = document.createElement('span');
     this.hintCounterCount.className = 'game-hint-counter-count';
     this.hintCounterCount.textContent = '3';
@@ -134,11 +137,7 @@ export class GameView {
     const title = document.createElement('h2');
     title.className = 'view-title';
     title.textContent = this.puzzleTitle;
-
-    this.wordsProgressLabel = document.createElement('p');
-    this.wordsProgressLabel.className = 'game-words-progress';
-    this.updateWordsProgressLabel();
-    titleRow.append(title, this.wordsProgressLabel);
+    titleRow.append(title);
 
     this.gridWrap = document.createElement('div');
     this.gridWrap.className = 'grid-wrap';
@@ -158,7 +157,10 @@ export class GameView {
         tile.dataset.row = String(row);
         tile.dataset.col = String(col);
         tile.dataset.state = 'idle';
-        tile.textContent = model.letter;
+        const letterSpan = document.createElement('span');
+        letterSpan.className = 'tile-letter';
+        letterSpan.textContent = model.letter;
+        tile.append(letterSpan);
         gridEl.appendChild(tile);
 
         this.allTiles.push(model);
@@ -190,6 +192,10 @@ export class GameView {
     const answers = [...puzzle.answers].sort((a, b) => a.display.localeCompare(b.display));
     const ownershipEntries: PartOwnershipEntry[] = [];
 
+    for (const answer of puzzle.answers) {
+      this.answerFullPaths.set(answer.display, answer.parts.flatMap((part) => part.path));
+    }
+
     for (const answer of answers) {
       const row = document.createElement('div');
       row.className = 'hint-row';
@@ -215,9 +221,11 @@ export class GameView {
         const slotsForPart: HTMLSpanElement[] = [];
 
         if (index > 0) {
-          const gap = document.createElement('span');
-          gap.className = 'word-gap';
-          row.appendChild(gap);
+          const separator = document.createElement('span');
+          separator.className = 'hint-word-separator';
+          separator.textContent = '·';
+          separator.setAttribute('aria-hidden', 'true');
+          row.append(separator);
         }
 
 
@@ -276,12 +284,10 @@ export class GameView {
       events: {
         onChainChanged: (chain) => this.onChainChanged(chain),
         onInvalidWord: () => {
-          // Shake animation and haptic feedback
-          HapticService.notification('warning');
-          this.gridWrap.classList.remove('tile-invalid-shake');
-          // Force reflow to restart animation
-          void this.gridWrap.offsetWidth;
-          this.gridWrap.classList.add('tile-invalid-shake');
+          // Intentionally silent. Wrong-letter additions are tracked by the
+          // path-prefix check in onChainChanged and surface at win time via the
+          // mistake counter. No grid shake, no warning haptic, no toast — mid-swipe
+          // stops are exploration, not error states.
         },
         onWordFound: (match) => {
           HapticService.impactMedium();
@@ -355,7 +361,10 @@ export class GameView {
     slot.dataset.revealed = 'false';
     slot.dataset.filled = 'false';
     slot.dataset.letter = letter;
-    slot.textContent = letter;
+    const letterSpan = document.createElement('span');
+    letterSpan.className = 'hint-slot-letter';
+    letterSpan.textContent = letter;
+    slot.append(letterSpan);
 
     slot.addEventListener('pointerdown', (e) => this.onHintSlotPointerDown(e, slot));
     slot.addEventListener('pointerup', () => this.onHintSlotPointerEnd(slot));
@@ -387,7 +396,7 @@ export class GameView {
   }
 
   private async onHintSlotAnimationEnd(event: AnimationEvent, slot: HTMLElement): Promise<void> {
-    if (event.animationName !== 'hint-reveal-fill') return;
+    if (event.animationName !== 'hint-reveal-rise') return;
     if (slot.dataset.revealed === 'true') return;
     if (slot.dataset.revealing !== 'true') return;
     delete slot.dataset.revealing;
@@ -420,10 +429,8 @@ export class GameView {
     this.hintCounterCount.textContent = String(this.hintsRemaining);
     if (this.hintsRemaining <= 0) {
       this.hintCounterEl.dataset.state = 'empty';
-    } else if (this.hintsRemaining === 1) {
-      this.hintCounterEl.dataset.state = 'low';
     } else {
-      this.hintCounterEl.dataset.state = 'normal';
+      delete this.hintCounterEl.dataset.state;
     }
   }
 
@@ -525,7 +532,7 @@ export class GameView {
       return;
     }
 
-    const hasProgress = this.solvedPartIds.size > 0 || this.selectionsStarted > 0 || this.getElapsedSeconds() >= 5;
+    const hasProgress = this.solvedPartIds.size > 0 || this.chainsStarted > 0 || this.getElapsedSeconds() >= 5;
     if (!hasProgress) {
       this.stopTimer();
       this.onMenu();
@@ -550,7 +557,8 @@ export class GameView {
       elapsed_sec: this.getElapsedSeconds(),
       progress_pct: totalParts === 0 ? 0 : Math.round((solvedParts / totalParts) * 100),
       is_archive: !this.isTodaysDaily,
-      hints_used: this.hintsUsed
+      hints_used: this.hintsUsed,
+      mistakes: this.getMistakeCount()
     });
 
     this.stopTimer();
@@ -600,13 +608,15 @@ export class GameView {
     const newLen = chain.length;
 
     if (prevLen === 0 && newLen >= 1) {
-      this.selectionsStarted += 1;
+      this.chainsStarted += 1;
       HapticService.selection();
-    } else if (newLen > 0 && newLen < prevLen) {
-      this.undosPerformed += 1;
-      HapticService.impactLight();
+      if (!this.isChainOnPath(chain)) this.wrongLetterAdds += 1;
     } else if (newLen > prevLen) {
       HapticService.impactLight();
+      if (!this.isChainOnPath(chain)) this.wrongLetterAdds += 1;
+    } else if (newLen > 0 && newLen < prevLen) {
+      HapticService.impactLight();
+      // backtrack — no mistake; this was the source of the false positives
     }
     this.previousChainLength = newLen;
 
@@ -693,6 +703,24 @@ export class GameView {
     return null;
   }
 
+  private isChainOnPath(chain: Tile[]): boolean {
+    if (chain.length === 0) return true;
+    const coords = chain.map((tile) => tile.coord);
+    for (const [display, fullPath] of this.answerFullPaths) {
+      if (this.solvedAnswerDisplays.has(display)) continue;
+      if (fullPath.length < coords.length) continue;
+      let isPrefix = true;
+      for (let i = 0; i < coords.length; i++) {
+        if (fullPath[i] !== coords[i]) {
+          isPrefix = false;
+          break;
+        }
+      }
+      if (isPrefix) return true;
+    }
+    return false;
+  }
+
   private onWordFound(partIds: string[]): void {
     if (this.solved) return;
 
@@ -727,10 +755,11 @@ export class GameView {
         }
       }
 
+      this.triggerTileFoundAnimation(partEntry.path);
+
       const slots = this.hintSlotsByPartId.get(partId) ?? [];
       for (let i = 0; i < slots.length; i++) {
         slots[i].dataset.filled = 'true';
-        slots[i].textContent = partEntry.word[i] ?? '';
       }
     }
 
@@ -740,12 +769,13 @@ export class GameView {
       const answerPartIds = this.partIdsByAnswer.get(firstEntry.answerDisplay) ?? [];
       const solved = answerPartIds.every((id) => this.solvedPartIds.has(id));
       if (solved) {
+        this.wordsFound += 1;
+        this.solvedAnswerDisplays.add(firstEntry.answerDisplay);
         const row = this.hintRowsByDisplay.get(firstEntry.answerDisplay);
         if (row) {
           row.dataset.solved = 'true';
           this.triggerCascade(row);
         }
-        this.updateWordsProgressLabel();
       }
     }
 
@@ -778,11 +808,39 @@ export class GameView {
     }
   }
 
+  private triggerTileFoundAnimation(path: string[]): void {
+    const STAGGER_MS = 50;
+    const FILL_DURATION_MS = 400;
+
+    path.forEach((coord, index) => {
+      const tile = this.tileByCoord.get(coord);
+      if (!tile) return;
+      const tileEl = this.tileElements.get(tile);
+      if (!tileEl) return;
+      tileEl.style.setProperty('--reveal-delay', `${index * STAGGER_MS}ms`);
+      tileEl.dataset.revealing = 'true';
+    });
+
+    const cleanupMs = FILL_DURATION_MS + (path.length - 1) * STAGGER_MS + 50;
+    window.setTimeout(() => {
+      for (const coord of path) {
+        const tile = this.tileByCoord.get(coord);
+        if (!tile) continue;
+        const tileEl = this.tileElements.get(tile);
+        if (!tileEl) continue;
+        tileEl.removeAttribute('data-revealing');
+        tileEl.style.removeProperty('--reveal-delay');
+      }
+    }, cleanupMs);
+  }
+
+  private getMistakeCount(): number {
+    const abandoned = Math.max(0, this.chainsStarted - this.wordsFound);
+    return this.wrongLetterAdds + abandoned;
+  }
 
   private getStarRating(): 1 | 2 | 3 {
-    const cleanExecution =
-      this.undosPerformed === 0 &&
-      this.selectionsStarted === this.puzzle.answers.length;
+    const cleanExecution = this.getMistakeCount() === 0;
     const noHints = this.hintsUsed === 0;
     const stars = 1 + (cleanExecution ? 1 : 0) + (noHints ? 1 : 0);
     return stars as 1 | 2 | 3;
@@ -796,6 +854,7 @@ export class GameView {
     const elapsedSeconds = this.getElapsedSeconds();
     this.timerLabel.textContent = this.formatElapsed(elapsedSeconds);
     const starRating = this.getStarRating();
+    const mistakes = this.getMistakeCount();
 
     // void haptic.pristineWin() or haptic.win() if available
 
@@ -843,6 +902,7 @@ export class GameView {
           elapsed_sec: elapsedSeconds,
           star_rating: starRating,
           hints_used: this.hintsUsed,
+          mistakes,
           is_archive: !this.isTodaysDaily,
           is_tutorial: this.isTutorial,
           was_new_best: wasNewBest,
@@ -859,6 +919,7 @@ export class GameView {
           currentStreak: snapshot.currentStreak,
           dayNumber: this.dayNumber,
           hintsUsed: this.hintsUsed,
+          mistakes,
           isTodaysDaily: this.isTodaysDaily,
           starRating,
           wasNewBest,
@@ -881,6 +942,7 @@ export class GameView {
           currentStreak: 0,
           dayNumber: this.dayNumber,
           hintsUsed: this.hintsUsed,
+          mistakes: 0,
           isTodaysDaily: this.isTodaysDaily,
           starRating: this.getStarRating(),
           wasNewBest: false,
@@ -908,15 +970,4 @@ export class GameView {
     el.dataset.state = 'idle';
   }
 
-  private updateWordsProgressLabel(): void {
-    const total = this.puzzle.answers.length;
-    let found = 0;
-    for (const answer of this.puzzle.answers) {
-      const partIds = this.partIdsByAnswer.get(answer.display) ?? [];
-      if (partIds.length > 0 && partIds.every((id) => this.solvedPartIds.has(id))) {
-        found += 1;
-      }
-    }
-    this.wordsProgressLabel.textContent = t('game.words_progress', { found, total });
-  }
 }

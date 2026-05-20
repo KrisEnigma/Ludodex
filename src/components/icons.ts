@@ -1,4 +1,4 @@
-type IconName = 'trophy' | 'settings' | 'lock' | 'chevron-right' | 'dismiss';
+type IconName = 'trophy' | 'settings' | 'lock' | 'chevron-right' | 'dismiss' | 'flame' | 'bulb';
 
 type IconShape =
   | { type: 'path'; d: string }
@@ -36,6 +36,14 @@ const ICON_SHAPES: Record<IconName, IconShape[]> = {
   dismiss: [
     { type: 'line', x1: 6, y1: 6, x2: 18, y2: 18 },
     { type: 'line', x1: 18, y1: 6, x2: 6, y2: 18 }
+  ],
+  flame: [
+    { type: 'path', d: 'M12 3 C 9 7 7 11 7 14 C 7 18 9 21 12 21 C 15 21 17 18 17 14 C 17 11 14 8 13 5 C 13 7 12 8 12 3 Z' },
+    { type: 'path', d: 'M12 11 C 10 13 10 16 12 18 C 14 16 14 13 12 11 Z' }
+  ],
+  bulb: [
+    { type: 'path', d: 'M9 16 C 9 12 6 11 6 8 C 6 4.7 8.7 2 12 2 C 15.3 2 18 4.7 18 8 C 18 11 15 12 15 16 Z' },
+    { type: 'path', d: 'M9 19 L 15 19' }
   ]
 };
 

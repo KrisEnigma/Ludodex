@@ -166,7 +166,10 @@ export class HowToPlayView {
       <g fill="var(--hint-solved-letter)" font-size="12" font-family="Space Mono" font-weight="700">
         <text x="40" y="84">✓</text><text x="62" y="84">✓</text><text x="84" y="84">✓</text><text x="106" y="84">✓</text>
       </g>
-      <text x="146" y="84" fill="var(--title-glow)" font-size="12">🔥</text>
+      <g transform="translate(140 74) scale(0.5)" fill="none" stroke="var(--title-glow)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3 C 9 7 7 11 7 14 C 7 18 9 21 12 21 C 15 21 17 18 17 14 C 17 11 14 8 13 5 C 13 7 12 8 12 3 Z" />
+        <path d="M12 11 C 10 13 10 16 12 18 C 14 16 14 13 12 11 Z" />
+      </g>
       <text x="100" y="126" text-anchor="middle" fill="var(--chrome-text)" font-size="11" font-family="Space Mono" letter-spacing="1.2">DAILY STREAK</text>
     </svg>`;
   }

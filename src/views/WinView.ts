@@ -100,38 +100,35 @@ export class WinView {
     pillRow.append(newBest, newRating);
 
     const showStreak = payload.currentStreak >= 2;
-    const showSolved = payload.solvedCount >= 2;
+    const showMistakes = payload.mistakes > 0;
     const showHints = payload.hintsUsed > 0;
-    const hasStats = showStreak || showSolved || showHints;
+    const hasStats = showStreak || showMistakes || showHints;
 
     let stats: HTMLDivElement | null = null;
     if (hasStats) {
       stats = document.createElement('div');
       stats.className = 'win-stats-line';
 
-      if (showStreak) {
-        const s = document.createElement('span');
-        s.textContent = t('win.stat_day_streak', { n: payload.currentStreak });
-        stats.append(s);
-      }
-      if (showStreak && showSolved) {
-        const dot = document.createElement('span');
-        dot.textContent = '·';
-        stats.append(dot);
-      }
-      if (showSolved) {
-        const s = document.createElement('span');
-        s.textContent = t('win.stat_solved_count', { n: payload.solvedCount });
-        stats.append(s);
-      }
-      if (showHints) {
-        const dot = document.createElement('span');
-        dot.textContent = '·';
-        stats.append(dot);
-        const h = document.createElement('span');
-        h.textContent = tn('win.stat_hint', payload.hintsUsed);
-        stats.append(h);
-      }
+      type StatPart = { icon?: 'flame' | 'bulb'; text: string };
+      const parts: StatPart[] = [];
+      if (showStreak) parts.push({ icon: 'flame', text: t('win.stat_day_streak', { n: payload.currentStreak }) });
+      if (showMistakes) parts.push({ text: tn('win.stat_mistake', payload.mistakes) });
+      if (showHints) parts.push({ icon: 'bulb', text: tn('win.stat_hint', payload.hintsUsed) });
+
+      parts.forEach((part, i) => {
+        if (i > 0) {
+          const dot = document.createElement('span');
+          dot.textContent = '·';
+          stats!.append(dot);
+        }
+        const wrap = document.createElement('span');
+        wrap.className = 'win-stat-part';
+        if (part.icon) wrap.append(createIcon(part.icon));
+        const text = document.createElement('span');
+        text.textContent = part.text;
+        wrap.append(text);
+        stats!.append(wrap);
+      });
     }
 
     const shareButton = document.createElement('button');
