@@ -37,6 +37,10 @@ type PartEntry = {
 };
 
 export class GameView {
+  private static readonly FINAL_ANIMATION_HOLD_MS = 800;
+  private static readonly EXIT_FADE_MS = 220;
+  private static readonly TILE_REVEAL_STAGGER_MS = 50;
+  private static readonly TILE_REVEAL_DURATION_MS = 360;
   readonly element: HTMLDivElement;
   private readonly gridWrap: HTMLDivElement;
   private readonly overlay: SVGSVGElement;
@@ -44,6 +48,7 @@ export class GameView {
   private readonly corePath: SVGPathElement;
   private readonly tileElements = new Map<Tile, HTMLDivElement>();
   private readonly tileByCoord = new Map<string, Tile>();
+  private readonly pendingVisualDeactivationCoords = new Set<string>();
   private readonly selectedTiles = new Set<Tile>();
   private readonly hintSlotsByPartId = new Map<string, HTMLSpanElement[]>();
   private readonly hintRowsByDisplay = new Map<string, HTMLDivElement>();
@@ -51,7 +56,7 @@ export class GameView {
   private readonly partIdsByWord = new Map<string, string[]>();
   private readonly partIdsByAnswer = new Map<string, string[]>();
   private readonly fullAnswerWordToPartIds = new Map<string, string[]>();
-  private readonly answerFullPaths = new Map<string, string[]>();
+  private readonly answerFullWords = new Map<string, string>();
   private readonly solvedPartIds = new Set<string>();
   private readonly solvedAnswerDisplays = new Set<string>();
   private readonly allTiles: Tile[];
@@ -193,7 +198,8 @@ export class GameView {
     const ownershipEntries: PartOwnershipEntry[] = [];
 
     for (const answer of puzzle.answers) {
-      this.answerFullPaths.set(answer.display, answer.parts.flatMap((part) => part.path));
+      const fullWord = answer.parts.map((part) => part.word).join('').toUpperCase();
+      this.answerFullWords.set(answer.display, fullWord);
     }
 
     for (const answer of answers) {
@@ -387,18 +393,29 @@ export class GameView {
 
     event.preventDefault();
     slot.dataset.revealing = 'true';
+    this.hintCounterEl.dataset.charging = 'true';
   }
 
   private onHintSlotPointerEnd(slot: HTMLElement): void {
     if (slot.dataset.revealed !== 'true') {
       delete slot.dataset.revealing;
     }
+    delete this.hintCounterEl.dataset.charging;
   }
 
   private async onHintSlotAnimationEnd(event: AnimationEvent, slot: HTMLElement): Promise<void> {
-    if (event.animationName !== 'hint-reveal-rise') return;
-    if (slot.dataset.revealed === 'true') return;
-    if (slot.dataset.revealing !== 'true') return;
+    if (event.animationName !== 'hint-reveal-rise') {
+      delete this.hintCounterEl.dataset.charging;
+      return;
+    }
+    if (slot.dataset.revealed === 'true') {
+      delete this.hintCounterEl.dataset.charging;
+      return;
+    }
+    if (slot.dataset.revealing !== 'true') {
+      delete this.hintCounterEl.dataset.charging;
+      return;
+    }
     delete slot.dataset.revealing;
     await this.revealSlot(slot);
   }
@@ -410,6 +427,7 @@ export class GameView {
 
     slot.dataset.revealed = 'true';
     slot.dataset.filled = 'true';
+    delete this.hintCounterEl.dataset.charging;
     this.hintsUsed += 1;
 
     const state = await consumeHint();
@@ -610,13 +628,13 @@ export class GameView {
     if (prevLen === 0 && newLen >= 1) {
       this.chainsStarted += 1;
       HapticService.selection();
-      if (!this.isChainOnPath(chain)) this.wrongLetterAdds += 1;
+      if (!this.isChainOnLetterPrefix(chain)) this.wrongLetterAdds += 1;
     } else if (newLen > prevLen) {
       HapticService.impactLight();
-      if (!this.isChainOnPath(chain)) this.wrongLetterAdds += 1;
+      if (!this.isChainOnLetterPrefix(chain)) this.wrongLetterAdds += 1;
     } else if (newLen > 0 && newLen < prevLen) {
       HapticService.impactLight();
-      // backtrack — no mistake; this was the source of the false positives
+      // backtrack — no mistake
     }
     this.previousChainLength = newLen;
 
@@ -630,6 +648,15 @@ export class GameView {
     }
 
     this.redrawPath(chain);
+
+    if (this.inputManager.getState() === 'SWIPING' && chain.length > 0) {
+      const chainStr = chain.map((tile) => tile.letter).join('').toUpperCase();
+      const match = this.findPartMatch(chainStr);
+      if (match && !this.isLongerPrefixPossible(chainStr)) {
+        HapticService.impactMedium();
+        this.onWordFound(match.partIds);
+      }
+    }
   }
 
   private redrawPath(chain: Tile[]): void {
@@ -703,20 +730,22 @@ export class GameView {
     return null;
   }
 
-  private isChainOnPath(chain: Tile[]): boolean {
+  private isChainOnLetterPrefix(chain: Tile[]): boolean {
     if (chain.length === 0) return true;
-    const coords = chain.map((tile) => tile.coord);
-    for (const [display, fullPath] of this.answerFullPaths) {
+    const chainStr = chain.map((tile) => tile.letter).join('').toUpperCase();
+    for (const [display, fullWord] of this.answerFullWords) {
       if (this.solvedAnswerDisplays.has(display)) continue;
-      if (fullPath.length < coords.length) continue;
-      let isPrefix = true;
-      for (let i = 0; i < coords.length; i++) {
-        if (fullPath[i] !== coords[i]) {
-          isPrefix = false;
-          break;
-        }
+      if (fullWord.startsWith(chainStr)) return true;
+    }
+    return false;
+  }
+
+  private isLongerPrefixPossible(chainStr: string): boolean {
+    for (const [display, fullWord] of this.answerFullWords) {
+      if (this.solvedAnswerDisplays.has(display)) continue;
+      if (fullWord.length > chainStr.length && fullWord.startsWith(chainStr)) {
+        return true;
       }
-      if (isPrefix) return true;
     }
     return false;
   }
@@ -729,6 +758,14 @@ export class GameView {
       this.inputManager.clearChain();
       return;
     }
+
+    // The player's actual chain at the moment of solve. We animate these tiles
+    // rather than partEntry.path so the celebration follows what the player
+    // swiped, not the canonical authoring path (which can differ when duplicate
+    // letters enable alternate routes). Ownership and deactivation still use
+    // canonical paths — tile letters and shared-tile claims are defined there.
+    const playerChainCoords = this.inputManager.getChain().map((tile) => tile.coord);
+    const deactivatedCoordsForSolve = new Set<string>();
 
     // Mark all parts as solved
     let anyDeactivated = false;
@@ -752,15 +789,44 @@ export class GameView {
 
         if (deactivated.has(coord)) {
           tile.deactivated = true;
+          this.pendingVisualDeactivationCoords.add(coord);
+          deactivatedCoordsForSolve.add(coord);
         }
       }
 
-      this.triggerTileFoundAnimation(partEntry.path);
-
       const slots = this.hintSlotsByPartId.get(partId) ?? [];
-      for (let i = 0; i < slots.length; i++) {
-        slots[i].dataset.filled = 'true';
-      }
+      slots.forEach((slot, index) => {
+        if (slot.dataset.filled === 'true') return;
+        window.setTimeout(() => {
+          if (!this.element.isConnected) return;
+          slot.dataset.filled = 'true';
+        }, index * 60);
+      });
+    }
+
+    // Single coherent flash wave across the player's swipe, in the order they swiped.
+    // For multi-part answers (e.g. LARA CROFT) this replaces two overlapping per-part
+    // staggers with one continuous N-tile stagger.
+    if (playerChainCoords.length > 0) {
+      this.triggerTileFoundAnimation(playerChainCoords);
+    }
+
+    if (deactivatedCoordsForSolve.size > 0) {
+      const cleanupMs =
+        playerChainCoords.length > 0
+          ? GameView.TILE_REVEAL_DURATION_MS +
+            (playerChainCoords.length - 1) * GameView.TILE_REVEAL_STAGGER_MS +
+            50
+          : 0;
+
+      window.setTimeout(() => {
+        for (const coord of deactivatedCoordsForSolve) {
+          const tile = this.tileByCoord.get(coord);
+          if (!tile) continue;
+          this.pendingVisualDeactivationCoords.delete(coord);
+          this.applyTileVisualState(tile);
+        }
+      }, cleanupMs);
     }
 
     // Get the answer display from first part
@@ -809,8 +875,8 @@ export class GameView {
   }
 
   private triggerTileFoundAnimation(path: string[]): void {
-    const STAGGER_MS = 50;
-    const FILL_DURATION_MS = 400;
+    const STAGGER_MS = GameView.TILE_REVEAL_STAGGER_MS;
+    const ANIMATION_DURATION_MS = GameView.TILE_REVEAL_DURATION_MS;
 
     path.forEach((coord, index) => {
       const tile = this.tileByCoord.get(coord);
@@ -821,7 +887,7 @@ export class GameView {
       tileEl.dataset.revealing = 'true';
     });
 
-    const cleanupMs = FILL_DURATION_MS + (path.length - 1) * STAGGER_MS + 50;
+    const cleanupMs = ANIMATION_DURATION_MS + (path.length - 1) * STAGGER_MS + 50;
     window.setTimeout(() => {
       for (const coord of path) {
         const tile = this.tileByCoord.get(coord);
@@ -830,6 +896,8 @@ export class GameView {
         if (!tileEl) continue;
         tileEl.removeAttribute('data-revealing');
         tileEl.style.removeProperty('--reveal-delay');
+        this.pendingVisualDeactivationCoords.delete(coord);
+        this.applyTileVisualState(tile);
       }
     }, cleanupMs);
   }
@@ -855,6 +923,17 @@ export class GameView {
     this.timerLabel.textContent = this.formatElapsed(elapsedSeconds);
     const starRating = this.getStarRating();
     const mistakes = this.getMistakeCount();
+    const holdForAnimations = new Promise<void>((resolve) =>
+      window.setTimeout(resolve, GameView.FINAL_ANIMATION_HOLD_MS)
+    );
+
+    const fadeOut = async (): Promise<void> => {
+      if (!this.element.isConnected) return;
+      this.element.classList.add('view-exiting');
+      await new Promise<void>((resolve) =>
+        window.setTimeout(resolve, GameView.EXIT_FADE_MS)
+      );
+    };
 
     // void haptic.pristineWin() or haptic.win() if available
 
@@ -910,6 +989,8 @@ export class GameView {
         });
 
         await maybeShowInterstitial(snapshot.totalSolveAttempts);
+        await holdForAnimations;
+        await fadeOut();
 
         this.onWin({
           puzzleId: this.puzzleId,
@@ -934,6 +1015,9 @@ export class GameView {
           // Ignore cleanup failures in fallback path.
         }
 
+        await holdForAnimations;
+        await fadeOut();
+
         this.onWin({
           puzzleId: this.puzzleId,
           puzzleTitle: this.puzzleTitle,
@@ -956,6 +1040,11 @@ export class GameView {
   private applyTileVisualState(tile: Tile): void {
     const el = this.tileElements.get(tile);
     if (!el) return;
+
+    if (tile.deactivated && this.pendingVisualDeactivationCoords.has(tile.coord)) {
+      el.dataset.state = 'idle';
+      return;
+    }
 
     if (tile.deactivated) {
       el.dataset.state = 'deactivated';

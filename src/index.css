@@ -271,6 +271,11 @@
 .view.view-entering {
   opacity: 0;
 }
+
+.view.view-exiting {
+  opacity: 0;
+  transition: opacity 220ms ease-in;
+}
 @media (prefers-reduced-motion: reduce) {
   .view {
     transition: none !important;
@@ -314,14 +319,40 @@
   bottom: 0;
   height: 0;
   background: var(--hint-solved-bg);
+  border-radius: 0 0 6px 6px;
   z-index: 1;
   animation: hint-reveal-rise 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   pointer-events: none;
+}
+.hint-slot[data-revealing]::after {
+  content: '';
+  position: absolute;
+  inset: -14px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--title-glow) 0%, transparent 65%);
+  opacity: 0;
+  z-index: -1;
+  pointer-events: none;
+  animation: hint-charging-halo 700ms ease-out forwards;
 }
 @keyframes hint-reveal-rise {
   0% { height: 0; opacity: 1; }
   85% { height: 100%; opacity: 1; }
   100% { height: 100%; opacity: 0; }
+}
+@keyframes hint-charging-halo {
+  0%   { opacity: 0; transform: scale(0.6); }
+  100% { opacity: 0.5; transform: scale(1.35); }
+}
+
+.game-hint-counter[data-charging="true"] {
+  border-color: var(--title-glow);
+  animation: hint-counter-pulse 700ms ease-in-out;
+}
+
+@keyframes hint-counter-pulse {
+  0%, 100% { box-shadow: 0 0 6px color-mix(in srgb, var(--title-glow) 30%, transparent); }
+  50%      { box-shadow: 0 0 16px color-mix(in srgb, var(--title-glow) 70%, transparent); }
 }
 
 .win-pill-row {
@@ -627,22 +658,31 @@ body {
 .tile[data-revealing="true"]::before {
   content: '';
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 0;
+  inset: 0;
+  border-radius: inherit;
   background: var(--title-glow);
-  opacity: 0.55;
+  opacity: 0;
   z-index: 1;
-  animation: tile-found-rise 400ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  animation-delay: var(--reveal-delay, 0ms);
   pointer-events: none;
+  animation: tile-found-flash 360ms ease-out forwards;
+  animation-delay: var(--reveal-delay, 0ms);
 }
 
-@keyframes tile-found-rise {
-  0% { height: 0; opacity: 0.55; }
-  85% { height: 100%; opacity: 0.55; }
-  100% { height: 100%; opacity: 0; }
+.tile[data-revealing="true"] .tile-letter {
+  animation: tile-found-letter-pop 360ms cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  animation-delay: var(--reveal-delay, 0ms);
+}
+
+@keyframes tile-found-flash {
+  0%   { opacity: 0; transform: scale(0.92); }
+  40%  { opacity: 0.55; transform: scale(1.04); }
+  100% { opacity: 0; transform: scale(1.16); }
+}
+
+@keyframes tile-found-letter-pop {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.22); }
+  100% { transform: scale(1); }
 }
 
 .tile[data-state="selected"] {
@@ -720,7 +760,7 @@ body {
 
 .hint-slot {
   position: relative;
-  overflow: hidden;
+  isolation: isolate;
   width: 22px;
   height: 30px;
   border-radius: 6px;
@@ -757,9 +797,17 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .tile[data-revealing="true"]::before,
-  .hint-slot[data-revealing]::before {
+  .hint-slot[data-revealing]::before,
+  .hint-slot[data-revealing]::after {
     animation: none !important;
     display: none;
+  }
+  .tile[data-revealing="true"] .tile-letter,
+  .game-hint-counter[data-charging="true"] {
+    animation: none !important;
+  }
+  .view.view-exiting {
+    transition: none !important;
   }
 }
 
