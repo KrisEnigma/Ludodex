@@ -38,9 +38,11 @@ type PartEntry = {
 
 export class GameView {
   private static readonly FINAL_ANIMATION_HOLD_MS = 800;
-  private static readonly EXIT_FADE_MS = 220;
+  private static readonly EXIT_FADE_MS = 360;
+  private static readonly GRID_CELEBRATION_MS = 700;
   private static readonly TILE_REVEAL_STAGGER_MS = 50;
   private static readonly TILE_REVEAL_DURATION_MS = 360;
+  private static readonly TILE_PUNCH_DURATION_MS = 480;
   readonly element: HTMLDivElement;
   private readonly gridWrap: HTMLDivElement;
   private readonly overlay: SVGSVGElement;
@@ -875,19 +877,29 @@ export class GameView {
   }
 
   private triggerTileFoundAnimation(path: string[]): void {
+    if (path.length === 0) return;
+
     const STAGGER_MS = GameView.TILE_REVEAL_STAGGER_MS;
-    const ANIMATION_DURATION_MS = GameView.TILE_REVEAL_DURATION_MS;
+    const WAVE_DURATION_MS = GameView.TILE_REVEAL_DURATION_MS;
+    const PUNCH_DURATION_MS = GameView.TILE_PUNCH_DURATION_MS;
+    const triggerIndex = path.length - 1;
 
     path.forEach((coord, index) => {
       const tile = this.tileByCoord.get(coord);
       if (!tile) return;
       const tileEl = this.tileElements.get(tile);
       if (!tileEl) return;
-      tileEl.style.setProperty('--reveal-delay', `${index * STAGGER_MS}ms`);
-      tileEl.dataset.revealing = 'true';
+
+      if (index === triggerIndex) {
+        tileEl.dataset.revealing = 'punch';
+      } else {
+        tileEl.style.setProperty('--reveal-delay', `${index * STAGGER_MS}ms`);
+        tileEl.dataset.revealing = 'true';
+      }
     });
 
-    const cleanupMs = ANIMATION_DURATION_MS + (path.length - 1) * STAGGER_MS + 50;
+    const waveTotalMs = WAVE_DURATION_MS + Math.max(0, path.length - 1) * STAGGER_MS;
+    const cleanupMs = Math.max(waveTotalMs, PUNCH_DURATION_MS) + 50;
     window.setTimeout(() => {
       for (const coord of path) {
         const tile = this.tileByCoord.get(coord);
@@ -918,6 +930,11 @@ export class GameView {
     if (this.solved) return;
     this.solved = true;
     this.stopTimer();
+    this.gridWrap.dataset.celebrating = 'true';
+    window.setTimeout(() => {
+      if (!this.element.isConnected) return;
+      delete this.gridWrap.dataset.celebrating;
+    }, GameView.GRID_CELEBRATION_MS);
 
     const elapsedSeconds = this.getElapsedSeconds();
     this.timerLabel.textContent = this.formatElapsed(elapsedSeconds);

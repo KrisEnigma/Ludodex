@@ -274,7 +274,9 @@
 
 .view.view-exiting {
   opacity: 0;
-  transition: opacity 220ms ease-in;
+  transform: scale(1.18);
+  transition: opacity 360ms cubic-bezier(0.5, 0.05, 0.9, 0.3),
+              transform 360ms cubic-bezier(0.5, 0.05, 0.9, 0.3);
 }
 @media (prefers-reduced-motion: reduce) {
   .view {
@@ -609,9 +611,26 @@ body {
 
 .grid-wrap {
   position: relative;
+  isolation: isolate;
   width: min(82vw, 332px);
   aspect-ratio: 1;
   margin: 0 auto;
+}
+
+.grid-wrap[data-celebrating="true"] {
+  animation: grid-celebrate-breath 700ms cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.grid-wrap[data-celebrating="true"]::after {
+  content: '';
+  position: absolute;
+  inset: 10%;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--title-glow) 0%, transparent 70%);
+  opacity: 0;
+  z-index: -1;
+  pointer-events: none;
+  animation: grid-celebrate-radiate 700ms ease-out forwards;
 }
 
 .grid {
@@ -673,6 +692,22 @@ body {
   animation-delay: var(--reveal-delay, 0ms);
 }
 
+.tile[data-revealing="punch"]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--title-glow);
+  opacity: 0;
+  z-index: 1;
+  pointer-events: none;
+  animation: tile-found-punch-flash 480ms ease-out forwards;
+}
+
+.tile[data-revealing="punch"] .tile-letter {
+  animation: tile-found-punch-pop 480ms cubic-bezier(0.34, 1.65, 0.5, 1) backwards;
+}
+
 @keyframes tile-found-flash {
   0%   { opacity: 0; transform: scale(0.92); }
   40%  { opacity: 0.55; transform: scale(1.04); }
@@ -683,6 +718,35 @@ body {
   0%   { transform: scale(1); }
   45%  { transform: scale(1.22); }
   100% { transform: scale(1); }
+}
+
+@keyframes tile-found-punch-flash {
+  0%   { opacity: 0; transform: scale(0.88); }
+  25%  { opacity: 0.85; transform: scale(1.18); }
+  100% { opacity: 0; transform: scale(1.46); }
+}
+
+@keyframes tile-found-punch-pop {
+  0%   { transform: scale(1); }
+  32%  { transform: scale(1.38); }
+  62%  { transform: scale(0.94); }
+  100% { transform: scale(1); }
+}
+
+@keyframes grid-celebrate-breath {
+  0%, 100% { transform: scale(1); }
+  40%      { transform: scale(1.06); }
+}
+
+@keyframes grid-celebrate-radiate {
+  0%   { opacity: 0; transform: scale(0.4); }
+  50%  { opacity: 0.65; transform: scale(1.0); }
+  100% { opacity: 0; transform: scale(1.4); }
+}
+
+@keyframes tile-celebrate-glow {
+  0%, 100% { box-shadow: 0 0 0 transparent; }
+  45%      { box-shadow: 0 0 18px var(--title-glow); }
 }
 
 .tile[data-state="selected"] {
@@ -698,6 +762,10 @@ body {
   transform: scale(0.92);
   opacity: var(--tile-deactivated-opacity);
   pointer-events: none;
+}
+
+.grid-wrap[data-celebrating="true"] .tile {
+  animation: tile-celebrate-glow 600ms ease-out 80ms;
 }
 
 .path-overlay {
@@ -797,17 +865,28 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .tile[data-revealing="true"]::before,
+  .tile[data-revealing="punch"]::before,
   .hint-slot[data-revealing]::before,
-  .hint-slot[data-revealing]::after {
+  .hint-slot[data-revealing]::after,
+  .grid-wrap[data-celebrating="true"]::after {
     animation: none !important;
     display: none;
   }
   .tile[data-revealing="true"] .tile-letter,
-  .game-hint-counter[data-charging="true"] {
+  .tile[data-revealing="punch"] .tile-letter,
+  .game-hint-counter[data-charging="true"],
+  .grid-wrap[data-celebrating="true"],
+  .grid-wrap[data-celebrating="true"] .tile,
+  .win-view {
     animation: none !important;
+    transition: none !important;
   }
   .view.view-exiting {
+    transform: none !important;
     transition: none !important;
+  }
+  .win-view.view-entering {
+    transform: none !important;
   }
 }
 
@@ -1510,6 +1589,12 @@ body {
 /* WinView overhaul */
 .win-view {
   position: relative;
+  transition: opacity 240ms ease-out,
+              transform 320ms cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.win-view.view-entering {
+  transform: scale(0.94);
 }
 
 .win-view .view-title {
