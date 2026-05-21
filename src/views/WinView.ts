@@ -21,6 +21,9 @@ export class WinView {
     this.element.className = 'view win-view';
     this.element.dataset.stars = String(payload.starRating);
 
+    const shell = document.createElement('div');
+    shell.className = 'win-view-shell';
+
     if (payload.starRating === 3) {
       window.setTimeout(() => {
         showConfetti({
@@ -175,7 +178,8 @@ export class WinView {
       nextCountdown
     ];
 
-    this.element.append(...children);
+    shell.append(...children);
+    this.element.append(shell);
 
   }
 

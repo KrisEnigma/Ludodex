@@ -38,11 +38,14 @@ type PartEntry = {
 
 export class GameView {
   private static readonly FINAL_ANIMATION_HOLD_MS = 800;
-  private static readonly EXIT_FADE_MS = 360;
-  private static readonly GRID_CELEBRATION_MS = 700;
+  private static readonly GLITCH_CORRUPT_MS = 320;
+  private static readonly GLITCH_COLLAPSE_MS = 220;
+  // Total time GameView is exiting before WinView mounts.
+  private static readonly EXIT_FADE_MS = GameView.GLITCH_CORRUPT_MS + GameView.GLITCH_COLLAPSE_MS;
   private static readonly TILE_REVEAL_STAGGER_MS = 50;
   private static readonly TILE_REVEAL_DURATION_MS = 360;
-  private static readonly TILE_PUNCH_DURATION_MS = 480;
+  private static readonly GLITCH_CHARS =
+    'ÀÁÂÃÄÅÆĆČĐÈÉÊËĞĐÌÍÎÏÑÒÓÔÕÖØŒÙÚÛÜÝŠŽß#@%&*<>?!~∆ΩΣΨ█▓▒░╳';
   readonly element: HTMLDivElement;
   private readonly gridWrap: HTMLDivElement;
   private readonly overlay: SVGSVGElement;
@@ -877,11 +880,9 @@ export class GameView {
   }
 
   private triggerTileFoundAnimation(path: string[]): void {
-    if (path.length === 0) return;
-
     const STAGGER_MS = GameView.TILE_REVEAL_STAGGER_MS;
-    const WAVE_DURATION_MS = GameView.TILE_REVEAL_DURATION_MS;
-    const PUNCH_DURATION_MS = GameView.TILE_PUNCH_DURATION_MS;
+    const ANIMATION_DURATION_MS = GameView.TILE_REVEAL_DURATION_MS;
+    const TRIGGER_ANIMATION_DURATION_MS = 480;
     const triggerIndex = path.length - 1;
 
     path.forEach((coord, index) => {
@@ -889,17 +890,21 @@ export class GameView {
       if (!tile) return;
       const tileEl = this.tileElements.get(tile);
       if (!tileEl) return;
-
-      if (index === triggerIndex) {
-        tileEl.dataset.revealing = 'punch';
-      } else {
-        tileEl.style.setProperty('--reveal-delay', `${index * STAGGER_MS}ms`);
-        tileEl.dataset.revealing = 'true';
-      }
+      const isTrigger = index === triggerIndex;
+      // Trigger tile fires at t=0 with its own larger animation. Every other tile
+      // runs the standard forward wave from t=0 at 50ms stagger. First and last
+      // tiles thus both start at t=0; the wave fills in the middle.
+      tileEl.style.setProperty('--reveal-delay', isTrigger ? '0ms' : `${index * STAGGER_MS}ms`);
+      tileEl.dataset.revealing = 'true';
+      if (isTrigger) tileEl.dataset.revealingTrigger = 'true';
     });
 
-    const waveTotalMs = WAVE_DURATION_MS + Math.max(0, path.length - 1) * STAGGER_MS;
-    const cleanupMs = Math.max(waveTotalMs, PUNCH_DURATION_MS) + 50;
+    // Cleanup waits for whichever finishes later: the trigger animation, or the
+    // last non-trigger tile's wave step (at index path.length - 2 when path.length >= 2).
+    const waveDuration =
+      path.length >= 2 ? ANIMATION_DURATION_MS + (path.length - 2) * STAGGER_MS : 0;
+    const cleanupMs = Math.max(waveDuration, TRIGGER_ANIMATION_DURATION_MS) + 50;
+
     window.setTimeout(() => {
       for (const coord of path) {
         const tile = this.tileByCoord.get(coord);
@@ -907,11 +912,98 @@ export class GameView {
         const tileEl = this.tileElements.get(tile);
         if (!tileEl) continue;
         tileEl.removeAttribute('data-revealing');
+        tileEl.removeAttribute('data-revealing-trigger');
         tileEl.style.removeProperty('--reveal-delay');
         this.pendingVisualDeactivationCoords.delete(coord);
         this.applyTileVisualState(tile);
       }
     }, cleanupMs);
+  }
+
+  private async runGlitchOut(): Promise<void> {
+    if (!this.element.isConnected) return;
+
+    const prefersReduced =
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (prefersReduced) {
+      // No glitch, no CRT — just instant exit. The default view-entering opacity
+      // transition handles WinView's appearance.
+      this.element.style.opacity = '0';
+      await new Promise<void>((resolve) => window.setTimeout(resolve, 60));
+      return;
+    }
+
+    // Snapshot original textContent for every letter element we'll scramble, so
+    // we can guarantee restoration even if the scramble loop is interrupted.
+    const letterEls: HTMLElement[] = [];
+    const originalText = new WeakMap<HTMLElement, string>();
+
+    for (const tileEl of this.tileElements.values()) {
+      const letterEl = tileEl.querySelector<HTMLElement>('.tile-letter');
+      if (!letterEl) continue;
+      letterEls.push(letterEl);
+      originalText.set(letterEl, letterEl.textContent ?? '');
+    }
+    const slotLetterEls = this.element.querySelectorAll<HTMLElement>(
+      '.hint-slot[data-filled="true"] .hint-slot-letter, .hint-slot[data-revealed="true"] .hint-slot-letter'
+    );
+    for (const letterEl of slotLetterEls) {
+      letterEls.push(letterEl);
+      originalText.set(letterEl, letterEl.textContent ?? '');
+    }
+
+    // Append the scanline overlay first — it spans the entire transition window.
+    const scanlines = document.createElement('div');
+    scanlines.className = 'endgame-scanlines';
+    scanlines.setAttribute('aria-hidden', 'true');
+    document.body.append(scanlines);
+
+    // Phase 1: corrupt. Tick the scramble every 40ms; 70% of ticks swap to a
+    // glitch glyph, 30% restore so the original letters strobe through.
+    this.element.dataset.endgamePhase = 'corrupt';
+    const corruptUntil = performance.now() + GameView.GLITCH_CORRUPT_MS;
+    const tickScramble = (): void => {
+      if (performance.now() >= corruptUntil) return;
+      for (const el of letterEls) {
+        if (Math.random() < 0.7) {
+          const ch = GameView.GLITCH_CHARS[Math.floor(Math.random() * GameView.GLITCH_CHARS.length)];
+          el.textContent = ch;
+        } else {
+          el.textContent = originalText.get(el) ?? '';
+        }
+      }
+      window.setTimeout(tickScramble, 40);
+    };
+    tickScramble();
+
+    await new Promise<void>((resolve) => window.setTimeout(resolve, GameView.GLITCH_CORRUPT_MS));
+    // Force-restore in case the last tick wrote glitch glyphs.
+    for (const el of letterEls) {
+      el.textContent = originalText.get(el) ?? '';
+    }
+
+    if (!this.element.isConnected) {
+      delete this.element.dataset.endgamePhase;
+      scanlines.remove();
+      return;
+    }
+
+    // Phase 2 + 3: CRT collapse + horizontal line of light.
+    this.element.dataset.endgamePhase = 'collapse';
+    const crtLine = document.createElement('div');
+    crtLine.className = 'endgame-crt-line';
+    crtLine.setAttribute('aria-hidden', 'true');
+    document.body.append(crtLine);
+
+    await new Promise<void>((resolve) => window.setTimeout(resolve, GameView.GLITCH_COLLAPSE_MS));
+
+    // Schedule cleanup of the overlay elements regardless of the WinView mount.
+    // The CRT line keeps animating into the WinView boot crossover for ~240ms more.
+    window.setTimeout(() => crtLine.remove(), 500);
+    window.setTimeout(() => scanlines.remove(), 800);
   }
 
   private getMistakeCount(): number {
@@ -930,11 +1022,6 @@ export class GameView {
     if (this.solved) return;
     this.solved = true;
     this.stopTimer();
-    this.gridWrap.dataset.celebrating = 'true';
-    window.setTimeout(() => {
-      if (!this.element.isConnected) return;
-      delete this.gridWrap.dataset.celebrating;
-    }, GameView.GRID_CELEBRATION_MS);
 
     const elapsedSeconds = this.getElapsedSeconds();
     this.timerLabel.textContent = this.formatElapsed(elapsedSeconds);
@@ -946,10 +1033,7 @@ export class GameView {
 
     const fadeOut = async (): Promise<void> => {
       if (!this.element.isConnected) return;
-      this.element.classList.add('view-exiting');
-      await new Promise<void>((resolve) =>
-        window.setTimeout(resolve, GameView.EXIT_FADE_MS)
-      );
+      await this.runGlitchOut();
     };
 
     // void haptic.pristineWin() or haptic.win() if available

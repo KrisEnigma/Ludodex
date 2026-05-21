@@ -272,12 +272,6 @@
   opacity: 0;
 }
 
-.view.view-exiting {
-  opacity: 0;
-  transform: scale(1.18);
-  transition: opacity 360ms cubic-bezier(0.5, 0.05, 0.9, 0.3),
-              transform 360ms cubic-bezier(0.5, 0.05, 0.9, 0.3);
-}
 @media (prefers-reduced-motion: reduce) {
   .view {
     transition: none !important;
@@ -424,22 +418,9 @@ body {
   width: min(390px, 100%);
   min-height: min(844px, calc(100dvh - 32px));
   height: min(844px, calc(100dvh - 32px));
-  border: 1px solid var(--shell-border);
-  border-radius: 18px;
-  background: var(--shell-bg);
-  box-shadow: 0 20px 60px var(--shell-shadow);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-}
-
-@media (min-width: 768px) {
-  .app-shell {
-    border: none;
-    border-radius: 0;
-    box-shadow: none;
-    background: transparent;
-  }
 }
 
 .view {
@@ -611,26 +592,9 @@ body {
 
 .grid-wrap {
   position: relative;
-  isolation: isolate;
   width: min(82vw, 332px);
   aspect-ratio: 1;
   margin: 0 auto;
-}
-
-.grid-wrap[data-celebrating="true"] {
-  animation: grid-celebrate-breath 700ms cubic-bezier(0.34, 1.4, 0.64, 1);
-}
-
-.grid-wrap[data-celebrating="true"]::after {
-  content: '';
-  position: absolute;
-  inset: 10%;
-  border-radius: 50%;
-  background: radial-gradient(circle, var(--title-glow) 0%, transparent 70%);
-  opacity: 0;
-  z-index: -1;
-  pointer-events: none;
-  animation: grid-celebrate-radiate 700ms ease-out forwards;
 }
 
 .grid {
@@ -674,7 +638,7 @@ body {
   height: 100%;
 }
 
-.tile[data-revealing="true"]::before {
+.tile[data-revealing="true"]:not([data-revealing-trigger="true"])::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -687,12 +651,12 @@ body {
   animation-delay: var(--reveal-delay, 0ms);
 }
 
-.tile[data-revealing="true"] .tile-letter {
+.tile[data-revealing="true"]:not([data-revealing-trigger="true"]) .tile-letter {
   animation: tile-found-letter-pop 360ms cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
   animation-delay: var(--reveal-delay, 0ms);
 }
 
-.tile[data-revealing="punch"]::before {
+.tile[data-revealing-trigger="true"]::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -701,11 +665,11 @@ body {
   opacity: 0;
   z-index: 1;
   pointer-events: none;
-  animation: tile-found-punch-flash 480ms ease-out forwards;
+  animation: tile-found-flash-trigger 480ms ease-out forwards;
 }
 
-.tile[data-revealing="punch"] .tile-letter {
-  animation: tile-found-punch-pop 480ms cubic-bezier(0.34, 1.65, 0.5, 1) backwards;
+.tile[data-revealing-trigger="true"] .tile-letter {
+  animation: tile-found-letter-pop-trigger 480ms cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
 }
 
 @keyframes tile-found-flash {
@@ -720,33 +684,17 @@ body {
   100% { transform: scale(1); }
 }
 
-@keyframes tile-found-punch-flash {
-  0%   { opacity: 0; transform: scale(0.88); }
-  25%  { opacity: 0.85; transform: scale(1.18); }
-  100% { opacity: 0; transform: scale(1.46); }
+@keyframes tile-found-flash-trigger {
+  0%   { opacity: 0; transform: scale(0.85); }
+  25%  { opacity: 0.9; transform: scale(1.18); }
+  100% { opacity: 0; transform: scale(1.35); }
 }
 
-@keyframes tile-found-punch-pop {
+@keyframes tile-found-letter-pop-trigger {
   0%   { transform: scale(1); }
-  32%  { transform: scale(1.38); }
-  62%  { transform: scale(0.94); }
+  30%  { transform: scale(1.4); }
+  60%  { transform: scale(0.95); }
   100% { transform: scale(1); }
-}
-
-@keyframes grid-celebrate-breath {
-  0%, 100% { transform: scale(1); }
-  40%      { transform: scale(1.06); }
-}
-
-@keyframes grid-celebrate-radiate {
-  0%   { opacity: 0; transform: scale(0.4); }
-  50%  { opacity: 0.65; transform: scale(1.0); }
-  100% { opacity: 0; transform: scale(1.4); }
-}
-
-@keyframes tile-celebrate-glow {
-  0%, 100% { box-shadow: 0 0 0 transparent; }
-  45%      { box-shadow: 0 0 18px var(--title-glow); }
 }
 
 .tile[data-state="selected"] {
@@ -764,8 +712,131 @@ body {
   pointer-events: none;
 }
 
-.grid-wrap[data-celebrating="true"] .tile {
-  animation: tile-celebrate-glow 600ms ease-out 80ms;
+/* ──────────── Endgame transition: pulse → lift-off + burst → descent ──────────── */
+
+/* ──────────── Endgame transition: glitch corruption → CRT collapse → WinView boot ──────────── */
+
+/* Phase 1: letter corruption. All grid tile letters and all revealed/solved hint
+   slot letters get an animated red/cyan chromatic split. The JS runs in parallel,
+   swapping textContent to wrong glyphs every ~40ms. Steps timing matches the
+   stepped feel of the scramble. The tiles themselves are forced to a uniformly
+   "live" state during the glitch — deactivated styling is overridden so the
+   corruption is fully visible across the grid. */
+.game-view[data-endgame-phase="corrupt"] .tile {
+  opacity: 1 !important;
+  transform: scale(1) !important;
+  background: var(--tile-selected-bg) !important;
+  color: var(--tile-selected-letter) !important;
+  border-color: var(--tile-selected-border) !important;
+  box-shadow: 0 0 14px var(--tile-selected-glow) !important;
+}
+
+.game-view[data-endgame-phase="corrupt"] .tile-letter,
+.game-view[data-endgame-phase="corrupt"] .hint-slot-letter {
+  animation: glitch-rgb-split 320ms steps(6, end) forwards;
+}
+
+.game-view[data-endgame-phase="corrupt"] {
+  animation: gameview-glitch-jitter 80ms steps(3, end) infinite;
+}
+
+@keyframes glitch-rgb-split {
+  0%   { text-shadow: 0 0 0 transparent, 0 0 0 transparent; }
+  25%  { text-shadow: -1px 0 0 #ff0080, 1px 0 0 #00ffff; }
+  55%  { text-shadow: -3px 0 0 #ff0080, 4px 0 0 #00ffff; }
+  80%  { text-shadow: -2px 0 0 #ff0080, 2px 0 0 #00ffff; }
+  100% { text-shadow: -5px 0 0 #ff0080, 6px 0 0 #00ffff; }
+}
+
+@keyframes gameview-glitch-jitter {
+  0%   { transform: translate3d(0, 0, 0); }
+  33%  { transform: translate3d(-2px, 1px, 0); }
+  66%  { transform: translate3d(3px, -1px, 0); }
+  100% { transform: translate3d(-1px, 0, 0); }
+}
+
+/* Phase 2: CRT power-off. The whole game-view stretches horizontally, squashes
+   to a thin horizontal slice, then collapses to nothing. */
+.game-view[data-endgame-phase="collapse"] {
+  animation: gameview-crt-collapse 220ms cubic-bezier(0.65, 0, 0.95, 0.35) forwards;
+}
+
+@keyframes gameview-crt-collapse {
+  0%   { transform: scale(1); opacity: 1; }
+  55%  { transform: scaleX(1.18) scaleY(0.04); opacity: 1; }
+  85%  { transform: scaleX(0.4) scaleY(0.02); opacity: 0.9; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+/* Phase 3 overlay: horizontal scanline of cyan light + faint scanline texture.
+   Both are short-lived fixed overlays appended/removed by JS. The bright line
+   sits at viewport center during the CRT collapse / WinView boot crossover. */
+.endgame-crt-line {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  background: var(--title-glow);
+  box-shadow: 0 0 24px var(--title-glow), 0 0 6px var(--title-glow);
+  transform-origin: 50% 50%;
+  z-index: 85;
+  pointer-events: none;
+  animation: endgame-crt-line 460ms cubic-bezier(0.25, 0, 0.35, 1) forwards;
+}
+
+@keyframes endgame-crt-line {
+  0%   { transform: scaleX(0); opacity: 0; }
+  20%  { transform: scaleX(1); opacity: 1; }
+  70%  { transform: scaleX(1); opacity: 1; }
+  100% { transform: scaleX(1); opacity: 0; }
+}
+
+.endgame-scanlines {
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 2px,
+    color-mix(in srgb, var(--title-glow) 10%, transparent) 3px,
+    transparent 4px
+  );
+  pointer-events: none;
+  z-index: 78;
+  opacity: 0;
+  animation: endgame-scanlines 760ms ease-out forwards;
+}
+
+@keyframes endgame-scanlines {
+  0%   { opacity: 0; }
+  25%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Phase 4: WinView powers on with the inverse CRT effect. ScaleY 0 → 1, with
+   a residual RGB split that decays. The internal star pops / time scale-in
+   / label glow / pristine background glow all play on top of this wrapper. */
+.win-view {
+  position: relative;
+}
+
+.win-view-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  /* Must match GLITCH_COLLAPSE_MS in src/views/GameView.ts — the CRT off and on
+     are mirror halves of one motion and read wrong at unequal speeds. */
+  animation: winview-crt-power-on 220ms linear both;
+  transition: none;
+}
+
+@keyframes winview-crt-power-on {
+  0%   { transform: scaleY(0); opacity: 0; }
+  100% { transform: scaleY(1); opacity: 1; }
 }
 
 .path-overlay {
@@ -865,28 +936,31 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .tile[data-revealing="true"]::before,
-  .tile[data-revealing="punch"]::before,
   .hint-slot[data-revealing]::before,
-  .hint-slot[data-revealing]::after,
-  .grid-wrap[data-celebrating="true"]::after {
+  .hint-slot[data-revealing]::after {
     animation: none !important;
     display: none;
   }
   .tile[data-revealing="true"] .tile-letter,
-  .tile[data-revealing="punch"] .tile-letter,
-  .game-hint-counter[data-charging="true"],
-  .grid-wrap[data-celebrating="true"],
-  .grid-wrap[data-celebrating="true"] .tile,
+  .game-hint-counter[data-charging="true"] {
+    animation: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-view[data-endgame-phase="corrupt"] .tile,
+  .game-view[data-endgame-phase="corrupt"] .tile-letter,
+  .game-view[data-endgame-phase="corrupt"] .hint-slot-letter,
+  .game-view[data-endgame-phase="corrupt"],
+  .game-view[data-endgame-phase="collapse"],
   .win-view {
     animation: none !important;
-    transition: none !important;
-  }
-  .view.view-exiting {
+    text-shadow: none !important;
     transform: none !important;
-    transition: none !important;
   }
-  .win-view.view-entering {
-    transform: none !important;
+  .endgame-crt-line,
+  .endgame-scanlines {
+    display: none;
   }
 }
 
@@ -1586,17 +1660,6 @@ body {
   cursor: pointer;
 }
 
-/* WinView overhaul */
-.win-view {
-  position: relative;
-  transition: opacity 240ms ease-out,
-              transform 320ms cubic-bezier(0.34, 1.4, 0.64, 1);
-}
-
-.win-view.view-entering {
-  transform: scale(0.94);
-}
-
 .win-view .view-title {
   font-size: var(--type-h1);
   font-weight: 600;
@@ -1675,13 +1738,16 @@ body {
 
 .win-view[data-stars="3"]::before {
   content: '';
-  position: absolute;
+  position: fixed;
   inset: 0;
-  background: radial-gradient(ellipse at center 8%, var(--title-glow) 0%, transparent 62%);
-  opacity: 0.1;
+  background: radial-gradient(circle at 50% 30%, var(--title-glow) 0%, transparent 45%);
+  opacity: 0;
   pointer-events: none;
   z-index: 0;
-  animation: pristine-glow-fade-in 1200ms ease-out backwards;
+  /* Delay the fade-in past the CRT power-on (220ms) — during the power-on the
+     glow would be clipped by the shell's scaleY, which fights the atmospheric
+     read. Once the shell is fully open, the glow blooms across the viewport. */
+  animation: pristine-glow-fade-in 1000ms ease-out 220ms forwards;
 }
 
 .win-view[data-stars="3"] > * {
@@ -1751,7 +1817,7 @@ body {
 
 @keyframes pristine-glow-fade-in {
   from { opacity: 0; }
-  to { opacity: 0.1; }
+  to   { opacity: 0.16; }
 }
 
 @media (prefers-reduced-motion: reduce) {
