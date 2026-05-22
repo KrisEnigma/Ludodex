@@ -88,6 +88,7 @@ const LAST_PLAYED_DATE_KEY = 'last_played_date';
 const CURRENT_STREAK_KEY = 'current_streak';
 const BEST_STREAK_KEY = 'best_streak';
 const ACTIVE_SKIN_KEY = 'active_skin';
+const INSTALL_DATE_KEY = 'glitchsalad.install_date';
 
 type SolvedTimesMap = Record<string, number>;
 
@@ -193,6 +194,29 @@ export async function getActiveSkinId(): Promise<string> {
 
 export async function setActiveSkinId(skinId: string): Promise<void> {
   await Preferences.set({ key: ACTIVE_SKIN_KEY, value: skinId });
+}
+
+/**
+ * Returns the install date as a 'YYYY-MM-DD' string. This is set on the
+ * first ever `bootstrapProgress()` call and never overwritten. Returns null
+ * only if storage has never been written (should not happen after first launch).
+ */
+export async function getInstallDate(): Promise<string | null> {
+  const { value } = await Preferences.get({ key: INSTALL_DATE_KEY });
+  return value ?? null;
+}
+
+/**
+ * Returns the number of whole days since the install date, or 0 if the
+ * install date is not yet set (first launch, before bootstrapProgress runs).
+ */
+export async function getDaysSinceInstall(now: Date = new Date()): Promise<number> {
+  const installDate = await getInstallDate();
+  if (!installDate) return 0;
+  const install = new Date(`${installDate}T00:00:00`);
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diffMs = today.getTime() - install.getTime();
+  return Math.max(0, Math.floor(diffMs / 86_400_000));
 }
 
 function toDayStamp(isoLike: string): string {
@@ -415,6 +439,8 @@ export async function resetAllProgress(): Promise<void> {
   await Preferences.remove({ key: CONSECUTIVE_PRISTINE_COUNT_KEY });
   await Preferences.remove({ key: ARCHIVE_SOLVES_COUNT_KEY });
   await Preferences.remove({ key: LAST_SEEN_DAY_STAMP_KEY });
+  // Note: install date is intentionally NOT reset — it reflects when the
+  // app was first installed and should survive a progress wipe.
   await resetHintData();
   await resetEarnedAchievements();
 }
@@ -435,9 +461,14 @@ export async function bootstrapProgress(): Promise<ProgressSnapshot> {
   }
 
   // Monotonic day-stamp defense: advance the watermark on every app open.
-  // First-ever bootstrap with this version: watermark gets set to today,
-  // and the defense activates against any subsequent backward time travel.
   await advanceLastSeenWatermark();
+
+  // Install date: set once on first ever launch, never overwritten.
+  const existingInstallDate = await getInstallDate();
+  if (!existingInstallDate) {
+    const today = getTodayDayStamp();
+    await Preferences.set({ key: INSTALL_DATE_KEY, value: today });
+  }
 
   return getProgressSnapshot();
 }

@@ -1,11 +1,18 @@
+import { Preferences } from '@capacitor/preferences';
 import { createIcon } from '../components/icons';
 import { ensureBundledPuzzlesLoaded, getDailyPuzzleIndex, getDayNumberSinceLaunch, getPuzzleAtIndex, getPuzzleForDay } from '../game/PuzzleLoader';
 import { t } from '../i18n';
-import { getProgressSnapshot, getSolvedIds, getSolvedRatings, getSolvedTimes, getStreakStatus, normalizeStarRating } from '../services/ProgressService';
+import { normalizeStarRating } from '../services/ProgressService';
+import { getMenuData } from '../services/MenuDataCache';
 import { t as tp } from '../utils/i18n';
 import type { RoutePayloads } from './Router';
 import { getMonetizationContext } from '../services/MonetizationContext';
 import { STORE_URLS } from '../config/legalUrls';
+import { getStarterPackEligibility, markStarterPackShown } from '../services/StarterPackService';
+import { showStarterPackModal } from '../components/StarterPackModal';
+import { showHintStore } from '../components/HintStoreSheet';
+
+const STREAK_BANNER_DISMISSED_KEY = 'streak_banner_dismissed';
 
 type MenuCallbacks = {
   onPlay: (payload: RoutePayloads['game']) => void;
@@ -88,6 +95,7 @@ export class MenuView {
     const streakCard = document.createElement('div');
     streakCard.className = 'stat-card';
     streakCard.dataset.highlight = 'true';
+    streakCard.dataset.loading = 'true';
 
     const streakValueRow = document.createElement('span');
     streakValueRow.className = 'stat-value-row';
@@ -110,6 +118,7 @@ export class MenuView {
 
     const solvedCard = document.createElement('div');
     solvedCard.className = 'stat-card';
+    solvedCard.dataset.loading = 'true';
     const solvedValue = document.createElement('span');
     solvedValue.className = 'stat-value';
     solvedValue.textContent = '0';
@@ -120,6 +129,7 @@ export class MenuView {
 
     const bestCard = document.createElement('div');
     bestCard.className = 'stat-card';
+    bestCard.dataset.loading = 'true';
     const bestValue = document.createElement('span');
     bestValue.className = 'stat-value';
     bestValue.textContent = t('menu.stat_empty');
@@ -193,10 +203,25 @@ export class MenuView {
 
     footerActions.append(archiveButton, howToPlayButton);
 
+    // Resolve platform context once — used for both the Get Hints button and
+    // the web-only "Get the app" row.
+    const context = getMonetizationContext();
+
+    // Native-only: "Get Hints" opens the hint store sheet from the menu.
+    if (context.isNative) {
+      const getHintsButton = document.createElement('button');
+      getHintsButton.type = 'button';
+      getHintsButton.className = 'menu-footer-action button-tertiary';
+      getHintsButton.textContent = t('hint_store.title');
+      getHintsButton.addEventListener('click', () => {
+        void showHintStore('menu');
+      });
+      footerActions.append(getHintsButton);
+    }
+
     let getAppRow: HTMLDivElement | null = null;
 
     // Add web-only "Get the app" footer on its own line.
-    const context = getMonetizationContext();
     if (!context.isNative) {
       getAppRow = document.createElement('div');
       getAppRow.className = 'menu-get-app';
@@ -239,53 +264,88 @@ export class MenuView {
     }, 60_000);
 
     void (async () => {
-      const [snapshot, solvedIds, solvedTimes, solvedRatings, streakStatus] = await Promise.all([
-        getProgressSnapshot(),
-        getSolvedIds(),
-        getSolvedTimes(),
-        getSolvedRatings(),
-        getStreakStatus()
-      ]);
-      if (!root.isConnected) return;
-      const effective = streakStatus.effective;
-      streakValue.textContent = String(effective);
-      if (effective >= 2) {
-        streakCard.dataset.fire = 'true';
-        streakFire.hidden = false;
-      } else {
-        streakCard.removeAttribute('data-fire');
-        streakFire.hidden = true;
-      }
-      solvedValue.textContent = String(snapshot.solvedCount);
-      bestValue.textContent = snapshot.bestTimeSec === null ? t('menu.stat_empty') : this.formatElapsed(snapshot.bestTimeSec);
+      // getMenuData() returns cached data immediately (stale-while-revalidate),
+      // then fires a background refresh. If fresh data arrives while we're still
+      // mounted, applyData() is called again to update the UI.
+      const applyData = async (): Promise<void> => {
+        const [{ snapshot, solvedIds, solvedTimes, solvedRatings, streakStatus }, dismissedPref] =
+          await Promise.all([
+            getMenuData(),
+            Preferences.get({ key: STREAK_BANNER_DISMISSED_KEY })
+          ]);
 
-      if (streakStatus.brokenAt !== null) {
-        const banner = this.buildStreakLossBanner(streakStatus.brokenAt);
-        root.insertBefore(banner, dailySection);
-      }
+        if (!root.isConnected) return;
 
-      if (solvedIds.includes(dailyPuzzle.id)) {
-        dailyCard.dataset.solved = 'true';
-        dailyPlayButton.textContent = t('menu.daily_play_again');
-      }
+        // Lift loading state now that we have real values to render.
+        delete streakCard.dataset.loading;
+        delete solvedCard.dataset.loading;
+        delete bestCard.dataset.loading;
 
-      const yesterdayNumber = dayNumber - 1;
-      if (yesterdayNumber >= 1) {
-        const yesterdayEntry = getPuzzleForDay(yesterdayNumber, puzzles);
-        if (yesterdayEntry) {
-          const yesterdayPuzzle = yesterdayEntry.puzzle;
-          const isSolved = solvedIds.includes(yesterdayPuzzle.id);
-          const time = isSolved ? solvedTimes[yesterdayPuzzle.id] : null;
-          const rating = normalizeStarRating(solvedRatings[yesterdayPuzzle.id]);
-          const card = this.buildYesterdayCard(yesterdayNumber, yesterdayPuzzle, isSolved, time, rating);
-          card.addEventListener('click', () => {
-            callbacks.onPlay({
-              puzzle: yesterdayPuzzle,
-              dayNumber: yesterdayNumber,
-              isTodaysDaily: false
-            });
-          });
-          dailySection.append(card);
+        const effective = streakStatus.effective;
+        streakValue.textContent = String(effective);
+        if (effective >= 2) {
+          streakCard.dataset.fire = 'true';
+          streakFire.hidden = false;
+        } else {
+          streakCard.removeAttribute('data-fire');
+          streakFire.hidden = true;
+        }
+        solvedValue.textContent = String(snapshot.solvedCount);
+        bestValue.textContent = snapshot.bestTimeSec === null
+          ? t('menu.stat_empty')
+          : this.formatElapsed(snapshot.bestTimeSec);
+
+        // Show the streak-loss banner only if it hasn't been dismissed for this
+        // specific brokenAt value. Storing the brokenAt count means: if the user
+        // later breaks a longer streak, the banner reappears for the new event.
+        if (
+          streakStatus.brokenAt !== null &&
+          dismissedPref.value !== String(streakStatus.brokenAt) &&
+          !root.querySelector('.streak-loss-banner')
+        ) {
+          const banner = this.buildStreakLossBanner(streakStatus.brokenAt);
+          root.insertBefore(banner, dailySection);
+        }
+
+        if (solvedIds.includes(dailyPuzzle.id)) {
+          dailyCard.dataset.solved = 'true';
+          dailyPlayButton.textContent = t('menu.daily_play_again');
+        }
+
+        const yesterdayNumber = dayNumber - 1;
+        if (yesterdayNumber >= 1) {
+          const yesterdayEntry = getPuzzleForDay(yesterdayNumber, puzzles);
+          if (yesterdayEntry) {
+            const yesterdayPuzzle = yesterdayEntry.puzzle;
+            const isSolved = solvedIds.includes(yesterdayPuzzle.id);
+            const time = isSolved ? (solvedTimes[yesterdayPuzzle.id] ?? null) : null;
+            const rating = normalizeStarRating(solvedRatings[yesterdayPuzzle.id]);
+            // Only append if not already rendered (can be called twice with cache)
+            if (!root.querySelector('.yesterday-card')) {
+              const card = this.buildYesterdayCard(yesterdayNumber, yesterdayPuzzle, isSolved, time, rating);
+              card.addEventListener('click', () => {
+                callbacks.onPlay({
+                  puzzle: yesterdayPuzzle,
+                  dayNumber: yesterdayNumber,
+                  isTodaysDaily: false
+                });
+              });
+              dailySection.append(card);
+            }
+          }
+        }
+      };
+
+      await applyData();
+
+      // Check starter pack eligibility after data loads.
+      // We delay this behind applyData so the menu is fully rendered before
+      // the modal fires, giving it a natural "you landed on the menu" feel.
+      if (root.isConnected) {
+        const eligibility = await getStarterPackEligibility();
+        if (eligibility.eligible && root.isConnected) {
+          await markStarterPackShown();
+          await showStarterPackModal();
         }
       }
     })();
@@ -369,7 +429,10 @@ export class MenuView {
     dismiss.className = 'streak-loss-dismiss';
     dismiss.setAttribute('aria-label', t('menu.streak_loss_dismiss'));
     dismiss.appendChild(createIcon('dismiss'));
-    dismiss.addEventListener('click', () => banner.remove());
+    dismiss.addEventListener('click', () => {
+      banner.remove();
+      void Preferences.set({ key: STREAK_BANNER_DISMISSED_KEY, value: String(brokenAt) });
+    });
 
     banner.append(icon, text, dismiss);
     return banner;

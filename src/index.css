@@ -371,14 +371,18 @@
 :root {
   color-scheme: dark;
   --type-micro: 10px;
-  --type-display-xl: 76px;
-  --type-display-l: 64px;
-  --type-display-m: 56px;
-  --type-display-s: 30px;
-  --type-h1: 24px;
-  --type-h3: 20px;
-  --type-h4: 19px;
-  --type-h2: 18px;
+  /* Display sizes use clamp() so they scale down gracefully on sub-375px
+     viewports (very small phones, web browser narrow windows) while staying
+     capped at their designed values on standard and large phones. The shell
+     maxes out at 390px, so vw-relative units affect only the lower bound. */
+  --type-display-xl: clamp(52px, 14vw, 76px);
+  --type-display-l:  clamp(44px, 12vw, 64px);
+  --type-display-m:  clamp(38px, 11vw, 56px);
+  --type-display-s:  clamp(22px,  7vw, 30px);
+  --type-h1: clamp(19px, 5.5vw, 24px);
+  --type-h3: clamp(16px, 4.8vw, 20px);
+  --type-h4: clamp(15px, 4.5vw, 19px);
+  --type-h2: clamp(15px, 4.3vw, 18px);
   --type-body-l: 15px;
   --type-body-s: 13px;
   --type-body: 14px;
@@ -1418,6 +1422,33 @@ body {
   align-items: center;
 }
 
+/* Stats skeleton — shown while async data is in flight */
+.stat-card[data-loading="true"] .stat-value,
+.stat-card[data-loading="true"] .stat-label {
+  color: transparent;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--button-border) 25%,
+    color-mix(in srgb, var(--button-border) 55%, var(--button-bg)) 50%,
+    var(--button-border) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stat-card[data-loading="true"] .stat-value,
+  .stat-card[data-loading="true"] .stat-label {
+    animation: none;
+  }
+}
+
 .stat-value {
   font-size: var(--type-h3);
   font-weight: 700;
@@ -1531,6 +1562,10 @@ body {
   justify-content: center;
   padding: 4px 10px;
   border-radius: 999px;
+  /* Stagger the pills so they appear after all three stars have animated in.
+     Star 3 starts at 360ms and its pop duration is ~640ms, so 900ms feels snappy
+     without overlapping the emotional peak of the star sequence. */
+  animation: win-pill-in 320ms cubic-bezier(0.34, 1.4, 0.64, 1) 900ms backwards;
   font-family: 'Space Mono', monospace;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -1543,6 +1578,11 @@ body {
 .win-new-best[hidden],
 .win-new-rating[hidden] {
   display: none;
+}
+
+@keyframes win-pill-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.92); }
+  to   { opacity: 1; transform: none; }
 }
 
 .win-stats-line {
@@ -1824,6 +1864,9 @@ body {
   .win-star[data-filled="true"],
   .win-time,
   .win-headline-label,
+  .win-new-best,
+  .win-new-rating,
+  .win-achievement-card,
   .win-view[data-stars="3"]::before {
     animation: none !important;
   }

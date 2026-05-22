@@ -96,22 +96,61 @@ export function track(
 /**
  * The canonical list of events we track. Adding a new event = adding to this
  * union. Keeps the taxonomy honest and prevents typo-named events.
+ *
+ * Naming convention:
+ *  - noun_verb (entity first): puzzle_started, hint_used
+ *  - iap_* for all purchase funnel events
+ *  - *_tapped for CTA tap/click events
  */
 export type AnalyticsEvent =
+  // ── App lifecycle ──────────────────────────────────────────────────────────
   | 'app_opened'
   | 'view_opened'
+
+  // ── Tutorial ───────────────────────────────────────────────────────────────
   | 'tutorial_step_viewed'
   | 'tutorial_completed'
   | 'tutorial_skipped'
+
+  // ── Puzzle ─────────────────────────────────────────────────────────────────
   | 'puzzle_started'
   | 'puzzle_solved'
   | 'puzzle_abandoned'
+
+  // ── Hints ──────────────────────────────────────────────────────────────────
   | 'hint_used'
-  | 'achievement_unlocked'
+  | 'hint_store_opened'           // context: 'menu' | 'loss_recovery'
+  | 'rewarded_ad_completed'       // placement: 'hint'
+
+  // ── Skins / achievements ───────────────────────────────────────────────────
   | 'skin_preview_entered'
   | 'skin_preview_buy_tapped'
   | 'skin_preview_cancelled'
-  | 'iap_purchase_started'
-  | 'iap_purchase_succeeded'
-  | 'iap_purchase_failed'
-  | 'iap_restore_tapped';
+  | 'achievement_unlocked'
+
+  // ── IAP purchase funnel ────────────────────────────────────────────────────
+  | 'iap_purchase_started'        // legacy — kept for IAPService.purchase() compat
+  | 'iap_purchase_succeeded'      // legacy — kept for existing call sites
+  | 'iap_purchase_failed'         // legacy — kept for existing call sites
+  | 'iap_restore_tapped'
+  | 'iap_offered'                 // product surfaced to user (store opened / modal shown)
+  | 'iap_purchased'               // purchase succeeded (new, richer event)
+  | 'iap_declined'                // user dismissed without buying
+  | 'iap_failed'                  // purchase attempt failed (new, richer event)
+
+  // ── Starter Pack ──────────────────────────────────────────────────────────
+  | 'starter_pack_shown'
+  | 'starter_pack_purchased'
+  | 'starter_pack_declined'
+
+  // ── Ads ────────────────────────────────────────────────────────────────────
+  | 'ad_impression'               // legacy alias kept for backward compat
+  | 'interstitial_shown'          // placement: 'win_exit'
+  | 'interstitial_skipped_remove_ads'
+
+  // ── Share ──────────────────────────────────────────────────────────────────
+  | 'share_string_generated'
+  | 'share_button_tapped'         // share_method: 'native_share' | 'clipboard'
+
+  // ── Web / cross-promo ─────────────────────────────────────────────────────
+  | 'web_install_cta_tapped';     // platform: 'android' | 'ios'

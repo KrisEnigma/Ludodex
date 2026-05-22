@@ -12,7 +12,36 @@ export type PuzzleHintReveal = {
 
 const HINT_STATE_KEY = 'glitchsalad.hint_state';
 const HINT_REVEALS_PREFIX = 'glitchsalad.hint_reveals.';
-const FREE_DAILY_HINTS = 3;
+const AD_HINT_GRANTS_KEY = 'glitchsalad.ad_hint_grants';
+
+/**
+ * Hints granted on first-ever install. Generous onboarding floor.
+ */
+const STARTING_HINTS = 5;
+
+/**
+ * Free hints added per calendar day (additive, not a floor).
+ * Rolls over up to HINT_ROLLOVER_CAP.
+ */
+const DAILY_HINT_GRANT = 1;
+
+/**
+ * Maximum free hints a player can accumulate via daily rollover.
+ * Keeps hints scarce enough to remain valuable.
+ */
+const HINT_ROLLOVER_CAP = 7;
+
+/**
+ * How many ad-rewarded hints a player can claim per day.
+ * 5 is the industry sweet spot — enough to feel generous without
+ * undermining the remove-ads or hint-pack value proposition.
+ */
+export const AD_HINT_DAILY_LIMIT = 5;
+
+type AdHintGrantState = {
+  count: number;
+  date: string; // 'YYYY-MM-DD' local
+};
 
 function todayKey(now: Date = new Date()): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -33,23 +62,35 @@ async function writeState(state: HintState): Promise<void> {
 }
 
 /**
- * Returns the current hint state, granting the daily allowance if today's date
- * differs from the last grant date. Top-up semantics: hintsRemaining is set to
- * max(hintsRemaining, FREE_DAILY_HINTS) — bought hints accumulate above the floor
- * but don't earn additional daily grants on top.
+ * Returns the current hint state, applying the daily grant if today's date
+ * differs from the last grant date.
+ *
+ * Grant model (v2):
+ *  - New install: STARTING_HINTS (5).
+ *  - Each new calendar day: +DAILY_HINT_GRANT (1), capped at HINT_ROLLOVER_CAP (7).
+ *  - Purchased or ad-earned hints accumulate above the rollover cap.
+ *
+ * This replaces the old "always at least FREE_DAILY_HINTS" floor, which
+ * felt opaque and undermined scarcity. The additive model is more
+ * legible and creates a natural save-up incentive.
  */
 export async function ensureDailyGrant(now: Date = new Date()): Promise<HintState> {
   const existing = await readState();
   const today = todayKey(now);
 
+  // First ever launch: grant starting hints.
   if (!existing) {
-    const fresh: HintState = { hintsRemaining: FREE_DAILY_HINTS, lastGrantDate: today };
+    const fresh: HintState = { hintsRemaining: STARTING_HINTS, lastGrantDate: today };
     await writeState(fresh);
     return fresh;
   }
 
   if (existing.lastGrantDate !== today) {
-    existing.hintsRemaining = Math.max(existing.hintsRemaining, FREE_DAILY_HINTS);
+    // Add one hint per day, capped at the rollover cap.
+    // Only the free daily portion is capped — hints above the cap from
+    // IAP purchases or ad rewards are preserved.
+    const freeBalance = Math.min(existing.hintsRemaining + DAILY_HINT_GRANT, HINT_ROLLOVER_CAP);
+    existing.hintsRemaining = Math.max(existing.hintsRemaining, freeBalance);
     existing.lastGrantDate = today;
     await writeState(existing);
   }
@@ -75,14 +116,52 @@ export async function consumeHint(): Promise<HintState> {
 }
 
 /**
- * Adds hints to the user's pool. Reserved for ad rewards and pack purchases.
- * Wired in the next commit.
+ * Adds hints to the user's pool. Used by ad rewards and IAP hint packs.
+ * Purchased hints are NOT capped — they accumulate above the rollover cap.
  */
 export async function grantHints(count: number): Promise<HintState> {
   const state = await ensureDailyGrant();
   state.hintsRemaining += count;
   await writeState(state);
   return state;
+}
+
+// ─────── Ad-hint daily tracking ───────
+
+async function readAdHintState(now: Date = new Date()): Promise<AdHintGrantState> {
+  const raw = await Preferences.get({ key: AD_HINT_GRANTS_KEY });
+  const today = todayKey(now);
+  if (!raw.value) return { count: 0, date: today };
+  try {
+    const parsed = JSON.parse(raw.value) as AdHintGrantState;
+    if (parsed.date !== today) return { count: 0, date: today };
+    return parsed;
+  } catch {
+    return { count: 0, date: today };
+  }
+}
+
+/**
+ * How many ad-rewarded hints the player can still claim today.
+ */
+export async function getAdHintsRemainingToday(now: Date = new Date()): Promise<number> {
+  const state = await readAdHintState(now);
+  return Math.max(0, AD_HINT_DAILY_LIMIT - state.count);
+}
+
+/**
+ * Consumes one ad-hint slot for today. Returns `true` if the slot was available
+ * and consumed, `false` if the daily limit was already reached.
+ * Call this AFTER a confirmed rewarded ad, BEFORE granting the hint.
+ */
+export async function consumeAdHintSlot(now: Date = new Date()): Promise<boolean> {
+  const today = todayKey(now);
+  const state = await readAdHintState(now);
+  if (state.count >= AD_HINT_DAILY_LIMIT) return false;
+  state.count += 1;
+  state.date = today;
+  await Preferences.set({ key: AD_HINT_GRANTS_KEY, value: JSON.stringify(state) });
+  return true;
 }
 
 // ─────── Per-puzzle reveal persistence ───────
@@ -117,7 +196,7 @@ export async function clearPuzzleReveals(puzzleId: string): Promise<void> {
 export async function resetHintData(): Promise<void> {
   const { keys } = await Preferences.keys();
   const toRemove = keys.filter(
-    k => k === HINT_STATE_KEY || k.startsWith(HINT_REVEALS_PREFIX)
+    k => k === HINT_STATE_KEY || k === AD_HINT_GRANTS_KEY || k.startsWith(HINT_REVEALS_PREFIX)
   );
   await Promise.all(toRemove.map(key => Preferences.remove({ key })));
 }

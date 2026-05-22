@@ -5,10 +5,15 @@ import { createIcon } from '../components/icons';
 import { Tile } from '../game/Tile';
 import { applySolvedPart, buildTileOwnership, type PartOwnershipEntry, type TileOwnershipState } from '../game/tileOwnership';
 import { showConfirmModal, showInfoModal } from '../components/Modal';
-import { maybeShowInterstitial } from '../services/AdService';
+import { recordSolveForInterstitial, showRewardedAdForHint, canShowAds } from '../services/AdService';
+import { invalidateMenuCache } from '../services/MenuDataCache';
+import { showHintStore } from '../components/HintStoreSheet';
 import {
   ensureDailyGrant,
   consumeHint,
+  grantHints,
+  getAdHintsRemainingToday,
+  consumeAdHintSlot,
   getPuzzleReveals,
   addPuzzleReveal,
   clearPuzzleReveals
@@ -128,8 +133,20 @@ export class GameView {
     hintIcon.append(createIcon('bulb'));
     this.hintCounterCount = document.createElement('span');
     this.hintCounterCount.className = 'game-hint-counter-count';
-    this.hintCounterCount.textContent = '3';
+    this.hintCounterCount.textContent = '5';
     this.hintCounterEl.append(hintIcon, this.hintCounterCount);
+
+    // Tapping the counter at zero opens the Hint Store (loss-recovery context).
+    this.hintCounterEl.addEventListener('click', () => {
+      if (this.hintsRemaining <= 0) {
+        void showHintStore('loss_recovery', (granted) => {
+          if (granted > 0) {
+            this.hintsRemaining += granted;
+            this.updateHintCounter();
+          }
+        });
+      }
+    });
 
     const levelLabel = document.createElement('span');
     levelLabel.className = 'header-level';
@@ -458,6 +475,39 @@ export class GameView {
   }
 
   private async showOutOfHintsModal(): Promise<void> {
+    // On native with ads enabled, offer a rewarded ad for a bonus hint.
+    if (canShowAds()) {
+      const adHintsLeft = await getAdHintsRemainingToday();
+      if (adHintsLeft > 0) {
+        const confirmed = await showConfirmModal({
+          title: t('hint.watch_ad_title'),
+          body: t('hint.watch_ad_body'),
+          confirmLabel: t('hint.watch_ad_confirm'),
+          cancelLabel: t('common.cancel')
+        });
+        if (confirmed) {
+          const result = await showRewardedAdForHint();
+          if (result === 'rewarded') {
+            const slotConsumed = await consumeAdHintSlot();
+            if (slotConsumed) {
+              const state = await grantHints(1);
+              this.hintsRemaining = state.hintsRemaining;
+              this.updateHintCounter();
+            }
+          }
+          // 'skipped' or 'unavailable': close silently, player can try again.
+        }
+        return;
+      }
+      // Ad hint daily limit reached — show a tailored message.
+      await showInfoModal({
+        title: t('hint.ad_limit_title'),
+        body: t('hint.ad_limit_body'),
+        closeLabel: t('hint.out_close')
+      });
+      return;
+    }
+    // Web / remove-ads owner: plain "come back tomorrow" message.
     await showInfoModal({
       title: t('hint.out_title'),
       body: t('hint.out_body'),
@@ -1055,6 +1105,10 @@ export class GameView {
           isTutorial: this.isTutorial
         });
 
+        // Invalidate the menu data cache so the next menu visit reflects the
+        // new solved state immediately rather than showing stale stats.
+        invalidateMenuCache();
+
         await clearPuzzleReveals(this.puzzleId);
 
         let unlockedAchievements: string[] = [];
@@ -1089,7 +1143,9 @@ export class GameView {
           was_new_rating: wasNewRating
         });
 
-        await maybeShowInterstitial(snapshot.totalSolveAttempts);
+        // Record this solve toward the interstitial cadence counter.
+        // The ad itself fires on the WinView→next-view transition (Router).
+        await recordSolveForInterstitial();
         await holdForAnimations;
         await fadeOut();
 

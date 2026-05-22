@@ -3,6 +3,10 @@ import { t } from '../i18n';
 import { getSolvedIds, getSolvedTimes, getSolvedRatings, normalizeStarRating } from '../services/ProgressService';
 import type { Puzzle } from '../types/puzzle';
 import { t as tp } from '../utils/i18n';
+import { getMonetizationContext } from '../services/MonetizationContext';
+
+/** On web, only the most recent N days are freely accessible. */
+const WEB_FREE_DAYS = 7;
 
 export class ArchiveView {
   public readonly element: HTMLDivElement;
@@ -47,6 +51,7 @@ export class ArchiveView {
   private async populate(): Promise<void> {
     const today = getDayNumberSinceLaunch();
     const lastArchiveDay = today - 1;
+    const ctx = getMonetizationContext();
 
     if (lastArchiveDay < 1) {
       const empty = document.createElement('p');
@@ -64,16 +69,50 @@ export class ArchiveView {
 
     if (!this.element.isConnected) return;
 
+    // On web, only the most recent WEB_FREE_DAYS entries are unlocked.
+    // Older entries are shown as locked rows — visible but unplayable —
+    // with an install CTA to prompt app download.
+    const webFreeThreshold = ctx.isNative ? 0 : lastArchiveDay - WEB_FREE_DAYS + 1;
+
+    let lockedRowInserted = false;
+
     for (let day = lastArchiveDay; day >= 1; day -= 1) {
       const entry = getPuzzleForDay(day);
       if (!entry) continue;
       const { puzzle } = entry;
+
+      if (!ctx.isNative && day < webFreeThreshold) {
+        // Render one locked-gate row to represent all older entries.
+        if (!lockedRowInserted) {
+          this.listContainer.append(this.renderLockedGate());
+          lockedRowInserted = true;
+        }
+        continue;
+      }
+
       const isSolved = solvedIds.includes(puzzle.id);
       const timeValue = solvedTimes[puzzle.id];
       const time = isSolved && Number.isFinite(timeValue) ? timeValue : null;
       const rating = normalizeStarRating(solvedRatings[puzzle.id]);
       this.listContainer.append(this.renderRow(day, puzzle, isSolved, time, rating));
     }
+  }
+
+  /** Locked-gate row shown at the bottom of the web archive list. */
+  private renderLockedGate(): HTMLElement {
+    const row = document.createElement('div');
+    row.className = 'archive-locked-gate';
+
+    const label = document.createElement('p');
+    label.className = 'archive-locked-label';
+    label.textContent = t('archive.web_locked_label');
+
+    const cta = document.createElement('p');
+    cta.className = 'archive-locked-cta';
+    cta.textContent = t('archive.web_locked_cta');
+
+    row.append(label, cta);
+    return row;
   }
 
   private renderRow(

@@ -7,6 +7,9 @@ import { clearPuzzleReveals } from '../services/HintService';
 import type { Router } from './Router';
 import { ACHIEVEMENTS } from '../data/achievements';
 import type { WinPayload } from './types';
+import { getMonetizationContext } from '../services/MonetizationContext';
+import { track } from '../services/AnalyticsService';
+import { STORE_URLS } from '../config/legalUrls';
 
 export class WinView {
   readonly element: HTMLDivElement;
@@ -142,6 +145,13 @@ export class WinView {
       void shareWin(payload);
     });
 
+    // Web-only: install CTA row, UA-detected to point at the right store.
+    let installCtaRow: HTMLElement | null = null;
+    const ctx = getMonetizationContext();
+    if (!ctx.isNative) {
+      installCtaRow = buildInstallCtaRow();
+    }
+
     const secondaryRow = document.createElement('div');
     secondaryRow.className = 'win-secondary-row';
 
@@ -175,7 +185,8 @@ export class WinView {
       ...(stats ? [stats] : []),
       shareButton,
       secondaryRow,
-      nextCountdown
+      nextCountdown,
+      ...(installCtaRow ? [installCtaRow] : []),
     ];
 
     shell.append(...children);
@@ -252,40 +263,97 @@ function renderStars(rating: 1 | 2 | 3): string {
   return '★'.repeat(rating) + '☆'.repeat(3 - rating);
 }
 
-function buildShareText(payload: WinPayload): string {
-  const time = formatTime(payload.elapsedSeconds);
+/** Shared suffix fragments used across variants. */
+function hintsSuffix(payload: WinPayload): string {
+  if (payload.hintsUsed <= 0) return '';
+  return payload.hintsUsed === 1
+    ? t('share.suffix_hint_one',  { n: payload.hintsUsed })
+    : t('share.suffix_hint_other', { n: payload.hintsUsed });
+}
+
+function newBestSuffix(payload: WinPayload): string {
+  return payload.wasNewBest ? t('share.suffix_new_best') : '';
+}
+
+function statsLine(payload: WinPayload): string {
+  const parts: string[] = [];
+  if (payload.currentStreak >= 2) parts.push(t('share.stat_day_streak', { n: payload.currentStreak }));
+  if (payload.solvedCount    >= 2) parts.push(t('share.stat_solved_count', { n: payload.solvedCount }));
+  return parts.join(' · ');
+}
+
+/**
+ * Variant A — Glyph trail
+ * Classic stars + time line. Works everywhere.
+ */
+function buildShareVariantA(payload: WinPayload): string {
+  const time  = formatTime(payload.elapsedSeconds);
   const stars = renderStars(payload.starRating);
-
-  const actionLabel = payload.starRating === 3
+  const action = payload.starRating === 3
     ? t('share.pristine_in', { time })
-    : t('share.solved_in', { time });
+    : t('share.solved_in',   { time });
 
-  const hintsSuffix = payload.hintsUsed > 0
-    ? (payload.hintsUsed === 1
-      ? t('share.suffix_hint_one', { n: payload.hintsUsed })
-      : t('share.suffix_hint_other', { n: payload.hintsUsed }))
-    : '';
-  const newBestSuffix = payload.wasNewBest ? t('share.suffix_new_best') : '';
+  const performanceLine = `${stars} ${action}${hintsSuffix(payload)}${newBestSuffix(payload)}`;
+  const sl = statsLine(payload);
 
-  const performanceLine = `${stars} ${actionLabel}${hintsSuffix}${newBestSuffix}`;
-
-  const statsParts: string[] = [];
-  if (payload.currentStreak >= 2) {
-    statsParts.push(t('share.stat_day_streak', { n: payload.currentStreak }));
-  }
-  if (payload.solvedCount >= 2) {
-    statsParts.push(t('share.stat_solved_count', { n: payload.solvedCount }));
-  }
-  const statsLine = statsParts.join(' · ');
-
-  const lines: string[] = [
+  const lines = [
     t('share.header', { day: payload.dayNumber, title: payload.puzzleTitle }),
     '',
-    performanceLine
+    performanceLine,
   ];
-  if (statsLine) lines.push(statsLine);
+  if (sl) lines.push(sl);
   lines.push('', t('share.footer'));
   return lines.join('\n');
+}
+
+/**
+ * Variant B — Scanline card
+ * Uses block characters for a retro terminal aesthetic. No spoilers.
+ */
+function buildShareVariantB(payload: WinPayload): string {
+  const time    = formatTime(payload.elapsedSeconds);
+  const barFull = '█';
+  const barHalf = '▒';
+
+  // Progress bar: filled proportional to star rating out of 3
+  const filled = payload.starRating;
+  const bar = barFull.repeat(filled) + barHalf.repeat(3 - filled);
+
+  const resultLabel = payload.starRating === 3
+    ? t('share.pristine_in', { time })
+    : t('share.solved_in',   { time });
+
+  const lines = [
+    t('share.header', { day: payload.dayNumber, title: payload.puzzleTitle }),
+    '',
+    `[${bar}] ${resultLabel}${hintsSuffix(payload)}${newBestSuffix(payload)}`,
+  ];
+  const sl = statsLine(payload);
+  if (sl) lines.push(sl);
+  lines.push('', t('share.footer'));
+  return lines.join('\n');
+}
+
+/**
+ * Variant C — Minimalist
+ * Single-line result. Compact for platforms that truncate previews.
+ */
+function buildShareVariantC(payload: WinPayload): string {
+  const time = formatTime(payload.elapsedSeconds);
+  const tag  = payload.starRating === 3 ? '🏆' : '✓';
+
+  const resultLine = `${tag} GlitchSalad #${payload.dayNumber} — ${time}${hintsSuffix(payload)}${newBestSuffix(payload)}`;
+  const sl = statsLine(payload);
+
+  const lines = [resultLine];
+  if (sl) lines.push(sl);
+  lines.push(t('share.footer'));
+  return lines.join('\n');
+}
+
+/** @deprecated Use the variant builders directly. Kept for reference. */
+function buildShareText(payload: WinPayload): string {
+  return buildShareVariantA(payload);
 }
 
 function formatTime(totalSeconds: number): string {
@@ -305,13 +373,134 @@ function formatTimeUntilMidnight(): string {
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
-async function shareWin(payload: WinPayload): Promise<void> {
-  try {
-    await Share.share({
-      title: 'GlitchSalad',
-      text: buildShareText(payload)
+/**
+ * Build install CTA row for web WinView.
+ * UA-detects Android vs iOS and points at the correct store link.
+ * Falls back to both links when the platform can't be determined.
+ */
+function buildInstallCtaRow(): HTMLElement {
+  const row = document.createElement('div');
+  row.className = 'win-install-cta';
+
+  const label = document.createElement('span');
+  label.className = 'win-install-cta-label';
+  label.textContent = t('web_cta.get_app');
+
+  const ua = navigator.userAgent.toLowerCase();
+  const isAndroid = ua.includes('android');
+  const isIos     = /iphone|ipad|ipod/.test(ua);
+
+  const makeLink = (href: string, text: string, store: 'app_store' | 'play_store'): HTMLAnchorElement => {
+    const a = document.createElement('a');
+    a.href = href;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.className = 'win-install-cta-link button-secondary';
+    a.textContent = text;
+    a.addEventListener('click', () => {
+      track('web_install_cta_tapped', { store });
     });
-  } catch {
-    // Sharing is optional and may be unavailable on web.
+    return a;
+  };
+
+  const links = document.createElement('div');
+  links.className = 'win-install-cta-links';
+
+  if (isAndroid) {
+    links.append(makeLink(STORE_URLS.playStore, t('web_cta.play_store'), 'play_store'));
+  } else if (isIos) {
+    links.append(makeLink(STORE_URLS.appStore, t('web_cta.app_store'), 'app_store'));
+  } else {
+    // Desktop or unknown — show both
+    links.append(
+      makeLink(STORE_URLS.appStore,  t('web_cta.app_store'),  'app_store'),
+      makeLink(STORE_URLS.playStore, t('web_cta.play_store'), 'play_store'),
+    );
   }
+
+  row.append(label, links);
+  return row;
+}
+
+/**
+ * Show a share-variant picker sheet then invoke the native share dialog.
+ *
+ * Three variants are built up-front and presented in a bottom sheet so the
+ * player can preview and choose before handing off to the OS share sheet.
+ */
+async function shareWin(payload: WinPayload): Promise<void> {
+  track('share_button_tapped', { day: payload.dayNumber });
+
+  const variants: Array<{ label: string; text: string }> = [
+    { label: '★ Glyph trail',   text: buildShareVariantA(payload) },
+    { label: '▒ Scanline card', text: buildShareVariantB(payload) },
+    { label: '✓ Minimalist',    text: buildShareVariantC(payload) },
+  ];
+
+  const chosen = await pickShareVariant(variants);
+  if (chosen === null) return; // dismissed without picking
+
+  track('share_string_generated', { variant: String(variants.findIndex(v => v.text === chosen) + 1) });
+
+  try {
+    await Share.share({ title: 'GlitchSalad', text: chosen });
+  } catch {
+    // Share API unavailable on some web browsers — copy to clipboard as fallback.
+    try {
+      await navigator.clipboard.writeText(chosen);
+    } catch {
+      // Nothing we can do if clipboard is also denied.
+    }
+  }
+}
+
+/**
+ * Render a modal sheet showing all share variants.
+ * Returns the chosen text, or null if the sheet was dismissed.
+ */
+function pickShareVariant(variants: Array<{ label: string; text: string }>): Promise<string | null> {
+  return new Promise((resolve) => {
+    const backdrop = document.createElement('div');
+    backdrop.className = 'sheet-backdrop';
+
+    const sheet = document.createElement('div');
+    sheet.className = 'share-picker-sheet';
+    sheet.setAttribute('role', 'dialog');
+    sheet.setAttribute('aria-modal', 'true');
+
+    const dismiss = (value: string | null): void => {
+      backdrop.remove();
+      resolve(value);
+    };
+
+    backdrop.addEventListener('click', (e) => {
+      if (e.target === backdrop) dismiss(null);
+    });
+
+    for (const variant of variants) {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'share-variant-card';
+
+      const labelEl = document.createElement('span');
+      labelEl.className = 'share-variant-label';
+      labelEl.textContent = variant.label;
+
+      const preview = document.createElement('pre');
+      preview.className = 'share-variant-preview';
+      preview.textContent = variant.text;
+
+      card.append(labelEl, preview);
+      card.addEventListener('click', () => dismiss(variant.text));
+      sheet.append(card);
+    }
+
+    backdrop.append(sheet);
+    document.body.append(backdrop);
+
+    requestAnimationFrame(() => {
+      backdrop.classList.add('sheet-backdrop--visible');
+      sheet.classList.add('share-picker-sheet--visible');
+    });
+  });
 }

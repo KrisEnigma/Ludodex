@@ -78,6 +78,25 @@ export const strings = {
   'hint.out_title': 'No hints left',
   'hint.out_body': 'You have used all hints for today. Come back tomorrow for more.',
   'hint.out_close': 'OK',
+  'hint.watch_ad_title': 'Need a hint?',
+  'hint.watch_ad_body': 'Watch a short ad to earn a bonus hint.',
+  'hint.watch_ad_confirm': 'Watch Ad',
+  'hint.ad_limit_title': 'No hints left',
+  'hint.ad_limit_body': 'You\'ve used all your free and ad hints for today. Get a hint pack or come back tomorrow.',
+  'hint.balance': '{n} hints',
+  'hint.balance_one': '1 hint',
+
+  // Hint store
+  'hint_store.title': 'Get Hints',
+  'hint_store.balance_label': 'Your balance',
+  'hint_store.watch_ad_cta': 'Watch Ad — Get +1 Hint',
+  'hint_store.watch_ad_remaining': '{n} free ad hints left today',
+  'hint_store.pack_badge_best_value': 'Best Value',
+  'hint_store.pack_badge_save': 'Save 60%',
+  'hint_store.pack_hints': '{n} Hints',
+  'hint_store.pack_price': '{price}',
+  'hint_store.buy_button': 'Get {n} Hints — {price}',
+  'hint_store.close': 'Close',
 
   // Win view
   'win.achievements_unlocked': 'Achievements unlocked',
@@ -129,6 +148,34 @@ export const strings = {
   'how_to_play.step3_body': 'Tap the last letter to undo. Tap outside the grid to clear your selection.',
   'how_to_play.step4_title': 'Daily ritual',
   'how_to_play.step4_body': 'A new puzzle every day. Solve today\'s to build your streak.',
+
+  // Starter Pack offer
+  'starter_pack.title': 'Starter Pack',
+  'starter_pack.subtitle': 'One-time offer — expires in {time}',
+  'starter_pack.body': 'Remove ads · 30 hints · Synthwave skin',
+  'starter_pack.cta': 'Get the Pack — {price}',
+  'starter_pack.dismiss': 'No thanks',
+  'starter_pack.badge': 'Launch Sale',
+  'starter_pack.item_remove_ads': 'Remove Ads — forever',
+  'starter_pack.item_hints': '30 Hints to use anytime',
+  'starter_pack.item_skin': 'Synthwave skin unlocked',
+
+  // Remove Ads launch promo (shown within first 14 days)
+  'remove_ads.title': 'Remove Ads',
+  'remove_ads.body': 'Play without interruptions. Rewarded ad hints still available.',
+  'remove_ads.cta': 'Remove Ads — {price}',
+  'remove_ads.promo_badge': 'Launch Sale',
+  'remove_ads.promo_original_price': '{price}',
+  'remove_ads.already_owned': 'You already own this.',
+
+  // Web archive gate
+  'archive.web_locked_label': 'Get the app to unlock',
+  'archive.web_locked_cta': 'Get the app for full archive access.',
+
+  // Web install CTA (WinView + elsewhere)
+  'web_cta.get_app': 'Get the app',
+  'web_cta.play_store': 'Google Play',
+  'web_cta.app_store': 'App Store',
 
   // Common
   'common.cancel': 'Cancel',

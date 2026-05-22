@@ -57,6 +57,11 @@ function ensureStyles(): void {
 }
 
 export function showConfetti(options: ConfettiOptions = {}): void {
+  // Respect the user's motion preference — skip confetti entirely.
+  if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+    return;
+  }
+
   const count = options.count ?? 40;
   const lifetimeMs = options.duration ?? 5000;
   const colors = options.colors ?? ['var(--title-glow)'];

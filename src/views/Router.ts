@@ -2,6 +2,7 @@
 import type { Puzzle } from '../types/puzzle';
 import { track } from '../services/AnalyticsService';
 import { trackRoute } from '../services/SentryService';
+import { fireInterstitialIfPending } from '../services/AdService';
 
 import { ArchiveView } from './ArchiveView';
 import { GameView } from './GameView';
@@ -34,15 +35,16 @@ type AnyRouteEntry = {
 }[RouteName];
 
 export class Router {
-    private mount(element: HTMLElement): void {
-      element.classList.add('view-entering');
-      this.shell.replaceChildren(element);
+  private mount(element: HTMLElement): void {
+    element.classList.add('view-entering');
+    this.shell.replaceChildren(element);
+    requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          element.classList.remove('view-entering');
-        });
+        element.classList.remove('view-entering');
       });
-    }
+    });
+  }
+
   private readonly shell: HTMLDivElement;
   private stack: AnyRouteEntry[] = [];
 
@@ -83,16 +85,32 @@ export class Router {
     if (this.stack.length <= 1) {
       return;
     }
+    const leaving = this.stack[this.stack.length - 1];
     this.stack.pop();
     const current = this.stack[this.stack.length - 1];
     if (current) trackRoute(current.name, 'pop');
+
+    // Critical timing rule: fire pending interstitial when navigating AWAY
+    // from WinView. The WinView celebration stays completely clean; the ad
+    // fires on the transition out (Done or Back button). This is a fire-and-
+    // forget — we do not await the ad before mounting the next view, so there
+    // is no perceived delay on the nav action itself.
+    if (leaving?.name === 'win') {
+      void fireInterstitialIfPending();
+    }
+
     this.renderCurrent();
   }
 
   popToRoot(): void {
     if (this.stack.length === 0) return;
+    const leaving = this.stack[this.stack.length - 1];
     while (this.stack.length > 1) {
       this.stack.pop();
+    }
+
+    if (leaving?.name === 'win') {
+      void fireInterstitialIfPending();
     }
 
     this.renderCurrent();
@@ -101,6 +119,14 @@ export class Router {
   private renderCurrent(): void {
     const current = this.stack[this.stack.length - 1];
     if (!current) return;
+
+    // When replacing a win route with a new route (Play Again → new game),
+    // fire the pending interstitial on the transition.
+    const prev = this.stack[this.stack.length - 2];
+    const isReplacingWin = prev?.name === 'win' && current.name !== 'win';
+    if (isReplacingWin) {
+      void fireInterstitialIfPending();
+    }
 
     switch (current.name) {
       case 'menu': {
@@ -114,11 +140,11 @@ export class Router {
         this.mount(view.element);
         return;
       }
-            case 'achievements': {
-              const view = new AchievementsView(() => this.pop());
-              this.mount(view.element);
-              return;
-            }
+      case 'achievements': {
+        const view = new AchievementsView(() => this.pop());
+        this.mount(view.element);
+        return;
+      }
       case 'game': {
         const view = new GameView(current.payload, {
           onWin: (payload) => this.replace('win', payload),

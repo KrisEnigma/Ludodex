@@ -79,6 +79,25 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'hint.out_title': 'Sin pistas',
   'hint.out_body': 'Ya usaste todas las pistas de hoy. Vuelve mañana para más.',
   'hint.out_close': 'Aceptar',
+  'hint.watch_ad_title': '¿Necesitas una pista?',
+  'hint.watch_ad_body': 'Mira un anuncio breve para ganar una pista extra.',
+  'hint.watch_ad_confirm': 'Ver anuncio',
+  'hint.ad_limit_title': 'Sin pistas',
+  'hint.ad_limit_body': 'Usaste todas las pistas gratuitas y de anuncios de hoy. Consigue un paquete o vuelve mañana.',
+  'hint.balance': '{n} pistas',
+  'hint.balance_one': '1 pista',
+
+  // Hint store
+  'hint_store.title': 'Conseguir pistas',
+  'hint_store.balance_label': 'Tu saldo',
+  'hint_store.watch_ad_cta': 'Ver anuncio — obtener +1 pista',
+  'hint_store.watch_ad_remaining': 'Te quedan {n} pistas de anuncios hoy',
+  'hint_store.pack_badge_best_value': 'Mejor valor',
+  'hint_store.pack_badge_save': 'Ahorra 60%',
+  'hint_store.pack_hints': '{n} pistas',
+  'hint_store.pack_price': '{price}',
+  'hint_store.buy_button': 'Obtener {n} pistas — {price}',
+  'hint_store.close': 'Cerrar',
 
   // Win view
   'win.achievements_unlocked': 'Logros desbloqueados',
@@ -115,6 +134,8 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'archive.empty': 'Vuelve mañana para tu primera entrada del archivo.',
   'archive.day_row': 'Día {n} — {title}',
   'archive.unsolved': '—',
+  'archive.web_locked_label': 'Disponible en la app',
+  'archive.web_locked_cta': 'Descarga la app para acceder al archivo completo.',
 
   // How to play
   'how_to_play.title': 'Cómo jugar',
@@ -130,6 +151,30 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'how_to_play.step3_body': 'Toca la última letra para deshacer. Toca fuera del tablero para limpiar tu selección.',
   'how_to_play.step4_title': 'Ritual diario',
   'how_to_play.step4_body': 'Un puzzle nuevo cada día. Resuelve el de hoy para mantener tu racha.',
+
+  // Starter Pack offer
+  'starter_pack.title': 'Pack de inicio',
+  'starter_pack.subtitle': 'Oferta única — expira en {time}',
+  'starter_pack.body': 'Sin anuncios · 30 pistas · Skin Synthwave',
+  'starter_pack.cta': 'Obtener el pack — {price}',
+  'starter_pack.dismiss': 'No, gracias',
+  'starter_pack.badge': 'Oferta de lanzamiento',
+  'starter_pack.item_remove_ads': 'Sin anuncios — para siempre',
+  'starter_pack.item_hints': '30 pistas para usar cuando quieras',
+  'starter_pack.item_skin': 'Skin Synthwave desbloqueada',
+
+  // Remove Ads launch promo
+  'remove_ads.title': 'Eliminar anuncios',
+  'remove_ads.body': 'Juega sin interrupciones. Los anuncios de pistas siguen disponibles.',
+  'remove_ads.cta': 'Eliminar anuncios — {price}',
+  'remove_ads.promo_badge': 'Oferta de lanzamiento',
+  'remove_ads.promo_original_price': '{price}',
+  'remove_ads.already_owned': 'Ya tienes esta compra.',
+
+  // Web install CTA
+  'web_cta.get_app': 'Obtener la app',
+  'web_cta.play_store': 'Google Play',
+  'web_cta.app_store': 'App Store',
 
   // Common
   'common.cancel': 'Cancelar',
