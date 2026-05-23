@@ -100,6 +100,7 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'hint_store.close': 'Cerrar',
 
   // Win view
+  'win.achievement_unlocked':  'Logro desbloqueado',
   'win.achievements_unlocked': 'Logros desbloqueados',
   'win.pristine_label': 'Impecable',
   'win.solved_subtitle': '¡Resuelto!',
@@ -117,16 +118,13 @@ export const strings: Record<keyof typeof enStrings, string> = {
 
   // Share string
   'share.header': 'GlitchSalad #{day} — {title}',
-  'share.line_pristine': '🏆 Impecable en {time}',
-  'share.line_solved': 'Resuelto en {time}',
+  'share.label_flawless': 'Impecable',
+  'share.label_solved': 'Resuelto',
   'share.suffix_new_best': ' — NUEVO RÉCORD',
   'share.suffix_hint_one': ' · 💡 {n} pista',
   'share.suffix_hint_other': ' · 💡 {n} pistas',
   'share.stat_day_streak': '🔥 Racha de {n} días',
   'share.stat_solved_count': '{n} resueltos',
-  'share.footer': 'glitchsalad.app',
-  'share.pristine_in': 'Impecable en {time}',
-  'share.solved_in': 'Resuelto en {time}',
 
   // Archive
   'archive.title': 'Archivo',

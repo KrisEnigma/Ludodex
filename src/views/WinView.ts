@@ -206,19 +206,25 @@ export class WinView {
 
     const heading = document.createElement('div');
     heading.className = 'win-achievements-heading';
-    heading.textContent = t('win.achievements_unlocked');
+    // Singular vs plural
+    heading.textContent = unlockedDefs.length === 1
+      ? t('win.achievement_unlocked')
+      : t('win.achievements_unlocked');
     achievementsSection.append(heading);
 
-    for (const def of unlockedDefs) {
-      achievementsSection.append(this.renderAchievementCard(def));
-    }
+    unlockedDefs.forEach((def, i) => {
+      const card = this.renderAchievementCard(def, i);
+      achievementsSection.append(card);
+    });
 
     return achievementsSection;
   }
 
-  private renderAchievementCard(def: typeof ACHIEVEMENTS[number]): HTMLElement {
+  private renderAchievementCard(def: typeof ACHIEVEMENTS[number], index = 0): HTMLElement {
     const card = document.createElement('div');
     card.className = 'win-achievement-card';
+    // Stagger each card's slide-in by 80ms per position.
+    card.style.setProperty('--card-delay', `${index * 80}ms`);
 
     const icon = document.createElement('div');
     icon.className = 'win-achievement-card-icon';
@@ -282,19 +288,18 @@ function statsLine(payload: WinPayload): string {
   return parts.join(' · ');
 }
 
-/**
- * Variant A — Glyph trail
- * Classic stars + time line. Works everywhere.
- */
-function buildShareVariantA(payload: WinPayload): string {
-  const time  = formatTime(payload.elapsedSeconds);
+function buildShareText(payload: WinPayload): string {
   const stars = renderStars(payload.starRating);
-  const action = payload.starRating === 3
-    ? t('share.pristine_in', { time })
-    : t('share.solved_in',   { time });
+  const time  = formatTime(payload.elapsedSeconds);
+  const label = payload.starRating === 3
+    ? t('share.label_flawless')
+    : t('share.label_solved');
 
-  const performanceLine = `${stars} ${action}${hintsSuffix(payload)}${newBestSuffix(payload)}`;
+  const performanceLine =
+    `${stars} ${label} · ${time}${newBestSuffix(payload)}${hintsSuffix(payload)}`;
+
   const sl = statsLine(payload);
+  const footer = import.meta.env.VITE_SHARE_BASE_URL?.trim() ?? '';
 
   const lines = [
     t('share.header', { day: payload.dayNumber, title: payload.puzzleTitle }),
@@ -302,58 +307,8 @@ function buildShareVariantA(payload: WinPayload): string {
     performanceLine,
   ];
   if (sl) lines.push(sl);
-  lines.push('', t('share.footer'));
+  if (footer) lines.push('', footer);
   return lines.join('\n');
-}
-
-/**
- * Variant B — Scanline card
- * Uses block characters for a retro terminal aesthetic. No spoilers.
- */
-function buildShareVariantB(payload: WinPayload): string {
-  const time    = formatTime(payload.elapsedSeconds);
-  const barFull = '█';
-  const barHalf = '▒';
-
-  // Progress bar: filled proportional to star rating out of 3
-  const filled = payload.starRating;
-  const bar = barFull.repeat(filled) + barHalf.repeat(3 - filled);
-
-  const resultLabel = payload.starRating === 3
-    ? t('share.pristine_in', { time })
-    : t('share.solved_in',   { time });
-
-  const lines = [
-    t('share.header', { day: payload.dayNumber, title: payload.puzzleTitle }),
-    '',
-    `[${bar}] ${resultLabel}${hintsSuffix(payload)}${newBestSuffix(payload)}`,
-  ];
-  const sl = statsLine(payload);
-  if (sl) lines.push(sl);
-  lines.push('', t('share.footer'));
-  return lines.join('\n');
-}
-
-/**
- * Variant C — Minimalist
- * Single-line result. Compact for platforms that truncate previews.
- */
-function buildShareVariantC(payload: WinPayload): string {
-  const time = formatTime(payload.elapsedSeconds);
-  const tag  = payload.starRating === 3 ? '🏆' : '✓';
-
-  const resultLine = `${tag} GlitchSalad #${payload.dayNumber} — ${time}${hintsSuffix(payload)}${newBestSuffix(payload)}`;
-  const sl = statsLine(payload);
-
-  const lines = [resultLine];
-  if (sl) lines.push(sl);
-  lines.push(t('share.footer'));
-  return lines.join('\n');
-}
-
-/** @deprecated Use the variant builders directly. Kept for reference. */
-function buildShareText(payload: WinPayload): string {
-  return buildShareVariantA(payload);
 }
 
 function formatTime(totalSeconds: number): string {
@@ -422,85 +377,19 @@ function buildInstallCtaRow(): HTMLElement {
   return row;
 }
 
-/**
- * Show a share-variant picker sheet then invoke the native share dialog.
- *
- * Three variants are built up-front and presented in a bottom sheet so the
- * player can preview and choose before handing off to the OS share sheet.
- */
 async function shareWin(payload: WinPayload): Promise<void> {
   track('share_button_tapped', { day: payload.dayNumber });
 
-  const variants: Array<{ label: string; text: string }> = [
-    { label: '★ Glyph trail',   text: buildShareVariantA(payload) },
-    { label: '▒ Scanline card', text: buildShareVariantB(payload) },
-    { label: '✓ Minimalist',    text: buildShareVariantC(payload) },
-  ];
-
-  const chosen = await pickShareVariant(variants);
-  if (chosen === null) return; // dismissed without picking
-
-  track('share_string_generated', { variant: String(variants.findIndex(v => v.text === chosen) + 1) });
+  const text = buildShareText(payload);
 
   try {
-    await Share.share({ title: 'GlitchSalad', text: chosen });
+    await Share.share({ title: 'GlitchSalad', text });
   } catch {
     // Share API unavailable on some web browsers — copy to clipboard as fallback.
     try {
-      await navigator.clipboard.writeText(chosen);
+      await navigator.clipboard.writeText(text);
     } catch {
       // Nothing we can do if clipboard is also denied.
     }
   }
-}
-
-/**
- * Render a modal sheet showing all share variants.
- * Returns the chosen text, or null if the sheet was dismissed.
- */
-function pickShareVariant(variants: Array<{ label: string; text: string }>): Promise<string | null> {
-  return new Promise((resolve) => {
-    const backdrop = document.createElement('div');
-    backdrop.className = 'sheet-backdrop';
-
-    const sheet = document.createElement('div');
-    sheet.className = 'share-picker-sheet';
-    sheet.setAttribute('role', 'dialog');
-    sheet.setAttribute('aria-modal', 'true');
-
-    const dismiss = (value: string | null): void => {
-      backdrop.remove();
-      resolve(value);
-    };
-
-    backdrop.addEventListener('click', (e) => {
-      if (e.target === backdrop) dismiss(null);
-    });
-
-    for (const variant of variants) {
-      const card = document.createElement('button');
-      card.type = 'button';
-      card.className = 'share-variant-card';
-
-      const labelEl = document.createElement('span');
-      labelEl.className = 'share-variant-label';
-      labelEl.textContent = variant.label;
-
-      const preview = document.createElement('pre');
-      preview.className = 'share-variant-preview';
-      preview.textContent = variant.text;
-
-      card.append(labelEl, preview);
-      card.addEventListener('click', () => dismiss(variant.text));
-      sheet.append(card);
-    }
-
-    backdrop.append(sheet);
-    document.body.append(backdrop);
-
-    requestAnimationFrame(() => {
-      backdrop.classList.add('sheet-backdrop--visible');
-      sheet.classList.add('share-picker-sheet--visible');
-    });
-  });
 }

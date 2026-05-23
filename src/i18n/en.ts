@@ -99,8 +99,9 @@ export const strings = {
   'hint_store.close': 'Close',
 
   // Win view
+  'win.achievement_unlocked':  'Achievement unlocked',
   'win.achievements_unlocked': 'Achievements unlocked',
-  'win.pristine_label': 'Pristine',
+  'win.pristine_label': 'Flawless',
   'win.solved_subtitle': 'Puzzle solved',
   'win.new_best': 'New best',
   'win.stat_day_streak': 'Day {n} streak',
@@ -116,16 +117,13 @@ export const strings = {
 
   // Share string
   'share.header': 'GlitchSalad #{day} — {title}',
-  'share.line_pristine': '🏆 Pristine in {time}',
-  'share.line_solved': 'Solved {time}',
+  'share.label_flawless': 'Flawless',
+  'share.label_solved': 'Solved',
   'share.suffix_new_best': ' — NEW BEST',
   'share.suffix_hint_one': ' · 💡 {n} hint',
   'share.suffix_hint_other': ' · 💡 {n} hints',
   'share.stat_day_streak': '🔥 Day {n} streak',
   'share.stat_solved_count': '{n} solved',
-  'share.footer': 'glitchsalad.app',
-  'share.pristine_in': 'Pristine in {time}',
-  'share.solved_in': 'Solved in {time}',
 
   // Archive
   'archive.title': 'Archive',
