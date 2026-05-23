@@ -142,7 +142,7 @@ export class WinView {
     shareButton.className = 'win-share-button button-primary';
     shareButton.textContent = t('win.share_button');
     shareButton.addEventListener('click', () => {
-      void shareWin(payload);
+      void shareWin(payload, shareButton);
     });
 
     // Web-only: install CTA row, UA-detected to point at the right store.
@@ -288,7 +288,12 @@ function statsLine(payload: WinPayload): string {
   return parts.join(' · ');
 }
 
-function buildShareText(payload: WinPayload): string {
+/**
+ * Build the share text WITHOUT the URL footer. Used when the OS share API
+ * can take the URL as its own field (`navigator.share` / Capacitor Share),
+ * so the URL isn't doubled — once in the text body, once appended by the OS.
+ */
+function buildShareBody(payload: WinPayload): string {
   const stars = renderStars(payload.starRating);
   const time  = formatTime(payload.elapsedSeconds);
   const label = payload.starRating === 3
@@ -299,7 +304,6 @@ function buildShareText(payload: WinPayload): string {
     `${stars} ${label} · ${time}${newBestSuffix(payload)}${hintsSuffix(payload)}`;
 
   const sl = statsLine(payload);
-  const footer = import.meta.env.VITE_SHARE_BASE_URL?.trim() ?? '';
 
   const lines = [
     t('share.header', { day: payload.dayNumber, title: payload.puzzleTitle }),
@@ -307,8 +311,47 @@ function buildShareText(payload: WinPayload): string {
     performanceLine,
   ];
   if (sl) lines.push(sl);
-  if (footer) lines.push('', footer);
   return lines.join('\n');
+}
+
+/**
+ * Build the share text WITH the URL footer included. Used when the receiving
+ * channel is a plain text dump (clipboard fallback, preview sheet) — the URL
+ * has to live inside the text or it gets lost.
+ */
+function buildShareText(payload: WinPayload): string {
+  const body = buildShareBody(payload);
+  const url  = buildPuzzleDeepLink(payload.dayNumber);
+  return url ? `${body}\n\n${url}` : body;
+}
+
+/**
+ * Build the deep link a friend should click to land on this specific puzzle.
+ * Shape: `{VITE_SHARE_BASE_URL}/{dayNumber}` — e.g. `https://glitchsalad.com/123`.
+ * The base URL is kept in an env var so it can change without code edits.
+ *
+ * Returns an empty string when no base URL is configured (dev builds), which
+ * tells buildShareText to omit the footer entirely.
+ *
+ * NOTE (receive-side, next session): for this link to actually route a friend
+ * to puzzle #N on web, three things need to land together —
+ *   1. URL parsing on app boot (read the trailing path segment, treat it as
+ *      a day number, hand it to PuzzleLoader). main.ts / Router are the
+ *      natural homes; today they don't touch window.location at all.
+ *   2. Out-of-archive handling for web players: WEB_FREE_DAYS (= 7, see
+ *      ArchiveView.ts:9) caps how far back a web player can play. If the
+ *      requested day is older than that, show an install/archive-unlock
+ *      prompt instead of silently dropping them on today's puzzle.
+ *   3. SPA fallback on the host: any path under the base URL must serve
+ *      index.html (Vercel rewrites / Netlify _redirects / Cloudflare Pages
+ *      _redirects, depending on host). Without it, the browser 404s before
+ *      our JS ever sees the URL.
+ */
+function buildPuzzleDeepLink(dayNumber: number): string {
+  const base = import.meta.env.VITE_SHARE_BASE_URL?.trim() ?? '';
+  if (!base) return '';
+  // Strip any trailing slash so we don't end up with `https://...//123`.
+  return `${base.replace(/\/+$/, '')}/${dayNumber}`;
 }
 
 function formatTime(totalSeconds: number): string {
@@ -377,19 +420,242 @@ function buildInstallCtaRow(): HTMLElement {
   return row;
 }
 
-async function shareWin(payload: WinPayload): Promise<void> {
+async function shareWin(payload: WinPayload, buttonEl: HTMLButtonElement): Promise<void> {
   track('share_button_tapped', { day: payload.dayNumber });
 
-  const text = buildShareText(payload);
+  // Two text shapes: the body (used when the OS takes the URL as its own
+  // field — navigator.share / Capacitor Share) and the full text (used when
+  // the URL has to be embedded in the text — clipboard fallback).
+  const body    = buildShareBody(payload);
+  const fullText = buildShareText(payload);
+  const url     = buildPuzzleDeepLink(payload.dayNumber);
+  const title   = 'GlitchSalad';
 
-  try {
-    await Share.share({ title: 'GlitchSalad', text });
-  } catch {
-    // Share API unavailable on some web browsers — copy to clipboard as fallback.
+  const { isNative } = getMonetizationContext();
+
+  if (isNative) {
+    // Native iOS/Android: route through the Capacitor plugin.
     try {
-      await navigator.clipboard.writeText(text);
+      await Share.share({ title, text: body, ...(url ? { url } : {}) });
+      track('share_string_generated', { share_method: 'native_share' });
     } catch {
-      // Nothing we can do if clipboard is also denied.
+      // Share cancelled or unavailable — no fallback needed on native.
+    }
+    return;
+  }
+
+  // Web (mobile AND desktop): try the OS share dialog first when available.
+  // We pass title + text + url as SEPARATE fields, not a concatenated blob.
+  // Edge mobile Android (and some Android share intents) reject text-only
+  // payloads with NotAllowedError; including title + url makes the data
+  // shareable across every browser that exposes the API.
+  //
+  // navigator.canShare() lets us bail out cleanly when the data isn't
+  // acceptable to the platform, instead of throwing into the catch and
+  // silently dropping into the preview sheet.
+  //
+  // Heads-up on macOS Safari: it sometimes bundles page imagery into the
+  // share payload, which can produce a "Share 2 Items" dialog instead of a
+  // plain text share. We accept that tradeoff — the native dialog is the
+  // right primary path when it exists.
+  const webShareData: ShareData = {
+    title,
+    text: body,
+    ...(url ? { url } : {}),
+  };
+  const canUseWebShare =
+    typeof navigator.share === 'function' &&
+    (typeof navigator.canShare !== 'function' || navigator.canShare(webShareData));
+
+  if (canUseWebShare) {
+    try {
+      await navigator.share(webShareData);
+      track('share_string_generated', { share_method: 'native_share' });
+      return;
+    } catch (err) {
+      // AbortError = user dismissed the share sheet intentionally. Not an error.
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      // Other errors (NotAllowedError, etc.) fall through to the preview sheet.
     }
   }
+
+  // Fallback: show a preview sheet so the player can SEE what they're sharing.
+  // We also eagerly attempt a clipboard write here, while the user gesture
+  // from the Share button is still live — most desktop browsers accept it,
+  // so the sheet opens already in "Copied" state. If the write fails
+  // (insecure context, locked-down browser), the sheet's Copy button does
+  // the work itself with execCommand as the bulletproof fallback.
+  let initiallyCopied = false;
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(fullText);
+      initiallyCopied = true;
+    } catch {
+      // Clipboard rejected — the sheet's Copy button will try again.
+    }
+  }
+
+  // buttonEl is unused on the desktop path now (the sheet has its own Copy
+  // button), but kept in the signature so native/mobile paths can still flash
+  // it if we ever want.
+  void buttonEl;
+
+  showSharePreviewSheet({
+    text: fullText,
+    initiallyCopied,
+    onCopied: () => {
+      track('share_string_generated', { share_method: 'clipboard' });
+    },
+  });
+}
+
+/** Briefly replace a button's label with a confirmation string, then restore. */
+function flashButton(btn: HTMLButtonElement, label: string, durationMs = 1800): void {
+  const original = btn.textContent ?? '';
+  btn.textContent = label;
+  btn.disabled = true;
+  window.setTimeout(() => {
+    btn.textContent = original;
+    btn.disabled = false;
+  }, durationMs);
+}
+
+/**
+ * Show a share preview sheet on desktop web (and as the mobile-web fallback).
+ * Displays the formatted share text so the player can see what they're sharing.
+ *
+ * When `initiallyCopied` is true, the sheet opens with the Copy button already
+ * flashed to "Copied ✓" — `shareWin` got a successful clipboard write during
+ * the live user gesture before mounting us. When false, the Copy button does
+ * the work itself via the three-stage `copyToClipboard` fallback.
+ *
+ * `onCopied` fires exactly once, regardless of which path landed the text in
+ * the clipboard, so analytics aren't double-counted.
+ */
+function showSharePreviewSheet(opts: {
+  text: string;
+  initiallyCopied: boolean;
+  onCopied: () => void;
+}): void {
+  const backdrop = document.createElement('div');
+  backdrop.className = 'sheet-backdrop';
+
+  const sheet = document.createElement('div');
+  sheet.className = 'share-preview-sheet';
+  sheet.setAttribute('role', 'dialog');
+  sheet.setAttribute('aria-modal', 'true');
+
+  const header = document.createElement('div');
+  header.className = 'share-preview-header';
+
+  const titleEl = document.createElement('span');
+  titleEl.className = 'share-preview-title';
+  titleEl.textContent = t('win.share_button');
+
+  const closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.className = 'share-preview-close';
+  closeBtn.setAttribute('aria-label', t('win.share_fallback_close'));
+  closeBtn.textContent = '✕';
+
+  header.append(titleEl, closeBtn);
+
+  const preview = document.createElement('pre');
+  preview.className = 'share-preview-text';
+  preview.textContent = opts.text;
+
+  const copyBtn = document.createElement('button');
+  copyBtn.type = 'button';
+  copyBtn.className = 'button-primary share-preview-copy';
+  copyBtn.textContent = t('win.share_copy');
+
+  const dismiss = (): void => {
+    backdrop.classList.remove('sheet-backdrop--visible');
+    sheet.classList.remove('share-preview-sheet--visible');
+    window.setTimeout(() => backdrop.remove(), 220);
+  };
+
+  let hasFiredOnCopied = false;
+  const fireOnCopiedOnce = (): void => {
+    if (hasFiredOnCopied) return;
+    hasFiredOnCopied = true;
+    opts.onCopied();
+  };
+
+  closeBtn.addEventListener('click', dismiss);
+  backdrop.addEventListener('click', (e) => { if (e.target === backdrop) dismiss(); });
+
+  copyBtn.addEventListener('click', async () => {
+    const ok = await copyToClipboard(opts.text, preview);
+    if (ok) {
+      fireOnCopiedOnce();
+      flashButton(copyBtn, t('win.share_copied'));
+    }
+    // If ok is false, the preview text has been selected — the user can hit
+    // ⌘C / Ctrl+C themselves. No further UI action.
+  });
+
+  sheet.append(header, preview, copyBtn);
+  backdrop.append(sheet);
+  document.body.append(backdrop);
+
+  requestAnimationFrame(() => {
+    backdrop.classList.add('sheet-backdrop--visible');
+    sheet.classList.add('share-preview-sheet--visible');
+
+    if (opts.initiallyCopied) {
+      flashButton(copyBtn, t('win.share_copied'));
+      fireOnCopiedOnce();
+    }
+  });
+}
+
+/**
+ * Robust clipboard write with three layered fallbacks:
+ *   1. navigator.clipboard.writeText  — modern async API (requires user gesture
+ *      and, in some browsers, an active document focus).
+ *   2. document.execCommand('copy')   — legacy synchronous path via a temp
+ *      textarea. Deprecated but still implemented in every shipping browser
+ *      and works in plenty of cases where (1) silently fails.
+ *   3. Manual selection of `selectionFallbackEl` — last-resort UX where the
+ *      user has to press ⌘C / Ctrl+C themselves. Returns false in this case
+ *      so the caller knows not to claim "Copied ✓".
+ */
+async function copyToClipboard(text: string, selectionFallbackEl: HTMLElement): Promise<boolean> {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // Fall through to the legacy path.
+    }
+  }
+
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.top = '-1000px';
+    ta.style.left = '0';
+    ta.style.opacity = '0';
+    document.body.append(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    ta.remove();
+    if (ok) return true;
+  } catch {
+    // execCommand absent or blocked — fall through to manual selection.
+  }
+
+  try {
+    const range = document.createRange();
+    range.selectNodeContents(selectionFallbackEl);
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+  } catch {
+    // Give up silently.
+  }
+  return false;
 }
