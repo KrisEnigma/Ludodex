@@ -26,7 +26,7 @@
     "@capacitor/status-bar": "^8.0.0",
     "@fontsource/space-mono": "^5.2.9",
     "@revenuecat/purchases-capacitor": "9.2.2",
-    "@sentry/browser": "^8.55.2",
+    "@sentry/browser": "8.55.0",
     "@sentry/capacitor": "^1.5.0",
     "posthog-js": "^1.180.0"
   },
