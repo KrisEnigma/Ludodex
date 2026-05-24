@@ -1,11 +1,9 @@
-# SPA fallback — every non-asset path serves index.html so the client
-# router can pick up the URL (e.g. /123 → puzzle #123).
+# SPA fallback moved to wrangler.toml — see the [assets] section,
+# `not_found_handling = "single-page-application"`. Cloudflare's
+# newer Workers + Static Assets model rejects the classic
+# `/* /index.html 200` rule with an "infinite loop detected"
+# false-positive, so the fallback now lives in wrangler config.
 #
-# Used by Netlify, Cloudflare Pages, and Render. If deploying to Vercel,
-# this file is ignored — Vercel uses vercel.json at the repo root instead.
-#
-# The 200 status (not 301/302) is critical: it serves index.html *at*
-# the requested URL without redirecting, so the path stays /123 (which
-# is what the JS router reads on boot).
-
-/*    /index.html   200
+# Add explicit per-path redirects here (e.g. legacy URL rewrites,
+# 301s for renamed pages) if you ever need them — those will
+# still validate fine.

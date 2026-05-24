@@ -1,0 +1,17 @@
+name = "glitchsalad"
+compatibility_date = "2025-01-01"
+
+# Workers + Static Assets configuration. `not_found_handling =
+# "single-page-application"` is the modern equivalent of a
+# `_redirects` rule like `/* /index.html 200` — any request whose
+# path doesn't match a real asset under ./dist serves /index.html
+# with a 200 status, so the SPA router can pick up the URL.
+#
+# We use this instead of _redirects because Cloudflare's current
+# validator rejects the wildcard SPA rule with an "infinite loop
+# detected" false-positive (it can't see that .html-stripping
+# wouldn't actually re-trigger the rule). The Workers + Assets
+# directive avoids the validator entirely.
+[assets]
+directory = "./dist"
+not_found_handling = "single-page-application"
