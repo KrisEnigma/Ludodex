@@ -2,6 +2,8 @@ import '@fontsource/space-mono/400.css';
 import '@fontsource/space-mono/700.css';
 import './skins/skins.css';
 import './index.css';
+import { App as CapacitorApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 import { Preferences } from '@capacitor/preferences';
 import { ensureBundledPuzzlesLoaded } from './game/PuzzleLoader';
 import { initI18n } from './i18n';
@@ -12,6 +14,7 @@ import { retroactivelyUnlockEarnedAchievements } from './services/AchievementSer
 import { initAnalytics, track, updateLocale } from './services/AnalyticsService';
 import { initSentry } from './services/SentryService';
 import { Router } from './views/Router';
+import { parseCurrentUrl, parseDeepLinkUrl, type ParsedDeepLink } from './services/DeepLinking';
 
 const app = document.querySelector<HTMLDivElement>('#app');
 if (!app) {
@@ -32,10 +35,28 @@ void (async () => {
   // Route immediately — the user sees UI as soon as skin + i18n are ready.
   const router = new Router(app);
   const tutorial = await Preferences.get({ key: 'tutorial_seen' });
+
+  // First-time players always see the tutorial, even if they arrived via a
+  // deep link — landing a brand-new user directly in a puzzle they don't
+  // know how to play is a worse experience than the slight delay of going
+  // through onboarding first.
   if (tutorial.value !== 'true') {
     router.push('how-to-play', { fromOnboarding: true });
   } else {
-    router.push('menu');
+    // Returning player: honor any deep-link URL, otherwise menu.
+    const initialDeepLink = await resolveInitialDeepLink();
+    applyDeepLink(router, initialDeepLink);
+  }
+
+  // Capacitor native: listen for deep links that arrive while the app is
+  // already running (warm-start). Cold-start native links are handled via
+  // App.getLaunchUrl() inside resolveInitialDeepLink above.
+  if (Capacitor.isNativePlatform()) {
+    void CapacitorApp.addListener('appUrlOpen', (event) => {
+      const parsed = parseDeepLinkUrl(event.url);
+      track('deep_link_opened', { kind: parsed.kind, source: 'app_url_open' });
+      applyDeepLink(router, parsed);
+    });
   }
 
   // ── Non-critical background init ──────────────────────────────────────────
@@ -66,3 +87,59 @@ void (async () => {
     });
   })();
 })();
+
+/**
+ * Resolve the deep link that opened the app, for cold-start routing.
+ *
+ *  - Native: ask Capacitor for the URL that launched the app via
+ *    App.getLaunchUrl(). Falls back to parsing window.location in case
+ *    the platform doesn't honor getLaunchUrl (unlikely on iOS/Android,
+ *    but harmless).
+ *  - Web: parse the current window.location.
+ *
+ * Returns a parsed deep-link descriptor; `{ kind: 'menu' }` is the
+ * neutral "no deep link, just open the menu" fallback.
+ */
+async function resolveInitialDeepLink(): Promise<ParsedDeepLink> {
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const launch = await CapacitorApp.getLaunchUrl();
+      if (launch?.url) {
+        return parseDeepLinkUrl(launch.url);
+      }
+    } catch {
+      // getLaunchUrl can throw if not available on the platform.
+    }
+  }
+  return parseCurrentUrl();
+}
+
+/**
+ * Apply a parsed deep link to the router. Always pushes the menu as the
+ * stack root so that an internal `pop` from the deep-linked view lands
+ * the player at home — even if they entered the app directly into a
+ * puzzle. Browser-back from a deep-link entry still exits the app, which
+ * is the expected behavior for a shared link.
+ */
+function applyDeepLink(router: Router, link: ParsedDeepLink): void {
+  if (link.kind === 'puzzle') {
+    track('deep_link_opened', { kind: 'puzzle', day_number: link.dayNumber });
+    router.replace('menu');
+    router.push('game', {
+      puzzle: link.puzzle,
+      dayNumber: link.dayNumber,
+      isTodaysDaily: link.isTodaysDaily
+    });
+    return;
+  }
+  if (link.kind === 'archive-locked') {
+    // The puzzle exists but is outside the web free window. Land them on
+    // the menu and open the archive so they see the locked-gate row that
+    // already exists; native players never hit this branch.
+    track('deep_link_opened', { kind: 'archive_locked', day_number: link.dayNumber });
+    router.replace('menu');
+    router.push('archive');
+    return;
+  }
+  router.replace('menu');
+}

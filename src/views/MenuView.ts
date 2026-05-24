@@ -7,7 +7,6 @@ import { getMenuData } from '../services/MenuDataCache';
 import { t as tp } from '../utils/i18n';
 import type { RoutePayloads } from './Router';
 import { getMonetizationContext } from '../services/MonetizationContext';
-import { STORE_URLS } from '../config/legalUrls';
 import { getStarterPackEligibility, markStarterPackShown } from '../services/StarterPackService';
 import { showStarterPackModal } from '../components/StarterPackModal';
 import { showHintStore } from '../components/HintStoreSheet';
@@ -45,11 +44,6 @@ export class MenuView {
     const topBar = document.createElement('div');
     topBar.className = 'menu-top-bar';
 
-    const dayChip = document.createElement('span');
-    dayChip.className = 'menu-day-chip';
-    dayChip.textContent = t('menu.day_chip', { n: dayNumber });
-
-
     // Trophy (achievements) button
     const trophyButton = document.createElement('button');
     trophyButton.type = 'button';
@@ -69,12 +63,11 @@ export class MenuView {
       callbacks.onOpenSettings();
     });
 
-    // Top bar actions group
-    const topBarActions = document.createElement('div');
-    topBarActions.className = 'menu-top-bar-actions';
-    topBarActions.append(trophyButton, settingsButton);
-
-    topBar.append(dayChip, topBarActions);
+    // Split header: trophy on left, settings on right.
+    // Matches the convention in NYT Wordle/Connections/Mini and LinkedIn
+    // Games — one utility icon on the left, settings on the right —
+    // which keeps the bar visually balanced without a title in it.
+    topBar.append(trophyButton, settingsButton);
 
     const logo = document.createElement('div');
     logo.className = 'menu-logo';
@@ -151,7 +144,7 @@ export class MenuView {
 
     const dailyTag = document.createElement('span');
     dailyTag.className = 'daily-card-tag';
-    dailyTag.textContent = t('menu.daily_tag_today');
+    dailyTag.textContent = t('menu.daily_tag_today', { n: dayNumber });
 
     const countdownEl = document.createElement('span');
     countdownEl.className = 'daily-card-countdown';
@@ -219,41 +212,11 @@ export class MenuView {
       footerActions.append(getHintsButton);
     }
 
-    let getAppRow: HTMLDivElement | null = null;
-
-    // Add web-only "Get the app" footer on its own line.
-    if (!context.isNative) {
-      getAppRow = document.createElement('div');
-      getAppRow.className = 'menu-get-app';
-
-      const label = document.createElement('span');
-      label.className = 'menu-get-app-label';
-      label.textContent = t('menu.get_app_label');
-
-      const appStoreLink = document.createElement('a');
-      appStoreLink.href = STORE_URLS.appStore;
-      appStoreLink.target = '_blank';
-      appStoreLink.rel = 'noopener noreferrer';
-      appStoreLink.className = 'menu-get-app-link';
-      appStoreLink.textContent = t('settings.store_app_store');
-
-      const dot = document.createElement('span');
-      dot.className = 'menu-get-app-divider';
-      dot.textContent = '·';
-
-      const playStoreLink = document.createElement('a');
-      playStoreLink.href = STORE_URLS.playStore;
-      playStoreLink.target = '_blank';
-      playStoreLink.rel = 'noopener noreferrer';
-      playStoreLink.className = 'menu-get-app-link';
-      playStoreLink.textContent = t('settings.store_play_store');
-
-      const links = document.createElement('span');
-      links.className = 'menu-get-app-links';
-      links.append(appStoreLink, dot, playStoreLink);
-
-      getAppRow.append(label, links);
-    }
+    // Web-only "Get the app" row used to live here. Removed from the
+    // menu so the promo only appears on the Win screen, which is the
+    // highest install-intent moment (a player who just solved is most
+    // likely to install). The Menu and Win both promoting was heavy
+    // on web and competed with the play CTA on the home screen.
 
     const countdownIntervalId = window.setInterval(() => {
       if (!root.isConnected) {
@@ -351,9 +314,6 @@ export class MenuView {
     })();
 
     this.element.append(topBar, logo, statsStrip, dailySection, footerActions);
-    if (getAppRow) {
-      this.element.append(getAppRow);
-    }
   }
 
   private buildYesterdayCard(

@@ -21,7 +21,6 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'achievements.category.archive': 'Archivo',
   'achievements.category.special': 'Especial',
   // Menu - top bar / chrome
-  'menu.day_chip': 'Día {n}',
   'menu.settings_aria': 'Ajustes',
   'menu.brand_glitch': 'GLITCH',
   'menu.brand_salad': 'SALAD',
@@ -33,7 +32,7 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'menu.stat_empty': '--',
 
   // Menu - daily card
-  'menu.daily_tag_today': 'HOY',
+  'menu.daily_tag_today': 'PUZZLE DE HOY #{n}',
   'menu.daily_next_in': 'PRÓXIMO EN {time}',
   'menu.daily_play': '▶ Jugar',
   'menu.daily_play_again': '✓ Resuelto · Volver a jugar',
@@ -73,7 +72,6 @@ export const strings: Record<keyof typeof enStrings, string> = {
 
   // Game view header
   'game.back': '← Menú',
-  'game.day_label': 'Día {n}',
   'game.words_progress': '{found}/{total}',
   'game.instructions': 'Desliza letras adyacentes para encontrar todas las palabras.',
   'hint.out_title': 'Sin pistas',
@@ -105,7 +103,7 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'win.pristine_label': 'Impecable',
   'win.solved_subtitle': '¡Resuelto!',
   'win.new_best': 'Nuevo récord',
-  'win.stat_day_streak': 'Racha de {n} días',
+  'win.stat_day_streak': 'Racha: {n}',
   'win.stat_solved_count': '{n} resueltos',
   'win.stat_mistake_one': '{n} error',
   'win.stat_mistake_other': '{n} errores',
@@ -126,14 +124,14 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'share.suffix_new_best': ' — NUEVO RÉCORD',
   'share.suffix_hint_one': ' · 💡 {n} pista',
   'share.suffix_hint_other': ' · 💡 {n} pistas',
-  'share.stat_day_streak': '🔥 Racha de {n} días',
+  'share.stat_day_streak': '🔥 Racha: {n}',
   'share.stat_solved_count': '{n} resueltos',
 
   // Archive
   'archive.title': 'Archivo',
   'archive.back': '← Menú',
   'archive.empty': 'Vuelve mañana para tu primera entrada del archivo.',
-  'archive.day_row': 'Día {n} — {title}',
+  'archive.day_row': '#{n} — {title}',
   'archive.unsolved': '—',
   'archive.web_locked_label': 'Disponible en la app',
   'archive.web_locked_cta': 'Descarga la app para acceder al archivo completo.',
@@ -194,11 +192,9 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'settings.privacy_policy': 'Política de privacidad',
   'settings.terms_of_service': 'Términos de servicio',
 
-  // Menu — web-only CTA
-  'menu.get_app_label': 'Descarga la app',
-  'menu.yesterday_tag': 'AYER · DÍA {n}',
+  'menu.yesterday_tag': 'AYER · #{n}',
   'menu.yesterday_unsolved': 'Sin jugar',
-  'menu.streak_loss': 'Tu racha de {n} días terminó. Resuelve el de hoy para empezar otra vez.',
+  'menu.streak_loss': 'Tu racha de {n} terminó. Resuelve el de hoy para empezar otra vez.',
   'menu.streak_loss_dismiss': 'Cerrar',
 
   // Achievement names + descriptions

@@ -148,15 +148,16 @@ export class GameView {
       }
     });
 
-    const levelLabel = document.createElement('span');
-    levelLabel.className = 'header-level';
-    levelLabel.textContent = t('game.day_label', { n: this.dayNumber });
+    // Puzzle number is intentionally NOT shown in the game chrome —
+    // the player already saw "TODAY'S PUZZLE #N" on the menu card.
+    // Header has two clusters now: ← MENU on the left, hint + timer
+    // on the right (matches NYT Mini's clean two-cluster header).
 
     this.timerLabel = document.createElement('span');
     this.timerLabel.className = 'header-timer';
     this.timerLabel.textContent = '0:00';
 
-    header.append(menuButton, levelLabel, this.hintCounterEl, this.timerLabel);
+    header.append(menuButton, this.hintCounterEl, this.timerLabel);
 
     const titleRow = document.createElement('div');
     titleRow.className = 'game-title-row';
@@ -1092,7 +1093,14 @@ export class GameView {
       try {
         const previousRatings = await getSolvedRatings();
         const previousRating = previousRatings[this.puzzleId] ?? 0;
-        const wasNewRating = starRating > previousRating;
+        // "New rating" means an *improvement* over a prior rating — not
+        // the absence of one. Without the `previousRating > 0` gate,
+        // every first-time solve would flag wasNewRating (since
+        // starRating ≥ 1 always beats the 0 fallback), and the
+        // NEW RATING pill would show on every initial play. Mirrors
+        // the shape of the wasNewBest check below, which requires
+        // previousBest !== null before declaring an improvement.
+        const wasNewRating = previousRating > 0 && starRating > previousRating;
 
         const previousTimes = await getSolvedTimes();
         const previousValues = Object.values(previousTimes).filter((v): v is number => Number.isFinite(v));

@@ -6,3 +6,8 @@ pnpm-lock.yaml
 ios
 android
 .playwright-mcp/
+
+# Local env files — never commit secrets. .env.example is the template.
+.env
+.env.local
+.env.*.local

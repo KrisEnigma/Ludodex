@@ -3,6 +3,7 @@ import type { Puzzle } from '../types/puzzle';
 import { track } from '../services/AnalyticsService';
 import { trackRoute } from '../services/SentryService';
 import { fireInterstitialIfPending } from '../services/AdService';
+import { pathForRoute, parseCurrentUrl } from '../services/DeepLinking';
 
 import { ArchiveView } from './ArchiveView';
 import { GameView } from './GameView';
@@ -52,6 +53,14 @@ export class Router {
     this.shell = document.createElement('div');
     this.shell.className = 'app-shell';
     app.replaceChildren(this.shell);
+
+    // Listen for browser back/forward. With replaceState-based URL sync,
+    // popstate only fires when the user actually presses the browser's
+    // back/forward buttons (not on our own URL updates). We re-parse the
+    // URL and pop-or-replace internal state to match. See onPopState.
+    if (typeof window !== 'undefined') {
+      window.addEventListener('popstate', this.onPopState);
+    }
   }
 
   push<T extends RouteName>(route: T, payload?: RoutePayloads[T]): void {
@@ -61,6 +70,7 @@ export class Router {
     } as AnyRouteEntry);
     trackRoute(route, 'push');
     this.trackViewIfRelevant(route);
+    this.syncUrlFromTop();
     this.renderCurrent();
   }
 
@@ -78,6 +88,7 @@ export class Router {
 
     trackRoute(route, 'replace');
     this.trackViewIfRelevant(route);
+    this.syncUrlFromTop();
     this.renderCurrent();
   }
 
@@ -99,6 +110,7 @@ export class Router {
       void fireInterstitialIfPending();
     }
 
+    this.syncUrlFromTop();
     this.renderCurrent();
   }
 
@@ -113,8 +125,65 @@ export class Router {
       void fireInterstitialIfPending();
     }
 
+    this.syncUrlFromTop();
     this.renderCurrent();
   }
+
+  /**
+   * Update the URL bar to reflect the top of the stack. Uses replaceState so
+   * we don't accumulate browser history entries for every internal nav —
+   * "back" from a deep-link entry naturally leaves the app, which is the
+   * desired behavior for a shared puzzle link. Pure URL update, no DOM work.
+   *
+   * No-op on Capacitor native (URL bar isn't visible) and when running in
+   * a non-browser context. We still call it on native — it's cheap, and
+   * the WebView underneath does honor pushState/replaceState which keeps
+   * any future hybrid features working.
+   */
+  private syncUrlFromTop(): void {
+    if (typeof window === 'undefined' || typeof history === 'undefined') return;
+    const top = this.stack[this.stack.length - 1];
+    if (!top) return;
+    const path = pathForRoute(top.name, top.payload);
+    if (path === null) return;
+    if (window.location.pathname === path) return;
+    try {
+      history.replaceState({}, '', path);
+    } catch {
+      // SecurityError can fire on file:// or sandboxed contexts; ignore.
+    }
+  }
+
+  /**
+   * Handle the browser's back/forward buttons.
+   *
+   * Strategy: parse the new URL and reconcile. If it's a puzzle URL and we
+   * can render it, route to that puzzle. If it's the root, pop to menu.
+   * If we can't make sense of it (rare — the URL must have come from us
+   * originally), leave the stack alone.
+   *
+   * NOTE: This is "soft" history support. Because we use replaceState (not
+   * pushState) for internal nav, the only popstate events we see come from
+   * the user actually pressing back/forward on a URL that existed before
+   * our app loaded — typically deep-link entry → user back → leaves the
+   * app to the referring page. The handler here is a safety net for cases
+   * where the URL was changed externally (rare).
+   */
+  private onPopState = (): void => {
+    const parsed = parseCurrentUrl();
+    if (parsed.kind === 'puzzle') {
+      this.replace('game', {
+        puzzle: parsed.puzzle,
+        dayNumber: parsed.dayNumber,
+        isTodaysDaily: parsed.isTodaysDaily
+      });
+      return;
+    }
+    // Menu or archive-locked: just go to menu.
+    if (this.stack.length > 0 && this.stack[this.stack.length - 1].name !== 'menu') {
+      this.replace('menu');
+    }
+  };
 
   private renderCurrent(): void {
     const current = this.stack[this.stack.length - 1];

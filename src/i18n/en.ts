@@ -20,7 +20,6 @@ export const strings = {
   'achievements.category.archive': 'Archive',
   'achievements.category.special': 'Special',
   // Menu - top bar / chrome
-  'menu.day_chip': 'Day {n}',
   'menu.settings_aria': 'Settings',
   'menu.brand_glitch': 'GLITCH',
   'menu.brand_salad': 'SALAD',
@@ -32,7 +31,7 @@ export const strings = {
   'menu.stat_empty': '--',
 
   // Menu - daily card
-  'menu.daily_tag_today': 'TODAY',
+  'menu.daily_tag_today': "TODAY'S PUZZLE #{n}",
   'menu.daily_next_in': 'NEXT IN {time}',
   'menu.daily_play': '▶ Play',
   'menu.daily_play_again': '✓ Solved · Play again',
@@ -72,7 +71,6 @@ export const strings = {
 
   // Game view header
   'game.back': '← Menu',
-  'game.day_label': 'Day {n}',
   'game.words_progress': '{found}/{total}',
   'game.instructions': 'Swipe adjacent letters to find all words.',
   'hint.out_title': 'No hints left',
@@ -104,7 +102,7 @@ export const strings = {
   'win.pristine_label': 'Flawless',
   'win.solved_subtitle': 'Puzzle solved',
   'win.new_best': 'New best',
-  'win.stat_day_streak': 'Day {n} streak',
+  'win.stat_day_streak': 'Streak: {n}',
   'win.stat_solved_count': '{n} solved',
   'win.stat_mistake_one': '{n} mistake',
   'win.stat_mistake_other': '{n} mistakes',
@@ -125,14 +123,14 @@ export const strings = {
   'share.suffix_new_best': ' — NEW BEST',
   'share.suffix_hint_one': ' · 💡 {n} hint',
   'share.suffix_hint_other': ' · 💡 {n} hints',
-  'share.stat_day_streak': '🔥 Day {n} streak',
+  'share.stat_day_streak': '🔥 Streak: {n}',
   'share.stat_solved_count': '{n} solved',
 
   // Archive
   'archive.title': 'Archive',
   'archive.back': '← Menu',
   'archive.empty': 'Come back tomorrow for the first archive entry.',
-  'archive.day_row': 'Day {n} — {title}',
+  'archive.day_row': '#{n} — {title}',
   'archive.unsolved': '—',
 
   // How to play
@@ -195,11 +193,9 @@ export const strings = {
   'settings.privacy_policy': 'Privacy policy',
   'settings.terms_of_service': 'Terms of service',
 
-  // Menu — web-only CTA
-  'menu.get_app_label': 'Get the app',
-  'menu.yesterday_tag': 'YESTERDAY · DAY {n}',
+  'menu.yesterday_tag': 'YESTERDAY · #{n}',
   'menu.yesterday_unsolved': 'Not played',
-  'menu.streak_loss': 'Your {n}-day streak ended. Solve today to start fresh.',
+  'menu.streak_loss': 'Your streak of {n} ended. Solve today to start fresh.',
   'menu.streak_loss_dismiss': 'Dismiss',
 
   // Achievement names + descriptions

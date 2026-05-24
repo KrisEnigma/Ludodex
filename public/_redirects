@@ -1,0 +1,11 @@
+# SPA fallback — every non-asset path serves index.html so the client
+# router can pick up the URL (e.g. /123 → puzzle #123).
+#
+# Used by Netlify, Cloudflare Pages, and Render. If deploying to Vercel,
+# this file is ignored — Vercel uses vercel.json at the repo root instead.
+#
+# The 200 status (not 301/302) is critical: it serves index.html *at*
+# the requested URL without redirecting, so the path stays /123 (which
+# is what the JS router reads on boot).
+
+/*    /index.html   200

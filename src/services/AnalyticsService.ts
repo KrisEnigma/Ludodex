@@ -153,4 +153,10 @@ export type AnalyticsEvent =
   | 'share_button_tapped'         // share_method: 'native_share' | 'clipboard'
 
   // ── Web / cross-promo ─────────────────────────────────────────────────────
-  | 'web_install_cta_tapped';     // platform: 'android' | 'ios'
+  | 'web_install_cta_tapped'      // platform: 'android' | 'ios'
+
+  // ── Deep linking ──────────────────────────────────────────────────────────
+  | 'deep_link_opened';           // kind: 'puzzle' | 'menu' | 'archive_locked',
+                                  // source: 'app_url_open' (warm-start native);
+                                  // cold-start (web boot or native getLaunchUrl)
+                                  // emits without `source`

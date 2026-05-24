@@ -1,0 +1,7 @@
+# Cloudflare Pages reads this file from the build output (public/ → dist/)
+# to apply custom response headers. Required so Android App Links
+# verification works — assetlinks.json must be served as application/json
+# without a charset suffix.
+
+/.well-known/assetlinks.json
+  Content-Type: application/json

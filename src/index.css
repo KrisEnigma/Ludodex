@@ -1,19 +1,21 @@
 /* ──────────── WinView — Inline Achievements Section ──────────── */
 .win-achievements-section {
   width: 100%;
-  /* max-height animates from 0 → a generous ceiling so layout pushes down
-     smoothly rather than jumping. overflow:hidden hides the cards during
-     the expand phase. The section itself fades in; cards slide from the side. */
-  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  animation: win-achievements-expand 380ms cubic-bezier(0.25, 0.46, 0.45, 0.94) backwards;
+  margin-top: 22px;
+  /* Pure opacity fade — no max-height animation. The section occupies
+     its final height from frame 1, so the countdown / share / buttons
+     below it don't get pushed down as it expands. The "reveal" feel
+     still comes from the per-card slide-in (win-achievement-slide-in)
+     with the staggered --card-delay. */
+  animation: win-achievements-fade-in 380ms cubic-bezier(0.25, 0.46, 0.45, 0.94) backwards;
 }
-@keyframes win-achievements-expand {
-  from { opacity: 0; max-height: 0; margin-top: 0; }
-  to   { opacity: 1; max-height: 600px; margin-top: 22px; }
+@keyframes win-achievements-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 .win-achievements-heading {
   font-size: var(--type-h3);
@@ -198,22 +200,7 @@
   text-overflow: ellipsis;
 }
 
-.menu-top-bar-actions {
-  display: flex;
-  gap: 2px;
-}
 /* --- Visual polish blocks --- */
-.menu-get-app {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-  margin-top: 12px;
-  font-size: var(--type-label);
-  letter-spacing: 0.14em;
-  color: var(--chrome-text);
-  text-transform: uppercase;
-}
 .game-hint-counter {
   transition: opacity 200ms, box-shadow 200ms;
 }
@@ -599,12 +586,17 @@ body {
   color: var(--title-color);
 }
 
+/* Two-cluster header: ← MENU on the left, hint counter + timer
+   grouped on the right (matches NYT Mini). The puzzle number used
+   to sit between them but was dropped from the game chrome — the
+   player already saw it on the menu card. `margin-left: auto` on
+   the first right-cluster child pushes everything after the menu
+   button against the right edge. */
 .header {
   width: 100%;
-  display: grid;
-  grid-template-columns: auto auto 1fr auto;
-  gap: 10px;
+  display: flex;
   align-items: center;
+  gap: 10px;
   color: var(--chrome-text);
   font-size: var(--type-body-s);
   letter-spacing: 0.15em;
@@ -612,7 +604,6 @@ body {
 }
 
 .header-menu-button {
-  justify-self: start;
   border: 1px solid transparent;
   border-radius: 8px;
   background: transparent;
@@ -630,18 +621,12 @@ body {
   background: var(--button-hover-bg);
 }
 
-.header-level {
-  justify-self: start;
-  opacity: 0.9;
-}
-
 .header-timer {
-  justify-self: end;
   font-variant-numeric: tabular-nums;
 }
 
 .game-hint-counter {
-  justify-self: end;
+  margin-left: auto;          /* pushes hint + timer to the right cluster */
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -1134,13 +1119,6 @@ body {
   margin-bottom: 28px;
 }
 
-.menu-day-chip {
-  font-size: var(--type-label);
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--chrome-text);
-}
-
 .menu-icon-button {
   display: inline-flex;
   align-items: center;
@@ -1207,11 +1185,24 @@ body {
   background: var(--button-bg);
 }
 
+/* Done is the tertiary action — quieter than Play Again so the player
+   doesn't have to read both labels to find the exit. Sizes to its
+   content (no flex: 1) so Play Again carries the visual weight. */
 .win-secondary-row .win-done-link {
-  flex: 1;
+  flex: none;
   border: 1px solid transparent;
-  padding: 12px;
+  padding: 12px 16px;
   text-align: center;
+  background: transparent;
+  color: var(--chrome-text);
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+.win-secondary-row .win-done-link:hover,
+.win-secondary-row .win-done-link:focus-visible {
+  opacity: 1;
+  color: var(--title-color);
 }
 
 /* ──────────── Menu — yesterday's preview card ──────────── */
@@ -1535,19 +1526,23 @@ body {
 .daily-card {
   width: 100%;
   background: linear-gradient(145deg, #0d3a42 80%, #071e26 100%);
-  border: 2px solid var(--tile-selected-border);
+  border: 1px solid var(--button-border);
   border-radius: 16px;
   padding: 18px 20px 20px;
-  box-shadow: 0 2px 16px 0 #00d4e822;
   cursor: pointer;
-  transition: box-shadow 180ms, border-color 180ms;
+  transition: border-color 180ms;
 }
 
+/* Stack the head: puzzle label on its own row, countdown as a smaller
+   muted sub-label underneath. Single-row "TODAY'S PUZZLE #509" +
+   "NEXT IN 21:32:38" used to wrap into a misaligned 2×2 grid on
+   narrow phone columns. */
 .daily-card-head {
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 10px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  margin-bottom: 12px;
 }
 
 .daily-card-tag {
@@ -1558,10 +1553,11 @@ body {
 }
 
 .daily-card-countdown {
-  font-size: var(--type-label);
+  font-size: var(--type-caption);
   letter-spacing: 0.14em;
   text-transform: none;
   color: var(--chrome-text);
+  opacity: 0.75;
   font-variant-numeric: tabular-nums;
 }
 
@@ -2334,32 +2330,6 @@ body {
   opacity: 0.5;
 }
 
-
-.menu-get-app-label {
-  opacity: 0.55;
-}
-
-.menu-get-app-links {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.menu-get-app-link {
-  color: var(--title-glow);
-  text-decoration: none;
-  font-size: var(--type-caption);
-  letter-spacing: 0.06em;
-  text-transform: none;
-}
-
-.menu-get-app-link:hover {
-  text-decoration: underline;
-}
-
-.menu-get-app-divider {
-  opacity: 0.5;
-}
 
 /* ──────────── WinView — web install CTA ──────────── */
 .win-install-cta {

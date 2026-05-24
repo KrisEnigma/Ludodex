@@ -4,7 +4,30 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#07090e" />
-    <title>GlitchSalad</title>
+    <title>GlitchSalad — Daily word puzzle</title>
+    <meta name="description" content="A daily word puzzle. Swipe to connect letters and find every word in today's theme. New puzzle every day." />
+
+    <!-- Open Graph — used by Slack, iMessage, WhatsApp, Discord, Facebook,
+         LinkedIn, etc. for link previews. Values are static (don't update
+         per-puzzle) because the SPA renders client-side and scrapers
+         don't run JS. If a per-puzzle preview ever matters, that's a
+         server-side rendering / Vercel OG image generation task. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="GlitchSalad" />
+    <meta property="og:title" content="GlitchSalad — Daily word puzzle" />
+    <meta property="og:description" content="A daily word puzzle. Swipe to connect letters and find every word in today's theme." />
+    <meta property="og:url" content="https://glitchsalad.krisenigma.com" />
+    <meta property="og:image" content="https://glitchsalad.krisenigma.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="GlitchSalad — a glowing cyan 4×4 grid of letters on a near-black background" />
+
+    <!-- Twitter Card. summary_large_image gives the wide preview card on
+         X, the variant most users see in feeds. -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="GlitchSalad — Daily word puzzle" />
+    <meta name="twitter:description" content="A daily word puzzle. Swipe to connect letters and find every word in today's theme." />
+    <meta name="twitter:image" content="https://glitchsalad.krisenigma.com/og-image.png" />
   </head>
   <body>
     <div id="app"></div>

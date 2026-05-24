@@ -77,17 +77,21 @@ export class WinView {
     nextCountdown.className = 'win-next-countdown';
     nextCountdown.hidden = !payload.isTodaysDaily;
     if (payload.isTodaysDaily) {
-      const updateCountdown = (): void => {
-        if (!this.element.isConnected) return;
-        nextCountdown.textContent = `${t('menu.daily_next_in', { time: formatTimeUntilMidnight() })}`;
-      };
-      updateCountdown();
+      // Set the initial text content synchronously, BEFORE the view is
+      // appended to the DOM. Previously this ran through an isConnected
+      // guard — which short-circuited because the element isn't mounted
+      // yet during the constructor — leaving the <p> empty (height 0)
+      // until the first interval tick ~1s later, at which point the
+      // text would finally appear and push the SHARE button + everything
+      // below it downward. The guard is still needed in the interval
+      // callback so we stop updating a removed-from-DOM element.
+      nextCountdown.textContent = t('menu.daily_next_in', { time: formatTimeUntilMidnight() });
       const countdownId = window.setInterval(() => {
-        if (!this.element.isConnected) {
+        if (!nextCountdown.isConnected) {
           window.clearInterval(countdownId);
           return;
         }
-        updateCountdown();
+        nextCountdown.textContent = t('menu.daily_next_in', { time: formatTimeUntilMidnight() });
       }, 1000);
     }
 
@@ -176,6 +180,10 @@ export class WinView {
         ? this.renderAchievementsSection(payload.unlockedAchievements)
         : null;
 
+    // Order matters: celebration → wrap-up info → primary CTA →
+    // secondary actions → install footer. The next-puzzle countdown
+    // sits right above SHARE so it reads as the "come back" hook
+    // alongside the primary CTA, not as a buried footer line.
     const children: HTMLElement[] = [
       headline,
       title,
@@ -183,9 +191,9 @@ export class WinView {
       pillRow,
       ...(achievementsSection ? [achievementsSection] : []),
       ...(stats ? [stats] : []),
+      nextCountdown,
       shareButton,
       secondaryRow,
-      nextCountdown,
       ...(installCtaRow ? [installCtaRow] : []),
     ];
 
