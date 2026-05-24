@@ -430,11 +430,48 @@ body {
 
 .app-shell {
   width: min(390px, 100%);
-  min-height: min(844px, calc(100dvh - 32px));
-  height: min(844px, calc(100dvh - 32px));
+  /* Desktop default: fill the viewport vertically but GROW beyond it when
+     content needs more room — the browser window becomes the scroll
+     container, not an inner element. Avoids cropping the WinView when there
+     are many achievement cards, and removes the inner scrollbar that clashes
+     with the puzzle aesthetic. Touch devices override this below to pin the
+     shell at exactly 100dvh, so the .view's internal scroll handles overflow
+     within the app surface (correct mobile-app behavior). */
+  min-height: calc(100dvh - 32px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+/* Phones get the full screen; tablets get the centered desktop column.
+
+   Primary defense is platform-level: AndroidManifest.xml locks the
+   activity to portrait (matching NYT Games, LinkedIn Games, Wordle,
+   Connections, etc. — all portrait-only on Android). When iOS is
+   scaffolded, Info.plist will lock portrait the same way. So phones
+   on native will never be in landscape.
+
+   This media query is the backstop for the cases the platform lock
+   can't cover:
+     - Android tablets / foldables ≥600dp where Android 16+ ignores
+       screenOrientation
+     - iPad once iOS is added (Apple lets iPads rotate freely)
+     - Web builds in any browser (Screen Orientation API can't lock
+       without fullscreen, so we can't force portrait there)
+
+   Adding (max-width: 600px) keeps the edge-to-edge stretch on phone
+   widths only. Anything wider — tablets in either orientation, or
+   the rare phone-in-landscape on web — falls through to the default
+   centered phone-frame column, which is what NYT shows on iPad. */
+@media (hover: none) and (pointer: coarse) and (max-width: 600px) {
+  #app {
+    padding: 0;
+  }
+  .app-shell {
+    width: 100%;
+    height: 100dvh;
+    min-height: 100dvh;
+  }
 }
 
 .view {
@@ -446,6 +483,23 @@ body {
   gap: 16px;
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+/* Hide internal scrollbars across the app — scrolling still works (wheel,
+   touch, keyboard, drag), we just suppress the OS-painted bar that clashes
+   with the puzzle's visual language. Applies to the main view container,
+   any vertically scrollable sheets, and the horizontally scrollable share
+   preview text. */
+.view,
+.share-picker-sheet,
+.share-preview-text {
+  scrollbar-width: none;         /* Firefox 64+ */
+}
+
+.view::-webkit-scrollbar,
+.share-picker-sheet::-webkit-scrollbar,
+.share-preview-text::-webkit-scrollbar {
+  display: none;                  /* WebKit / Chromium */
 }
 
 .game-view {
