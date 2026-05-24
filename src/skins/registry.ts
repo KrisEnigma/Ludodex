@@ -1,12 +1,33 @@
 export type SkinId = 'void' | 'synthwave' | 'gameboy';
 
+/**
+ * Tile-shaped preview token set. Drives the mini-tile shown in the Settings
+ * skin selector. The tokens here mirror the skin's selected-state values
+ * because the selected state is the most distinctive look — it's what the
+ * player sees during the active "I'm tracing a word" moment.
+ *
+ * We can't reuse the live CSS variables for the preview because those only
+ * apply when the corresponding skin class is on `<html>`. The preview must
+ * render in every skin's style regardless of which skin is currently active,
+ * so the values are baked in here and applied via inline styles.
+ */
+export type SkinPreviewTile = {
+  /** Background gradient or solid color (CSS `background` value). */
+  bg: string;
+  /** 1px border color around the tile. */
+  border: string;
+  /** Letter color inside the tile. */
+  letter: string;
+  /** Outer glow color (CSS `box-shadow` color). */
+  glow: string;
+};
+
 export type SkinMeta = {
   id: SkinId;
   name: string;
   productId: string | null;
   bundleProductId?: string;
-  /** Three colors driving the preview swatch in Settings: [background, tile, accent]. */
-  previewSwatch: [string, string, string];
+  previewTile: SkinPreviewTile;
 };
 
 export const SKINS: SkinMeta[] = [
@@ -14,21 +35,36 @@ export const SKINS: SkinMeta[] = [
     id: 'void',
     name: 'Void',
     productId: null,
-    previewSwatch: ['#131824', '#1e2236', '#00d4e8']
+    previewTile: {
+      bg: 'linear-gradient(145deg, #0d3a42, #071e26)',
+      border: '#00d4e8',
+      letter: '#9af0ff',
+      glow: 'rgba(0, 212, 232, 0.4)'
+    }
   },
   {
     id: 'synthwave',
     name: 'Synthwave',
     productId: 'skin_synthwave',
     bundleProductId: 'skin_bundle',
-    previewSwatch: ['#150620', '#6a0f9a', '#ff2bd6']
+    previewTile: {
+      bg: 'linear-gradient(145deg, #ff2bd6, #6a0f9a)',
+      border: '#ff7af0',
+      letter: '#ffffff',
+      glow: 'rgba(255, 43, 214, 0.6)'
+    }
   },
   {
     id: 'gameboy',
     name: 'Game Boy',
     productId: 'skin_pixel',
     bundleProductId: 'skin_bundle',
-    previewSwatch: ['#4a5e44', '#6a8060', '#b5d68f']
+    previewTile: {
+      bg: 'linear-gradient(145deg, #b5d68f, #7ea05c)',
+      border: '#1a2a1a',
+      letter: '#0d1a0d',
+      glow: 'rgba(181, 214, 143, 0.6)'
+    }
   }
 ];
 

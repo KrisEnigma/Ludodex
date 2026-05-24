@@ -1,4 +1,4 @@
-# GlitchSalad — Frontend Design Analysis
+# Ludodex — Frontend Design Analysis
 
 > Prepared May 2026. Based on full source review of the TypeScript/Vite/Capacitor codebase.
 
@@ -6,7 +6,7 @@
 
 ## 1. Architecture Overview
 
-GlitchSalad is a **zero-framework vanilla TypeScript SPA** bundled with Vite 6 and shipped cross-platform via Capacitor 8. There is no React, Vue, or Svelte — every element is created by hand in TypeScript. This is an intentional, disciplined choice that keeps the bundle lean and gives the game loop full control over DOM lifecycle.
+Ludodex is a **zero-framework vanilla TypeScript SPA** bundled with Vite 6 and shipped cross-platform via Capacitor 8. There is no React, Vue, or Svelte — every element is created by hand in TypeScript. This is an intentional, disciplined choice that keeps the bundle lean and gives the game loop full control over DOM lifecycle.
 
 The overall structure is:
 

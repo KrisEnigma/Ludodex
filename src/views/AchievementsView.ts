@@ -15,15 +15,14 @@ const CATEGORY_ORDER: AchievementCategory[] = [
 export class AchievementsView {
   public readonly element: HTMLDivElement;
   private readonly listContainer: HTMLDivElement;
-  private readonly summaryEl: HTMLParagraphElement;
+  private readonly summaryEl: HTMLDivElement;
 
   constructor(private readonly onBack: () => void) {
     this.element = document.createElement('div');
     this.element.className = 'view achievements-view';
 
-    this.summaryEl = document.createElement('p');
+    this.summaryEl = document.createElement('div');
     this.summaryEl.className = 'achievements-summary';
-    this.summaryEl.textContent = '';
 
     this.listContainer = document.createElement('div');
     this.listContainer.className = 'achievements-list';
@@ -61,11 +60,45 @@ export class AchievementsView {
     const earnedById = new Map(earned.map((r) => [r.id, r] as const));
     const totalCount = ACHIEVEMENTS.length;
     const earnedCount = earned.length;
+    const pct = totalCount > 0 ? Math.round((earnedCount / totalCount) * 100) : 0;
 
-    this.summaryEl.textContent = t('achievements.unlocked_summary', {
-      earned: earnedCount,
-      total: totalCount
-    });
+    // Hero summary: big earned count, small `/total unlocked` descriptor,
+    // thin progress bar. The earned count is the screen's most engaging
+    // number — players who can see they're 11/39 of the way through are
+    // more motivated to chase the rest. Previously this was rendered as
+    // a single small muted line that read as a footer.
+    this.summaryEl.replaceChildren();
+
+    const countRow = document.createElement('div');
+    countRow.className = 'achievements-summary-count';
+
+    const earnedNum = document.createElement('span');
+    earnedNum.className = 'achievements-summary-earned';
+    earnedNum.textContent = String(earnedCount);
+
+    const totalNum = document.createElement('span');
+    totalNum.className = 'achievements-summary-total';
+    totalNum.textContent = `/${totalCount}`;
+
+    countRow.append(earnedNum, totalNum);
+
+    const label = document.createElement('div');
+    label.className = 'achievements-summary-label';
+    label.textContent = t('achievements.unlocked_label');
+
+    const bar = document.createElement('div');
+    bar.className = 'achievements-summary-bar';
+    bar.setAttribute('role', 'progressbar');
+    bar.setAttribute('aria-valuemin', '0');
+    bar.setAttribute('aria-valuemax', String(totalCount));
+    bar.setAttribute('aria-valuenow', String(earnedCount));
+
+    const fill = document.createElement('div');
+    fill.className = 'achievements-summary-bar-fill';
+    fill.style.width = `${pct}%`;
+    bar.append(fill);
+
+    this.summaryEl.append(countRow, label, bar);
 
     for (const category of CATEGORY_ORDER) {
       const inCategory = ACHIEVEMENTS.filter((a) => a.category === category);
@@ -147,8 +180,12 @@ export class AchievementsView {
     try {
       const date = new Date(iso);
       const locale = getLang() === 'es' ? 'es-ES' : 'en-US';
+      // `month: 'long'` produces natural Spanish ("22 de mayo de 2026")
+      // instead of the abbreviated "22 may 2026". For English the change
+      // is invisible for short month names (May, Jun) and slightly longer
+      // for spelled-out names (December). Card has room either way.
       return date.toLocaleDateString(locale, {
-        month: 'short',
+        month: 'long',
         day: 'numeric',
         year: 'numeric'
       });

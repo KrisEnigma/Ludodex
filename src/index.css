@@ -17,25 +17,31 @@
   from { opacity: 0; }
   to   { opacity: 1; }
 }
+/* Section heading — demoted from the brand accent to a quiet label
+   treatment. The trophy icon + accent-colored achievement name inside
+   each card below carry the celebration weight; this header just
+   identifies the section. */
 .win-achievements-heading {
   font-size: var(--type-h3);
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--title-glow);
+  color: var(--chrome-text);
+  opacity: 0.85;
   margin-bottom: 6px;
-  text-shadow: 0 0 8px color-mix(in srgb, var(--title-glow) 30%, transparent);
   text-align: center;
 }
+/* Earned card — demoted from accent-bordered to a quiet elevated tile.
+   The trophy icon (accent-colored, see .win-achievement-card-icon below)
+   does the "you earned this" signaling; the border doesn't need to. */
 .win-achievement-card {
   display: flex;
   align-items: center;
   gap: 12px;
   background: var(--button-bg);
-  border: 1.5px solid var(--title-glow);
+  border: 1px solid var(--button-border);
   border-radius: 10px;
   padding: 10px 16px;
-  box-shadow: 0 2px 12px 0 color-mix(in srgb, var(--title-glow) 12%, transparent);
   min-width: 0;
   max-width: 340px;
   width: 100%;
@@ -108,12 +114,64 @@
   gap: 16px;
 }
 
+/* Hero summary: big earned count, smaller `/total` descriptor, label,
+   and a thin progress bar. Designed to make the player's progress
+   through the achievement set visually weighty — previously this was
+   buried as a small muted line. */
 .achievements-summary {
-  margin: 0;
-  text-align: center;
-  font-size: var(--type-body-s);
-  letter-spacing: 0.04em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  padding: 0 4px;
+}
+
+.achievements-summary-count {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.achievements-summary-earned {
+  font-size: var(--type-display-s);
+  font-weight: 700;
+  color: var(--title-glow);
+  text-shadow: 0 0 14px color-mix(in srgb, var(--title-glow) 30%, transparent);
+}
+
+.achievements-summary-total {
+  font-size: var(--type-h3);
+  font-weight: 500;
   color: var(--chrome-text);
+  opacity: 0.7;
+}
+
+.achievements-summary-label {
+  font-size: var(--type-caption);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--chrome-text);
+  opacity: 0.7;
+}
+
+.achievements-summary-bar {
+  width: min(100%, 240px);
+  height: 4px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--chrome-text) 18%, transparent);
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.achievements-summary-bar-fill {
+  height: 100%;
+  background: var(--title-glow);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--title-glow) 50%, transparent);
+  border-radius: 2px;
+  transition: width 600ms ease-out;
 }
 
 .achievements-list {
@@ -136,11 +194,16 @@
   margin-bottom: 2px;
 }
 
+/* Category label (STREAK, VOLUME, etc.) — demoted from the accent
+   color to a quiet uppercase chrome label. The category name doesn't
+   need to compete for attention with the hero count above; it just
+   wayfinds. */
 .achievements-section-label {
   font-size: var(--type-label);
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--title-glow);
+  color: var(--chrome-text);
+  opacity: 0.85;
 }
 
 .achievements-section-count {
@@ -150,11 +213,14 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Earned achievement row — demoted from accent-bordered to a quiet
+   elevated tile. The trophy icon (filled) and the row's "Earned on
+   [date]" line still mark earned status; the border doesn't need to. */
 .achievement-row[data-earned="true"] {
-  border-color: var(--title-glow);
+  border-color: var(--button-border);
   color: var(--title-color);
   opacity: 1;
-  background: color-mix(in srgb, var(--title-glow) 8%, var(--button-bg));
+  background: color-mix(in srgb, var(--chrome-text) 6%, var(--button-bg));
 }
 
 .achievement-row-icon {
@@ -190,9 +256,12 @@
   text-overflow: ellipsis;
 }
 
+/* "Earned on [date]" — informational, not celebratory. Demoted to
+   chrome-text so the achievement name (still emphasized via weight)
+   reads as the primary identity of the row. */
 .achievement-row-status {
   font-size: var(--type-caption);
-  color: var(--title-glow);
+  color: var(--chrome-text);
   opacity: 0.85;
   margin-top: 2px;
   white-space: nowrap;
@@ -241,9 +310,14 @@
     animation: none !important;
   }
 }
+/* Streak stat card — demoted from a tinted accent border + glow to
+   a quiet elevated state. The flame icon and accent-colored streak
+   number inside (see .stat-fire-icon, .stat-card[data-fire="true"]
+   .stat-value below) still mark the card as the "live streak" card;
+   the surrounding glow was redundant signal. */
 .stat-card[data-fire="true"] {
-  border-color: color-mix(in srgb, var(--title-glow) 32%, var(--button-border));
-  box-shadow: 0 0 16px color-mix(in srgb, var(--title-glow) 14%, transparent);
+  border-color: var(--button-border);
+  background: color-mix(in srgb, var(--chrome-text) 4%, var(--button-bg));
 }
 .stat-value-row {
   display: inline-flex;
@@ -357,13 +431,10 @@
 
 .archive-row-stars {
   display: inline-block;
-  min-width: 54px;
-  text-align: center;
-  font-size: var(--type-h2);
+  text-align: right;
+  font-size: var(--type-body-s);
   color: var(--hint-solved-letter);
   letter-spacing: 0.04em;
-  margin: 0 6px 0 2px;
-  vertical-align: middle;
 }
 :root {
   color-scheme: dark;
@@ -1146,17 +1217,9 @@ body {
   letter-spacing: 0.18em;
   line-height: 1.05;
   margin: 0 0 22px;
-  text-shadow: 0 0 14px color-mix(in srgb, var(--title-glow) 30%, transparent);
-}
-
-.menu-logo-top,
-.menu-logo-bottom {
   font-size: var(--type-display-s);
-  display: block;
-}
-
-.menu-logo-top {
-  color: var(--title-color);
+  color: var(--title-glow);
+  text-shadow: 0 0 14px color-mix(in srgb, var(--title-glow) 30%, transparent);
 }
 
 /* ──────────── Win — Play Again row ──────────── */
@@ -1453,11 +1516,6 @@ body {
   }
 }
 
-.menu-logo-bottom {
-  color: var(--title-glow);
-  margin-top: 2px;
-}
-
 .stats-strip {
   width: 100%;
   display: grid;
@@ -1545,11 +1603,15 @@ body {
   margin-bottom: 12px;
 }
 
+/* "TODAY'S PUZZLE #509" — demoted from the brand accent to a quiet
+   uppercase label. The PLAY button below carries the accent for this
+   card; the tag is a wayfinder, not a callout. */
 .daily-card-tag {
   font-size: var(--type-label);
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--title-glow);
+  color: var(--chrome-text);
+  opacity: 0.9;
 }
 
 .daily-card-countdown {
@@ -1561,13 +1623,17 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Puzzle title — moved from accent + hardcoded cyan glow to plain white
+   text. Three reasons: (1) the hardcoded #00d4e866 wasn't theme-aware
+   and showed cyan on Synthwave/Game Boy where it shouldn't; (2) the
+   PLAY button already carries the accent on this card; (3) the title
+   is identity info, not a celebration moment. */
 .daily-card-title {
   margin: 0 0 4px;
   font-size: var(--type-h4);
   font-weight: 700;
   line-height: 1.2;
-  color: var(--title-glow);
-  text-shadow: 0 0 12px #00d4e866;
+  color: var(--title-color);
 }
 
 .daily-card-meta {
@@ -1976,19 +2042,25 @@ body {
   min-width: 0;
 }
 
+/* Mini-tile preview in the Settings skin selector. Renders a single
+   tile in the skin's selected-state styling — background gradient,
+   border, glow, letter color — so the player sees a tangible "this
+   is what this skin's active tile looks like" instead of three
+   abstract color swatches. Colors are inline-styled per skin (see
+   SettingsView.renderSkinSection), this rule only handles shape. */
 .settings-skin-preview {
-  display: inline-grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2px;
-  width: 60px;
-  height: 20px;
-  border-radius: 5px;
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--button-border) 70%, transparent);
-}
-
-.settings-skin-preview-tile {
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  border: 1px solid;
+  font-family: 'Space Mono', monospace;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 
@@ -2151,32 +2223,69 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   background: var(--tile-bg);
   border: 1px solid var(--tile-border);
   color: var(--tile-letter);
   padding: 12px 14px;
   font-family: inherit;
-  font-size: var(--type-body-s);
   cursor: pointer;
   text-align: left;
 }
 
+/* Solved row — demoted from accent border. The cyan/accent stars and
+   the visible time in the meta column already mark the row as solved;
+   when every row is solved (a common state for engaged players), the
+   accent border was painting the entire archive in brand color with no
+   anchor. A subtle background tint instead of a colored border keeps
+   the differentiation without the visual noise. */
 .archive-row[data-solved="true"] {
-  border-color: var(--title-glow);
+  background: color-mix(in srgb, var(--chrome-text) 6%, var(--tile-bg));
 }
 
+/* Label block: puzzle title is the dominant element, day number sits
+   above it as quieter metadata. */
 .archive-row-label {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.archive-row-number {
+  font-size: var(--type-caption);
+  letter-spacing: 0.12em;
+  color: var(--chrome-text);
+  opacity: 0.7;
+}
+
+.archive-row-title {
+  font-size: var(--type-body);
+  font-weight: 700;
+  color: var(--title-color);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* Metadata column: stars on top, time below — both small and quieter
+   than the puzzle title so the row identity reads as "this puzzle"
+   first, "I got 3 stars in 0:08" second. */
+.archive-row-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
 .archive-row-status {
+  font-size: var(--type-caption);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
-  color: var(--title-glow);
-  margin-left: 12px;
+  color: var(--chrome-text);
+  opacity: 0.85;
 }
 
 .archive-empty {
@@ -2187,6 +2296,7 @@ body {
 }
 
 /* How to play */
+/* ──────────── How to Play / Tutorial ──────────── */
 .how-to-play-view {
   display: flex;
   flex-direction: column;
@@ -2195,9 +2305,13 @@ body {
   min-height: 100%;
 }
 
+/* Back/Skip on the left to match the rest of the app — Archive,
+   Achievements, Settings, Game screen all use a left-anchored back
+   button. Previously this lived on the right and broke the wayfinding
+   convention. */
 .how-to-play-topbar {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 .how-to-play-skip {
@@ -2210,27 +2324,32 @@ body {
   text-transform: uppercase;
   cursor: pointer;
   padding: 8px;
+  opacity: 0.85;
+  transition: opacity 180ms;
 }
 
+.how-to-play-skip:hover,
+.how-to-play-skip:focus-visible {
+  opacity: 1;
+  color: var(--title-color);
+}
+
+/* Illustration sits centered; viewBox is 200×160 in source. The width
+   floats up to ~280px so the SVG reads at a comfortable size on phone
+   screens without dominating the layout. */
 .how-to-play-visual {
   align-self: center;
-  width: 200px;
-  height: 200px;
+  width: min(280px, 80vw);
   display: flex;
   align-items: center;
   justify-content: center;
+  margin: 4px 0 8px;
 }
 
 .how-to-play-visual svg {
   width: 100%;
-  height: 100%;
-}
-
-.how-to-play-indicator {
-  text-align: center;
-  font-size: var(--type-label);
-  letter-spacing: 0.22em;
-  color: var(--chrome-text);
+  height: auto;
+  display: block;
 }
 
 .how-to-play-title {
@@ -2250,22 +2369,67 @@ body {
   max-width: 320px;
 }
 
-.how-to-play-nav {
+/* Dot pagination. Replaces the old "1 / 4" text indicator. Anchored
+   to the bottom (margin-top: auto) so it doesn't drift up and down as
+   different steps render bodies of different lengths — the dots and
+   the nav below them read as a single fixed footer cluster, with the
+   illustration + title + body flowing freely above. */
+.how-to-play-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
   margin-top: auto;
+}
+
+.how-to-play-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--chrome-text) 35%, transparent);
+  transition: background 180ms, transform 180ms;
+}
+
+.how-to-play-dot[data-active="true"] {
+  background: var(--title-glow);
+  transform: scale(1.25);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .how-to-play-dot {
+    transition: none;
+  }
+}
+
+/* No margin-top: auto here — the indicator above already anchors the
+   footer cluster to the bottom; the nav sits naturally beneath it
+   with the parent's 16px gap. */
+.how-to-play-nav {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
 }
 
+.how-to-play-nav-spacer {
+  width: 1px;
+}
+
 .how-to-play-nav-back {
   background: transparent;
   border: 1px solid var(--button-border);
+  border-radius: 10px;
   color: var(--button-text);
   padding: 12px 24px;
   font-family: inherit;
   font-size: var(--type-body-s);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   cursor: pointer;
+  transition: background 180ms;
+}
+
+.how-to-play-nav-back:hover {
+  background: var(--button-hover-bg);
 }
 
 .how-to-play-nav-next {
@@ -2274,6 +2438,8 @@ body {
   background: var(--primary-action-bg);
   color: var(--primary-action-text);
   border: none;
+  padding: 13px;
+  cursor: pointer;
 }
 
 /* ──────────── Settings — web-only skin row ──────────── */
@@ -2294,15 +2460,23 @@ body {
   text-transform: none;
 }
 
+/* Utility store links inside Settings ("App Store · Google Play"). These
+   are one-time-tap external links, not primary actions — demoted from
+   the brand accent so they don't compete with the active skin/language
+   pills above. Underline on hover provides the link affordance now that
+   the color is muted. */
 .store-link {
-  color: var(--title-glow);
-  text-decoration: none;
+  color: var(--chrome-text);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--chrome-text) 40%, transparent);
+  text-underline-offset: 3px;
   font-size: var(--type-caption);
   letter-spacing: 0.06em;
 }
 
 .store-link:hover {
-  text-decoration: underline;
+  color: var(--title-color);
+  text-decoration-color: var(--title-color);
 }
 
 /* ──────────── Settings — legal links ──────────── */
@@ -2317,13 +2491,19 @@ body {
   text-transform: uppercase;
 }
 
+/* Legal links ("PRIVACY POLICY · TERMS OF SERVICE") at the very bottom
+   of Settings — already muted, just adding a quiet underline so they
+   read as links without competing for attention. */
 .legal-link {
   color: var(--chrome-text);
-  text-decoration: none;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--chrome-text) 40%, transparent);
+  text-underline-offset: 3px;
 }
 
 .legal-link:hover {
-  text-decoration: underline;
+  color: var(--title-color);
+  text-decoration-color: var(--title-color);
 }
 
 .legal-link-divider {
@@ -2373,32 +2553,60 @@ body {
   color: var(--title-glow);
 }
 
-/* ──────────── Archive — web gate ──────────── */
-.archive-locked-gate {
-  margin-top: 8px;
-  padding: 20px 16px;
-  border: 1px dashed color-mix(in srgb, var(--chrome-text) 35%, var(--button-border));
-  border-radius: 10px;
+/* ──────────── Archive — web install CTA ──────────── */
+/* Shares structure with .win-install-cta but with slightly different
+   spacing because it lives at the bottom of a list of rows rather than
+   under a celebratory hero. Solid border (no dashed outlier), title
+   carries the confident CTA, optional subhead clarifies. Buttons match
+   the rest of the install-CTA surfaces in the app. */
+.archive-install-cta {
+  margin-top: 16px;
+  padding: 22px 18px;
+  border: 1px solid var(--button-border);
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   text-align: center;
 }
 
-.archive-locked-label {
-  font-size: var(--type-body-s);
+.archive-install-cta-label {
+  font-size: var(--type-body);
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--chrome-text);
+  letter-spacing: 0.04em;
+  color: var(--title-color);
 }
 
-.archive-locked-cta {
+.archive-install-cta-sub {
+  margin: 0;
   font-size: var(--type-caption);
   letter-spacing: 0.04em;
   color: var(--chrome-text);
-  opacity: 0.65;
+  opacity: 0.75;
+}
+
+.archive-install-cta-links {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  margin-top: 6px;
+}
+
+/* <a> elements styled as buttons need explicit text-decoration reset */
+.archive-install-cta-link {
+  flex: 1;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  /* padding, border, color come from button-secondary */
+}
+
+.archive-install-cta-link:hover {
+  border-color: color-mix(in srgb, var(--title-glow) 60%, var(--button-border));
+  color: var(--title-glow);
 }
 
 /* ──────────── Bottom sheet backdrop (HintStore, SharePicker) ──────────── */

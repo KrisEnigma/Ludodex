@@ -10,9 +10,9 @@ export type PuzzleHintReveal = {
   letterIndex: number;
 };
 
-const HINT_STATE_KEY = 'glitchsalad.hint_state';
-const HINT_REVEALS_PREFIX = 'glitchsalad.hint_reveals.';
-const AD_HINT_GRANTS_KEY = 'glitchsalad.ad_hint_grants';
+const HINT_STATE_KEY = 'ludodex.hint_state';
+const HINT_REVEALS_PREFIX = 'ludodex.hint_reveals.';
+const AD_HINT_GRANTS_KEY = 'ludodex.ad_hint_grants';
 
 /**
  * Hints granted on first-ever install. Generous onboarding floor.

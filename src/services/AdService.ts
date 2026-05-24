@@ -1,5 +1,5 @@
 /**
- * AdService — ad lifecycle management for GlitchSalad.
+ * AdService — ad lifecycle management for Ludodex.
  *
  * ## Architecture
  *
@@ -47,8 +47,8 @@ const SESSION_CAP = 2;
 
 // ── Preferences keys ──────────────────────────────────────────────────────────
 
-const SOLVES_SINCE_LAST_INTERSTITIAL_KEY = 'glitchsalad.ad.solves_since_last';
-const PENDING_INTERSTITIAL_KEY           = 'glitchsalad.ad.pending_interstitial';
+const SOLVES_SINCE_LAST_INTERSTITIAL_KEY = 'ludodex.ad.solves_since_last';
+const PENDING_INTERSTITIAL_KEY           = 'ludodex.ad.pending_interstitial';
 
 // ── AdMob test IDs ────────────────────────────────────────────────────────────
 

@@ -5,7 +5,7 @@
  * route, and computing the path segment for outbound URLs (history.pushState,
  * share text).
  *
- * URL shape: `{VITE_SHARE_BASE_URL}/{dayNumber}` — e.g. `https://glitchsalad.krisenigma.com/123`.
+ * URL shape: `{VITE_SHARE_BASE_URL}/{dayNumber}` — e.g. `https://ludodex.krisenigma.com/123`.
  *   - `/` (or no path) → menu
  *   - `/N` where N is a positive integer → puzzle for day N
  *   - Anything else → menu (graceful fallback, no error toast)

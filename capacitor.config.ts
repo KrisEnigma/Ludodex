@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.glitchsalad.game',
-  appName: 'GlitchSalad',
+  appId: 'app.ludodex.game',
+  appName: 'Ludodex',
   webDir: 'dist',
   ios: {
     contentInset: 'always'

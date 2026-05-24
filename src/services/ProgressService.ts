@@ -1,5 +1,5 @@
 // --- Monotonic day-stamp defense ---
-const LAST_SEEN_DAY_STAMP_KEY = 'glitchsalad.last_seen_day_stamp';
+const LAST_SEEN_DAY_STAMP_KEY = 'ludodex.last_seen_day_stamp';
 
 function getTodayDayStamp(): string {
   const now = new Date();
@@ -49,9 +49,9 @@ async function isClockBackwardFromWatermark(): Promise<boolean> {
   const stored = await readLastSeenDayStamp();
   return stored !== null && today < stored;
 }
-const PRISTINE_COUNT_KEY = 'glitchsalad.pristine_count';
-const CONSECUTIVE_PRISTINE_COUNT_KEY = 'glitchsalad.consecutive_pristine_count';
-const ARCHIVE_SOLVES_COUNT_KEY = 'glitchsalad.archive_solves_count';
+const PRISTINE_COUNT_KEY = 'ludodex.pristine_count';
+const CONSECUTIVE_PRISTINE_COUNT_KEY = 'ludodex.consecutive_pristine_count';
+const ARCHIVE_SOLVES_COUNT_KEY = 'ludodex.archive_solves_count';
 export async function getPristineCount(): Promise<number> {
   const { value } = await Preferences.get({ key: PRISTINE_COUNT_KEY });
   if (!value) return 0;
@@ -88,7 +88,7 @@ const LAST_PLAYED_DATE_KEY = 'last_played_date';
 const CURRENT_STREAK_KEY = 'current_streak';
 const BEST_STREAK_KEY = 'best_streak';
 const ACTIVE_SKIN_KEY = 'active_skin';
-const INSTALL_DATE_KEY = 'glitchsalad.install_date';
+const INSTALL_DATE_KEY = 'ludodex.install_date';
 
 type SolvedTimesMap = Record<string, number>;
 

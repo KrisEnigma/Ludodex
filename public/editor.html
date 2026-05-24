@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=1024">
   <meta name="robots" content="noindex,nofollow">
-  <title>GlitchSalad Editor</title>
+  <title>Ludodex Editor</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
   <style>
     :root {
@@ -77,7 +77,7 @@
 </head>
 <body>
   <!-- PASTE THE EXISTING EDITOR CONTENT HERE -->
-  <h2 class="sr-only">GlitchSalad level editor v2 — type letters into grid tiles, draw word paths, validate and export puzzle JSON</h2>
+  <h2 class="sr-only">Ludodex level editor v2 — type letters into grid tiles, draw word paths, validate and export puzzle JSON</h2>
 
 <script>
 const COLS=['a','b','c','d'],ROWS=['1','2','3','4'];
@@ -94,7 +94,7 @@ let S={
 };
 
 // --- Task 3: localStorage autosave + restore ---
-const AUTOSAVE_KEY='glitchsalad_editor_v2_state';
+const AUTOSAVE_KEY='ludodex_editor_v2_state';
 
 function saveState(){
   try{
@@ -211,7 +211,7 @@ function render(){
 <div style="padding:0.5rem 0;font-size:13px;font-family:var(--font-sans)">
 
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-  <div><div style="font-size:15px;font-weight:500;color:var(--color-text-primary)">GlitchSalad level editor</div>
+  <div><div style="font-size:15px;font-weight:500;color:var(--color-text-primary)">Ludodex level editor</div>
   <div style="font-size:11px;color:var(--color-text-secondary)">Type letters into tiles · draw paths · export JSON</div></div>
   <button onclick="doReset()" style="font-size:11px">Reset</button>
 </div>

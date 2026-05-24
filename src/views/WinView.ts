@@ -9,7 +9,7 @@ import { ACHIEVEMENTS } from '../data/achievements';
 import type { WinPayload } from './types';
 import { getMonetizationContext } from '../services/MonetizationContext';
 import { track } from '../services/AnalyticsService';
-import { STORE_URLS } from '../config/legalUrls';
+import { buildInstallCta } from '../components/InstallCta';
 
 export class WinView {
   readonly element: HTMLDivElement;
@@ -335,7 +335,7 @@ function buildShareText(payload: WinPayload): string {
 
 /**
  * Build the deep link a friend should click to land on this specific puzzle.
- * Shape: `{VITE_SHARE_BASE_URL}/{dayNumber}` — e.g. `https://glitchsalad.com/123`.
+ * Shape: `{VITE_SHARE_BASE_URL}/{dayNumber}` — e.g. `https://ludodex.com/123`.
  * The base URL is kept in an env var so it can change without code edits.
  *
  * Returns an empty string when no base URL is configured (dev builds), which
@@ -380,71 +380,37 @@ function formatTimeUntilMidnight(): string {
 }
 
 /**
- * Build install CTA row for web WinView.
- * UA-detects Android vs iOS and points at the correct store link.
- * Falls back to both links when the platform can't be determined.
+ * Build install CTA row for web WinView. Thin wrapper over the shared
+ * `buildInstallCta` component — passes the Win-specific class name and
+ * copy. The shared component handles UA-detected store routing.
  */
 function buildInstallCtaRow(): HTMLElement {
-  const row = document.createElement('div');
-  row.className = 'win-install-cta';
-
-  const label = document.createElement('span');
-  label.className = 'win-install-cta-label';
-  label.textContent = t('web_cta.get_app');
-
-  const ua = navigator.userAgent.toLowerCase();
-  const isAndroid = ua.includes('android');
-  const isIos     = /iphone|ipad|ipod/.test(ua);
-
-  const makeLink = (href: string, text: string, store: 'app_store' | 'play_store'): HTMLAnchorElement => {
-    const a = document.createElement('a');
-    a.href = href;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    a.className = 'win-install-cta-link button-secondary';
-    a.textContent = text;
-    a.addEventListener('click', () => {
-      track('web_install_cta_tapped', { store });
-    });
-    return a;
-  };
-
-  const links = document.createElement('div');
-  links.className = 'win-install-cta-links';
-
-  if (isAndroid) {
-    links.append(makeLink(STORE_URLS.playStore, t('web_cta.play_store'), 'play_store'));
-  } else if (isIos) {
-    links.append(makeLink(STORE_URLS.appStore, t('web_cta.app_store'), 'app_store'));
-  } else {
-    // Desktop or unknown — show both
-    links.append(
-      makeLink(STORE_URLS.appStore,  t('web_cta.app_store'),  'app_store'),
-      makeLink(STORE_URLS.playStore, t('web_cta.play_store'), 'play_store'),
-    );
-  }
-
-  row.append(label, links);
-  return row;
+  return buildInstallCta({
+    className: 'win-install-cta',
+    headlineKey: 'web_cta.get_app',
+  });
 }
 
 async function shareWin(payload: WinPayload, buttonEl: HTMLButtonElement): Promise<void> {
   track('share_button_tapped', { day: payload.dayNumber });
 
-  // Two text shapes: the body (used when the OS takes the URL as its own
-  // field — navigator.share / Capacitor Share) and the full text (used when
-  // the URL has to be embedded in the text — clipboard fallback).
-  const body    = buildShareBody(payload);
+  // Single text shape with the URL embedded as its own paragraph. We used to
+  // pass `text` and `url` as separate fields to navigator.share / Capacitor
+  // Share, but iOS Messages (and a few Android share targets) concatenate
+  // them with a single space instead of preserving the blank line between
+  // them — producing `★★★ Impecable · 0:05 https://...` on one line rather
+  // than the intended two-paragraph layout. Embedding the URL in the text
+  // gives us full control of the formatting; messaging apps still auto-
+  // linkify URLs in plaintext bodies so the link stays clickable.
   const fullText = buildShareText(payload);
-  const url     = buildPuzzleDeepLink(payload.dayNumber);
-  const title   = 'GlitchSalad';
+  const title    = 'Ludodex';
 
   const { isNative } = getMonetizationContext();
 
   if (isNative) {
     // Native iOS/Android: route through the Capacitor plugin.
     try {
-      await Share.share({ title, text: body, ...(url ? { url } : {}) });
+      await Share.share({ title, text: fullText });
       track('share_string_generated', { share_method: 'native_share' });
     } catch {
       // Share cancelled or unavailable — no fallback needed on native.
@@ -453,11 +419,6 @@ async function shareWin(payload: WinPayload, buttonEl: HTMLButtonElement): Promi
   }
 
   // Web (mobile AND desktop): try the OS share dialog first when available.
-  // We pass title + text + url as SEPARATE fields, not a concatenated blob.
-  // Edge mobile Android (and some Android share intents) reject text-only
-  // payloads with NotAllowedError; including title + url makes the data
-  // shareable across every browser that exposes the API.
-  //
   // navigator.canShare() lets us bail out cleanly when the data isn't
   // acceptable to the platform, instead of throwing into the catch and
   // silently dropping into the preview sheet.
@@ -468,8 +429,7 @@ async function shareWin(payload: WinPayload, buttonEl: HTMLButtonElement): Promi
   // right primary path when it exists.
   const webShareData: ShareData = {
     title,
-    text: body,
-    ...(url ? { url } : {}),
+    text: fullText,
   };
   const canUseWebShare =
     typeof navigator.share === 'function' &&

@@ -4,6 +4,7 @@ import { getSolvedIds, getSolvedTimes, getSolvedRatings, normalizeStarRating } f
 import type { Puzzle } from '../types/puzzle';
 import { t as tp } from '../utils/i18n';
 import { getMonetizationContext } from '../services/MonetizationContext';
+import { buildInstallCta } from '../components/InstallCta';
 
 /** On web, only the most recent N days are freely accessible. */
 const WEB_FREE_DAYS = 7;
@@ -98,21 +99,18 @@ export class ArchiveView {
     }
   }
 
-  /** Locked-gate row shown at the bottom of the web archive list. */
+  /**
+   * Install CTA shown at the bottom of the web archive list when older
+   * puzzles fall outside the WEB_FREE_DAYS window. Uses the shared
+   * InstallCta component so the styling and UA-detection logic match
+   * the Win screen's install row.
+   */
   private renderLockedGate(): HTMLElement {
-    const row = document.createElement('div');
-    row.className = 'archive-locked-gate';
-
-    const label = document.createElement('p');
-    label.className = 'archive-locked-label';
-    label.textContent = t('archive.web_locked_label');
-
-    const cta = document.createElement('p');
-    cta.className = 'archive-locked-cta';
-    cta.textContent = t('archive.web_locked_cta');
-
-    row.append(label, cta);
-    return row;
+    return buildInstallCta({
+      className: 'archive-install-cta',
+      headlineKey: 'archive.web_locked_label',
+      subheadKey: 'archive.web_locked_cta',
+    });
   }
 
   private renderRow(
@@ -127,9 +125,27 @@ export class ArchiveView {
     row.className = 'archive-row';
     row.dataset.solved = String(isSolved);
 
-    const label = document.createElement('span');
+    // Split number from title so the puzzle title can carry the visual
+    // weight while the day number sits as quieter metadata. Single-string
+    // labels meant `#508` and the title rendered at identical size/color,
+    // and the cyan time on the right ended up reading as more important
+    // than the puzzle identity. The new shape lets typography establish
+    // hierarchy: puzzle title > number > rating/time.
+    const label = document.createElement('div');
     label.className = 'archive-row-label';
-    label.textContent = t('archive.day_row', { n: day, title: tp(puzzle.name, puzzle.id) });
+
+    const num = document.createElement('span');
+    num.className = 'archive-row-number';
+    num.textContent = `#${day}`;
+
+    const title = document.createElement('span');
+    title.className = 'archive-row-title';
+    title.textContent = tp(puzzle.name, puzzle.id);
+
+    label.append(num, title);
+
+    const meta = document.createElement('div');
+    meta.className = 'archive-row-meta';
 
     const stars = document.createElement('span');
     stars.className = 'archive-row-stars';
@@ -146,7 +162,9 @@ export class ArchiveView {
       ? this.formatTime(time)
       : t('archive.unsolved');
 
-    row.append(label, stars, status);
+    meta.append(stars, status);
+
+    row.append(label, meta);
     row.addEventListener('click', () => {
       this.onPlay(puzzle, day);
     });

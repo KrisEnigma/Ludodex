@@ -4,7 +4,7 @@ type ConfettiOptions = {
   colors?: string[];
 };
 
-const STYLE_ID = 'glitchsalad-confetti-styles';
+const STYLE_ID = 'ludodex-confetti-styles';
 
 function ensureStyles(): void {
   if (document.getElementById(STYLE_ID)) return;

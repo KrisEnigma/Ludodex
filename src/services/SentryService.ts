@@ -26,7 +26,7 @@ export function initSentry(): void {
   Sentry.init(
     {
       dsn,
-      release: `glitchsalad@${APP_VERSION}`,
+      release: `ludodex@${APP_VERSION}`,
       environment,
       tracesSampleRate: 0,
       // Capture unhandled promise rejections automatically.

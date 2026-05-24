@@ -25,8 +25,8 @@ import { getDaysSinceInstall, getSolvedIds } from './ProgressService';
 import { listOwnedProductIds } from './IAPService';
 import { track } from './AnalyticsService';
 
-const STARTER_PACK_SHOWN_KEY    = 'glitchsalad.starter_pack.shown';
-const STARTER_PACK_SHOWN_AT_KEY = 'glitchsalad.starter_pack.shown_at';
+const STARTER_PACK_SHOWN_KEY    = 'ludodex.starter_pack.shown';
+const STARTER_PACK_SHOWN_AT_KEY = 'ludodex.starter_pack.shown_at';
 
 /**
  * The skin included in the Starter Pack. Must map to an existing SkinId.

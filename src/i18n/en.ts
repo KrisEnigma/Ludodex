@@ -9,6 +9,7 @@ export const strings = {
   // AchievementsView
   'achievements.back': '← Menu',
   'achievements.unlocked_summary': '{earned}/{total} unlocked',
+  'achievements.unlocked_label': 'unlocked',
   'achievements.earned_on': 'Earned on {date}',
   // Achievements
   'menu.achievements_aria': 'Achievements',
@@ -21,8 +22,7 @@ export const strings = {
   'achievements.category.special': 'Special',
   // Menu - top bar / chrome
   'menu.settings_aria': 'Settings',
-  'menu.brand_glitch': 'GLITCH',
-  'menu.brand_salad': 'SALAD',
+  'menu.brand': 'LUDODEX',
 
   // Menu - stats
   'menu.stat_streak': 'Streak',
@@ -62,7 +62,7 @@ export const strings = {
     'settings.more_skins_in_app': 'More skins in the app',
   'settings.section_about': 'About',
   'settings.about_credit': 'By KrisEnigma',
-  'settings.version': 'GlitchSalad v{version}',
+  'settings.version': 'Ludodex v{version}',
 
   // Skin display names
   'skin.void.name': 'Void',
@@ -117,7 +117,7 @@ export const strings = {
   'win.play_again': 'Play again',
 
   // Share string
-  'share.header': 'GlitchSalad #{day} — {title}',
+  'share.header': 'Ludodex #{day} — {title}',
   'share.label_flawless': 'Flawless',
   'share.label_solved': 'Solved',
   'share.suffix_new_best': ' — NEW BEST',
@@ -139,14 +139,14 @@ export const strings = {
   'how_to_play.back': 'Back',
   'how_to_play.next': 'Next',
   'how_to_play.got_it': 'Got it',
-  'how_to_play.step1_title': 'Form words',
-  'how_to_play.step1_body': 'Tap each letter or swipe across them. The word completes when you reach a valid answer.',
-  'how_to_play.step2_title': 'Stick to the theme',
-  'how_to_play.step2_body': 'Each daily puzzle has a theme. All the answers fit it.',
-  'how_to_play.step3_title': 'Backtrack and restart',
-  'how_to_play.step3_body': 'Tap the last letter to undo. Tap outside the grid to clear your selection.',
-  'how_to_play.step4_title': 'Daily ritual',
-  'how_to_play.step4_body': 'A new puzzle every day. Solve today\'s to build your streak.',
+  'how_to_play.step1_title': 'Swipe to spell',
+  'how_to_play.step1_body': 'Drag across adjacent letters to form a word. Release when it\'s complete.',
+  'how_to_play.step2_title': 'Every puzzle has a theme',
+  'how_to_play.step2_body': 'Characters, items, studios, hardware — every answer shares a topic.',
+  'how_to_play.step3_title': 'Stuck? Use a hint',
+  'how_to_play.step3_body': 'Press and hold an empty slot below the grid to reveal that letter. Hints refill every day.',
+  'how_to_play.step4_title': 'Come back every day',
+  'how_to_play.step4_body': 'A new puzzle drops daily. Solve it to grow your streak.',
 
   // Starter Pack offer
   'starter_pack.title': 'Starter Pack',
@@ -168,8 +168,8 @@ export const strings = {
   'remove_ads.already_owned': 'You already own this.',
 
   // Web archive gate
-  'archive.web_locked_label': 'Get the app to unlock',
-  'archive.web_locked_cta': 'Get the app for full archive access.',
+  'archive.web_locked_label': 'Unlock the full archive',
+  'archive.web_locked_cta': 'The app has every puzzle since launch.',
 
   // Web install CTA (WinView + elsewhere)
   'web_cta.get_app': 'Get the app',
@@ -284,6 +284,6 @@ export const strings = {
   'achievement.time_capsule.description': '30+ day-old puzzle solved.',
 
   // Notification
-  'notification.daily_title': "Today's GlitchSalad is ready",
+  'notification.daily_title': "Today's Ludodex is ready",
   'notification.daily_body': 'Your daily puzzle is waiting.',
 } as const;

@@ -6,7 +6,7 @@ import { setLocale } from '../utils/i18n';
 export type Language = 'en' | 'es';
 export type StringKey = keyof typeof enStrings;
 
-const STORAGE_KEY = 'glitchsalad.language';
+const STORAGE_KEY = 'ludodex.language';
 
 const MAPS: Record<Language, Record<string, string>> = {
   en: enStrings,

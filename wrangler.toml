@@ -1,4 +1,4 @@
-name = "glitchsalad"
+name = "ludodex"
 compatibility_date = "2025-01-01"
 
 # Workers + Static Assets configuration. `not_found_handling =

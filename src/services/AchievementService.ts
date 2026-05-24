@@ -3,7 +3,7 @@ import { ACHIEVEMENTS, type SnapshotContext, type SolveContext } from '../data/a
 import { track } from './AnalyticsService';
 import { getMonetizationContext } from './MonetizationContext';
 
-const EARNED_KEY = 'glitchsalad.achievements_earned';
+const EARNED_KEY = 'ludodex.achievements_earned';
 
 export type EarnedRecord = {
   id: string;

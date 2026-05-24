@@ -69,18 +69,9 @@ export class MenuView {
     // which keeps the bar visually balanced without a title in it.
     topBar.append(trophyButton, settingsButton);
 
-    const logo = document.createElement('div');
+    const logo = document.createElement('h1');
     logo.className = 'menu-logo';
-
-    const logoTop = document.createElement('span');
-    logoTop.className = 'menu-logo-top';
-    logoTop.textContent = t('menu.brand_glitch');
-
-    const logoBottom = document.createElement('span');
-    logoBottom.className = 'menu-logo-bottom';
-    logoBottom.textContent = t('menu.brand_salad');
-
-    logo.append(logoTop, logoBottom);
+    logo.textContent = t('menu.brand');
 
     const statsStrip = document.createElement('div');
     statsStrip.className = 'stats-strip';

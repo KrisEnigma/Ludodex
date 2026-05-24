@@ -14,7 +14,7 @@ import { parsePuzzle } from './PuzzleParser';
  * release time. See AGENTS.md or the design discussion for the full rationale.
  */
 const LAUNCH_DATE = new Date('2025-01-01T00:00:00');
-const REMOTE_PUZZLES_URL = 'https://cdn.glitchsalad.app/puzzles.json';
+const REMOTE_PUZZLES_URL = 'https://cdn.ludodex.app/puzzles.json';
 const PUZZLES_REMOTE_KEY = 'puzzles_remote';
 
 let parsedPuzzles: Puzzle[] = [];

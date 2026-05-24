@@ -10,6 +10,7 @@ export const strings: Record<keyof typeof enStrings, string> = {
   // AchievementsView
   'achievements.back': '← Menú',
   'achievements.unlocked_summary': '{earned}/{total} desbloqueados',
+  'achievements.unlocked_label': 'desbloqueados',
   'achievements.earned_on': 'Obtenido el {date}',
   // Achievements
   'menu.achievements_aria': 'Logros',
@@ -22,8 +23,7 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'achievements.category.special': 'Especial',
   // Menu - top bar / chrome
   'menu.settings_aria': 'Ajustes',
-  'menu.brand_glitch': 'GLITCH',
-  'menu.brand_salad': 'SALAD',
+  'menu.brand': 'LUDODEX',
 
   // Menu - stats
   'menu.stat_streak': 'Racha',
@@ -63,7 +63,7 @@ export const strings: Record<keyof typeof enStrings, string> = {
     'settings.more_skins_in_app': 'Más skins en la app',
   'settings.section_about': 'Acerca de',
   'settings.about_credit': 'Por KrisEnigma',
-  'settings.version': 'GlitchSalad v{version}',
+  'settings.version': 'Ludodex v{version}',
 
   // Skin names - same in both languages
   'skin.void.name': 'Void',
@@ -118,7 +118,7 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'win.play_again': 'Jugar otra vez',
 
   // Share string
-  'share.header': 'GlitchSalad #{day} — {title}',
+  'share.header': 'Ludodex #{day} — {title}',
   'share.label_flawless': 'Impecable',
   'share.label_solved': 'Resuelto',
   'share.suffix_new_best': ' — NUEVO RÉCORD',
@@ -133,8 +133,8 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'archive.empty': 'Vuelve mañana para tu primera entrada del archivo.',
   'archive.day_row': '#{n} — {title}',
   'archive.unsolved': '—',
-  'archive.web_locked_label': 'Disponible en la app',
-  'archive.web_locked_cta': 'Descarga la app para acceder al archivo completo.',
+  'archive.web_locked_label': 'Desbloquea el archivo completo',
+  'archive.web_locked_cta': 'La app tiene todos los puzzles desde el lanzamiento.',
 
   // How to play
   'how_to_play.title': 'Cómo jugar',
@@ -142,14 +142,14 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'how_to_play.back': 'Atrás',
   'how_to_play.next': 'Siguiente',
   'how_to_play.got_it': 'Entendido',
-  'how_to_play.step1_title': 'Forma palabras',
-  'how_to_play.step1_body': 'Toca cada letra o desliza a través de ellas. La palabra se completa al llegar a una respuesta válida.',
-  'how_to_play.step2_title': 'Sigue el tema',
-  'how_to_play.step2_body': 'Cada puzzle diario tiene un tema. Todas las respuestas encajan.',
-  'how_to_play.step3_title': 'Retrocede y reinicia',
-  'how_to_play.step3_body': 'Toca la última letra para deshacer. Toca fuera del tablero para limpiar tu selección.',
-  'how_to_play.step4_title': 'Ritual diario',
-  'how_to_play.step4_body': 'Un puzzle nuevo cada día. Resuelve el de hoy para mantener tu racha.',
+  'how_to_play.step1_title': 'Desliza para deletrear',
+  'how_to_play.step1_body': 'Arrastra entre letras adyacentes para formar una palabra. Suelta al terminar.',
+  'how_to_play.step2_title': 'Cada puzzle tiene un tema',
+  'how_to_play.step2_body': 'Personajes, ítems, estudios, hardware — todas las respuestas comparten un tema.',
+  'how_to_play.step3_title': '¿Atascado? Usa una pista',
+  'how_to_play.step3_body': 'Mantén presionada una casilla vacía debajo del tablero para revelar esa letra. Las pistas se renuevan cada día.',
+  'how_to_play.step4_title': 'Vuelve cada día',
+  'how_to_play.step4_body': 'Hay un puzzle nuevo cada día. Resuélvelo para mantener tu racha.',
 
   // Starter Pack offer
   'starter_pack.title': 'Pack de inicio',
@@ -283,6 +283,6 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'achievement.time_capsule.description': 'Puzzle de hace 30 días o más resuelto.',
 
   // Notification
-  'notification.daily_title': 'Tu GlitchSalad de hoy ya está',
+  'notification.daily_title': 'Tu Ludodex de hoy ya está',
   'notification.daily_body': 'Tu puzzle diario te espera.',
 };

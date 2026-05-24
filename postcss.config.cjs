@@ -1,5 +1,5 @@
 /**
- * PostCSS configuration for GlitchSalad.
+ * PostCSS configuration for Ludodex.
  *
  * ## Activating PurgeCSS
  *
@@ -10,7 +10,7 @@
  *
  * ## Safelist rationale
  *
- * GlitchSalad uses several categories of selectors that PurgeCSS cannot
+ * Ludodex uses several categories of selectors that PurgeCSS cannot
  * detect from static source scanning:
  *
  *  - `[data-*]` attribute selectors:  data-state, data-filled, data-solved,

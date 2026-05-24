@@ -292,14 +292,19 @@ export class SettingsView {
       const left = document.createElement('span');
       left.className = 'settings-skin-left';
 
+      // Mini-tile preview rendered with the skin's actual selected-state
+      // tokens so the player can see what a tile in that skin looks like
+      // in the active moment of play — not just three abstract color
+      // swatches. The letter "A" is a representative glyph; any consonant
+      // works the same. Inline styles because the skin tokens live in CSS
+      // vars scoped to <html>.skin-X and don't apply to non-active skins.
       const preview = document.createElement('span');
       preview.className = 'settings-skin-preview';
-      for (let i = 0; i < 3; i += 1) {
-        const tile = document.createElement('span');
-        tile.className = 'settings-skin-preview-tile';
-        tile.style.background = skin.previewSwatch[i];
-        preview.append(tile);
-      }
+      preview.style.background = skin.previewTile.bg;
+      preview.style.borderColor = skin.previewTile.border;
+      preview.style.color = skin.previewTile.letter;
+      preview.style.boxShadow = `0 0 12px ${skin.previewTile.glow}`;
+      preview.textContent = 'A';
       left.append(preview);
 
       const name = document.createElement('span');
