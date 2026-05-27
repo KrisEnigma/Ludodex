@@ -1,8 +1,6 @@
 name = "ludodex"
 compatibility_date = "2025-01-01"
-[assets]
-directory = "./dist"
-not_found_handling = "single-page-application"
+pages_build_output_dir = "dist"
 
 [[r2_buckets]]
 binding = "PUZZLE_BUCKET"

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "deploy": "npm run build && npx wrangler deploy",
+    "deploy": "npm run build && npx wrangler pages deploy dist",
     "preview": "vite preview",
     "validate": "npm run validate:puzzles && npm run test:grid && npm run test:selection && npm run test:ownership && npm run test:deactivation",
     "test:grid": "tsx scripts/test-grid.ts",
