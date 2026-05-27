@@ -2,6 +2,9 @@ name = "ludodex"
 main = "src/index.ts"
 compatibility_date = "2025-01-01"
 
+[vars]
+VITE_SHARE_BASE_URL = "https://ludodex.krisenigma.com"
+
 [[r2_buckets]]
 binding = "PUZZLE_BUCKET"
 bucket_name = "ludodex-puzzles"
