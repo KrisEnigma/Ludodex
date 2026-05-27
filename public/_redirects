@@ -1,9 +1,3 @@
-# SPA fallback moved to wrangler.toml — see the [assets] section,
-# `not_found_handling = "single-page-application"`. Cloudflare's
-# newer Workers + Static Assets model rejects the classic
-# `/* /index.html 200` rule with an "infinite loop detected"
-# false-positive, so the fallback now lives in wrangler config.
-#
-# Add explicit per-path redirects here (e.g. legacy URL rewrites,
-# 301s for renamed pages) if you ever need them — those will
-# still validate fine.
+/editor /editor.html 200
+/privacy /privacy.html 200
+/terms /terms.html 200
