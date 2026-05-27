@@ -15,3 +15,8 @@ compatibility_date = "2025-01-01"
 [assets]
 directory = "./dist"
 not_found_handling = "single-page-application"
+
+# R2 binding for Pages Functions
+[[r2_buckets]]
+binding = "PUZZLE_BUCKET"
+bucket_name = "ludodex-puzzles"

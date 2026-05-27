@@ -76,10 +76,228 @@
   </style>
 </head>
 <body>
-  <!-- PASTE THE EXISTING EDITOR CONTENT HERE -->
+  <!-- Server panel — sits above the existing editor UI -->
+  <div id="server-panel" style="
+    background: var(--color-background-secondary);
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-family: var(--font-sans);
+    font-size: 13px;
+  ">
+    <span style="font-weight:600;color:var(--color-text-primary);letter-spacing:.04em">
+      LUDODEX CMS
+    </span>
+
+    <input id="api-token" type="password" placeholder="API token"
+      style="flex:1;min-width:180px;max-width:260px;font-family:var(--font-mono);font-size:12px"
+      autocomplete="current-password">
+
+    <button onclick="serverLoad()" style="padding:5px 14px;font-size:12px">
+      ↓ Load All
+    </button>
+
+    <span id="puzzle-count" style="color:var(--color-text-secondary);font-size:11px"></span>
+
+    <select id="puzzle-select"
+      onchange="serverSelectPuzzle(this.value)"
+      style="flex:1;min-width:180px;max-width:340px;font-size:12px;display:none">
+      <option value="">— select puzzle —</option>
+    </select>
+
+    <button onclick="serverNew()" style="padding:5px 14px;font-size:12px;display:none"
+      id="btn-new">+ New</button>
+
+    <button onclick="serverSaveCurrent()" style="
+      padding:5px 14px;font-size:12px;display:none;
+      background:var(--color-text-success);color:#111;border-color:var(--color-border-success)"
+      id="btn-save">↑ Save</button>
+
+    <button onclick="serverDeleteCurrent()" style="
+      padding:5px 14px;font-size:12px;display:none;
+      background:var(--color-background-danger);color:var(--color-text-danger);
+      border-color:var(--color-border-danger)"
+      id="btn-delete">✕ Delete</button>
+
+    <span id="server-status" style="color:var(--color-text-secondary);font-size:11px;min-width:120px"></span>
+  </div>
   <h2 class="sr-only">Ludodex level editor v2 — type letters into grid tiles, draw word paths, validate and export puzzle JSON</h2>
 
 <script>
+// ── Server-side CMS layer ─────────────────────────────────────────────────────
+
+const API_URL = '/api/puzzles';
+const TOKEN_KEY = 'ludodex_cms_token';
+
+// Full puzzles array loaded from / saved to the server.
+let serverPuzzles = [];
+// The id of the puzzle currently open in the editor, or null for new.
+let editingId = null;
+
+// Persist token in sessionStorage so it survives page refreshes during a
+// session without ever touching localStorage (slightly safer than persisting).
+const tokenInput = document.getElementById('api-token');
+tokenInput.value = sessionStorage.getItem(TOKEN_KEY) || '';
+tokenInput.addEventListener('input', () => {
+  sessionStorage.setItem(TOKEN_KEY, tokenInput.value.trim());
+});
+
+function serverStatus(msg, isError = false) {
+  const el = document.getElementById('server-status');
+  el.textContent = msg;
+  el.style.color = isError
+    ? 'var(--color-text-danger)'
+    : 'var(--color-text-secondary)';
+}
+
+function token() {
+  return tokenInput.value.trim();
+}
+
+// Load all puzzles from the server into the select dropdown.
+async function serverLoad() {
+  serverStatus('Loading…');
+  try {
+    const res = await fetch(API_URL, { headers: { 'Cache-Control': 'no-store' } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    serverPuzzles = await res.json();
+    serverStatus(`${serverPuzzles.length} puzzles loaded`);
+    rebuildSelect();
+    ['puzzle-select', 'btn-new', 'btn-save', 'btn-delete'].forEach(id => {
+      document.getElementById(id).style.display = '';
+    });
+    document.getElementById('puzzle-count').textContent =
+      `${serverPuzzles.length} total`;
+  } catch (e) {
+    serverStatus('Load failed: ' + e.message, true);
+  }
+}
+
+function rebuildSelect() {
+  const sel = document.getElementById('puzzle-select');
+  sel.innerHTML = '<option value="">— select puzzle —</option>';
+  serverPuzzles.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = `[${p.difficulty}] ${p.name?.en || p.id} (${p.id})`;
+    if (p.id === editingId) opt.selected = true;
+    sel.append(opt);
+  });
+}
+
+// Load a puzzle from the server array into the existing editor.
+function serverSelectPuzzle(id) {
+  if (!id) { serverNew(); return; }
+  const puzzle = serverPuzzles.find(p => p.id === id);
+  if (!puzzle) return;
+  editingId = id;
+
+  // Reuse the existing editor's import logic.
+  document.getElementById('imp') || void 0; // imp may not exist yet
+  S.importText = JSON.stringify(puzzle);
+  doImport();
+  serverStatus(`Editing: ${puzzle.name?.en || id}`);
+}
+
+// Reset editor for a brand-new puzzle.
+function serverNew() {
+  editingId = null;
+  doReset();
+  serverStatus('New puzzle — fill in the editor below');
+}
+
+// Save the current editor state back to the server.
+async function serverSaveCurrent() {
+  if (!token()) {
+    serverStatus('Enter your API token first', true);
+    return;
+  }
+
+  // Pull the current puzzle JSON from the editor.
+  const currentJson = toJSON(S.meta, S.words, S.letters);
+  let current;
+  try {
+    current = JSON.parse(currentJson);
+  } catch (e) {
+    serverStatus('Editor has invalid JSON — fix errors first', true);
+    return;
+  }
+
+  // Basic validation — mirror what the server checks.
+  if (!current.id) {
+    serverStatus('Puzzle needs an ID', true);
+    return;
+  }
+  if (!current.data || Object.keys(current.data).length === 0) {
+    serverStatus('Puzzle has no words', true);
+    return;
+  }
+
+  // Upsert into the local array.
+  const existing = serverPuzzles.findIndex(p => p.id === current.id);
+  const next = [...serverPuzzles];
+  if (existing >= 0) {
+    next[existing] = current;
+  } else {
+    next.push(current);
+  }
+
+  serverStatus('Saving…');
+  try {
+    const res = await fetch(API_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token()}`,
+      },
+      body: JSON.stringify(next, null, 2),
+    });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.message || `HTTP ${res.status}`);
+
+    serverPuzzles = next;
+    editingId = current.id;
+    serverStatus(`✓ Saved — ${body.count} puzzles`);
+    rebuildSelect();
+    document.getElementById('puzzle-count').textContent = `${serverPuzzles.length} total`;
+  } catch (e) {
+    serverStatus('Save failed: ' + e.message, true);
+  }
+}
+
+// Delete the currently loaded puzzle from the server.
+async function serverDeleteCurrent() {
+  if (!editingId) { serverStatus('No puzzle selected', true); return; }
+  if (!token()) { serverStatus('Enter your API token first', true); return; }
+  if (!confirm(`Delete puzzle "${editingId}"? This cannot be undone.`)) return;
+
+  serverStatus('Deleting…');
+  try {
+    const res = await fetch(`${API_URL}?id=${encodeURIComponent(editingId)}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token()}` },
+    });
+    const body = await res.json();
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    serverPuzzles = serverPuzzles.filter(p => p.id !== editingId);
+    editingId = null;
+    serverStatus(`✓ Deleted — ${body.remaining} puzzles remain`);
+    rebuildSelect();
+    document.getElementById('puzzle-count').textContent = `${serverPuzzles.length} total`;
+    doReset();
+  } catch (e) {
+    serverStatus('Delete failed: ' + e.message, true);
+  }
+}
+
+// Auto-load on page open if a token is already stored.
+if (tokenInput.value) {
+  serverLoad();
+}
 const COLS=['a','b','c','d'],ROWS=['1','2','3','4'];
 const CELL_ORDER=ROWS.flatMap(r=>COLS.map(c=>c+r));
 const WC=['#4a90d9','#d94a6a','#48bb78','#ed8936','#9f7aea','#38b2ac','#f6ad55','#fc8181'];
