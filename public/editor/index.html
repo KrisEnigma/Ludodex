@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=1024">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow">
   <title>Ludodex Editor</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
@@ -38,7 +38,7 @@
     }
 
     body {
-      padding: 20px;
+      padding: 12px;
     }
 
     input, select, button, textarea {
@@ -63,6 +63,238 @@
 
     button:hover { opacity: 0.85; }
     button:active { opacity: 0.7; }
+
+    #server-panel {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(10px);
+    }
+
+    #server-panel input,
+    #server-panel select,
+    #server-panel button,
+    #app input,
+    #app select,
+    #app button,
+    #app textarea {
+      min-height: 44px;
+    }
+
+    #server-panel input,
+    #server-panel select,
+    #server-panel button {
+      font-size: 14px !important;
+    }
+
+    #app {
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    .editor-shell {
+      padding: 6px 0 20px;
+      font-size: 14px;
+    }
+
+    .editor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .editor-title {
+      min-width: 0;
+    }
+
+    .editor-title h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+    }
+
+    .editor-title p {
+      margin: 2px 0 0;
+      font-size: 12px;
+      color: var(--color-text-secondary);
+    }
+
+    .editor-header button {
+      min-width: 96px;
+    }
+
+    .layout-grid {
+      display: grid;
+      grid-template-columns: minmax(290px, 340px) minmax(0, 1fr);
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .left-column,
+    .right-column,
+    .panel {
+      min-width: 0;
+    }
+
+    .panel {
+      background: var(--color-background-secondary);
+      border-radius: 12px;
+      border: 0.5px solid var(--color-border-tertiary);
+    }
+
+    .tile-grid {
+      --tile-size: 64px;
+      --tile-gap: 8px;
+    }
+
+    .tile-grid__legend {
+      display: grid;
+      grid-template-columns: repeat(4, var(--tile-size));
+      gap: var(--tile-gap);
+      margin-bottom: 6px;
+    }
+
+    .tile-grid__row {
+      display: grid;
+      grid-template-columns: repeat(4, var(--tile-size));
+      gap: var(--tile-gap);
+      margin-bottom: var(--tile-gap);
+    }
+
+    .tile {
+      width: var(--tile-size);
+      height: var(--tile-size);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .word-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      margin-bottom: 6px;
+      border-radius: 10px;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+
+    .word-row button {
+      min-height: 36px;
+      padding-top: 6px;
+      padding-bottom: 6px;
+    }
+
+    .dialog-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(9, 12, 20, 0.72);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 100;
+    }
+
+    .dialog-card {
+      width: min(100%, 460px);
+      background: var(--color-background-secondary);
+      border: 1px solid var(--color-border-tertiary);
+      border-radius: 14px;
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
+      padding: 16px;
+    }
+
+    .dialog-title {
+      margin: 0 0 8px;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+    }
+
+    .dialog-message {
+      margin: 0;
+      font-size: 14px;
+      color: var(--color-text-secondary);
+      line-height: 1.45;
+    }
+
+    .dialog-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .dialog-actions button {
+      min-width: 112px;
+    }
+
+    .dialog-actions .danger {
+      background: var(--color-background-danger);
+      color: var(--color-text-danger);
+      border-color: var(--color-border-danger);
+    }
+
+    .dialog-actions .primary {
+      background: var(--color-text-success);
+      color: #111;
+      border-color: var(--color-border-success);
+    }
+
+    .save-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .save-chip--dirty {
+      background: color-mix(in srgb, var(--color-text-warning) 20%, transparent);
+      color: var(--color-text-warning);
+      border: 1px solid color-mix(in srgb, var(--color-text-warning) 30%, transparent);
+    }
+
+    .save-chip--clean {
+      background: color-mix(in srgb, var(--color-text-success) 16%, transparent);
+      color: var(--color-text-success);
+      border: 1px solid color-mix(in srgb, var(--color-text-success) 30%, transparent);
+    }
+
+    @media (max-width: 900px) {
+      body { padding: 10px; }
+      .layout-grid { grid-template-columns: 1fr; }
+      .editor-header { align-items: stretch; }
+      .editor-header button { width: 100%; }
+      .tile-grid { --tile-size: clamp(56px, 20vw, 72px); }
+    }
+
+    @media (max-width: 560px) {
+      #server-panel {
+        padding: 10px 12px;
+      }
+      #server-panel input,
+      #server-panel select,
+      #server-panel button {
+        flex: 1 1 100%;
+        max-width: none !important;
+      }
+      .dialog-actions {
+        flex-direction: column;
+      }
+      .dialog-actions button {
+        width: 100%;
+      }
+    }
 
     .sr-only {
       position: absolute;
@@ -136,6 +368,10 @@ const TOKEN_KEY = 'ludodex_cms_token';
 let serverPuzzles = [];
 // The id of the puzzle currently open in the editor, or null for new.
 let editingId = null;
+// Snapshot of the last loaded/saved puzzle state. Used to detect unsaved edits.
+let savedSnapshot = '';
+// Custom confirmation dialog state.
+let dialogState = null;
 
 // Persist token in sessionStorage so it survives page refreshes during a
 // session without ever touching localStorage (slightly safer than persisting).
@@ -159,6 +395,68 @@ function token() {
 
 function authHeaders() {
   return token() ? { Authorization: `Bearer ${token()}` } : {};
+}
+
+function currentSnapshot() {
+  return toJSON(S.meta, S.words, S.letters);
+}
+
+function syncSavedSnapshot() {
+  savedSnapshot = currentSnapshot();
+}
+
+function isDirty() {
+  return currentSnapshot() !== savedSnapshot;
+}
+
+function promptConfirm(state) {
+  return new Promise(resolve => {
+    dialogState = { ...state, resolve };
+    render();
+  });
+}
+
+window.dialogAccept = () => {
+  if (!dialogState) return;
+  const resolve = dialogState.resolve;
+  dialogState = null;
+  render();
+  resolve(true);
+};
+
+window.dialogCancel = () => {
+  if (!dialogState) return;
+  const resolve = dialogState.resolve;
+  dialogState = null;
+  render();
+  resolve(false);
+};
+
+function loadPuzzleIntoEditor(puzzle, id) {
+  editingId = id;
+  S.importText = JSON.stringify(puzzle);
+  doImport();
+  syncSavedSnapshot();
+  serverStatus(`Editing: ${puzzle.name?.en || id}`);
+}
+
+function resetEditorState() {
+  S = {
+    meta: { id: '', nameEn: '', nameEs: '', category: 'characters', difficulty: 'medium', date: '', premium: false, hintEn: '', hintEs: '' },
+    letters: {},
+    words: [],
+    drawIdx: null,
+    path: [],
+    newWord: '',
+    showImport: false,
+    importText: '',
+    importErr: '',
+    copied: false
+  };
+  pf = null;
+  try { localStorage.removeItem(AUTOSAVE_KEY); } catch (e) {}
+  syncSavedSnapshot();
+  render();
 }
 
 // Load all puzzles from the server into the select dropdown.
@@ -202,23 +500,43 @@ function rebuildSelect() {
 }
 
 // Load a puzzle from the server array into the existing editor.
-function serverSelectPuzzle(id) {
-  if (!id) { serverNew(); return; }
+async function serverSelectPuzzle(id) {
+  if (!id) { await serverNew(); return; }
   const puzzle = serverPuzzles.find(p => p.id === id);
   if (!puzzle) return;
-  editingId = id;
-
-  // Reuse the existing editor's import logic.
-  document.getElementById('imp') || void 0; // imp may not exist yet
-  S.importText = JSON.stringify(puzzle);
-  doImport();
-  serverStatus(`Editing: ${puzzle.name?.en || id}`);
+  if (isDirty()) {
+    const ok = await promptConfirm({
+      title: 'Discard unsaved changes?',
+      message: `Switch to "${puzzle.name?.en || id}"? Your current edits will be lost.`,
+      confirmText: 'Switch',
+      cancelText: 'Keep Editing',
+      variant: 'danger',
+    });
+    if (!ok) {
+      render();
+      return;
+    }
+  }
+  loadPuzzleIntoEditor(puzzle, id);
 }
 
 // Reset editor for a brand-new puzzle.
-function serverNew() {
+async function serverNew() {
+  if (isDirty()) {
+    const ok = await promptConfirm({
+      title: 'Discard current puzzle?',
+      message: 'Start a new puzzle? Any unsaved changes will be lost.',
+      confirmText: 'Start New',
+      cancelText: 'Keep Editing',
+      variant: 'danger',
+    });
+    if (!ok) {
+      render();
+      return;
+    }
+  }
   editingId = null;
-  doReset();
+  resetEditorState();
   serverStatus('New puzzle — fill in the editor below');
 }
 
@@ -248,6 +566,14 @@ async function serverSaveCurrent() {
     serverStatus('Puzzle has no words', true);
     return;
   }
+  const ok = await promptConfirm({
+    title: 'Save puzzle?',
+    message: `Upload "${current.id}" to the server? This will overwrite the remote puzzle.`,
+    confirmText: 'Save',
+    cancelText: 'Cancel',
+    variant: 'primary',
+  });
+  if (!ok) return;
 
   // Upsert into the local array.
   const existing = serverPuzzles.findIndex(p => p.id === current.id);
@@ -276,6 +602,7 @@ async function serverSaveCurrent() {
     serverPuzzles = next;
     editingId = current.id;
     serverStatus(`✓ Saved — ${body.count} puzzles`);
+    syncSavedSnapshot();
     rebuildSelect();
     document.getElementById('puzzle-count').textContent = `${serverPuzzles.length} total`;
   } catch (e) {
@@ -287,7 +614,14 @@ async function serverSaveCurrent() {
 async function serverDeleteCurrent() {
   if (!editingId) { serverStatus('No puzzle selected', true); return; }
   if (!token()) { serverStatus('Enter your API token first', true); return; }
-  if (!confirm(`Delete puzzle "${editingId}"? This cannot be undone.`)) return;
+  const ok = await promptConfirm({
+    title: 'Delete puzzle?',
+    message: `Delete "${editingId}" from the server? This cannot be undone.`,
+    confirmText: 'Delete',
+    cancelText: 'Cancel',
+    variant: 'danger',
+  });
+  if (!ok) return;
 
   serverStatus('Deleting…');
   try {
@@ -305,7 +639,7 @@ async function serverDeleteCurrent() {
     serverStatus(`✓ Deleted — ${body.remaining} puzzles remain`);
     rebuildSelect();
     document.getElementById('puzzle-count').textContent = `${serverPuzzles.length} total`;
-    doReset();
+    resetEditorState();
   } catch (e) {
     serverStatus('Delete failed: ' + e.message, true);
   }
@@ -428,7 +762,7 @@ function cell(coord){
   const inner=drawIdx!==null
     ?`<div onclick="cellClick('${coord}')" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;cursor:pointer;padding-bottom:12px;box-sizing:border-box;font-size:20px;font-weight:500;font-family:var(--font-mono);color:${lc}">${letter}</div>`
     :`<input id="t-${coord}" type="text" maxlength="1" value="${letter}" oninput="tIn('${coord}',this)" onkeydown="tKd('${coord}',event)" autocomplete="off" style="width:100%;height:100%;background:transparent;border:none;outline:none;text-align:center;font-size:20px;font-weight:500;font-family:var(--font-mono);color:${lc};padding:0 0 12px 0;box-sizing:border-box;text-transform:uppercase;caret-color:transparent">`;
-  return`<div style="position:relative;width:58px;height:58px;border:${brd};border-radius:8px;background:${bg};box-sizing:border-box;overflow:hidden">
+  return`<div class="tile" style="position:relative;border:${brd};background:${bg};box-sizing:border-box;overflow:hidden">
     ${inner}
     <span style="position:absolute;bottom:3px;left:0;right:0;text-align:center;font-size:9px;color:var(--color-text-tertiary);font-family:var(--font-mono);pointer-events:none">${coord}</span>
     ${drawIdx!==null&&inPath?`<span style="position:absolute;top:2px;right:4px;font-size:9px;font-weight:500;color:${wD.color};font-family:var(--font-mono)">${pos+1}</span>`:''}
@@ -438,130 +772,161 @@ function cell(coord){
 
 function render(){
   const{meta,words,drawIdx,path,letters,newWord,showImport,importText,importErr,copied}=S;
-  const own=buildOwn(words);
   const{errors,warnings,valid}=validate(meta,words,letters);
   const wD=drawIdx!==null?words[drawIdx]:null;
   const json=toJSON(meta,words,letters);
+  const dirty=isDirty();
+  const dialog=dialogState?`
+  <div class="dialog-backdrop" onclick="dialogCancel()">
+    <div class="dialog-card" role="dialog" aria-modal="true" aria-labelledby="dialog-title" aria-describedby="dialog-message" onclick="event.stopPropagation()">
+      <p class="dialog-title" id="dialog-title">${escapeHtml(dialogState.title)}</p>
+      <p class="dialog-message" id="dialog-message">${escapeHtml(dialogState.message)}</p>
+      <div class="dialog-actions">
+        <button onclick="dialogCancel()">${escapeHtml(dialogState.cancelText||'Cancel')}</button>
+        <button class="${dialogState.variant==='danger'?'danger':'primary'}" onclick="dialogAccept()">${escapeHtml(dialogState.confirmText||'OK')}</button>
+      </div>
+    </div>
+  </div>`:'';
   document.getElementById('app').innerHTML=`
-<div style="padding:0.5rem 0;font-size:13px;font-family:var(--font-sans)">
-
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-  <div><div style="font-size:15px;font-weight:500;color:var(--color-text-primary)">Ludodex level editor</div>
-  <div style="font-size:11px;color:var(--color-text-secondary)">Type letters into tiles · draw paths · export JSON</div></div>
-  <button onclick="doReset()" style="font-size:11px">Reset</button>
-</div>
-
-<div style="display:grid;grid-template-columns:274px 1fr;gap:12px;margin-bottom:12px">
-<div>
-  <div style="background:var(--color-background-secondary);border-radius:12px;padding:14px;border:0.5px solid var(--color-border-tertiary)">
-    <div style="display:grid;grid-template-columns:repeat(4,58px);gap:6px;margin-bottom:4px">
-      ${COLS.map(c=>`<div style="text-align:center;font-size:10px;color:var(--color-text-tertiary);font-family:var(--font-mono)">${c}</div>`).join('')}
+<div class="editor-shell">
+  <div class="editor-header">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <h1 style="margin:0;font-size:18px;font-weight:600;color:var(--color-text-primary)">Ludodex level editor</h1>
+        <span class="save-chip ${dirty?'save-chip--dirty':'save-chip--clean'}">${dirty?'Unsaved changes':'Saved'}</span>
+      </div>
+      <p>Tap to type letters, draw word paths, validate the puzzle, and export JSON.</p>
     </div>
-    ${ROWS.map(r=>`<div style="display:grid;grid-template-columns:repeat(4,58px);gap:6px;margin-bottom:6px">${COLS.map(c=>cell(c+r)).join('')}</div>`).join('')}
-    <div style="font-size:10px;color:var(--color-text-tertiary);margin-top:4px;text-align:center">
-      ${drawIdx===null?'Click a tile to type · Tab to advance · Backspace to clear':'Click tiles to draw path'}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+      <button onclick="doReset()">Reset</button>
     </div>
   </div>
 
-  ${wD?`<div style="margin-top:8px;padding:10px 12px;background:var(--color-background-secondary);border:1.5px solid ${wD.color}44;border-radius:8px">
-    <div style="font-size:11px;font-weight:500;color:${wD.color};margin-bottom:4px">Drawing: ${wD.display}</div>
-    <div style="font-size:11px;font-family:var(--font-mono);color:var(--color-text-secondary);margin-bottom:8px">${path.join(' ')||'—'} (${path.length}/${wD.display.replace(/ /g,'').length})</div>
-    <div style="display:flex;gap:6px">
-      <button onclick="finishDraw()" style="font-size:11px;padding:4px 10px;background:${wD.color};color:#fff;border:none;border-radius:4px;cursor:pointer">Done</button>
-      <button onclick="clearCP()" style="font-size:11px;padding:4px 10px">Clear</button>
-      <button onclick="cancelDraw()" style="font-size:11px;padding:4px 10px;opacity:0.5">Cancel</button>
-    </div>
-  </div>`:''}
+  <div class="layout-grid">
+    <section class="left-column">
+      <div class="panel tile-grid" style="padding:14px">
+        <div class="tile-grid__legend">
+          ${COLS.map(c=>`<div style="text-align:center;font-size:10px;color:var(--color-text-tertiary);font-family:var(--font-mono);text-transform:uppercase">${c}</div>`).join('')}
+        </div>
+        ${ROWS.map(r=>`<div class="tile-grid__row">${COLS.map(c=>cell(c+r)).join('')}</div>`).join('')}
+        <div style="font-size:12px;color:var(--color-text-tertiary);margin-top:8px;text-align:center;line-height:1.4">
+          ${drawIdx===null?'Tap a tile to type. Use Tab and Backspace for quick entry.':'Tap tiles to extend the word path.'}
+        </div>
+      </div>
 
-  ${drawIdx===null&&words.length?`<div style="margin-top:8px;padding-left:2px">
-    ${words.map(w=>`<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
-      <div style="width:8px;height:8px;border-radius:2px;background:${w.color};flex-shrink:0"></div>
-      <span style="font-size:11px;color:var(--color-text-secondary);font-family:var(--font-mono);flex:1">${w.display}</span>
-      ${!w.path?'<span style="font-size:10px;color:var(--color-text-danger)">no path</span>':''}
-    </div>`).join('')}
-    <div style="font-size:10px;color:var(--color-text-tertiary);margin-top:2px">2+ = shared tile</div>
-  </div>`:''}
-</div>
+      ${wD?`<div class="panel" style="padding:14px;margin-top:12px;border-color:${wD.color}44">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--color-text-primary)">${escapeHtml(wD.display)}</div>
+            <div style="font-size:12px;font-family:var(--font-mono);color:var(--color-text-secondary);margin-top:4px">${path.join(' ')||'—'} (${path.length}/${wD.display.replace(/ /g,'').length})</div>
+          </div>
+          <div style="width:10px;height:10px;border-radius:999px;background:${wD.color};margin-top:4px"></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+          <button onclick="finishDraw()" style="background:${wD.color};color:#111;border-color:${wD.color};">Done</button>
+          <button onclick="clearCP()">Clear</button>
+          <button onclick="cancelDraw()">Cancel</button>
+        </div>
+      </div>`:''}
 
-<div style="background:var(--color-background-secondary);border-radius:12px;padding:12px 14px;border:0.5px solid var(--color-border-tertiary)">
-  <div style="font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:10px">Metadata</div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-    <div><div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em">ID</div>
-    <input value="${meta.id}" oninput="upM('id',this.value.toLowerCase().replace(/[^a-z0-9]/g,''))" placeholder="videogameheroes" style="width:100%;font-family:var(--font-mono);font-size:12px"></div>
+      <div class="panel" style="padding:14px;margin-top:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+          <div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">Words</div>
+          <div style="font-size:12px;color:var(--color-text-tertiary)">${words.length} total</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+          <input id="nw" value="${newWord}" oninput="S.newWord=this.value.toUpperCase();this.value=S.newWord"
+            onkeydown="if(event.key==='Enter')addWord()"
+            placeholder="SONIC or LARA CROFT" style="flex:1;min-width:180px;font-family:var(--font-mono);font-size:14px">
+          <button onclick="addWord()">Add word</button>
+        </div>
+        ${!words.length?`<div style="text-align:center;color:var(--color-text-tertiary);font-size:13px;padding:10px 0">No words yet</div>`:''}
+        ${words.map((w,idx)=>`
+        <div class="word-row" style="background:${drawIdx===idx?w.color+'18':'transparent'};border:1px solid ${drawIdx===idx?w.color+'33':'var(--color-border-tertiary)'}">
+          <div style="width:10px;height:10px;border-radius:3px;background:${w.color};flex-shrink:0"></div>
+          <span style="font-family:var(--font-mono);font-size:13px;font-weight:600;color:var(--color-text-primary);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(w.display)}</span>
+          <span style="font-family:var(--font-mono);font-size:11px;color:${w.path?'var(--color-text-tertiary)':'var(--color-text-danger)'};min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(w.path||'no path')}</span>
+          ${drawIdx!==idx?`<button onclick="startDraw(${idx})" style="min-width:72px">Draw</button>`:`<span style="font-size:12px;color:${w.color};font-style:italic;white-space:nowrap">drawing…</span>`}
+          <button onclick="clearPath(${idx})" title="Clear path">Clear</button>
+          <button onclick="rmWord(${idx})" title="Remove word"><i class="ti ti-trash" style="font-size:16px" aria-hidden="true"></i></button>
+        </div>`).join('')}
+      </div>
+    </section>
 
-    <div><div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em">Category</div>
-    <select onchange="upM('category',this.value)" style="width:100%;font-size:12px">${CATS.map(c=>`<option${c===meta.category?' selected':''}>${c}</option>`).join('')}</select></div>
+    <section class="right-column">
+      <div class="panel" style="padding:14px;margin-bottom:12px">
+        <div style="font-size:14px;font-weight:600;color:var(--color-text-primary);margin-bottom:12px">Puzzle details</div>
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+          <div>
+            <div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">ID</div>
+            <input value="${meta.id}" oninput="upM('id',this.value.toLowerCase().replace(/[^a-z0-9]/g,''))" placeholder="sonic" style="width:100%;font-family:var(--font-mono);font-size:14px">
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Category</div>
+            <select onchange="upM('category',this.value)" style="width:100%;font-size:14px">${CATS.map(c=>`<option value="${c}"${meta.category===c?' selected':''}>${c}</option>`).join('')}</select>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Name (EN)</div>
+            <input value="${meta.nameEn}" oninput="upM('nameEn',this.value)" placeholder="Sonic the Hedgehog" style="width:100%;font-size:14px">
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Name (ES)</div>
+            <input value="${meta.nameEs}" oninput="upM('nameEs',this.value)" placeholder="Opcional" style="width:100%;font-size:14px">
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Difficulty</div>
+            <select onchange="upM('difficulty',this.value)" style="width:100%;font-size:14px">${DIFFS.map(d=>`<option value="${d}"${d===meta.difficulty?' selected':''}>${d}</option>`).join('')}</select>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Date</div>
+            <input value="${meta.date}" oninput="upM('date',this.value)" placeholder="2026-05-27" style="width:100%;font-family:var(--font-mono);font-size:14px">
+          </div>
+          <div style="grid-column:1/-1">
+            <div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Hint (EN)</div>
+            <input value="${meta.hintEn}" oninput="upM('hintEn',this.value)" placeholder="Optional flavor text..." style="width:100%;font-size:14px">
+          </div>
+          <div style="grid-column:1/-1">
+            <div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Hint (ES)</div>
+            <input value="${meta.hintEs}" oninput="upM('hintEs',this.value)" placeholder="Texto opcional..." style="width:100%;font-size:14px">
+          </div>
+        </div>
+        <label style="display:flex;align-items:center;gap:10px;margin-top:12px;font-size:13px;color:var(--color-text-secondary);cursor:pointer">
+          <input type="checkbox"${meta.premium?' checked':''} onchange="upM('premium',this.checked)"> Premium puzzle
+        </label>
+      </div>
 
-    <div style="grid-column:1/-1"><div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em">Name (EN)</div>
-    <input value="${meta.nameEn}" oninput="upM('nameEn',this.value)" placeholder="Video Game Heroes" style="width:100%"></div>
+      <div class="panel" style="padding:14px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+          <div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">Validation</div>
+          <div style="font-size:12px;font-weight:600;color:${valid?'var(--color-text-success)':'var(--color-text-danger)'}">${valid?'Valid':'Needs work'}</div>
+        </div>
+        ${errors.length===0&&warnings.length===0?`<div style="font-size:13px;color:var(--color-text-secondary)">No issues detected.</div>`:''}
+        ${errors.map(e=>`<div style="font-size:13px;color:var(--color-text-danger);margin-bottom:4px">✗ ${escapeHtml(e)}</div>`).join('')}
+        ${warnings.map(w=>`<div style="font-size:13px;color:var(--color-text-warning);margin-bottom:4px">⚠ ${escapeHtml(w)}</div>`).join('')}
+      </div>
 
-    <div style="grid-column:1/-1"><div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em">Name (ES)</div>
-    <input value="${meta.nameEs}" oninput="upM('nameEs',this.value)" placeholder="Héroes de Videojuegos" style="width:100%"></div>
-
-    <div><div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em">Difficulty</div>
-    <select onchange="upM('difficulty',this.value)" style="width:100%;font-size:12px">${DIFFS.map(d=>`<option${d===meta.difficulty?' selected':''}>${d}</option>`).join('')}</select></div>
-
-    <div><div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em">Date (optional)</div>
-    <input value="${meta.date}" oninput="upM('date',this.value)" placeholder="YYYY-MM-DD" style="width:100%;font-family:var(--font-mono);font-size:12px"></div>
-
-    <div style="grid-column:1/-1"><div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em">Hint (EN)</div>
-    <input value="${meta.hintEn}" oninput="upM('hintEn',this.value)" placeholder="Optional flavor text..." style="width:100%"></div>
-
-    <div style="grid-column:1/-1"><div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em">Hint (ES)</div>
-    <input value="${meta.hintEs}" oninput="upM('hintEs',this.value)" placeholder="Texto opcional..." style="width:100%"></div>
+      <div class="panel" style="padding:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+          <div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">Export</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button onclick="doCopy()">${copied?'Copied':'Copy JSON'}</button>
+            <button onclick="S.showImport=!S.showImport;S.importErr='';render()">Import</button>
+          </div>
+        </div>
+        <textarea readonly style="width:100%;height:180px;font-family:var(--font-mono);font-size:12px;background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:10px;padding:10px;resize:vertical;box-sizing:border-box">${json.replace(/</g,'&lt;')}</textarea>
+        ${showImport?`<div style="margin-top:12px">
+          <textarea id="imp" placeholder="Paste puzzle JSON here..." style="width:100%;height:120px;box-sizing:border-box;font-family:var(--font-mono);font-size:12px;background:var(--color-background-secondary);color:var(--color-text-primary);border:0.5px solid var(--color-border-tertiary);border-radius:10px;padding:10px;resize:vertical">${importText}</textarea>
+          ${importErr?`<div style="font-size:12px;color:var(--color-text-danger);margin-top:6px">${escapeHtml(importErr)}</div>`:''}
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+            <button onclick="doImport()">Import</button>
+            <button onclick="S.showImport=false;S.importText='';S.importErr='';render()">Cancel</button>
+          </div>
+        </div>`:''}
+      </div>
+    </section>
   </div>
-  <label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:11px;color:var(--color-text-secondary);cursor:pointer">
-    <input type="checkbox"${meta.premium?' checked':''} onchange="upM('premium',this.checked)"> Premium puzzle
-  </label>
 </div>
-</div>
-
-<div style="background:var(--color-background-secondary);border-radius:12px;padding:12px 14px;border:0.5px solid var(--color-border-tertiary);margin-bottom:12px">
-  <div style="font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:10px">Words</div>
-  <div style="display:flex;gap:6px;margin-bottom:10px">
-    <input id="nw" value="${newWord}" oninput="S.newWord=this.value.toUpperCase();this.value=S.newWord"
-      onkeydown="if(event.key==='Enter')addWord()"
-      placeholder="SONIC or LARA CROFT" style="flex:1;font-family:var(--font-mono);font-size:12px">
-    <button onclick="addWord()" style="padding:0 14px;font-size:12px">+ Add</button>
-  </div>
-  ${!words.length?`<div style="text-align:center;color:var(--color-text-tertiary);font-size:11px;padding:8px 0">No words yet</div>`:''}
-  ${words.map((w,idx)=>`
-  <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;margin-bottom:4px;border-radius:6px;background:${drawIdx===idx?w.color+'18':'transparent'};border:1px solid ${drawIdx===idx?w.color+'33':'transparent'}">
-    <div style="width:8px;height:8px;border-radius:2px;background:${w.color};flex-shrink:0"></div>
-    <span style="font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--color-text-primary);flex:1;min-width:0">${w.display}</span>
-    <span style="font-family:var(--font-mono);font-size:10px;color:${w.path?'var(--color-text-tertiary)':'var(--color-text-danger)'};max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${w.path||'no path'}</span>
-    ${drawIdx!==idx?`<button onclick="startDraw(${idx})" style="font-size:10px;padding:2px 8px">Draw</button>`:`<span style="font-size:10px;color:${w.color};font-style:italic">drawing…</span>`}
-    <button onclick="clearPath(${idx})" style="font-size:10px;padding:2px 6px;opacity:0.5" title="Clear path">✕</button>
-    <button onclick="rmWord(${idx})" style="font-size:10px;padding:2px 6px;opacity:0.4"><i class="ti ti-trash" style="font-size:12px" aria-hidden="true"></i></button>
-  </div>`).join('')}
-</div>
-
-<div style="padding:10px 14px;margin-bottom:12px;background:${valid?'var(--color-background-success)':'var(--color-background-danger)'};border:0.5px solid ${valid?'var(--color-border-success)':'var(--color-border-danger)'};border-radius:8px">
-  <div style="font-size:12px;font-weight:500;color:${valid?'var(--color-text-success)':'var(--color-text-danger)'};margin-bottom:${errors.length+warnings.length?'6px':'0'}">
-    ${valid?'✓ Valid':`✗ ${errors.length} error${errors.length!==1?'s':''}`}${warnings.length?` · ${warnings.length} warning${warnings.length!==1?'s':''}` :''}
-  </div>
-  ${errors.map(e=>`<div style="font-size:11px;color:var(--color-text-danger);margin-bottom:2px">✗ ${e}</div>`).join('')}
-  ${warnings.map(w=>`<div style="font-size:11px;color:var(--color-text-warning);margin-bottom:2px">⚠ ${w}</div>`).join('')}
-</div>
-
-<div style="display:flex;gap:8px;align-items:flex-start">
-  <textarea readonly style="flex:1;height:130px;font-family:var(--font-mono);font-size:11px;background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:6px;padding:8px;resize:vertical;box-sizing:border-box">${json.replace(/</g,'&lt;')}</textarea>
-  <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
-    <button onclick="doCopy()" style="padding:6px 14px;font-size:12px">${copied?'✓ Copied':'Copy JSON'}</button>
-    <button onclick="S.showImport=!S.showImport;S.importErr='';render()" style="padding:6px 14px;font-size:12px">Import</button>
-  </div>
-</div>
-
-${showImport?`<div style="margin-top:8px">
-  <textarea id="imp" placeholder="Paste puzzle JSON here..." style="width:100%;height:100px;box-sizing:border-box;font-family:var(--font-mono);font-size:11px;background:var(--color-background-secondary);color:var(--color-text-primary);border:0.5px solid var(--color-border-tertiary);border-radius:6px;padding:8px;resize:vertical">${importText}</textarea>
-  ${importErr?`<div style="font-size:11px;color:var(--color-text-danger);margin-top:4px">${importErr}</div>`:''}
-  <div style="display:flex;gap:6px;margin-top:6px">
-    <button onclick="doImport()" style="padding:5px 14px;font-size:12px">Import</button>
-    <button onclick="S.showImport=false;S.importText='';S.importErr='';render()" style="padding:5px 14px;font-size:12px;opacity:0.6">Cancel</button>
-  </div>
-</div>`:''}
-
-</div>`;
+${dialog}`;
   if(pf&&S.drawIdx===null){const el=document.getElementById('t-'+pf);if(el){el.focus();el.select();}pf=null;}
 }
 
@@ -628,13 +993,27 @@ window.doImport=()=>{
   }catch(e){S.importErr='Invalid JSON: '+e.message;render();}
 };
 // --- Task 2: Reset confirmation ---
-window.doReset=()=>{
-  if(!confirm('Discard the current puzzle?'))return;
-  S={meta:{id:'',nameEn:'',nameEs:'',category:'characters',difficulty:'medium',date:'',premium:false,hintEn:'',hintEs:''},letters:{},words:[],drawIdx:null,path:[],newWord:'',showImport:false,importText:'',importErr:'',copied:false};
-  pf=null;
-  try{localStorage.removeItem(AUTOSAVE_KEY);}catch(e){}
-  render();
+window.doReset=async()=>{
+  if (isDirty()) {
+    const ok = await promptConfirm({
+      title: 'Discard current puzzle?',
+      message: 'Start over? Any unsaved work will be lost.',
+      confirmText: 'Discard',
+      cancelText: 'Keep Editing',
+      variant: 'danger',
+    });
+    if (!ok) return;
+  }
+  editingId = null;
+  resetEditorState();
+  serverStatus('Started a new blank puzzle');
 };
+
+window.addEventListener('beforeunload', e => {
+  if (!isDirty()) return;
+  e.preventDefault();
+  e.returnValue = '';
+});
 </script>
 <div id="app"></div>
 <script>loadState();render();</script>
