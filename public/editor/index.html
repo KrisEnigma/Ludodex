@@ -163,6 +163,10 @@ function authHeaders() {
 
 // Load all puzzles from the server into the select dropdown.
 async function serverLoad() {
+  if (!token()) {
+    serverStatus('Enter your API token first', true);
+    return;
+  }
   serverStatus('Loading…');
   try {
     const res = await fetch(API_URL, {

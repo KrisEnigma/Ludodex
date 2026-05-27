@@ -70,13 +70,13 @@ export default {
       return new Response(null, { status: 204, headers: CORS_HEADERS });
     }
 
-    if (request.method === 'GET') {
-      return readPuzzles(env);
-    }
-
     const auth = request.headers.get('Authorization') ?? '';
     if (!auth.startsWith('Bearer ') || auth.slice(7) !== env.API_SECRET) {
       return err('Unauthorized: API token does not match the worker secret `API_SECRET`.', 401, 'invalid_api_secret');
+    }
+
+    if (request.method === 'GET') {
+      return readPuzzles(env);
     }
 
     if (request.method === 'PUT') {
