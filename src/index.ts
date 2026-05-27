@@ -33,8 +33,8 @@ function json(data: unknown, status = 200): Response {
   });
 }
 
-function err(message: string, status: number): Response {
-  return json({ error: message }, status);
+function err(message: string, status: number, code?: string): Response {
+  return json({ error: message, ...(code ? { code } : {}) }, status);
 }
 
 async function readPuzzles(env: Env): Promise<Response> {
@@ -70,13 +70,13 @@ export default {
       return new Response(null, { status: 204, headers: CORS_HEADERS });
     }
 
-    if (request.method === 'GET') {
-      return readPuzzles(env);
-    }
-
     const auth = request.headers.get('Authorization') ?? '';
     if (!auth.startsWith('Bearer ') || auth.slice(7) !== env.API_SECRET) {
-      return err('Unauthorized', 401);
+      return err('Unauthorized: API token does not match the worker secret `API_SECRET`.', 401, 'invalid_api_secret');
+    }
+
+    if (request.method === 'GET') {
+      return readPuzzles(env);
     }
 
     if (request.method === 'PUT') {

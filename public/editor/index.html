@@ -157,11 +157,20 @@ function token() {
   return tokenInput.value.trim();
 }
 
+function authHeaders() {
+  return token() ? { Authorization: `Bearer ${token()}` } : {};
+}
+
 // Load all puzzles from the server into the select dropdown.
 async function serverLoad() {
   serverStatus('Loading…');
   try {
-    const res = await fetch(API_URL, { headers: { 'Cache-Control': 'no-store' } });
+    const res = await fetch(API_URL, {
+      headers: {
+        'Cache-Control': 'no-store',
+        ...authHeaders(),
+      }
+    });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     serverPuzzles = await res.json();
     serverStatus(`${serverPuzzles.length} puzzles loaded`);
@@ -251,12 +260,14 @@ async function serverSaveCurrent() {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token()}`,
+        ...authHeaders(),
       },
       body: JSON.stringify(next, null, 2),
     });
     const body = await res.json();
-    if (!res.ok) throw new Error(body.message || `HTTP ${res.status}`);
+    if (!res.ok) {
+      throw new Error(body.detail || body.error || body.message || `HTTP ${res.status}`);
+    }
 
     serverPuzzles = next;
     editingId = current.id;
@@ -278,10 +289,12 @@ async function serverDeleteCurrent() {
   try {
     const res = await fetch(`${API_URL}?id=${encodeURIComponent(editingId)}`, {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${token()}` },
+      headers: authHeaders(),
     });
     const body = await res.json();
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) {
+      throw new Error(body.detail || body.error || body.message || `HTTP ${res.status}`);
+    }
 
     serverPuzzles = serverPuzzles.filter(p => p.id !== editingId);
     editingId = null;
