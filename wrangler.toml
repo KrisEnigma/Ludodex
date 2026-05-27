@@ -1,9 +1,9 @@
 name = "ludodex"
 compatibility_date = "2025-01-01"
-pages_build_output_dir = "dist"   # ← add this, fixes the warning
+[assets]
+directory = "./dist"
+not_found_handling = "single-page-application"
 
-# Remove the [assets] block — that's Workers syntax, not Pages
-# Keep the R2 binding declaration:
 [[r2_buckets]]
 binding = "PUZZLE_BUCKET"
 bucket_name = "ludodex-puzzles"
