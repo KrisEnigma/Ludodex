@@ -55,7 +55,7 @@ export default {
 
     if (url.pathname !== '/api/puzzles') {
       if (url.pathname === '/editor' || url.pathname === '/editor/' || url.pathname === '/editor.html') {
-        return env.ASSETS.fetch(new Request(new URL('/editor/', request.url), request));
+        return env.ASSETS.fetch(new Request(new URL('/editor/index.html', request.url), request));
       }
       if (url.pathname === '/privacy') {
         return env.ASSETS.fetch(new Request(new URL('/privacy.html', request.url), request));
