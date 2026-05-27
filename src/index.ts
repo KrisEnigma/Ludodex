@@ -7,6 +7,9 @@ const CORS_HEADERS = {
 } as const;
 
 type Env = {
+  ASSETS: {
+    fetch(request: Request): Promise<Response>;
+  };
   PUZZLE_BUCKET: {
     get(key: string): Promise<{
       body: BodyInit | null;
@@ -51,7 +54,16 @@ export default {
     const url = new URL(request.url);
 
     if (url.pathname !== '/api/puzzles') {
-      return new Response('Not Found', { status: 404 });
+      if (url.pathname === '/editor') {
+        return env.ASSETS.fetch(new Request(new URL('/editor.html', request.url), request));
+      }
+      if (url.pathname === '/privacy') {
+        return env.ASSETS.fetch(new Request(new URL('/privacy.html', request.url), request));
+      }
+      if (url.pathname === '/terms') {
+        return env.ASSETS.fetch(new Request(new URL('/terms.html', request.url), request));
+      }
+      return env.ASSETS.fetch(request);
     }
 
     if (request.method === 'OPTIONS') {
