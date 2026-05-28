@@ -724,6 +724,30 @@ function authHeaders() {
   return token() ? { Authorization: `Bearer ${token()}` } : {};
 }
 
+async function readApiJson(res) {
+  const contentType = res.headers.get('content-type') || '';
+  const text = await res.text();
+  if (!contentType.toLowerCase().includes('application/json')) {
+    const preview = text.trim().slice(0, 90);
+    const routeHint = preview.toLowerCase().startsWith('<!doctype')
+      ? 'The /api route returned the app HTML. Check the Worker route or local dev proxy.'
+      : preview;
+    throw new Error(`API returned ${contentType || 'non-JSON'} (${res.status}). ${routeHint}`);
+  }
+
+  let body;
+  try {
+    body = JSON.parse(text);
+  } catch (e) {
+    throw new Error(`API returned invalid JSON (${res.status}): ${e.message}`);
+  }
+
+  if (!res.ok) {
+    throw new Error(body.detail || body.error || body.message || `HTTP ${res.status}`);
+  }
+  return body;
+}
+
 function currentSnapshot() {
   return toJSON(S.meta, S.words, S.letters);
 }
@@ -811,8 +835,8 @@ async function serverLoad() {
         ...authHeaders(),
       }
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    serverPuzzles = await res.json();
+    serverPuzzles = await readApiJson(res);
+    if (!Array.isArray(serverPuzzles)) throw new Error('API payload was not a puzzle array');
     serverStatus(`${serverPuzzles.length} puzzles loaded`);
     rebuildSelect();
     ['puzzle-select', 'btn-new', 'btn-save', 'btn-delete'].forEach(id => {
@@ -932,10 +956,7 @@ async function serverSaveCurrent() {
       },
       body: JSON.stringify(next, null, 2),
     });
-    const body = await res.json();
-    if (!res.ok) {
-      throw new Error(body.detail || body.error || body.message || `HTTP ${res.status}`);
-    }
+    const body = await readApiJson(res);
 
     serverPuzzles = next;
     editingId = current.id;
@@ -967,10 +988,7 @@ async function serverDeleteCurrent() {
       method: 'DELETE',
       headers: authHeaders(),
     });
-    const body = await res.json();
-    if (!res.ok) {
-      throw new Error(body.detail || body.error || body.message || `HTTP ${res.status}`);
-    }
+    const body = await readApiJson(res);
 
     serverPuzzles = serverPuzzles.filter(p => p.id !== editingId);
     editingId = null;
