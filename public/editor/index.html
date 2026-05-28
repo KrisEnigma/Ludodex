@@ -288,10 +288,10 @@
       }
 
       #server-panel {
-        padding: 10px 12px;
+        padding: 8px 8px;
         display: grid;
         grid-template-columns: 1fr;
-        gap: 8px;
+        gap: 6px;
       }
 
       #server-panel > * {
@@ -310,10 +310,11 @@
       #app {
         max-width: none;
         width: 100%;
+        margin: 0;
       }
 
       .editor-shell {
-        padding: 12px 12px 24px;
+        padding: 8px 8px 16px;
       }
 
       .editor-header {
@@ -335,25 +336,21 @@
       .layout-grid {
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 8px;
       }
 
       .tile-grid {
-        --tile-size: min(21vw, 76px);
-        --tile-gap: 8px;
-        width: fit-content;
-        max-width: 100%;
-        margin: 0 auto;
+        --tile-size: min(22vw, 80px);
+        --tile-gap: 6px;
       }
 
       .tile-grid__legend,
       .tile-grid__row {
-        width: fit-content;
-        margin-left: auto;
-        margin-right: auto;
+        width: 100%;
       }
 
       .panel {
+        padding: 10px !important;
         border-radius: 10px;
       }
 
