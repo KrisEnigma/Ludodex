@@ -126,6 +126,30 @@
       min-width: 96px;
     }
 
+    .mode-switch {
+      display: none;
+      gap: 8px;
+      margin: 0 0 8px;
+    }
+
+    .mode-switch button {
+      flex: 1 1 0;
+      min-width: 0;
+      min-height: 42px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 0.5px solid var(--color-border-tertiary);
+      background: var(--color-background-secondary);
+      color: var(--color-text-secondary);
+      font-weight: 600;
+    }
+
+    .mode-switch button.is-active {
+      background: var(--color-text-success);
+      color: #111;
+      border-color: var(--color-border-success);
+    }
+
     .layout-grid {
       display: grid;
       grid-template-columns: minmax(290px, 340px) minmax(0, 1fr);
@@ -316,6 +340,11 @@
         padding: 8px 8px 16px;
       }
 
+      .mode-switch {
+        display: flex;
+        margin: 0 0 8px;
+      }
+
       .editor-header {
         flex-direction: column;
         align-items: stretch;
@@ -351,6 +380,14 @@
       .panel {
         padding: 10px !important;
         border-radius: 10px;
+      }
+
+      .mobile-pane {
+        display: none;
+      }
+
+      .mobile-pane.is-active {
+        display: block;
       }
 
       .word-row {
@@ -542,7 +579,8 @@ function resetEditorState() {
     showImport: false,
     importText: '',
     importErr: '',
-    copied: false
+    copied: false,
+    viewMode: 'edit'
   };
   pf = null;
   try { localStorage.removeItem(AUTOSAVE_KEY); } catch (e) {}
@@ -750,7 +788,8 @@ let pf=null;
 let S={
   meta:{id:'',nameEn:'',nameEs:'',category:'characters',difficulty:'medium',date:'',premium:false,hintEn:'',hintEs:''},
   letters:{},words:[],drawIdx:null,path:[],newWord:'',
-  showImport:false,importText:'',importErr:'',copied:false
+  showImport:false,importText:'',importErr:'',copied:false,
+  viewMode:'edit'
 };
 
 // --- Task 3: localStorage autosave + restore ---
@@ -867,6 +906,7 @@ function render(){
   const wD=drawIdx!==null?words[drawIdx]:null;
   const json=toJSON(meta,words,letters);
   const dirty=isDirty();
+  const viewMode=S.viewMode||'edit';
   const mount=document.getElementById('app');
   if(!mount)return;
   const dialog=dialogState?`
@@ -896,8 +936,14 @@ function render(){
     </div>
   </div>
 
+  <div class="mode-switch" aria-label="Editor sections">
+    <button class="${viewMode==='edit'?'is-active':''}" onclick="setEditorMode('edit')">Edit</button>
+    <button class="${viewMode==='meta'?'is-active':''}" onclick="setEditorMode('meta')">Meta</button>
+    <button class="${viewMode==='export'?'is-active':''}" onclick="setEditorMode('export')">Export</button>
+  </div>
+
   <div class="layout-grid">
-    <section class="left-column">
+    <section class="left-column mobile-pane ${viewMode==='edit'?'is-active':''}">
       <div class="panel tile-grid" style="padding:14px">
         <div class="tile-grid__legend">
           ${COLS.map(c=>`<div style="text-align:center;font-size:10px;color:var(--color-text-tertiary);font-family:var(--font-mono);text-transform:uppercase">${c}</div>`).join('')}
@@ -923,7 +969,7 @@ function render(){
         </div>
       </div>`:''}
 
-      <div class="panel" style="padding:14px;margin-top:12px">
+      <div class="panel mobile-pane ${viewMode==='edit'?'is-active':''}" style="padding:14px;margin-top:12px">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px">
           <div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">Words</div>
           <div style="font-size:12px;color:var(--color-text-tertiary)">${words.length} total</div>
@@ -948,7 +994,7 @@ function render(){
     </section>
 
     <section class="right-column">
-      <div class="panel" style="padding:14px;margin-bottom:12px">
+      <div class="panel mobile-pane ${viewMode==='meta'?'is-active':''}" style="padding:14px;margin-bottom:12px">
         <div style="font-size:14px;font-weight:600;color:var(--color-text-primary);margin-bottom:12px">Puzzle details</div>
         <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
           <div>
@@ -989,7 +1035,7 @@ function render(){
         </label>
       </div>
 
-      <div class="panel" style="padding:14px;margin-bottom:12px">
+      <div class="panel mobile-pane ${viewMode==='export'?'is-active':''}" style="padding:14px;margin-bottom:12px">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px">
           <div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">Validation</div>
           <div style="font-size:12px;font-weight:600;color:${valid?'var(--color-text-success)':'var(--color-text-danger)'}">${valid?'Valid':'Needs work'}</div>
@@ -999,7 +1045,7 @@ function render(){
         ${warnings.map(w=>`<div style="font-size:13px;color:var(--color-text-warning);margin-bottom:4px">⚠ ${escapeHtml(w)}</div>`).join('')}
       </div>
 
-      <div class="panel" style="padding:14px">
+      <div class="panel mobile-pane ${viewMode==='export'?'is-active':''}" style="padding:14px">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px">
           <div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">Export</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -1068,6 +1114,7 @@ window.cellClick=(coord)=>{
 };
 
 window.upM=(k,v)=>{S.meta={...S.meta,[k]:v};render();};
+window.setEditorMode=(mode)=>{S.viewMode=mode;render();};
 window.addWord=()=>{const d=S.newWord.trim().toUpperCase();if(!d)return;S.words=[...S.words,{id:Math.random().toString(36).slice(2),display:d,path:'',color:WC[S.words.length%WC.length]}];S.newWord='';render();};
 window.startDraw=(i)=>{S.path=S.words[i].path.match(/.{2}/g)||[];S.drawIdx=i;render();};
 window.finishDraw=()=>{if(S.drawIdx===null)return;const u=[...S.words];u[S.drawIdx]={...u[S.drawIdx],path:S.path.join('')};S.words=u;S.drawIdx=null;S.path=[];render();};
