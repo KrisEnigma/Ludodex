@@ -279,15 +279,101 @@
     }
 
     @media (max-width: 560px) {
+      html, body {
+        width: 100%;
+        overflow-x: hidden;
+      }
+
+      body {
+        padding: 0;
+      }
+
       #server-panel {
         padding: 10px 12px;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
       }
+
+      #server-panel > * {
+        width: 100%;
+        max-width: none !important;
+      }
+
       #server-panel input,
       #server-panel select,
       #server-panel button {
-        flex: 1 1 100%;
+        width: 100%;
         max-width: none !important;
+        font-size: 16px !important;
       }
+
+      #app {
+        max-width: none;
+        width: 100%;
+      }
+
+      .editor-shell {
+        padding: 12px 12px 24px;
+      }
+
+      .editor-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+      }
+
+      .editor-header > div:first-child,
+      .editor-header > div:last-child {
+        width: 100%;
+      }
+
+      .editor-header button {
+        width: 100%;
+        min-width: 0;
+      }
+
+      .layout-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .tile-grid {
+        --tile-size: min(21vw, 76px);
+        --tile-gap: 8px;
+        width: fit-content;
+        max-width: 100%;
+        margin: 0 auto;
+      }
+
+      .tile-grid__legend,
+      .tile-grid__row {
+        width: fit-content;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .panel {
+        border-radius: 10px;
+      }
+
+      .word-row {
+        align-items: stretch;
+      }
+
+      .word-row > * {
+        min-width: 0;
+      }
+
+      .word-row button {
+        width: 100%;
+      }
+
+      .dialog-card {
+        width: min(100%, 520px);
+      }
+
       .dialog-actions {
         flex-direction: column;
       }
