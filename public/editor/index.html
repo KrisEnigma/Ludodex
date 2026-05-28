@@ -24,28 +24,33 @@
     Ludodex
   </div>
   <div class="topbar-sep"></div>
-  <span id="topbar-token-label">Token</span>
-  <input id="api-token" type="password" placeholder="Bearer token…" autocomplete="current-password" aria-label="API bearer token">
-  <div class="topbar-sep"></div>
-  <select id="puzzle-select" aria-label="Select puzzle" onchange="serverSelectPuzzle(this.value)" disabled>
-    <option value="">— select puzzle —</option>
-  </select>
-  <button class="btn btn-load" onclick="serverLoad()" title="Load all puzzles">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-    Load
-  </button>
-  <button class="btn btn-ghost" onclick="serverNew()" id="btn-new" disabled title="New puzzle">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    New
-  </button>
-  <button class="btn btn-success" onclick="serverSaveCurrent()" id="btn-save" disabled title="Save puzzle">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-    Save
-  </button>
-  <button class="btn btn-danger" onclick="serverDeleteCurrent()" id="btn-delete" disabled title="Delete puzzle">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-    Delete
-  </button>
+  <div id="login-group" style="display:flex;align-items:center;gap:8px;">
+    <input id="api-token" type="password" placeholder="Bearer token…" autocomplete="current-password" aria-label="API bearer token">
+    <button class="btn btn-load" onclick="serverLoad()" title="Load all puzzles">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Load
+    </button>
+  </div>
+  <div id="logged-group" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;">
+    <select id="puzzle-select" aria-label="Select puzzle" onchange="serverSelectPuzzle(this.value)">
+      <option value="">— select puzzle —</option>
+    </select>
+    <button class="btn btn-ghost" onclick="serverNew()" id="btn-new" title="New puzzle">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New
+    </button>
+    <button class="btn btn-success" onclick="serverSaveCurrent()" id="btn-save" title="Save puzzle">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Save
+    </button>
+    <button class="btn btn-danger" onclick="serverDeleteCurrent()" id="btn-delete" title="Delete puzzle">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      Delete
+    </button>
+    <button class="btn btn-ghost btn-icon" onclick="serverLogout()" title="Log out" aria-label="Log out">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    </button>
+  </div>
   <div class="topbar-spacer"></div>
   <span id="server-status"></span>
   <button class="btn btn-icon btn-ghost" id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme" data-theme-toggle>

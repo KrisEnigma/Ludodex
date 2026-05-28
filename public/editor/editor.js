@@ -78,7 +78,11 @@ function serverStatus(msg, isError = false) {
 (function() {
   const inp = document.getElementById('api-token');
   if (inp) {
-    try { inp.value = localStorage.getItem('ludodex_cms_token') || ''; } catch(e) {}
+    try {
+      const saved = localStorage.getItem('ludodex_cms_token') || '';
+      inp.value = saved;
+      if (saved) setTimeout(serverLoad, 100); // auto-login if token present
+    } catch(e) {}
     inp.addEventListener('input', () => {
       try { localStorage.setItem('ludodex_cms_token', inp.value.trim()); } catch(e) {}
     });
@@ -160,6 +164,10 @@ async function serverLoad() {
     serverPuzzles = Array.isArray(body) ? body : (body.puzzles || []);
     serverStatus(`✓ ${serverPuzzles.length} puzzles`);
     rebuildSelect();
+    // Switch to logged-in UI
+    document.getElementById('login-group').style.display = 'none';
+    const lg = document.getElementById('logged-group');
+    lg.style.display = 'flex';
     ['btn-new','btn-save','btn-delete'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.removeAttribute('disabled');
@@ -251,6 +259,17 @@ function loadPuzzleIntoEditor(puzzle, id) {
   renderAll();
 }
 
+
+function serverLogout() {
+  try { localStorage.removeItem('ludodex_cms_token'); } catch(e) {}
+  document.getElementById('api-token').value = '';
+  document.getElementById('login-group').style.display = 'flex';
+  document.getElementById('logged-group').style.display = 'none';
+  document.getElementById('puzzle-select').innerHTML = '<option value="">— select puzzle —</option>';
+  serverPuzzles = [];
+  editingId = null;
+  serverStatus('');
+}
 async function serverNew() {
   if (isDirty()) {
     const ok = await promptConfirm({ title: 'Discard changes?', message: 'You have unsaved changes. Start a new puzzle anyway?', confirmText: 'Discard', variant: 'danger' });
