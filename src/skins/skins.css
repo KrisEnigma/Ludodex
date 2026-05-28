@@ -85,42 +85,60 @@
 }
 
 .skin-gameboy {
-  --bg-center: #2d402d;
-  --bg-edge: #1a2a1a;
-  --shell-bg: linear-gradient(180deg, rgba(23, 36, 23, 0.9), rgba(15, 24, 15, 0.95));
-  --shell-border: #2d3e2d;
-  --chrome-text: #8aa872;
-  --title-color: #b5d68f;
-  --title-glow: #b5d68f;
-  --button-bg: #1a2a1a;
-  --button-border: #2d3e2d;
-  --button-text: #b5d68f;
-  --button-hover-bg: rgba(45, 62, 45, 0.85);
-  --button-active-bg: rgba(181, 214, 143, 0.2);
-  --button-active-border: #b5d68f;
-  --button-active-text: #0d1a0d;
-  --tile-bg: linear-gradient(145deg, #6a8060, #4a5e44);
-  --tile-border: #2d3e2d;
-  --tile-letter: #0d1a0d;
-  --tile-selected-bg: linear-gradient(145deg, #b5d68f, #7ea05c);
-  --tile-selected-border: #1a2a1a;
-  --tile-selected-letter: #0d1a0d;
-  --tile-selected-glow: rgba(181, 214, 143, 0.6);
-  --tile-found-bg: linear-gradient(145deg, #3d5238, #2a3e26);
-  --tile-found-border: #1a2a1a;
-  --tile-found-letter: #8aa872;
-  --path-color: #0d1a0d;
-  --primary-action-bg: #b5d68f;
-  --primary-action-text: #0d1a0d;
-  --hint-empty-bg: rgba(26, 42, 26, 0.25);
-  --hint-empty-border: #2d3e2d;
-  --hint-solved-bg: #b5d68f;
-  --hint-solved-border: #1a2a1a;
-  --hint-solved-letter: #0d1a0d;
-  --skin-button-bg: rgba(26, 42, 26, 0.82);
-  --skin-button-border: #2d3e2d;
-  --skin-button-text: #b5d68f;
-  --skin-button-active-bg: rgba(181, 214, 143, 0.2);
-  --skin-button-active-border: #b5d68f;
-  --skin-button-active-text: #0d1a0d;
+  color-scheme: dark;
+  /* Hardware Chassis & Outer Matte Boundaries */
+  --bg-center: #1a2219;
+  --bg-edge: #0c120c;
+  --shell-bg: linear-gradient(180deg, #243022, #161f15);
+  --shell-border: #303e2e; /* Frame surrounding the glass lens */
+  --chrome-text: #8bac0f;   /* Classic Game Boy light-green font accent */
+  
+  /* Text & Title Header Elements */
+  --title-color: #9bbc0f;   /* Pure brightest screen shade */
+  --title-glow: rgba(139, 172, 15, 0.4);
+
+  /* Menu Navigation Interaction Buttons */
+  --button-bg: #0f380f;     /* Hard contrast darkest tone */
+  --button-border: #306230; /* Mid-dark screen shade */
+  --button-text: #9bbc0f;
+  --button-hover-bg: #306230;
+  --button-active-bg: #8bac0f;
+  --button-active-border: #9bbc0f;
+  --button-active-text: #0f380f;
+
+  /* The 4x4 Interactive Word Matrix Grid Tiles */
+  --tile-bg: linear-gradient(145deg, #2b3824, #1c2618);
+  --tile-border: #111a10;
+  --tile-letter: #8bac0f;   /* Crisp unselected pixel state */
+
+  /* Active/Selected Node States during Finger Drag/Swipe */
+  --tile-selected-bg: linear-gradient(145deg, #9bbc0f, #8bac0f);
+  --tile-selected-border: #0f380f;
+  --tile-selected-letter: #0f380f; /* Inverted pixel text */
+  --tile-selected-glow: rgba(155, 188, 15, 0.45);
+
+  /* Solved Word Locked States */
+  --tile-found-bg: #306230;
+  --tile-found-border: #0f380f;
+  --tile-found-letter: #9bbc0f;
+
+  /* Swipe Connector Paths & Hints */
+  --path-color: #0f380f;    /* Dense dark link path cutting between nodes */
+  --primary-action-bg: #8bac0f;
+  --primary-action-text: #0f380f;
+  
+  /* Hint Slot Blocks */
+  --hint-empty-bg: #1c2618;
+  --hint-empty-border: #306230;
+  --hint-solved-bg: #9bbc0f;
+  --hint-solved-border: #0f380f;
+  --hint-solved-letter: #0f380f;
+
+  /* Skin Selection Button Interactivity */
+  --skin-button-bg: #1c2618;
+  --skin-button-border: #306230;
+  --skin-button-text: #8bac0f;
+  --skin-button-active-bg: #9bbc0f;
+  --skin-button-active-border: #0f380f;
+  --skin-button-active-text: #0f380f;
 }
