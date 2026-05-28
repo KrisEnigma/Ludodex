@@ -200,7 +200,8 @@ function addCategory(raw) {
 /* ── Category combobox ── */
 let _catFilter = '';
 function catComboOpen() {
-  _catFilter = document.getElementById('m-cat')?.value || '';
+  // Show full list on open; filter only resets on actual typing
+  _catFilter = '';
   catComboRender(catComboFiltered());
   const dd = document.getElementById('cat-combo-dropdown');
   if (dd) dd.style.display = 'block';
@@ -210,19 +211,20 @@ function catComboClose() {
   if (dd) dd.style.display = 'none';
 }
 function catComboFiltered() {
-  const q = _catFilter.toLowerCase();
-  const matches = CATS.filter(c => c.includes(q));
-  // if typed something not in list, show "Create" option
-  const exact = CATS.includes(_catFilter.toLowerCase().replace(/\s+/g,'-'));
-  if (_catFilter && !exact) matches.push('__create__');
+  const q = _catFilter.toLowerCase().trim();
+  const matches = q ? CATS.filter(c => c.includes(q)) : [...CATS];
+  const normalised = _catFilter.trim().toLowerCase().replace(/\s+/g, '-');
+  if (normalised && !CATS.includes(normalised)) matches.push('__create__');
   return matches;
 }
 function catComboFilter(val) {
   _catFilter = val;
-  S.meta.category = val.trim().toLowerCase().replace(/\s+/g,'-');
+  S.meta.category = val.trim().toLowerCase().replace(/\s+/g, '-');
   catComboRender(catComboFiltered());
   const dd = document.getElementById('cat-combo-dropdown');
   if (dd) dd.style.display = 'block';
+  updateDirtyChip();
+  saveLocalState();
 }
 function catComboRender(list) {
   const dd = document.getElementById('cat-combo-dropdown');
@@ -241,8 +243,11 @@ function catComboSelect(cat, create) {
   S.meta.category = cat;
   const inp = document.getElementById('m-cat');
   if (inp) inp.value = cat;
+  _catFilter = cat;
   catComboClose();
-  renderMeta();
+  // Don't re-render the whole form - just update dirty state
+  updateDirtyChip();
+  saveLocalState();
 }
 function catComboKey(e) {
   if (e.key === 'Enter') {
@@ -631,19 +636,19 @@ function renderMeta() {
   form.innerHTML = `
     <div class="form-field span-3">
       <label class="form-label" for="m-nen">Name (EN)</label>
-      <input class="form-input" id="m-nen" type="text" value="${escapeHtml(m.nameEn)}" placeholder="English name" oninput="S.meta.nameEn=this.value;renderAll()">
+      <input class="form-input" id="m-nen" type="text" value="${escapeHtml(m.nameEn)}" placeholder="English name" oninput="S.meta.nameEn=this.value;updateDirtyChip();saveLocalState();">
     </div>
     <div class="form-field span-3">
       <label class="form-label" for="m-nes">Name (ES)</label>
-      <input class="form-input" id="m-nes" type="text" value="${escapeHtml(m.nameEs)}" placeholder="Spanish name" oninput="S.meta.nameEs=this.value;renderAll()">
+      <input class="form-input" id="m-nes" type="text" value="${escapeHtml(m.nameEs)}" placeholder="Spanish name" oninput="S.meta.nameEs=this.value;updateDirtyChip();saveLocalState();">
     </div>
     <div class="form-field span-3">
       <label class="form-label" for="m-hen">Hint (EN)</label>
-      <input class="form-input" id="m-hen" type="text" value="${escapeHtml(m.hintEn)}" placeholder="Hint in English" oninput="S.meta.hintEn=this.value;renderAll()">
+      <input class="form-input" id="m-hen" type="text" value="${escapeHtml(m.hintEn)}" placeholder="Hint in English" oninput="S.meta.hintEn=this.value;updateDirtyChip();saveLocalState();">
     </div>
     <div class="form-field span-3">
       <label class="form-label" for="m-hes">Hint (ES)</label>
-      <input class="form-input" id="m-hes" type="text" value="${escapeHtml(m.hintEs)}" placeholder="Hint in Spanish" oninput="S.meta.hintEs=this.value;renderAll()">
+      <input class="form-input" id="m-hes" type="text" value="${escapeHtml(m.hintEs)}" placeholder="Hint in Spanish" oninput="S.meta.hintEs=this.value;updateDirtyChip();saveLocalState();">
     </div>
     <div class="form-field">
       <label class="form-label" for="m-cat">Category</label>
@@ -667,11 +672,11 @@ function renderMeta() {
     </div>
     <div class="form-field">
       <label class="form-label" for="m-series">Series</label>
-      <input class="form-input" id="m-series" type="text" value="${escapeHtml(m.series||'')}" placeholder="e.g. Final Fantasy" oninput="S.meta.series=this.value;renderAll()">
+      <input class="form-input" id="m-series" type="text" value="${escapeHtml(m.series||'')}" placeholder="e.g. Final Fantasy" oninput="S.meta.series=this.value;updateDirtyChip();saveLocalState();">
     </div>
     <div class="form-field">
       <label class="form-label" for="m-date">Date</label>
-      <input class="form-input" id="m-date" type="date" value="${escapeHtml(m.date)}" oninput="S.meta.date=this.value;renderAll()">
+      <input class="form-input" id="m-date" type="date" value="${escapeHtml(m.date)}" oninput="S.meta.date=this.value;updateDirtyChip();saveLocalState();">
     </div>
     <div class="form-field span-2 form-field--inline">
       <input type="checkbox" id="m-premium" ${m.premium?'checked':''} onchange="S.meta.premium=this.checked;renderAll()">
@@ -879,13 +884,9 @@ function renderListItemExpanded(p, i) {
       </div>
       <div class="list-meta-field">
         <label>Category</label>
-        <input type="text" list="cats-list-li" value="${escapeHtml(p.category||'')}"
-          placeholder="Type or pick…"
-          oninput="listUpdateField('${p.id}', 'category', this.value.trim().toLowerCase().replace(/\\s+/g,'-'))"
-          onchange="if(this.value){addCategory(this.value);listUpdateField('${p.id}','category',this.value.trim().toLowerCase().replace(/\\s+/g,'-'))}">
-        <datalist id="cats-list-li">
-          ${CATS.map(c => `<option value="${c}">`).join('')}
-        </datalist>
+        <select onchange="listUpdateField('${p.id}', 'category', this.value)">
+          ${CATS.map(c => `<option value="${c}"${p.category===c?' selected':''}>${c}</option>`).join('')}
+        </select>
       </div>
       <div class="list-meta-field">
         <label>Difficulty</label>
