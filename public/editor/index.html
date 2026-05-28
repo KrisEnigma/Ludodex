@@ -1,1393 +1,174 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow">
   <title>Ludodex Editor</title>
-  <style>
-    :root {
-      --color-background-primary: #131824;
-      --color-background-secondary: #1c2238;
-      --color-background-success: #0f2e1c;
-      --color-background-danger: #2e1414;
-      --color-border-tertiary: #2a3148;
-      --color-border-success: #2d5a3f;
-      --color-border-danger: #5a2d2d;
-      --color-text-primary: #e1e6f0;
-      --color-text-secondary: #9aa3bb;
-      --color-text-tertiary: #5a6178;
-      --color-text-success: #4ade80;
-      --color-text-warning: #fbbf24;
-      --color-text-danger: #f87171;
-      --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', Menlo, Consolas, monospace;
-      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-    }
-
-    * { box-sizing: border-box; }
-
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: var(--color-background-primary);
-      color: var(--color-text-primary);
-      font-family: var(--font-sans);
-      font-size: 14px;
-      min-height: 100vh;
-    }
-
-    body {
-      padding: 0;
-    }
-
-    input, select, button, textarea {
-      background: var(--color-background-secondary);
-      color: var(--color-text-primary);
-      border: 0.5px solid var(--color-border-tertiary);
-      border-radius: 6px;
-      padding: 6px 8px;
-      font-family: inherit;
-      font-size: inherit;
-    }
-
-    input:focus, select:focus, textarea:focus {
-      outline: none;
-      border-color: color-mix(in srgb, var(--color-text-success) 60%, var(--color-border-tertiary));
-    }
-
-    button {
-      cursor: pointer;
-      transition: opacity 120ms ease;
-    }
-
-    button:hover { opacity: 0.85; }
-    button:active { opacity: 0.7; }
-
-    #server-panel {
-      position: sticky;
-      top: 0;
-      z-index: 20;
-      backdrop-filter: blur(10px);
-    }
-
-    #server-panel input,
-    #server-panel select,
-    #server-panel button,
-    #app input,
-    #app select,
-    #app button,
-    #app textarea {
-      min-height: 44px;
-    }
-
-    #server-panel input,
-    #server-panel select,
-    #server-panel button {
-      font-size: 14px !important;
-    }
-
-    #app {
-      max-width: 1180px;
-      margin: 0 auto;
-    }
-
-    .editor-shell {
-      padding: 6px 0 20px;
-      font-size: 14px;
-    }
-
-    .editor-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 12px;
-      margin-bottom: 12px;
-      flex-wrap: wrap;
-    }
-
-    .editor-title {
-      min-width: 0;
-    }
-
-    .editor-title h1 {
-      margin: 0;
-      font-size: 16px;
-      font-weight: 600;
-      color: var(--color-text-primary);
-    }
-
-    .editor-title p {
-      margin: 2px 0 0;
-      font-size: 12px;
-      color: var(--color-text-secondary);
-    }
-
-    .editor-header button {
-      min-width: 96px;
-    }
-
-    .mode-switch {
-      display: none;
-      gap: 8px;
-      margin: 0 0 8px;
-    }
-
-    .mode-switch button {
-      flex: 1 1 0;
-      min-width: 0;
-      min-height: 42px;
-      padding: 10px 12px;
-      border-radius: 999px;
-      border: 0.5px solid var(--color-border-tertiary);
-      background: var(--color-background-secondary);
-      color: var(--color-text-secondary);
-      font-weight: 600;
-    }
-
-    .mode-switch button.is-active {
-      background: var(--color-text-success);
-      color: #111;
-      border-color: var(--color-border-success);
-    }
-
-    .layout-grid {
-      display: grid;
-      grid-template-columns: minmax(290px, 340px) minmax(0, 1fr);
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-
-    .left-column,
-    .right-column,
-    .panel {
-      min-width: 0;
-    }
-
-    .panel {
-      background: var(--color-background-secondary);
-      border-radius: 12px;
-      border: 0.5px solid var(--color-border-tertiary);
-    }
-
-    .tile-grid {
-      --tile-size: 64px;
-      --tile-gap: 8px;
-    }
-
-    .tile-grid__legend {
-      display: grid;
-      grid-template-columns: repeat(4, var(--tile-size));
-      gap: var(--tile-gap);
-      margin-bottom: 6px;
-    }
-
-    .tile-grid__row {
-      display: grid;
-      grid-template-columns: repeat(4, var(--tile-size));
-      gap: var(--tile-gap);
-      margin-bottom: var(--tile-gap);
-    }
-
-    .tile {
-      width: var(--tile-size);
-      height: var(--tile-size);
-      border-radius: 10px;
-      overflow: hidden;
-    }
-
-    .word-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 10px;
-      margin-bottom: 6px;
-      border-radius: 10px;
-      min-width: 0;
-      flex-wrap: wrap;
-    }
-
-    .word-row button {
-      min-height: 36px;
-      padding-top: 6px;
-      padding-bottom: 6px;
-    }
-
-    .dialog-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(9, 12, 20, 0.72);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      z-index: 100;
-    }
-
-    .dialog-card {
-      width: min(100%, 460px);
-      background: var(--color-background-secondary);
-      border: 1px solid var(--color-border-tertiary);
-      border-radius: 14px;
-      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
-      padding: 16px;
-    }
-
-    .dialog-title {
-      margin: 0 0 8px;
-      font-size: 16px;
-      font-weight: 600;
-      color: var(--color-text-primary);
-    }
-
-    .dialog-message {
-      margin: 0;
-      font-size: 14px;
-      color: var(--color-text-secondary);
-      line-height: 1.45;
-    }
-
-    .dialog-actions {
-      display: flex;
-      gap: 8px;
-      justify-content: flex-end;
-      margin-top: 16px;
-      flex-wrap: wrap;
-    }
-
-    .dialog-actions button {
-      min-width: 112px;
-    }
-
-    .dialog-actions .danger {
-      background: var(--color-background-danger);
-      color: var(--color-text-danger);
-      border-color: var(--color-border-danger);
-    }
-
-    .dialog-actions .primary {
-      background: var(--color-text-success);
-      color: #111;
-      border-color: var(--color-border-success);
-    }
-
-    .save-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      border-radius: 999px;
-      padding: 6px 10px;
-      font-size: 12px;
-      font-weight: 600;
-      white-space: nowrap;
-    }
-
-    .save-chip--dirty {
-      background: color-mix(in srgb, var(--color-text-warning) 20%, transparent);
-      color: var(--color-text-warning);
-      border: 1px solid color-mix(in srgb, var(--color-text-warning) 30%, transparent);
-    }
-
-    .save-chip--clean {
-      background: color-mix(in srgb, var(--color-text-success) 16%, transparent);
-      color: var(--color-text-success);
-      border: 1px solid color-mix(in srgb, var(--color-text-success) 30%, transparent);
-    }
-
-    @media (max-width: 900px) {
-      .layout-grid { grid-template-columns: 1fr; }
-      .editor-header { align-items: stretch; }
-      .editor-header button { width: 100%; }
-      .tile-grid { --tile-size: clamp(56px, 20vw, 72px); }
-    }
-
-    @media (max-width: 560px) {
-      html, body {
-        width: 100%;
-        overflow-x: hidden;
-      }
-
-      body {
-        padding: 0;
-      }
-
-      #server-panel {
-        padding: 8px 8px;
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 6px;
-      }
-
-      #server-panel > * {
-        width: 100%;
-        max-width: none !important;
-      }
-
-      #server-panel input,
-      #server-panel select,
-      #server-panel button {
-        width: 100%;
-        max-width: none !important;
-        font-size: 16px !important;
-      }
-
-      #app {
-        max-width: none;
-        width: 100%;
-        margin: 0;
-      }
-
-      .editor-shell {
-        padding: 8px 8px 16px;
-      }
-
-      .mode-switch {
-        display: flex;
-        margin: 0 0 8px;
-      }
-
-      .editor-header {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 10px;
-      }
-
-      .editor-header > div:first-child,
-      .editor-header > div:last-child {
-        width: 100%;
-      }
-
-      .editor-header button {
-        width: 100%;
-        min-width: 0;
-      }
-
-      .layout-grid {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
-
-      .tile-grid {
-        --tile-size: min(22vw, 80px);
-        --tile-gap: 6px;
-      }
-
-      .tile-grid__legend,
-      .tile-grid__row {
-        width: 100%;
-      }
-
-      .panel {
-        padding: 10px !important;
-        border-radius: 10px;
-      }
-
-      .mobile-pane {
-        display: none;
-      }
-
-      .mobile-pane.is-active {
-        display: block;
-      }
-
-      .word-row {
-        align-items: stretch;
-      }
-
-      .word-row > * {
-        min-width: 0;
-      }
-
-      .word-row button {
-        width: 100%;
-      }
-
-      .dialog-card {
-        width: min(100%, 520px);
-      }
-
-      .dialog-actions {
-        flex-direction: column;
-      }
-      .dialog-actions button {
-        width: 100%;
-      }
-    }
-
-    .sr-only {
-      position: absolute;
-      width: 1px; height: 1px;
-      padding: 0; margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
-
-    /* Workspace layout reset */
-    #server-panel {
-      display: grid !important;
-      grid-template-columns: auto minmax(180px, 260px) auto minmax(140px, 1fr) auto auto auto minmax(120px, auto);
-      align-items: center !important;
-      gap: 8px !important;
-      padding: 8px 12px !important;
-      background: color-mix(in srgb, var(--color-background-secondary) 88%, #000) !important;
-    }
-
-    #server-panel input,
-    #server-panel select,
-    #server-panel button {
-      min-height: 38px !important;
-      height: 38px;
-      padding: 6px 10px !important;
-      font-size: 13px !important;
-    }
-
-    #api-token {
-      min-width: 0 !important;
-      max-width: none !important;
-      width: 100% !important;
-    }
-
-    #puzzle-select {
-      min-width: 0 !important;
-      max-width: none !important;
-      width: 100% !important;
-    }
-
-    #server-status,
-    #puzzle-count {
-      min-width: 0 !important;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    #app {
-      width: 100%;
-      max-width: 1320px;
-      padding: 0 12px 18px;
-    }
-
-    .editor-shell {
-      padding: 10px 0 0;
-    }
-
-    .editor-header {
-      align-items: center;
-      margin-bottom: 8px;
-    }
-
-    .editor-header h1 {
-      font-size: 16px !important;
-      line-height: 1.15;
-    }
-
-    .editor-header p {
-      display: none;
-    }
-
-    .layout-grid {
-      grid-template-columns: minmax(330px, 420px) minmax(0, 1fr);
-      gap: 12px;
-      align-items: start;
-    }
-
-    .left-column {
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
-      gap: 10px;
-    }
-
-    .left-column > .panel {
-      margin-top: 0 !important;
-    }
-
-    .tile-grid {
-      --tile-size: clamp(68px, 6.2vw, 82px);
-      --tile-gap: 8px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 12px !important;
-    }
-
-    .tile-grid__legend,
-    .tile-grid__row {
-      width: auto;
-      justify-content: center;
-    }
-
-    .tile-grid__row:last-of-type {
-      margin-bottom: 0;
-    }
-
-    .panel {
-      border-radius: 8px;
-    }
-
-    @media (max-width: 760px) {
-      #server-panel {
-        grid-template-columns: minmax(0, 1fr) auto auto auto !important;
-        gap: 6px !important;
-        padding: 6px !important;
-      }
-
-      #server-panel > span:first-child {
-        display: none;
-      }
-
-      #api-token {
-        grid-column: 1 / 2;
-      }
-
-      #server-panel button[onclick="serverLoad()"] {
-        grid-column: 2 / 5;
-        width: auto !important;
-      }
-
-      #puzzle-count,
-      #server-status,
-      #puzzle-select {
-        grid-column: 1 / -1;
-        width: 100% !important;
-      }
-
-      #btn-new,
-      #btn-save,
-      #btn-delete {
-        width: auto !important;
-      }
-
-      #app {
-        max-width: none;
-        padding: 0 6px 12px;
-      }
-
-      .editor-shell {
-        padding-top: 6px;
-      }
-
-      .editor-header {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        gap: 8px;
-        margin-bottom: 6px;
-      }
-
-      .editor-header > div:first-child {
-        min-width: 0;
-      }
-
-      .editor-header > div:last-child {
-        width: auto;
-      }
-
-      .editor-header button {
-        width: auto;
-        min-width: 72px;
-        min-height: 38px !important;
-      }
-
-      .save-chip {
-        padding: 4px 8px;
-        font-size: 11px;
-      }
-
-      .mode-switch {
-        display: flex;
-        position: sticky;
-        top: 50px;
-        z-index: 15;
-        padding: 4px 0 6px;
-        background: var(--color-background-primary);
-      }
-
-      .mode-switch button {
-        min-height: 38px;
-        padding: 8px 10px;
-        border-radius: 8px;
-      }
-
-      .layout-grid {
-        display: block;
-      }
-
-      .mobile-pane {
-        display: none;
-      }
-
-      .mobile-pane.is-active {
-        display: block;
-      }
-
-      .tile-grid {
-        --tile-size: clamp(68px, calc((100vw - 46px) / 4), 84px);
-        --tile-gap: 6px;
-        padding: 8px !important;
-      }
-
-      .panel {
-        padding: 8px !important;
-      }
-    }
-  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/editor/editor.css">
 </head>
 <body>
-  <!-- Server panel — sits above the existing editor UI -->
-  <div id="server-panel" style="
-    background: var(--color-background-secondary);
-    border-bottom: 0.5px solid var(--color-border-tertiary);
-    padding: 10px 20px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-    font-family: var(--font-sans);
-    font-size: 13px;
-  ">
-    <span style="font-weight:600;color:var(--color-text-primary);letter-spacing:.04em">
-      LUDODEX CMS
-    </span>
 
-    <input id="api-token" type="password" placeholder="API token"
-      style="flex:1;min-width:180px;max-width:260px;font-family:var(--font-mono);font-size:12px"
-      autocomplete="current-password">
-
-    <button onclick="serverLoad()" style="padding:5px 14px;font-size:12px">
-      ↓ Load All
-    </button>
-
-    <span id="puzzle-count" style="color:var(--color-text-secondary);font-size:11px"></span>
-
-    <select id="puzzle-select"
-      onchange="serverSelectPuzzle(this.value)"
-      style="flex:1;min-width:180px;max-width:340px;font-size:12px;display:none">
-      <option value="">— select puzzle —</option>
-    </select>
-
-    <button onclick="serverNew()" style="padding:5px 14px;font-size:12px;display:none"
-      id="btn-new">+ New</button>
-
-    <button onclick="serverSaveCurrent()" style="
-      padding:5px 14px;font-size:12px;display:none;
-      background:var(--color-text-success);color:#111;border-color:var(--color-border-success)"
-      id="btn-save">↑ Save</button>
-
-    <button onclick="serverDeleteCurrent()" style="
-      padding:5px 14px;font-size:12px;display:none;
-      background:var(--color-background-danger);color:var(--color-text-danger);
-      border-color:var(--color-border-danger)"
-      id="btn-delete">✕ Delete</button>
-
-    <span id="server-status" style="color:var(--color-text-secondary);font-size:11px;min-width:120px"></span>
+<!-- TOP BAR -->
+<header id="topbar">
+  <div id="topbar-logo">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+      <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+      <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+      <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+    </svg>
+    Ludodex
   </div>
-  <h2 class="sr-only">Ludodex level editor v2 — type letters into grid tiles, draw word paths, validate and export puzzle JSON</h2>
+  <div class="topbar-sep"></div>
+  <span id="topbar-token-label">Token</span>
+  <input id="api-token" type="password" placeholder="Bearer token…" autocomplete="current-password" aria-label="API bearer token">
+  <div class="topbar-sep"></div>
+  <select id="puzzle-select" aria-label="Select puzzle" onchange="serverSelectPuzzle(this.value)" disabled>
+    <option value="">— select puzzle —</option>
+  </select>
+  <button class="btn btn-load" onclick="serverLoad()" title="Load all puzzles">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Load
+  </button>
+  <button class="btn btn-ghost" onclick="serverNew()" id="btn-new" disabled title="New puzzle">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    New
+  </button>
+  <button class="btn btn-success" onclick="serverSaveCurrent()" id="btn-save" disabled title="Save puzzle">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+    Save
+  </button>
+  <button class="btn btn-danger" onclick="serverDeleteCurrent()" id="btn-delete" disabled title="Delete puzzle">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+    Delete
+  </button>
+  <div class="topbar-spacer"></div>
+  <span id="server-status"></span>
+  <button class="btn btn-icon btn-ghost" id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme" data-theme-toggle>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+</header>
 
-<script>
-// ── Server-side CMS layer ─────────────────────────────────────────────────────
-
-const API_URL = '/api/puzzles';
-const TOKEN_KEY = 'ludodex_cms_token';
-
-// Full puzzles array loaded from / saved to the server.
-let serverPuzzles = [];
-// The id of the puzzle currently open in the editor, or null for new.
-let editingId = null;
-// Snapshot of the last loaded/saved puzzle state. Used to detect unsaved edits.
-let savedSnapshot = '';
-// Custom confirmation dialog state.
-let dialogState = null;
-
-// Persist token in sessionStorage so it survives page refreshes during a
-// session without ever touching localStorage (slightly safer than persisting).
-const tokenInput = document.getElementById('api-token');
-tokenInput.value = sessionStorage.getItem(TOKEN_KEY) || '';
-tokenInput.addEventListener('input', () => {
-  sessionStorage.setItem(TOKEN_KEY, tokenInput.value.trim());
-});
-
-function serverStatus(msg, isError = false) {
-  const el = document.getElementById('server-status');
-  el.textContent = msg;
-  el.style.color = isError
-    ? 'var(--color-text-danger)'
-    : 'var(--color-text-secondary)';
-}
-
-function token() {
-  return tokenInput.value.trim();
-}
-
-function authHeaders() {
-  return token() ? { Authorization: `Bearer ${token()}` } : {};
-}
-
-async function readApiJson(res) {
-  const contentType = res.headers.get('content-type') || '';
-  const text = await res.text();
-  if (!contentType.toLowerCase().includes('application/json')) {
-    const preview = text.trim().slice(0, 90);
-    const routeHint = preview.toLowerCase().startsWith('<!doctype')
-      ? 'The /api route returned the app HTML. Check the Worker route or local dev proxy.'
-      : preview;
-    throw new Error(`API returned ${contentType || 'non-JSON'} (${res.status}). ${routeHint}`);
-  }
-
-  let body;
-  try {
-    body = JSON.parse(text);
-  } catch (e) {
-    throw new Error(`API returned invalid JSON (${res.status}): ${e.message}`);
-  }
-
-  if (!res.ok) {
-    throw new Error(body.detail || body.error || body.message || `HTTP ${res.status}`);
-  }
-  return body;
-}
-
-function currentSnapshot() {
-  return toJSON(S.meta, S.words, S.letters);
-}
-
-function escapeHtml(text) {
-  return String(text).replace(/[&<>"']/g, ch => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;',
-  }[ch]));
-}
-
-function syncSavedSnapshot() {
-  savedSnapshot = currentSnapshot();
-}
-
-function isDirty() {
-  return currentSnapshot() !== savedSnapshot;
-}
-
-function promptConfirm(state) {
-  return new Promise(resolve => {
-    dialogState = { ...state, resolve };
-    render();
-  });
-}
-
-window.dialogAccept = () => {
-  if (!dialogState) return;
-  const resolve = dialogState.resolve;
-  dialogState = null;
-  render();
-  resolve(true);
-};
-
-window.dialogCancel = () => {
-  if (!dialogState) return;
-  const resolve = dialogState.resolve;
-  dialogState = null;
-  render();
-  resolve(false);
-};
-
-function loadPuzzleIntoEditor(puzzle, id) {
-  editingId = id;
-  S.importText = JSON.stringify(puzzle);
-  doImport();
-  syncSavedSnapshot();
-  serverStatus(`Editing: ${puzzle.name?.en || id}`);
-}
-
-function resetEditorState() {
-  S = {
-    meta: { id: '', nameEn: '', nameEs: '', category: 'characters', difficulty: 'medium', date: '', premium: false, hintEn: '', hintEs: '' },
-    letters: {},
-    words: [],
-    drawIdx: null,
-    path: [],
-    newWord: '',
-    showImport: false,
-    importText: '',
-    importErr: '',
-    copied: false,
-    viewMode: 'edit'
-  };
-  pf = null;
-  try { localStorage.removeItem(AUTOSAVE_KEY); } catch (e) {}
-  syncSavedSnapshot();
-  render();
-}
-
-// Load all puzzles from the server into the select dropdown.
-async function serverLoad() {
-  if (!token()) {
-    serverStatus('Enter your API token first', true);
-    return;
-  }
-  serverStatus('Loading…');
-  try {
-    const res = await fetch(API_URL, {
-      headers: {
-        'Cache-Control': 'no-store',
-        ...authHeaders(),
-      }
-    });
-    serverPuzzles = await readApiJson(res);
-    if (!Array.isArray(serverPuzzles)) throw new Error('API payload was not a puzzle array');
-    serverStatus(`${serverPuzzles.length} puzzles loaded`);
-    rebuildSelect();
-    ['puzzle-select', 'btn-new', 'btn-save', 'btn-delete'].forEach(id => {
-      document.getElementById(id).style.display = '';
-    });
-    document.getElementById('puzzle-count').textContent =
-      `${serverPuzzles.length} total`;
-  } catch (e) {
-    serverStatus('Load failed: ' + e.message, true);
-  }
-}
-
-function rebuildSelect() {
-  const sel = document.getElementById('puzzle-select');
-  sel.innerHTML = '<option value="">— select puzzle —</option>';
-  serverPuzzles.forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = p.id;
-    opt.textContent = `[${p.difficulty}] ${p.name?.en || p.id} (${p.id})`;
-    if (p.id === editingId) opt.selected = true;
-    sel.append(opt);
-  });
-}
-
-// Load a puzzle from the server array into the existing editor.
-async function serverSelectPuzzle(id) {
-  if (!id) { await serverNew(); return; }
-  const puzzle = serverPuzzles.find(p => p.id === id);
-  if (!puzzle) return;
-  if (isDirty()) {
-    const ok = await promptConfirm({
-      title: 'Discard unsaved changes?',
-      message: `Switch to "${puzzle.name?.en || id}"? Your current edits will be lost.`,
-      confirmText: 'Switch',
-      cancelText: 'Keep Editing',
-      variant: 'danger',
-    });
-    if (!ok) {
-      render();
-      return;
-    }
-  }
-  loadPuzzleIntoEditor(puzzle, id);
-}
-
-// Reset editor for a brand-new puzzle.
-async function serverNew() {
-  if (isDirty()) {
-    const ok = await promptConfirm({
-      title: 'Discard current puzzle?',
-      message: 'Start a new puzzle? Any unsaved changes will be lost.',
-      confirmText: 'Start New',
-      cancelText: 'Keep Editing',
-      variant: 'danger',
-    });
-    if (!ok) {
-      render();
-      return;
-    }
-  }
-  editingId = null;
-  resetEditorState();
-  serverStatus('New puzzle — fill in the editor below');
-}
-
-// Save the current editor state back to the server.
-async function serverSaveCurrent() {
-  if (!token()) {
-    serverStatus('Enter your API token first', true);
-    return;
-  }
-
-  // Pull the current puzzle JSON from the editor.
-  const currentJson = toJSON(S.meta, S.words, S.letters);
-  let current;
-  try {
-    current = JSON.parse(currentJson);
-  } catch (e) {
-    serverStatus('Editor has invalid JSON — fix errors first', true);
-    return;
-  }
-
-  // Basic validation — mirror what the server checks.
-  if (!current.id) {
-    serverStatus('Puzzle needs an ID', true);
-    return;
-  }
-  if (!current.data || Object.keys(current.data).length === 0) {
-    serverStatus('Puzzle has no words', true);
-    return;
-  }
-  const ok = await promptConfirm({
-    title: 'Save puzzle?',
-    message: `Upload "${current.id}" to the server? This will overwrite the remote puzzle.`,
-    confirmText: 'Save',
-    cancelText: 'Cancel',
-    variant: 'primary',
-  });
-  if (!ok) return;
-
-  // Upsert into the local array.
-  const existing = serverPuzzles.findIndex(p => p.id === current.id);
-  const next = [...serverPuzzles];
-  if (existing >= 0) {
-    next[existing] = current;
-  } else {
-    next.push(current);
-  }
-
-  serverStatus('Saving…');
-  try {
-    const res = await fetch(API_URL, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        ...authHeaders(),
-      },
-      body: JSON.stringify(next, null, 2),
-    });
-    const body = await readApiJson(res);
-
-    serverPuzzles = next;
-    editingId = current.id;
-    serverStatus(`✓ Saved — ${body.count} puzzles`);
-    syncSavedSnapshot();
-    rebuildSelect();
-    document.getElementById('puzzle-count').textContent = `${serverPuzzles.length} total`;
-  } catch (e) {
-    serverStatus('Save failed: ' + e.message, true);
-  }
-}
-
-// Delete the currently loaded puzzle from the server.
-async function serverDeleteCurrent() {
-  if (!editingId) { serverStatus('No puzzle selected', true); return; }
-  if (!token()) { serverStatus('Enter your API token first', true); return; }
-  const ok = await promptConfirm({
-    title: 'Delete puzzle?',
-    message: `Delete "${editingId}" from the server? This cannot be undone.`,
-    confirmText: 'Delete',
-    cancelText: 'Cancel',
-    variant: 'danger',
-  });
-  if (!ok) return;
-
-  serverStatus('Deleting…');
-  try {
-    const res = await fetch(`${API_URL}?id=${encodeURIComponent(editingId)}`, {
-      method: 'DELETE',
-      headers: authHeaders(),
-    });
-    const body = await readApiJson(res);
-
-    serverPuzzles = serverPuzzles.filter(p => p.id !== editingId);
-    editingId = null;
-    serverStatus(`✓ Deleted — ${body.remaining} puzzles remain`);
-    rebuildSelect();
-    document.getElementById('puzzle-count').textContent = `${serverPuzzles.length} total`;
-    resetEditorState();
-  } catch (e) {
-    serverStatus('Delete failed: ' + e.message, true);
-  }
-}
-
-// Auto-load on page open if a token is already stored.
-if (tokenInput.value) {
-  serverLoad();
-}
-const COLS=['a','b','c','d'],ROWS=['1','2','3','4'];
-const CELL_ORDER=ROWS.flatMap(r=>COLS.map(c=>c+r));
-const WC=['#4a90d9','#d94a6a','#48bb78','#ed8936','#9f7aea','#38b2ac','#f6ad55','#fc8181'];
-const CATS=['characters','titles','studios','franchises','consoles','composers','genres','decades'];
-const DIFFS=['easy','medium','hard'];
-
-let pf=null;
-let S={
-  meta:{id:'',nameEn:'',nameEs:'',category:'characters',difficulty:'medium',date:'',premium:false,hintEn:'',hintEs:''},
-  letters:{},words:[],drawIdx:null,path:[],newWord:'',
-  showImport:false,importText:'',importErr:'',copied:false,
-  viewMode:'edit'
-};
-
-// --- Task 3: localStorage autosave + restore ---
-const AUTOSAVE_KEY='ludodex_editor_v2_state';
-
-function saveState(){
-  try{
-    const persistable={meta:S.meta,letters:S.letters,words:S.words,newWord:S.newWord};
-    localStorage.setItem(AUTOSAVE_KEY,JSON.stringify(persistable));
-  }catch(e){}
-}
-
-function loadState(){
-  try{
-    const saved=localStorage.getItem(AUTOSAVE_KEY);
-    if(!saved)return;
-    const parsed=JSON.parse(saved);
-    if(!parsed||typeof parsed!=='object')return;
-    if(parsed.meta&&typeof parsed.meta==='object')S.meta={...S.meta,...parsed.meta};
-    if(parsed.letters&&typeof parsed.letters==='object')S.letters=parsed.letters;
-    if(Array.isArray(parsed.words))S.words=parsed.words.map(w=>({
-      id:w.id||Math.random().toString(36).slice(2),
-      display:String(w.display||''),
-      path:String(w.path||''),
-      color:String(w.color||WC[0])
-    }));
-    if(typeof parsed.newWord==='string')S.newWord=parsed.newWord;
-  }catch(e){}
-}
-
-function isAdj(a,b){if(!a||!b||a===b)return false;return Math.abs(a.charCodeAt(0)-b.charCodeAt(0))<=1&&Math.abs(+a[1]-+b[1])<=1;}
-
-function buildOwn(words){
-  const o={};
-  words.forEach((w,i)=>{(w.path.match(/.{2}/g)||[]).forEach(c=>{if(!o[c])o[c]=[];if(!o[c].includes(i))o[c].push(i);});});
-  return o;
-}
-
-function validate(meta,words,letters){
-  const er=[],wa=[];
-  if(!meta.id)er.push('Missing ID');
-  else if(!/^[a-z0-9]+$/.test(meta.id))er.push('ID must be lowercase alphanumeric');
-  if(!meta.nameEn)er.push('Missing name (EN)');
-  if(!words.length)er.push('No words added');
-  const tileLetters={};
-  words.forEach(w=>{
-    if(!w.display.trim()){er.push('Empty word name');return;}
-    const coords=w.path.match(/.{2}/g)||[];
-    const exp=w.display.replace(/ /g,'').split('');
-    if(!coords.length){er.push(`"${w.display}": no path drawn`);return;}
-    if(coords.length!==exp.length)er.push(`"${w.display}": path ${coords.length} steps ≠ ${exp.length} letters`);
-    for(let i=1;i<coords.length;i++)if(!isAdj(coords[i-1],coords[i])){er.push(`"${w.display}": ${coords[i-1]}→${coords[i]} not adjacent`);break;}
-    coords.forEach((c,i)=>{
-      if(!CELL_ORDER.includes(c)){er.push(`Out of bounds: ${c}`);return;}
-      const gl=letters[c],el=exp[i];
-      if(!gl)er.push(`"${w.display}": tile ${c} is empty`);
-      else if(gl!==el)er.push(`"${w.display}" tile ${c}: grid="${gl}" expected="${el}"`);
-      if(tileLetters[c]&&tileLetters[c]!==el)er.push(`Tile conflict at ${c}: "${tileLetters[c]}" vs "${el}"`);
-      else tileLetters[c]=el;
-    });
-  });
-  const filled=CELL_ORDER.filter(c=>letters[c]).length;
-  if(words.length&&filled<16)wa.push(`${filled}/16 tiles filled`);
-  return{errors:er,warnings:wa,valid:!er.length};
-}
-
-function toJSON(meta,words,letters){
-  const pathTiles=new Set();
-  words.forEach(w=>(w.path.match(/.{2}/g)||[]).forEach(c=>pathTiles.add(c)));
-  const filler={};
-  CELL_ORDER.forEach(c=>{if(letters[c]&&!pathTiles.has(c))filler[c]=letters[c];});
-  const data={};
-  words.forEach(w=>{if(w.display&&w.path)data[w.display]=w.path;});
-  return JSON.stringify({
-    id:meta.id,
-    name:{en:meta.nameEn,...(meta.nameEs&&{es:meta.nameEs})},
-    category:meta.category,difficulty:meta.difficulty,
-    date:meta.date||null,series:null,premium:meta.premium,
-    hint:(meta.hintEn||meta.hintEs)?{en:meta.hintEn,...(meta.hintEs&&{es:meta.hintEs})}:null,
-    ...(Object.keys(filler).length&&{filler}),
-    data
-  },null,2);
-}
-
-function cell(coord){
-  const{drawIdx,path,letters,words}=S;
-  const own=buildOwn(words);
-  const letter=letters[coord]||'';
-  const inPath=path.includes(coord);
-  const pos=path.indexOf(coord);
-  const owners=own[coord]||[];
-  const wD=drawIdx!==null?words[drawIdx]:null;
-  const last=path[path.length-1];
-  const maxLen=wD?wD.display.replace(/ /g,'').length:0;
-  const canAdd=drawIdx!==null&&!inPath&&path.length<maxLen&&(path.length===0||isAdj(last,coord));
-  let bg='var(--color-background-primary)',brd='0.5px solid var(--color-border-tertiary)',lc='var(--color-text-primary)';
-  if(drawIdx!==null&&inPath){bg=wD.color+'28';brd=`2px solid ${wD.color}`;lc=wD.color;}
-  else if(drawIdx!==null&&canAdd){brd=`1.5px dashed ${wD.color}88`;}
-  else if(drawIdx===null&&owners.length>0){const wc=words[owners[0]]?.color;bg=wc+'20';brd=`1.5px solid ${wc}77`;lc=wc;}
-  const inner=drawIdx!==null
-    ?`<div onclick="cellClick('${coord}')" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;cursor:pointer;padding-bottom:12px;box-sizing:border-box;font-size:20px;font-weight:500;font-family:var(--font-mono);color:${lc}">${letter}</div>`
-    :`<input id="t-${coord}" type="text" maxlength="1" value="${letter}" oninput="tIn('${coord}',this)" onkeydown="tKd('${coord}',event)" autocomplete="off" spellcheck="false" autocapitalize="characters" style="width:100%;height:100%;background:transparent;border:none;outline:none;text-align:center;font-size:20px;font-weight:500;font-family:var(--font-mono);color:${lc};padding:0 0 12px 0;box-sizing:border-box;text-transform:uppercase;caret-color:${lc};cursor:text">`;
-  return`<div class="tile" style="position:relative;border:${brd};background:${bg};box-sizing:border-box;overflow:hidden">
-    ${inner}
-    <span style="position:absolute;bottom:3px;left:0;right:0;text-align:center;font-size:9px;color:var(--color-text-tertiary);font-family:var(--font-mono);pointer-events:none">${coord}</span>
-    ${drawIdx!==null&&inPath?`<span style="position:absolute;top:2px;right:4px;font-size:9px;font-weight:500;color:${wD.color};font-family:var(--font-mono)">${pos+1}</span>`:''}
-    ${drawIdx===null&&owners.length>1?`<span style="position:absolute;top:2px;left:4px;font-size:9px;color:var(--color-text-secondary)">2+</span>`:''}
-  </div>`;
-}
-
-function render(){
-  const{meta,words,drawIdx,path,letters,newWord,showImport,importText,importErr,copied}=S;
-  const{errors,warnings,valid}=validate(meta,words,letters);
-  const wD=drawIdx!==null?words[drawIdx]:null;
-  const json=toJSON(meta,words,letters);
-  const dirty=isDirty();
-  const viewMode=S.viewMode||'edit';
-  const mount=document.getElementById('app');
-  if(!mount)return;
-  const dialog=dialogState?`
-  <div class="dialog-backdrop" onclick="dialogCancel()">
-    <div class="dialog-card" role="dialog" aria-modal="true" aria-labelledby="dialog-title" aria-describedby="dialog-message" onclick="event.stopPropagation()">
-      <p class="dialog-title" id="dialog-title">${escapeHtml(dialogState.title)}</p>
-      <p class="dialog-message" id="dialog-message">${escapeHtml(dialogState.message)}</p>
-      <div class="dialog-actions">
-        <button onclick="dialogCancel()">${escapeHtml(dialogState.cancelText||'Cancel')}</button>
-        <button class="${dialogState.variant==='danger'?'danger':'primary'}" onclick="dialogAccept()">${escapeHtml(dialogState.confirmText||'OK')}</button>
-      </div>
-    </div>
-  </div>`:'';
-  try{
-  mount.innerHTML=`
-<div class="editor-shell">
+<!-- WORKSPACE -->
+<main id="workspace">
   <div class="editor-header">
-    <div>
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <h1 style="margin:0;font-size:18px;font-weight:600;color:var(--color-text-primary)">Ludodex level editor</h1>
-        <span class="save-chip ${dirty?'save-chip--dirty':'save-chip--clean'}">${dirty?'Unsaved changes':'Saved'}</span>
-      </div>
+    <div class="editor-title">
+      <h1>Level editor</h1>
+      <span id="dirty-chip" class="save-chip save-chip--clean">Saved</span>
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
-      <button onclick="doReset()">Reset</button>
+    <div class="editor-actions">
+      <button class="btn btn-ghost" onclick="doReset()" title="Reset to blank">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        Reset
+      </button>
     </div>
   </div>
 
-  <div class="mode-switch" aria-label="Editor sections">
-    <button class="${viewMode==='edit'?'is-active':''}" onclick="setEditorMode('edit')">Edit</button>
-    <button class="${viewMode==='meta'?'is-active':''}" onclick="setEditorMode('meta')">Meta</button>
-    <button class="${viewMode==='export'?'is-active':''}" onclick="setEditorMode('export')">Export</button>
+  <!-- Mobile section tabs -->
+  <div class="mobile-tabs" role="tablist" aria-label="Editor sections">
+    <button class="mobile-tab is-active" role="tab" onclick="setTab('edit')" data-tab="edit">Grid &amp; Words</button>
+    <button class="mobile-tab" role="tab" onclick="setTab('meta')" data-tab="meta">Details</button>
+    <button class="mobile-tab" role="tab" onclick="setTab('export')" data-tab="export">Export</button>
   </div>
 
   <div class="layout-grid">
-    <section class="left-column mobile-pane ${viewMode==='edit'?'is-active':''}">
-      <div class="panel tile-grid" style="padding:14px">
-        <div class="tile-grid__legend">
-          ${COLS.map(c=>`<div style="text-align:center;font-size:10px;color:var(--color-text-tertiary);font-family:var(--font-mono);text-transform:uppercase">${c}</div>`).join('')}
+    <!-- LEFT: Grid + Words -->
+    <section class="left-column mobile-pane is-active" data-panel="edit" aria-label="Tile grid and words">
+
+      <!-- Tile grid card -->
+      <div class="card" style="margin-bottom: var(--space-4);">
+        <div class="card-header">
+          <span class="card-title">Tile Grid</span>
+          <span class="card-meta" id="grid-fill-label">0/16 filled</span>
         </div>
-        ${ROWS.map(r=>`<div class="tile-grid__row">${COLS.map(c=>cell(c+r)).join('')}</div>`).join('')}
+        <div class="tile-grid-wrap" id="grid-wrap">
+          <!-- Rendered by JS -->
+        </div>
       </div>
 
-      ${wD?`<div class="panel" style="padding:14px;margin-top:12px;border-color:${wD.color}44">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap">
-          <div>
-            <div style="font-size:13px;font-weight:600;color:var(--color-text-primary)">${escapeHtml(wD.display)}</div>
-            <div style="font-size:12px;font-family:var(--font-mono);color:var(--color-text-secondary);margin-top:4px">${path.join(' ')||'—'} (${path.length}/${wD.display.replace(/ /g,'').length})</div>
-          </div>
-          <div style="width:10px;height:10px;border-radius:999px;background:${wD.color};margin-top:4px"></div>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
-          <button onclick="finishDraw()" style="background:${wD.color};color:#111;border-color:${wD.color};">Done</button>
-          <button onclick="clearCP()">Clear</button>
-          <button onclick="cancelDraw()">Cancel</button>
-        </div>
-      </div>`:''}
+      <!-- Draw context -->
+      <div class="draw-context card" id="draw-context" style="margin-bottom: var(--space-4);">
+        <!-- Rendered by JS -->
+      </div>
 
-      <div class="panel mobile-pane ${viewMode==='edit'?'is-active':''}" style="padding:14px;margin-top:12px">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-          <div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">Words</div>
-          <div style="font-size:12px;color:var(--color-text-tertiary)">${words.length} total</div>
+      <!-- Words card -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Words</span>
+          <span class="card-meta" id="word-count-label">0 total</span>
         </div>
-        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-          <input id="nw" value="${newWord}" oninput="S.newWord=this.value.toUpperCase();this.value=S.newWord"
-            onkeydown="if(event.key==='Enter')addWord()"
-            placeholder="SONIC or LARA CROFT" style="flex:1;min-width:180px;font-family:var(--font-mono);font-size:14px">
-          <button onclick="addWord()">Add word</button>
+        <div class="card-body">
+          <div class="words-add-row">
+            <input class="words-add-input" id="nw" type="text" placeholder="SONIC or LARA CROFT"
+              oninput="S.newWord=this.value.toUpperCase();this.value=S.newWord"
+              onkeydown="if(event.key==='Enter')addWord()"
+              autocomplete="off" spellcheck="false" autocapitalize="characters"
+              aria-label="New word">
+            <button class="btn btn-primary" onclick="addWord()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add
+            </button>
+          </div>
+          <div class="words-list" id="words-list">
+            <!-- Rendered by JS -->
+          </div>
         </div>
-        ${!words.length?`<div style="text-align:center;color:var(--color-text-tertiary);font-size:13px;padding:10px 0">No words yet</div>`:''}
-        ${words.map((w,idx)=>`
-        <div class="word-row" style="background:${drawIdx===idx?w.color+'18':'transparent'};border:1px solid ${drawIdx===idx?w.color+'33':'var(--color-border-tertiary)'}">
-          <div style="width:10px;height:10px;border-radius:3px;background:${w.color};flex-shrink:0"></div>
-          <span style="font-family:var(--font-mono);font-size:13px;font-weight:600;color:var(--color-text-primary);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(w.display)}</span>
-          <span style="font-family:var(--font-mono);font-size:11px;color:${w.path?'var(--color-text-tertiary)':'var(--color-text-danger)'};min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(w.path||'no path')}</span>
-          ${drawIdx!==idx?`<button onclick="startDraw(${idx})" style="min-width:72px">Draw</button>`:`<span style="font-size:12px;color:${w.color};font-style:italic;white-space:nowrap">drawing…</span>`}
-          <button onclick="clearPath(${idx})" title="Clear path">Clear</button>
-          <button onclick="rmWord(${idx})" title="Remove word">Delete</button>
-        </div>`).join('')}
       </div>
     </section>
 
-    <section class="right-column">
-      <div class="panel mobile-pane ${viewMode==='meta'?'is-active':''}" style="padding:14px;margin-bottom:12px">
-        <div style="font-size:14px;font-weight:600;color:var(--color-text-primary);margin-bottom:12px">Puzzle details</div>
-        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
-          <div>
-            <div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">ID</div>
-            <input value="${meta.id}" oninput="upM('id',this.value.toLowerCase().replace(/[^a-z0-9]/g,''))" placeholder="sonic" style="width:100%;font-family:var(--font-mono);font-size:14px">
-          </div>
-          <div>
-            <div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Category</div>
-            <select onchange="upM('category',this.value)" style="width:100%;font-size:14px">${CATS.map(c=>`<option value="${c}"${meta.category===c?' selected':''}>${c}</option>`).join('')}</select>
-          </div>
-          <div>
-            <div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Name (EN)</div>
-            <input value="${meta.nameEn}" oninput="upM('nameEn',this.value)" placeholder="Sonic the Hedgehog" style="width:100%;font-size:14px">
-          </div>
-          <div>
-            <div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Name (ES)</div>
-            <input value="${meta.nameEs}" oninput="upM('nameEs',this.value)" placeholder="Opcional" style="width:100%;font-size:14px">
-          </div>
-          <div>
-            <div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Difficulty</div>
-            <select onchange="upM('difficulty',this.value)" style="width:100%;font-size:14px">${DIFFS.map(d=>`<option value="${d}"${d===meta.difficulty?' selected':''}>${d}</option>`).join('')}</select>
-          </div>
-          <div>
-            <div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Date</div>
-            <input value="${meta.date}" oninput="upM('date',this.value)" placeholder="2026-05-27" style="width:100%;font-family:var(--font-mono);font-size:14px">
-          </div>
-          <div style="grid-column:1/-1">
-            <div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Hint (EN)</div>
-            <input value="${meta.hintEn}" oninput="upM('hintEn',this.value)" placeholder="Optional flavor text..." style="width:100%;font-size:14px">
-          </div>
-          <div style="grid-column:1/-1">
-            <div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Hint (ES)</div>
-            <input value="${meta.hintEs}" oninput="upM('hintEs',this.value)" placeholder="Texto opcional..." style="width:100%;font-size:14px">
+    <!-- RIGHT: Meta + Export -->
+    <div class="right-column">
+
+      <!-- Meta card -->
+      <div class="card mobile-pane" data-panel="meta" style="margin-bottom: var(--space-4);">
+        <div class="card-header">
+          <span class="card-title">Puzzle Details</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid" id="meta-form">
+            <!-- Rendered by JS -->
           </div>
         </div>
-        <label style="display:flex;align-items:center;gap:10px;margin-top:12px;font-size:13px;color:var(--color-text-secondary);cursor:pointer">
-          <input type="checkbox"${meta.premium?' checked':''} onchange="upM('premium',this.checked)"> Premium puzzle
-        </label>
       </div>
 
-      <div class="panel mobile-pane ${viewMode==='export'?'is-active':''}" style="padding:14px;margin-bottom:12px">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-          <div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">Validation</div>
-          <div style="font-size:12px;font-weight:600;color:${valid?'var(--color-text-success)':'var(--color-text-danger)'}">${valid?'Valid':'Needs work'}</div>
+      <!-- Validation + Export card -->
+      <div class="card mobile-pane" data-panel="export">
+        <div class="card-header">
+          <span class="card-title">Validate &amp; Export</span>
         </div>
-        ${errors.length===0&&warnings.length===0?`<div style="font-size:13px;color:var(--color-text-secondary)">No issues detected.</div>`:''}
-        ${errors.map(e=>`<div style="font-size:13px;color:var(--color-text-danger);margin-bottom:4px">✗ ${escapeHtml(e)}</div>`).join('')}
-        ${warnings.map(w=>`<div style="font-size:13px;color:var(--color-text-warning);margin-bottom:4px">⚠ ${escapeHtml(w)}</div>`).join('')}
+        <div class="card-body">
+          <div id="validation-block"></div>
+          <div class="json-output-wrap">
+            <pre class="json-output" id="json-output" aria-label="JSON output"></pre>
+            <div class="copy-btn-wrap">
+              <button class="btn btn-ghost" id="copy-btn" onclick="copyJSON()" style="font-size:11px; padding: 5px 12px; min-height: 30px;">
+                Copy
+              </button>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div style="font-size: var(--text-xs); font-weight: 700; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: var(--space-3);">Import JSON</div>
+          <div class="import-area">
+            <textarea class="import-textarea" id="import-text" placeholder='Paste puzzle JSON here…' oninput="S.importText=this.value"></textarea>
+            <div id="import-error" class="import-error"></div>
+            <div style="margin-top: var(--space-3); display: flex; gap: var(--space-2);">
+              <button class="btn btn-ghost" onclick="doImport()">Import</button>
+              <button class="btn btn-ghost" onclick="S.importText='';S.importErr='';document.getElementById('import-text').value='';renderExport()">Clear</button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="panel mobile-pane ${viewMode==='export'?'is-active':''}" style="padding:14px">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-          <div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">Export</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button onclick="doCopy()">${copied?'Copied':'Copy JSON'}</button>
-            <button onclick="S.showImport=!S.showImport;S.importErr='';render()">Import</button>
-          </div>
-        </div>
-        <textarea readonly style="width:100%;height:180px;font-family:var(--font-mono);font-size:12px;background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:10px;padding:10px;resize:vertical;box-sizing:border-box">${json.replace(/</g,'&lt;')}</textarea>
-        ${showImport?`<div style="margin-top:12px">
-          <textarea id="imp" placeholder="Paste puzzle JSON here..." style="width:100%;height:120px;box-sizing:border-box;font-family:var(--font-mono);font-size:12px;background:var(--color-background-secondary);color:var(--color-text-primary);border:0.5px solid var(--color-border-tertiary);border-radius:10px;padding:10px;resize:vertical">${importText}</textarea>
-          ${importErr?`<div style="font-size:12px;color:var(--color-text-danger);margin-top:6px">${escapeHtml(importErr)}</div>`:''}
-          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-            <button onclick="doImport()">Import</button>
-            <button onclick="S.showImport=false;S.importText='';S.importErr='';render()">Cancel</button>
-          </div>
-        </div>`:''}
-      </div>
-    </section>
+    </div>
   </div>
-</div>
-${dialog}`;
-  if(pf&&S.drawIdx===null){const el=document.getElementById('t-'+pf);if(el){el.focus();el.select();}pf=null;}
-  }catch(err){
-    console.error(err);
-    mount.innerHTML=`<div style="padding:16px;color:var(--color-text-danger);font-family:var(--font-mono);white-space:pre-wrap">Editor render failed: ${escapeHtml(err?.message||String(err))}</div>`;
-  }
-}
+</main>
 
-window.tIn=(coord,el)=>{
-  const raw=el.value;
-  const letter=raw?raw[raw.length-1].toUpperCase():'';
-  S.letters={...S.letters,[coord]:letter};
-  if(letter){const i=CELL_ORDER.indexOf(coord);pf=i<CELL_ORDER.length-1?CELL_ORDER[i+1]:coord;}
-  else pf=coord;
-  render();
-};
-
-window.tKd=(coord,e)=>{
-  if(e.key==='Backspace'&&!S.letters[coord]){
-    const i=CELL_ORDER.indexOf(coord);
-    if(i>0){const prev=CELL_ORDER[i-1];S.letters={...S.letters,[prev]:''};pf=prev;render();}
-    e.preventDefault();
-  }
-  if(e.key==='Tab'){
-    e.preventDefault();
-    const i=CELL_ORDER.indexOf(coord);
-    const next=e.shiftKey?CELL_ORDER[Math.max(0,i-1)]:CELL_ORDER[Math.min(CELL_ORDER.length-1,i+1)];
-    pf=next;render();
-  }
-};
-
-// --- Task 1: Letter auto-fill on path-draw ---
-window.cellClick=(coord)=>{
-  if(S.drawIdx===null)return;
-  const w=S.words[S.drawIdx];
-  const expectedLetters=w.display.replace(/ /g,'');
-  const maxLen=expectedLetters.length;
-  const ei=S.path.indexOf(coord);
-  if(ei>=0){S.path=S.path.slice(0,ei+1);render();return;}
-  if(S.path.length>=maxLen)return;
-  if(S.path.length>0&&!isAdj(S.path[S.path.length-1],coord))return;
-  const nextLetter=expectedLetters[S.path.length];
-  if(nextLetter)S.letters={...S.letters,[coord]:nextLetter};
-  S.path=[...S.path,coord];
-  render();
-};
-
-window.upM=(k,v)=>{S.meta={...S.meta,[k]:v};render();};
-window.setEditorMode=(mode)=>{S.viewMode=mode;render();};
-window.addWord=()=>{const d=S.newWord.trim().toUpperCase();if(!d)return;S.words=[...S.words,{id:Math.random().toString(36).slice(2),display:d,path:'',color:WC[S.words.length%WC.length]}];S.newWord='';render();};
-window.startDraw=(i)=>{S.path=S.words[i].path.match(/.{2}/g)||[];S.drawIdx=i;render();};
-window.finishDraw=()=>{if(S.drawIdx===null)return;const u=[...S.words];u[S.drawIdx]={...u[S.drawIdx],path:S.path.join('')};S.words=u;S.drawIdx=null;S.path=[];render();};
-window.cancelDraw=()=>{S.drawIdx=null;S.path=[];render();};
-window.clearCP=()=>{S.path=[];render();};
-window.clearPath=(i)=>{const u=[...S.words];u[i]={...u[i],path:''};S.words=u;if(S.drawIdx===i)S.path=[];render();};
-window.rmWord=(i)=>{if(S.drawIdx===i){S.drawIdx=null;S.path=[];}else if(S.drawIdx>i)S.drawIdx--;S.words=S.words.filter((_,j)=>j!==i);render();};
-window.doCopy=()=>{try{navigator.clipboard.writeText(toJSON(S.meta,S.words,S.letters));}catch(e){}S.copied=true;render();setTimeout(()=>{S.copied=false;render();},2000);};
-window.doImport=()=>{
-  const ta=document.getElementById('imp');
-  if(ta)S.importText=ta.value;
-  try{
-    const r=JSON.parse(S.importText);
-    S.meta={id:r.id||'',nameEn:r.name?.en||'',nameEs:r.name?.es||'',category:r.category||'characters',difficulty:r.difficulty||'medium',date:r.date||'',premium:r.premium||false,hintEn:r.hint?.en||'',hintEs:r.hint?.es||''};
-    const letters={};
-    Object.entries(r.data||{}).forEach(([d,p])=>{(p.match(/.{2}/g)||[]).forEach((c,i)=>{const L=d.replace(/ /g,'')[i];if(L)letters[c]=L;});});
-    Object.entries(r.filler||{}).forEach(([c,l])=>{letters[c]=l;});
-    S.letters=letters;
-    S.words=Object.entries(r.data||{}).map(([d,p],i)=>({id:Math.random().toString(36).slice(2),display:d,path:p,color:WC[i%WC.length]}));
-    S.showImport=false;S.importText='';S.importErr='';render();
-  }catch(e){S.importErr='Invalid JSON: '+e.message;render();}
-};
-// --- Task 2: Reset confirmation ---
-window.doReset=async()=>{
-  if (isDirty()) {
-    const ok = await promptConfirm({
-      title: 'Discard current puzzle?',
-      message: 'Start over? Any unsaved work will be lost.',
-      confirmText: 'Discard',
-      cancelText: 'Keep Editing',
-      variant: 'danger',
-    });
-    if (!ok) return;
-  }
-  editingId = null;
-  resetEditorState();
-  serverStatus('Started a new blank puzzle');
-};
-
-window.addEventListener('beforeunload', e => {
-  if (!isDirty()) return;
-  e.preventDefault();
-  e.returnValue = '';
-});
-</script>
-<div id="app"></div>
-<script>
-  loadState();
-  syncSavedSnapshot();
-  render();
-</script>
+<!-- Dialog mount -->
+<div id="dialog-mount"></div>
+  <script src="/editor/editor.js" defer></script>
 </body>
 </html>
