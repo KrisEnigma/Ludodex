@@ -862,6 +862,8 @@ function render(){
   const wD=drawIdx!==null?words[drawIdx]:null;
   const json=toJSON(meta,words,letters);
   const dirty=isDirty();
+  const mount=document.getElementById('app');
+  if(!mount)return;
   const dialog=dialogState?`
   <div class="dialog-backdrop" onclick="dialogCancel()">
     <div class="dialog-card" role="dialog" aria-modal="true" aria-labelledby="dialog-title" aria-describedby="dialog-message" onclick="event.stopPropagation()">
@@ -873,7 +875,8 @@ function render(){
       </div>
     </div>
   </div>`:'';
-  document.getElementById('app').innerHTML=`
+  try{
+  mount.innerHTML=`
 <div class="editor-shell">
   <div class="editor-header">
     <div>
@@ -1014,6 +1017,10 @@ function render(){
 </div>
 ${dialog}`;
   if(pf&&S.drawIdx===null){const el=document.getElementById('t-'+pf);if(el){el.focus();el.select();}pf=null;}
+  }catch(err){
+    console.error(err);
+    mount.innerHTML=`<div style="padding:16px;color:var(--color-text-danger);font-family:var(--font-mono);white-space:pre-wrap">Editor render failed: ${escapeHtml(err?.message||String(err))}</div>`;
+  }
 }
 
 window.tIn=(coord,el)=>{
@@ -1102,6 +1109,9 @@ window.addEventListener('beforeunload', e => {
 });
 </script>
 <div id="app"></div>
-<script>loadState();render();</script>
+<script>
+  loadState();
+  render();
+</script>
 </body>
 </html>
