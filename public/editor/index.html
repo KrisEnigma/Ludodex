@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow">
   <title>Ludodex Editor</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
   <style>
     :root {
       --color-background-primary: #131824;
@@ -487,6 +486,16 @@ function currentSnapshot() {
   return toJSON(S.meta, S.words, S.letters);
 }
 
+function escapeHtml(text) {
+  return String(text).replace(/[&<>"']/g, ch => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[ch]));
+}
+
 function syncSavedSnapshot() {
   savedSnapshot = currentSnapshot();
 }
@@ -937,7 +946,7 @@ function render(){
           <span style="font-family:var(--font-mono);font-size:11px;color:${w.path?'var(--color-text-tertiary)':'var(--color-text-danger)'};min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(w.path||'no path')}</span>
           ${drawIdx!==idx?`<button onclick="startDraw(${idx})" style="min-width:72px">Draw</button>`:`<span style="font-size:12px;color:${w.color};font-style:italic;white-space:nowrap">drawing…</span>`}
           <button onclick="clearPath(${idx})" title="Clear path">Clear</button>
-          <button onclick="rmWord(${idx})" title="Remove word"><i class="ti ti-trash" style="font-size:16px" aria-hidden="true"></i></button>
+          <button onclick="rmWord(${idx})" title="Remove word">Delete</button>
         </div>`).join('')}
       </div>
     </section>
