@@ -190,12 +190,69 @@ function rebuildCats() {
   CATS = merged;
 }
 
-function addCategory(val) {
-  const cat = val.trim().toLowerCase().replace(/\s+/g, '-');
-  if (!cat) return;
+function addCategory(raw) {
+  const cat = raw.trim().toLowerCase().replace(/\s+/g, '-');
+  if (!cat) return cat;
   if (!CATS.includes(cat)) CATS.push(cat);
+  return cat;
+}
+
+/* ── Category combobox ── */
+let _catFilter = '';
+function catComboOpen() {
+  _catFilter = document.getElementById('m-cat')?.value || '';
+  catComboRender(catComboFiltered());
+  const dd = document.getElementById('cat-combo-dropdown');
+  if (dd) dd.style.display = 'block';
+}
+function catComboClose() {
+  const dd = document.getElementById('cat-combo-dropdown');
+  if (dd) dd.style.display = 'none';
+}
+function catComboFiltered() {
+  const q = _catFilter.toLowerCase();
+  const matches = CATS.filter(c => c.includes(q));
+  // if typed something not in list, show "Create" option
+  const exact = CATS.includes(_catFilter.toLowerCase().replace(/\s+/g,'-'));
+  if (_catFilter && !exact) matches.push('__create__');
+  return matches;
+}
+function catComboFilter(val) {
+  _catFilter = val;
+  S.meta.category = val.trim().toLowerCase().replace(/\s+/g,'-');
+  catComboRender(catComboFiltered());
+  const dd = document.getElementById('cat-combo-dropdown');
+  if (dd) dd.style.display = 'block';
+}
+function catComboRender(list) {
+  const dd = document.getElementById('cat-combo-dropdown');
+  if (!dd) return;
+  dd.innerHTML = list.map(c => {
+    if (c === '__create__') {
+      const label = _catFilter.trim().toLowerCase().replace(/\s+/g,'-');
+      return `<div class="cat-combo-opt cat-combo-create" onmousedown="catComboSelect('${label}',true)">+ Create "<strong>${label}</strong>"</div>`;
+    }
+    const active = c === S.meta.category ? ' cat-combo-opt--active' : '';
+    return `<div class="cat-combo-opt${active}" onmousedown="catComboSelect('${c}')">${c}</div>`;
+  }).join('') || '<div class="cat-combo-empty">No matches</div>';
+}
+function catComboSelect(cat, create) {
+  if (create) addCategory(cat);
   S.meta.category = cat;
-  renderAll();
+  const inp = document.getElementById('m-cat');
+  if (inp) inp.value = cat;
+  catComboClose();
+  renderMeta();
+}
+function catComboKey(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const list = catComboFiltered();
+    if (list.length) catComboSelect(list[0] === '__create__' ? _catFilter.trim().toLowerCase().replace(/\s+/g,'-') : list[0], list[0] === '__create__');
+    catComboClose();
+  } else if (e.key === 'Escape') {
+    catComboClose();
+  }
 }
 
 function rebuildSelect() {
@@ -590,15 +647,17 @@ function renderMeta() {
     </div>
     <div class="form-field">
       <label class="form-label" for="m-cat">Category</label>
-      <input class="form-input" id="m-cat" type="text" list="cats-list"
-        value="${escapeHtml(m.category)}"
-        placeholder="Type or pick…"
-        oninput="S.meta.category=this.value.trim().toLowerCase().replace(/\\s+/g,'-');renderAll()"
-        onchange="addCategory(this.value)"
-        autocomplete="off">
-      <datalist id="cats-list">
-        ${CATS.map(c => `<option value="${c}">`).join('')}
-      </datalist>
+      <div class="cat-combo" id="cat-combo">
+        <input class="form-input cat-combo-input" id="m-cat" type="text"
+          value="${escapeHtml(m.category)}"
+          placeholder="Type or pick…"
+          autocomplete="off"
+          oninput="catComboFilter(this.value)"
+          onkeydown="catComboKey(event)"
+          onfocus="catComboOpen()"
+          onblur="setTimeout(catComboClose,150)">
+        <div class="cat-combo-dropdown" id="cat-combo-dropdown" style="display:none"></div>
+      </div>
     </div>
     <div class="form-field">
       <label class="form-label" for="m-diff">Difficulty</label>
