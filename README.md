@@ -97,7 +97,7 @@ Achievements earned before the system was introduced are retroactively unlocked 
 
 ## Skins
 
-Three visual themes ship with the game:
+Five visual themes ship with the game:
 
 **Void** (free) — the default. Near-black background, cyan grid glow, Space Mono font. Clean and focused.
 
@@ -105,15 +105,19 @@ Three visual themes ship with the game:
 
 **Game Boy** — muted greens and dark outlines. A love letter to the original DMG palette.
 
-Locked skins can be previewed before purchasing — the entire UI shifts to that theme while you browse, so you know exactly what you're getting.
+**Terminal** (free) — amber CRT-inspired styling with VT323 lettering and sharp retro contrast.
+
+**Crimson** (free) — high-energy red accents with Orbitron display styling and stronger glow.
+
+Skins can be previewed before unlocking — the entire UI shifts to that theme while you browse, so you know exactly what you're getting. On web, all skins are free. On native, skins are unlocked through achievements and optional purchases.
 
 ---
 
 ## Platform
 
-Ludodex is available as:
+Ludodex will be available as:
 
-- A **web app** at [ludodex.krisenigma.com](https://ludodex.krisenigma.com) — playable in any browser, no install needed. The daily puzzle and the last 7 archive entries are free.
+- A **web app** at [ludodex.krisenigma.com](https://ludodex.krisenigma.com) — playable in any browser, no install needed. On web, you can play today’s puzzle plus the 7 most recent archive entries.
 - An **iOS app** on the App Store — full archive, hints, skins, and native features.
 - An **Android app** on Google Play — same as iOS.
 

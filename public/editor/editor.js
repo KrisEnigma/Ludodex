@@ -10,7 +10,7 @@ const COLS = ['a','b','c','d'];
 const ROWS = ['1','2','3','4'];
 const CELL_ORDER = ROWS.flatMap(r => COLS.map(c => c + r));
 const WC = ['#5b9bff','#f472b6','#4ade80','#fb923c','#c084fc','#34d399','#fbbf24','#f87171'];
-let CATS = [];
+const CATEGORIES = ['characters','enemies','items','locations','mechanics','series','people','studios','hardware','culture'];
 const DIFFS = ['easy','medium','hard'];
 
 /* ---- state ---- */
@@ -130,10 +130,6 @@ async function serverLoad() {
     renderLibrary();
     toast(`Connected · ${serverPuzzles.length} levels loaded`);
   } catch(e) { serverStatus('Load failed', 'err'); }
-}
-function rebuildCats() {
-  const found = new Set(serverPuzzles.map(p => p.category).filter(Boolean));
-  found.forEach(c => { if (!CATS.includes(c)) CATS.push(c); });
 }
 function serverLogout() {
   try { localStorage.removeItem('ludodex_cms_token'); } catch(e) {}
@@ -784,11 +780,10 @@ function renderMetaForm(p) {
       <div class="form-field"><label class="form-label">Name <span class="lang">EN</span></label><input class="field" type="text" value="${escapeHtml(n.en || '')}" oninput="metaUpdate('${id}','name.en',this.value)" placeholder="English name"></div>
       <div class="form-field"><label class="form-label">Name <span class="lang">ES</span></label><input class="field" type="text" value="${escapeHtml(n.es || '')}" oninput="metaUpdate('${id}','name.es',this.value)" placeholder="Spanish name"></div>
       <div class="form-field"><label class="form-label">Category</label>
-        <div class="combo">
-          <input class="field" type="text" value="${escapeHtml(p.category || '')}" autocomplete="off" placeholder="Type or pick…"
-            oninput="comboInput('category','${id}',this.value)" onfocus="comboShow('category','${id}')" onblur="setTimeout(comboHide,160)">
-          <div class="combo-dropdown" id="combo-category" style="display:none"></div>
-        </div>
+        <select class="field" onchange="metaUpdate('${id}','category',this.value)">
+          <option value="">— pick one —</option>
+          ${CATEGORIES.map(c => `<option value="${c}"${p.category===c?' selected':''}>${c.toUpperCase()}</option>`).join('')}
+        </select>
       </div>
       <div class="form-field"><label class="form-label">Series <span class="lang">opt</span></label>
         <div class="combo">
