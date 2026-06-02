@@ -186,7 +186,6 @@ function puzzleToJSON(p) {
     difficulty: p.difficulty || 'medium',
     date: p.date || null,
     series: p.series || null,
-    premium: !!p.premium,
     hint: { en: p.hint?.en || '', es: p.hint?.es || '' },
     data: p.data || {},
   };
@@ -751,7 +750,6 @@ const canMove = !listQuery;
       <div class="list-badges">
         ${cat ? `<span class="badge badge-cat">${escapeHtml(cat[0].toUpperCase() + cat.slice(1))}</span>` : ''}
         <span class="badge badge-${diff}">${diff[0].toUpperCase()}${diff.slice(1)}</span>
-        ${p.premium ? '<span class="badge badge-premium">★ Premium</span>' : ''}
       </div>
       <div class="list-actions">
         <button class="btn btn-ghost btn-meta${expanded ? ' is-open' : ''}" onclick="toggleMeta('${escapeHtml(p.id)}')" title="Edit metadata">
@@ -798,12 +796,6 @@ function renderMetaForm(p) {
         <div class="diff-seg" role="group">${DIFFS.map(d => `<button class="diff-opt${diff===d?' is-active':''}" data-diff="${d}" onclick="metaUpdateDiff('${id}','${d}')">${d}</button>`).join('')}</div>
       </div>
       <div class="form-field"><label class="form-label">Release date</label><input class="field" type="date" value="${escapeHtml(p.date || '')}" oninput="metaUpdate('${id}','date',this.value)"></div>
-      <div class="form-field" style="justify-content:flex-end">
-        <label class="switch-row">
-          <span class="switch-text"><strong>Premium</strong><span>Members-only level</span></span>
-          <span class="switch"><input type="checkbox" ${p.premium ? 'checked' : ''} onchange="metaUpdate('${id}','premium',this.checked)"><span class="track"></span><span class="thumb"></span></span>
-        </label>
-      </div>
     </div>
 
     <details class="raw-json">
@@ -843,13 +835,7 @@ function metaUpdate(id, field, value) {
     if (field === 'category') {
       let b = el.querySelector('.badge-cat');
       if (value && b) b.textContent = value;
-      else if (value && !b) { const badges = el.querySelector('.list-badges'); const s = document.createElement('span'); s.className = 'badge badge-cat'; s.textContent = value[0].toUpperCase() + value.slice(1); badges.insertBefore(s, badges.querySelector('.badge-premium')); }
-    }
-    if (field === 'premium') {
-      let b = el.querySelector('.badge-premium');
-      const badges = el.querySelector('.list-badges');
-      if (value && !b) { const s = document.createElement('span'); s.className = 'badge badge-premium'; s.textContent = '★ Premium'; badges.appendChild(s); }
-      else if (!value && b) b.remove();
+      else if (value && !b) { const badges = el.querySelector('.list-badges'); const s = document.createElement('span'); s.className = 'badge badge-cat'; s.textContent = value[0].toUpperCase() + value.slice(1); badges.prepend(s); }
     }
   }
 }
@@ -884,7 +870,7 @@ async function metaDelete(id) {
 async function newLevel() {
   const p = {
     id: String(serverPuzzles.length + 1), category: '', difficulty: 'medium',
-    name: { en: '', es: '' }, hint: { en: '', es: '' }, date: null, series: null, premium: false, data: {},
+    name: { en: '', es: '' }, hint: { en: '', es: '' }, date: null, series: null, data: {},
   };
   serverPuzzles.push(p);
   renumberIds();
@@ -925,7 +911,7 @@ function applyRawJSON(id) {
     const obj = JSON.parse(ta.value);
     const p = serverPuzzles.find(x => x.id === id);
     if (!p) return;
-    ['name','category','difficulty','date','series','premium','hint','data'].forEach(k => { if (k in obj) p[k] = obj[k]; });
+    ['name','category','difficulty','date','series','hint','data'].forEach(k => { if (k in obj) p[k] = obj[k]; });
     delete p.filler;
     if (errEl) errEl.textContent = '';
     renderLibrary();

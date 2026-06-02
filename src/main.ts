@@ -1,5 +1,5 @@
-import '@fontsource/space-mono/400.css';
-import '@fontsource/space-mono/700.css';
+import '@fontsource/space-mono/latin-400.css';
+import '@fontsource/space-mono/latin-700.css';
 // Skin display fonts. Bundled via Vite (relative asset URLs) so they work
 // offline on iOS/Android, same as Space Mono above. Latin-only subset and
 // only the weights each skin uses (Press Start 2P ships 400 only) — keeps

@@ -19,7 +19,6 @@ export type RawPuzzle = {
   difficulty: Difficulty;
   date: string | null;
   series: Series | null;
-  premium: boolean;
   hint: LocalizedString | null;
   filler?: Record<string, string>;
   data: Record<string, string>;
@@ -42,7 +41,6 @@ export type Puzzle = {
   difficulty: Difficulty;
   date: string | null;
   series: Series | null;
-  premium: boolean;
   hint: LocalizedString | null;
   grid: Record<string, string>;
   answers: Answer[];

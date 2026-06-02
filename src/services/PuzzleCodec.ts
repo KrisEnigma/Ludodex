@@ -116,7 +116,6 @@ export function decodePuzzleToken(token: string): RawPuzzle | null {
     difficulty,
     date: isStr(o.date) ? o.date : null,
     series: null, // previews are standalone; never carry series linkage
-    premium: false,
     hint: asLocalized(o.hint),
     data
   };

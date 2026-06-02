@@ -76,7 +76,6 @@ export function parsePuzzle(raw: RawPuzzle): Puzzle {
     difficulty: raw.difficulty,
     date: raw.date,
     series: raw.series,
-    premium: raw.premium,
     hint: raw.hint,
     grid,
     answers
