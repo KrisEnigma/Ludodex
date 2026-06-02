@@ -3,7 +3,8 @@ const PUZZLES_KEY = 'puzzles.json';
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, If-None-Match',
+  'Access-Control-Expose-Headers': 'ETag',
 } as const;
 
 type Env = {
@@ -13,6 +14,9 @@ type Env = {
   PUZZLE_BUCKET: {
     get(key: string): Promise<{
       body: BodyInit | null;
+      etag?: string;
+      httpEtag?: string;
+      customMetadata?: Record<string, string>;
       json<T = unknown>(): Promise<T>;
     } | null>;
     put(key: string, value: string, options?: {
@@ -37,13 +41,75 @@ function err(message: string, status: number, code?: string): Response {
   return json({ error: message, ...(code ? { code } : {}) }, status);
 }
 
-async function readPuzzles(env: Env): Promise<Response> {
+function quoteEtag(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return '"puzzles-empty"';
+  if (trimmed.startsWith('W/"') || trimmed.startsWith('"')) return trimmed;
+  return `"${trimmed}"`;
+}
+
+function getObjectEtag(
+  obj: { etag?: string; httpEtag?: string; customMetadata?: Record<string, string> }
+): string {
+  if (obj.httpEtag) return quoteEtag(obj.httpEtag);
+  if (obj.etag) return quoteEtag(obj.etag);
+  const fallback = obj.customMetadata?.updatedAt;
+  if (fallback) return quoteEtag(fallback);
+  return '"puzzles-unknown"';
+}
+
+function etagMatches(ifNoneMatch: string | null, currentEtag: string): boolean {
+  if (!ifNoneMatch) return false;
+  const normalizedCurrent = currentEtag.replace(/^W\//, '');
+  const tokens = ifNoneMatch.split(',').map((value) => value.trim());
+  return tokens.some((token) => {
+    if (!token) return false;
+    if (token === '*') return true;
+    return token.replace(/^W\//, '') === normalizedCurrent;
+  });
+}
+
+async function readPuzzles(request: Request, env: Env): Promise<Response> {
   const obj = await env.PUZZLE_BUCKET.get(PUZZLES_KEY);
-  if (!obj) return json([]);
+  if (!obj) {
+    const emptyEtag = '"puzzles-empty"';
+    if (etagMatches(request.headers.get('If-None-Match'), emptyEtag)) {
+      return new Response(null, {
+        status: 304,
+        headers: {
+          ETag: emptyEtag,
+          'Cache-Control': 'no-cache',
+          ...CORS_HEADERS,
+        },
+      });
+    }
+    return new Response(JSON.stringify([]), {
+      headers: {
+        'Content-Type': 'application/json',
+        ETag: emptyEtag,
+        'Cache-Control': 'no-cache',
+        ...CORS_HEADERS,
+      },
+    });
+  }
+
+  const etag = getObjectEtag(obj);
+  if (etagMatches(request.headers.get('If-None-Match'), etag)) {
+    return new Response(null, {
+      status: 304,
+      headers: {
+        ETag: etag,
+        'Cache-Control': 'no-cache',
+        ...CORS_HEADERS,
+      },
+    });
+  }
+
   return new Response(obj.body, {
     headers: {
       'Content-Type': 'application/json',
-      'Cache-Control': 'no-store',
+      ETag: etag,
+      'Cache-Control': 'no-cache',
       ...CORS_HEADERS,
     },
   });
@@ -71,7 +137,7 @@ export default {
     }
 
     if (request.method === 'GET') {
-      return readPuzzles(env);
+      return readPuzzles(request, env);
     }
 
     const auth = request.headers.get('Authorization') ?? '';

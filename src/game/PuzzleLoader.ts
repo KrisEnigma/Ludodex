@@ -65,6 +65,12 @@ const REMOTE_PUZZLES_URL = (() => {
   return 'https://ludodex.krisenigma.com/api/puzzles';
 })();
 const PUZZLES_REMOTE_KEY = 'puzzles_remote';
+const PUZZLES_REMOTE_ETAG_KEY = 'puzzles_remote_etag';
+
+type RemoteFetchResult =
+  | { kind: 'ok'; raw: RawPuzzle[]; etag: string | null }
+  | { kind: 'not-modified' }
+  | { kind: 'error' };
 
 let parsedPuzzles: Puzzle[] = [];
 let puzzleSource: 'remote' | 'cache' | 'bundled' = 'bundled';
@@ -74,11 +80,11 @@ export async function loadPuzzles(): Promise<Puzzle[]> {
 
   let selectedRaw: RawPuzzle[] | null = null;
 
-  const remoteRaw = await fetchRemoteRawPuzzles();
-  if (remoteRaw) {
-    selectedRaw = remoteRaw;
+  const remoteResult = await fetchRemoteRawPuzzles();
+  if (remoteResult.kind === 'ok') {
+    selectedRaw = remoteResult.raw;
     puzzleSource = 'remote';
-    await cacheRemoteRawPuzzles(remoteRaw);
+    await cacheRemoteRawPuzzles(remoteResult.raw, remoteResult.etag);
   } else {
     const cachedRaw = await getCachedRemoteRawPuzzles();
     if (cachedRaw) {
@@ -140,45 +146,72 @@ export function parseRawPuzzleToPuzzle(raw: RawPuzzle): Puzzle | null {
   }
 }
 
-async function fetchRemoteRawPuzzles(): Promise<RawPuzzle[] | null> {
+async function fetchRemoteRawPuzzles(): Promise<RemoteFetchResult> {
   const controller = new AbortController();
   const timeoutMs = 1800;
   const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
 
   try {
+    const cachedEtag = await getCachedRemoteEtag();
+    const headers: HeadersInit = { Accept: 'application/json' };
+    if (cachedEtag) {
+      headers['If-None-Match'] = cachedEtag;
+    }
+
     const response = await fetch(REMOTE_PUZZLES_URL, {
       method: 'GET',
-      headers: {
-        Accept: 'application/json'
-      },
+      headers,
       signal: controller.signal
     });
 
+    if (response.status === 304) {
+      return { kind: 'not-modified' };
+    }
+
     if (!response.ok) {
-      return null;
+      return { kind: 'error' };
     }
 
     const data = await response.json();
     if (!Array.isArray(data)) {
-      return null;
+      return { kind: 'error' };
     }
 
-    return data as RawPuzzle[];
+    return {
+      kind: 'ok',
+      raw: data as RawPuzzle[],
+      etag: response.headers.get('ETag')
+    };
   } catch {
-    return null;
+    return { kind: 'error' };
   } finally {
     window.clearTimeout(timeoutId);
   }
 }
 
-async function cacheRemoteRawPuzzles(raw: RawPuzzle[]): Promise<void> {
+async function cacheRemoteRawPuzzles(raw: RawPuzzle[], etag: string | null): Promise<void> {
   try {
     await Preferences.set({
       key: PUZZLES_REMOTE_KEY,
       value: JSON.stringify(raw)
     });
+    if (etag) {
+      await Preferences.set({ key: PUZZLES_REMOTE_ETAG_KEY, value: etag });
+    } else {
+      await Preferences.remove({ key: PUZZLES_REMOTE_ETAG_KEY });
+    }
   } catch (error) {
     console.warn('Failed to cache remote puzzles', error);
+  }
+}
+
+async function getCachedRemoteEtag(): Promise<string | null> {
+  try {
+    const { value } = await Preferences.get({ key: PUZZLES_REMOTE_ETAG_KEY });
+    if (!value) return null;
+    return value;
+  } catch {
+    return null;
   }
 }
 
