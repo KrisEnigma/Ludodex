@@ -4,8 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "dev": "npm run sync:puzzles && vite",
+    "sync:puzzles": "tsx scripts/sync-puzzles.ts",
+    "build": "npm run sync:puzzles && tsc --noEmit && vite build",
     "deploy": "npm run build && wrangler deploy",
     "preview": "vite preview",
     "validate": "npm run validate:puzzles && npm run test:grid && npm run test:selection && npm run test:ownership && npm run test:deactivation",

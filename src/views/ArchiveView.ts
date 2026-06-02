@@ -5,6 +5,7 @@ import type { Puzzle } from '../types/puzzle';
 import { t as tp } from '../utils/i18n';
 import { getMonetizationContext } from '../services/MonetizationContext';
 import { buildInstallCta } from '../components/InstallCta';
+import { buildPuzzleTags } from '../components/PuzzleTags';
 
 /** On web, only the most recent N days are freely accessible. */
 const WEB_FREE_DAYS = 7;
@@ -144,7 +145,9 @@ export class ArchiveView {
     title.className = 'archive-row-title';
     title.textContent = tp(puzzle.name, puzzle.id);
 
-    label.append(num, title);
+    const tags = buildPuzzleTags({ category: puzzle.category, difficulty: puzzle.difficulty });
+
+    label.append(num, title, tags);
 
     const meta = document.createElement('div');
     meta.className = 'archive-row-meta';

@@ -1,6 +1,6 @@
 [
   {
-    "id": "videogameheroes",
+    "id": "1",
     "name": {
       "en": "Video Game Heroes",
       "es": "Héroes de Videojuegos"
@@ -21,11 +21,11 @@
     }
   },
   {
-    "id": "chess",
+    "id": "2",
     "name": {
       "en": "Chess Pieces"
     },
-    "category": "characters",
+    "category": "items",
     "difficulty": "easy",
     "date": null,
     "series": null,
@@ -40,11 +40,11 @@
     }
   },
   {
-    "id": "planets",
+    "id": "3",
     "name": {
       "en": "Solar System"
     },
-    "category": "series",
+    "category": "locations",
     "difficulty": "medium",
     "date": null,
     "series": null,
@@ -60,7 +60,7 @@
     }
   },
   {
-    "id": "street_fighters",
+    "id": "4",
     "name": {
       "en": "Street Fighters"
     },
@@ -76,6 +76,28 @@
       "RYU": "c1d1d2",
       "CHUN LI": "b3c2d2c3d3d4",
       "AKUMA": "b1a1a2a3a4"
+    }
+  },
+  {
+    "id": "5",
+    "category": "enemies",
+    "difficulty": "hard",
+    "name": {
+      "en": "Dark Souls Bosses",
+      "es": ""
+    },
+    "hint": {
+      "en": "",
+      "es": ""
+    },
+    "date": null,
+    "series": null,
+    "premium": false,
+    "data": {
+      "GWYN": "a1b2c3d4",
+      "SEATH": "b1c1d1d2d3",
+      "GWYNDOLIN": "a1b2c3d4c4b4a4a3a2",
+      "SIF": "b1c2b3"
     }
   }
 ]

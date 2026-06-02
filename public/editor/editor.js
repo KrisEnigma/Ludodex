@@ -729,8 +729,7 @@ function renderListItem(p, i) {
   const diff = p.difficulty || 'medium';
   const cat = p.category || '';
   const expanded = expandedId === p.id;
-  const wordCount = p.data ? Object.keys(p.data).length : 0;
-  const canMove = !listQuery;
+const canMove = !listQuery;
   const total = serverPuzzles.length;
   const v = validatePuzzle(p);
   const statusDot = v.ok
@@ -748,10 +747,10 @@ function renderListItem(p, i) {
       </span>
       <span class="list-num">${i + 1}</span>
       ${statusDot}
-      <span class="list-name">${name ? escapeHtml(name) : '<span class="noname">Untitled</span>'}<span class="sub">${wordCount} word${wordCount !== 1 ? 's' : ''}</span></span>
+      <span class="list-name">${name ? escapeHtml(name) : '<span class="noname">Untitled</span>'}</span>
       <div class="list-badges">
-        <span class="badge badge-${diff}">${diff}</span>
-        ${cat ? `<span class="badge badge-cat">${escapeHtml(cat)}</span>` : ''}
+        ${cat ? `<span class="badge badge-cat">${escapeHtml(cat[0].toUpperCase() + cat.slice(1))}</span>` : ''}
+        <span class="badge badge-${diff}">${diff[0].toUpperCase()}${diff.slice(1)}</span>
         ${p.premium ? '<span class="badge badge-premium">★ Premium</span>' : ''}
       </div>
       <div class="list-actions">
@@ -782,7 +781,7 @@ function renderMetaForm(p) {
       <div class="form-field"><label class="form-label">Category</label>
         <select class="field" onchange="metaUpdate('${id}','category',this.value)">
           <option value="">— pick one —</option>
-          ${CATEGORIES.map(c => `<option value="${c}"${p.category===c?' selected':''}>${c.toUpperCase()}</option>`).join('')}
+          ${CATEGORIES.map(c => `<option value="${c}"${p.category===c?' selected':''}>${c[0].toUpperCase()}${c.slice(1)}</option>`).join('')}
         </select>
       </div>
       <div class="form-field"><label class="form-label">Series <span class="lang">opt</span></label>
@@ -844,7 +843,7 @@ function metaUpdate(id, field, value) {
     if (field === 'category') {
       let b = el.querySelector('.badge-cat');
       if (value && b) b.textContent = value;
-      else if (value && !b) { const badges = el.querySelector('.list-badges'); const s = document.createElement('span'); s.className = 'badge badge-cat'; s.textContent = value; badges.insertBefore(s, badges.querySelector('.badge-premium')); }
+      else if (value && !b) { const badges = el.querySelector('.list-badges'); const s = document.createElement('span'); s.className = 'badge badge-cat'; s.textContent = value[0].toUpperCase() + value.slice(1); badges.insertBefore(s, badges.querySelector('.badge-premium')); }
     }
     if (field === 'premium') {
       let b = el.querySelector('.badge-premium');
@@ -860,7 +859,7 @@ function metaUpdateDiff(id, diff) {
   if (el) {
     el.querySelectorAll('.diff-opt').forEach(o => o.classList.toggle('is-active', o.dataset.diff === diff));
     const b = el.querySelector('.badge-easy,.badge-medium,.badge-hard');
-    if (b) { b.className = 'badge badge-' + diff; b.textContent = diff; }
+    if (b) { b.className = 'badge badge-' + diff; b.textContent = diff[0].toUpperCase() + diff.slice(1); }
   }
 }
 

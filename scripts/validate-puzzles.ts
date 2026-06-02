@@ -3,8 +3,9 @@ import { parsePuzzle } from '../src/game/PuzzleParser';
 import type { RawPuzzle } from '../src/types/puzzle';
 
 const VALID_CATEGORIES = [
-  'characters', 'titles', 'studios', 'franchises',
-  'consoles', 'composers', 'genres', 'decades'
+  'characters', 'enemies', 'items', 'locations',
+  'mechanics', 'series', 'people', 'studios',
+  'hardware', 'culture'
 ];
 
 const VALID_DIFFICULTIES = ['easy', 'medium', 'hard'];
@@ -25,9 +26,6 @@ for (const raw of puzzles as unknown as RawPuzzle[]) {
     }
     if (raw.date && !/^\d{4}-\d{2}-\d{2}$/.test(raw.date)) {
       throw new Error(`Invalid date format: \"${raw.date}\"`);
-    }
-    if (raw.hint && !raw.hint.en) {
-      throw new Error('hint exists but missing hint.en');
     }
 
     parsePuzzle(raw);

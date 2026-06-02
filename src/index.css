@@ -2287,10 +2287,41 @@ body {
   gap: 6px;
 }
 
+/* ── Puzzle tags (category + difficulty) ───────────────────────────────────
+   Reusable pill labels. Category is always neutral. Difficulty uses data-diff
+   to escalate visual weight: easy = quiet, medium = warm, hard = accent.
+   Never use color alone — hard also uses a slightly bolder letter-spacing so
+   it reads as distinct even in low-color environments.
+   ────────────────────────────────────────────────────────────────────────── */
+.puzzle-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: var(--type-micro);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-family: 'Space Mono', monospace;
+  line-height: 1.6;
+  white-space: nowrap;
+  /* neutral default — used by category tag and easy difficulty */
+  background: color-mix(in srgb, var(--chrome-text) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--chrome-text) 18%, transparent);
+  color: var(--chrome-text);
+}
+
+
+.puzzle-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+}
+
 .archive-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   background: var(--button-bg);
   border: 1px solid var(--button-border);
@@ -2347,6 +2378,7 @@ body {
   align-items: flex-end;
   gap: 2px;
   flex-shrink: 0;
+  padding-top: 18px;
 }
 
 .archive-row-status {

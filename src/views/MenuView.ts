@@ -10,6 +10,7 @@ import { getMonetizationContext } from '../services/MonetizationContext';
 import { getStarterPackEligibility, markStarterPackShown } from '../services/StarterPackService';
 import { showStarterPackModal } from '../components/StarterPackModal';
 import { showHintStore } from '../components/HintStoreSheet';
+import { buildPuzzleTags } from '../components/PuzzleTags';
 
 const STREAK_BANNER_DISMISSED_KEY = 'streak_banner_dismissed';
 
@@ -144,11 +145,13 @@ export class MenuView {
     dailyTitle.className = 'daily-card-title';
     dailyTitle.textContent = puzzleTitle ?? t('menu.daily_no_puzzle_title');
 
-    const dailyMeta = document.createElement('p');
+    const dailyMeta = document.createElement('div');
     dailyMeta.className = 'daily-card-meta';
-    dailyMeta.textContent = dailyPuzzle
-      ? `${dailyPuzzle.category} · ${dailyPuzzle.difficulty}`
-      : t('menu.daily_no_puzzle_meta');
+    if (dailyPuzzle) {
+      dailyMeta.append(buildPuzzleTags({ category: dailyPuzzle.category, difficulty: dailyPuzzle.difficulty }));
+    } else {
+      dailyMeta.textContent = t('menu.daily_no_puzzle_meta');
+    }
 
     const dailyPlayButton = document.createElement('button');
     dailyPlayButton.type = 'button';
