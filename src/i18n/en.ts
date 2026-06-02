@@ -35,6 +35,8 @@ export const strings = {
   'menu.daily_next_in': 'NEXT IN {time}',
   'menu.daily_play': '▶ Play',
   'menu.daily_play_again': '✓ Solved · Play again',
+  'menu.daily_no_puzzle_title': 'New puzzle coming soon',
+  'menu.daily_no_puzzle_meta': 'Check back tomorrow',
 
   // Menu - footer
   'menu.footer_archive': 'Archive',
@@ -45,6 +47,7 @@ export const strings = {
   'settings.skin_section': 'Skin',
   'settings.skin_active': 'Active',
   'settings.skin_unlock': 'Unlock',
+  'settings.skin_earn_hint': 'Earn: {hint}',
     'settings.skin_preview_banner_title': 'Previewing {name} — not yet unlocked',
   'settings.restore_purchases': 'Restore purchases',
   'settings.badge_free': 'Free',
@@ -60,6 +63,11 @@ export const strings = {
   'settings.section_language': 'Language',
   'settings.section_skin': 'Skin',
     'settings.more_skins_in_app': 'More skins in the app',
+  'settings.section_reminders': 'Daily reminder',
+  'settings.reminder_on': 'On',
+  'settings.reminder_off': 'Off',
+  'settings.reminder_hint': "A gentle nudge each day so you don't break your streak.",
+  'settings.reminder_denied': 'Allow notifications in system settings to get reminders.',
   'settings.section_about': 'About',
   'settings.about_credit': 'By KrisEnigma',
   'settings.version': 'Ludodex v{version}',
@@ -114,6 +122,7 @@ export const strings = {
   'win.share_fallback_close': 'Close',
   'win.done_link': 'Done',
   'win.new_rating': 'New rating',
+  'win.freeze_used': '🛡 Streak Freeze used',
   'win.play_again': 'Play again',
 
   // Share string
@@ -284,6 +293,10 @@ export const strings = {
   'achievement.time_capsule.description': '30+ day-old puzzle solved.',
 
   // Notification
-  'notification.daily_title': "Today's Ludodex is ready",
-  'notification.daily_body': 'Your daily puzzle is waiting.',
+  'notification.daily_title': 'Keep your streak alive',
+  'notification.daily_body': "Today's Ludodex is live — solve it to keep your streak going.",
+  'reminder_prompt.title': 'Never miss a day?',
+  'reminder_prompt.body': "Get a daily nudge so you don't break your streak.",
+  'reminder_prompt.enable': 'Enable reminders',
+  'reminder_prompt.not_now': 'Not now',
 } as const;

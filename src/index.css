@@ -94,11 +94,11 @@
   gap: 12px;
   background: var(--button-bg);
   border: 1px solid var(--button-border);
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 10px 14px;
   font-size: var(--type-body-s);
   color: var(--button-text);
-  opacity: 0.92;
+  opacity: 0.72;
   transition: background 180ms, border-color 180ms, color 180ms, opacity 180ms;
 }
 
@@ -208,14 +208,13 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Earned achievement row — demoted from accent-bordered to a quiet
-   elevated tile. The trophy icon (filled) and the row's "Earned on
-   [date]" line still mark earned status; the border doesn't need to. */
+/* Earned achievement row — accent border + elevated bg makes the
+   earned/unearned split unmistakable. */
 .achievement-row[data-earned="true"] {
-  border-color: var(--button-border);
+  background: color-mix(in srgb, var(--primary-action-bg) 12%, var(--button-bg));
+  border-color: color-mix(in srgb, var(--primary-action-bg) 60%, transparent);
   color: var(--title-color);
   opacity: 1;
-  background: color-mix(in srgb, var(--chrome-text) 6%, var(--button-bg));
 }
 
 .achievement-row-icon {
@@ -563,8 +562,12 @@ body {
 
 .view-title {
   margin: 0;
-  font-size: var(--type-h1);
-  font-weight: 700;
+  font-size: calc(var(--type-h1) * var(--display-font-scale, 1));
+  /* Level/win title follows the skin's display font (same family as the
+     LUDODEX wordmark). Weight tracks the wordmark too, so single-weight
+     display fonts (e.g. VT323 400) don't get faux-bolded. */
+  font-family: var(--wordmark-font-family, 'Space Mono', ui-monospace, monospace);
+  font-weight: var(--wordmark-font-weight, 700);
   letter-spacing: 0.04em;
   color: var(--title-color);
   text-shadow: 0 0 12px color-mix(in srgb, var(--title-glow) 40%, transparent);
@@ -727,18 +730,26 @@ body {
 
 .tile {
   position: relative;
-  isolation: isolate;
+  /* No `isolation: isolate` and no transform/z-index on the selected state
+     (below): the tile must NOT form its own stacking context, so the swipe
+     ribbon (.path-overlay, z-index 10) can paint above the tile background
+     while .tile-letter (z-index 20) still paints above the ribbon. */
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(28px, 7vw, 38px);
-  font-weight: 700;
+  /* Skin-driven typography. tile-font-scale multiplies the base size so a
+     skin can swap to a font with different metrics (e.g. Press Start 2P)
+     without changing the cell — only the glyph inside it. Hitbox is set by
+     the grid, never by font-size, so this stays purely cosmetic. */
+  font-family: var(--tile-font-family, 'Space Mono', ui-monospace, monospace);
+  font-size: calc(clamp(28px, 7vw, 38px) * var(--tile-font-scale, 1));
+  font-weight: var(--tile-font-weight, 700);
   letter-spacing: 0.02em;
   background: var(--tile-bg);
   color: var(--tile-letter);
   border: 1px solid var(--tile-border);
-  border-radius: 14px;
+  border-radius: var(--tile-radius, 14px);
   transition: transform 140ms ease-out, opacity 220ms ease-out, background 180ms ease-out, color 180ms ease-out, box-shadow 180ms ease-out;
   user-select: none;
   -webkit-user-select: none;
@@ -748,13 +759,15 @@ body {
 
 .tile-letter {
   position: relative;
-  z-index: 2;
+  /* Above the ribbon overlay (z-index 10) so letters are never covered. */
+  z-index: 20;
   pointer-events: none;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
   height: 100%;
+  transition: transform 140ms ease-out;
 }
 
 .tile[data-revealing="true"]:not([data-revealing-trigger="true"])::before {
@@ -820,9 +833,21 @@ body {
   background: var(--tile-selected-bg);
   color: var(--tile-selected-letter);
   border-color: var(--tile-selected-border);
-  box-shadow: 0 0 18px var(--tile-selected-glow);
-  transform: scale(1.07);
-  z-index: 1;
+  box-shadow: 0 0 calc(18px * var(--glow-strength, 1)) var(--tile-selected-glow);
+  /* No transform/z-index here — see .tile note. The selection "pop" lives on
+     the letter (below), and the recolor + border + glow carry the state. */
+}
+
+/* Selected letters pop, and get a thin per-skin outline so they stay crisp
+   where the ribbon crosses underneath them. */
+.tile[data-state="selected"] .tile-letter {
+  transform: scale(1.06);
+  text-shadow:
+    0 0 2px var(--selected-letter-outline, transparent),
+    0 1px 1px var(--selected-letter-outline, transparent),
+    0 -1px 1px var(--selected-letter-outline, transparent),
+    1px 0 1px var(--selected-letter-outline, transparent),
+    -1px 0 1px var(--selected-letter-outline, transparent);
 }
 
 .tile[data-state="deactivated"] {
@@ -847,7 +872,7 @@ body {
   background: var(--tile-selected-bg) !important;
   color: var(--tile-selected-letter) !important;
   border-color: var(--tile-selected-border) !important;
-  box-shadow: 0 0 14px var(--tile-selected-glow) !important;
+  box-shadow: 0 0 calc(14px * var(--glow-strength, 1)) var(--tile-selected-glow) !important;
 }
 
 .game-view[data-endgame-phase="corrupt"] .tile-letter,
@@ -859,12 +884,16 @@ body {
   animation: gameview-glitch-jitter 80ms steps(3, end) infinite;
 }
 
+/* Chromatic split uses the active skin's ribbon gradient endpoints instead of
+   fixed pink/cyan, so the win-transition glitch wears each skin's colors. On
+   Game Boy the two endpoints are equal, so the split collapses into a subtle
+   same-color jitter — fitting for a clean LCD skin. */
 @keyframes glitch-rgb-split {
   0%   { text-shadow: 0 0 0 transparent, 0 0 0 transparent; }
-  25%  { text-shadow: -1px 0 0 #ff0080, 1px 0 0 #00ffff; }
-  55%  { text-shadow: -3px 0 0 #ff0080, 4px 0 0 #00ffff; }
-  80%  { text-shadow: -2px 0 0 #ff0080, 2px 0 0 #00ffff; }
-  100% { text-shadow: -5px 0 0 #ff0080, 6px 0 0 #00ffff; }
+  25%  { text-shadow: -1px 0 0 var(--path-grad-start), 1px 0 0 var(--path-grad-end); }
+  55%  { text-shadow: -3px 0 0 var(--path-grad-start), 4px 0 0 var(--path-grad-end); }
+  80%  { text-shadow: -2px 0 0 var(--path-grad-start), 2px 0 0 var(--path-grad-end); }
+  100% { text-shadow: -5px 0 0 var(--path-grad-start), 6px 0 0 var(--path-grad-end); }
 }
 
 @keyframes gameview-glitch-jitter {
@@ -966,22 +995,30 @@ body {
   overflow: visible;
 }
 
-.path-halo {
+/* Swipe ribbon, drawn as one <line> per segment (see GameView.redrawPath).
+   Each segment is tinted along swipe order via --seg-t (0→1) using color-mix
+   between the per-skin gradient endpoints; equal endpoints give a flat ribbon.
+   Thick rounded strokes overlap cleanly where a path crosses itself, instead
+   of the thin-line + halo "blob" the old treatment produced. */
+.path-seg {
   fill: none;
-  stroke: var(--path-color);
-  stroke-opacity: 0.25;
-  stroke-width: 18;
-  stroke-linecap: round;
+  stroke: color-mix(
+    in srgb,
+    var(--path-grad-end, var(--path-color)) calc(var(--seg-t, 0) * 100%),
+    var(--path-grad-start, var(--path-color))
+  );
+  stroke-width: var(--path-width, 9px);
+  stroke-opacity: var(--path-opacity, 0.95);
+  stroke-linecap: var(--path-cap, round);
   stroke-linejoin: round;
-}
-
-.path-core {
-  fill: none;
-  stroke: var(--path-color);
-  stroke-opacity: 0.95;
-  stroke-width: 6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  filter: drop-shadow(
+    0 0 calc(var(--path-glow, 0) * 1px)
+    color-mix(
+      in srgb,
+      var(--path-grad-end, var(--path-color)) calc(var(--seg-t, 0) * 100%),
+      var(--path-grad-start, var(--path-color))
+    )
+  );
 }
 
 .hints {
@@ -1028,7 +1065,10 @@ body {
   align-items: center;
   justify-content: center;
   font-size: var(--type-body);
-  font-weight: 700;
+  /* Answer-slot letters follow the skin's tile font so the hint row matches
+     the grid (pixel on Game Boy, VT323 on Terminal, etc.). */
+  font-family: var(--tile-font-family, 'Space Mono', ui-monospace, monospace);
+  font-weight: var(--tile-font-weight, 700);
   transition: background 200ms ease, border-color 200ms ease, color 200ms ease;
 }
 
@@ -1040,17 +1080,25 @@ body {
   transition: color 200ms ease;
 }
 
+/* Revealed (filled but the word isn't solved yet): the slot stays on the dark
+   empty background, so the letter uses the skin's normal --tile-letter (light
+   on dark). Was --hint-solved-letter, which is the on-accent color (dark on
+   light-bg skins like Terminal/Game Boy) and therefore invisible here. */
 .hint-slot[data-filled="true"] .hint-slot-letter {
-  color: var(--hint-solved-letter);
+  color: var(--tile-letter);
 }
 
+/* Solved word: fill the slot with the solid --hint-solved-* triple. Was a
+   color-mix() of --tile-selected-bg, but that variable is a *gradient* and
+   color-mix only accepts colors — so the declaration was invalid and silently
+   fell back to the dark empty background, hiding dark solved letters. */
 .hint-row[data-solved="true"] .hint-slot {
-  background: color-mix(in srgb, var(--tile-selected-bg) 84%, var(--hint-empty-bg));
-  border-color: color-mix(in srgb, var(--tile-selected-border) 78%, var(--hint-empty-border));
+  background: var(--hint-solved-bg);
+  border-color: var(--hint-solved-border);
 }
 
 .hint-row[data-solved="true"] .hint-slot[data-filled="true"] .hint-slot-letter {
-  color: var(--tile-selected-letter);
+  color: var(--hint-solved-letter);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1208,13 +1256,14 @@ body {
 .menu-logo {
   width: 100%;
   text-align: center;
-  font-weight: 700;
-  letter-spacing: 0.18em;
+  font-family: var(--wordmark-font-family, 'Space Mono', ui-monospace, monospace);
+  font-weight: var(--wordmark-font-weight, 700);
+  letter-spacing: var(--wordmark-letter-spacing, 0.18em);
   line-height: 1.05;
   margin: 0 0 22px;
-  font-size: var(--type-display-s);
+  font-size: calc(var(--type-display-s) * var(--display-font-scale, 1));
   color: var(--title-glow);
-  text-shadow: 0 0 14px color-mix(in srgb, var(--title-glow) 30%, transparent);
+  text-shadow: 0 0 calc(14px * var(--glow-strength, 1)) color-mix(in srgb, var(--title-glow) 30%, transparent);
 }
 
 /* ──────────── Win — Play Again row ──────────── */
@@ -1578,7 +1627,13 @@ body {
 
 .daily-card {
   width: 100%;
-  background: linear-gradient(145deg, #0d3a42 80%, #071e26 100%);
+  /* Skin-tinted card (was a hardcoded void-teal gradient that ignored the
+     active skin). Derives a subtle accent tint from the skin's tokens. */
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--title-glow) 22%, var(--button-bg)) 0%,
+    var(--button-bg) 100%
+  );
   border: 1px solid var(--button-border);
   border-radius: 16px;
   padding: 18px 20px 20px;
@@ -1677,7 +1732,8 @@ body {
 }
 
 .win-new-best,
-.win-new-rating {
+.win-new-rating,
+.win-freeze-used {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1697,7 +1753,8 @@ body {
 }
 
 .win-new-best[hidden],
-.win-new-rating[hidden] {
+.win-new-rating[hidden],
+.win-freeze-used[hidden] {
   display: none;
 }
 
@@ -1810,11 +1867,19 @@ body {
   gap: 8px;
 }
 
+.settings-reminder-hint {
+  margin: 8px 0 0;
+  font-size: var(--type-caption);
+  line-height: 1.4;
+  color: var(--chrome-text);
+}
+
 .settings-language-button {
   flex: 1;
   background: var(--button-bg);
   color: var(--button-text);
   border: 1px solid var(--button-border);
+  border-radius: 10px;
   padding: 12px;
   font-family: inherit;
   font-size: var(--type-body);
@@ -1876,9 +1941,11 @@ body {
 
 .win-headline[data-pristine="true"] .win-headline-label,
 .win-headline-label {
-  font-family: inherit;
-  font-size: var(--type-h2);
-  font-weight: 700;
+  /* Celebratory label ("FLAWLESS") — follows the skin display font like the
+     win title, instead of staying mono. */
+  font-family: var(--wordmark-font-family, 'Space Mono', ui-monospace, monospace);
+  font-size: calc(var(--type-h2) * var(--display-font-scale, 1));
+  font-weight: var(--wordmark-font-weight, 700);
   letter-spacing: 0.28em;
   text-transform: uppercase;
   color: var(--title-glow);
@@ -1887,8 +1954,12 @@ body {
 }
 
 .win-time {
-  font-size: var(--type-display-l);
-  font-weight: 700;
+  /* Big result time in the skin display font (a retro digital clock on the
+     pixel/terminal skins). tabular-nums keeps the digits from shifting; all
+     the bundled display fonts are fixed-width or expose tnum. */
+  font-family: var(--wordmark-font-family, 'Space Mono', ui-monospace, monospace);
+  font-size: calc(var(--type-display-l) * var(--display-font-scale, 1));
+  font-weight: var(--wordmark-font-weight, 700);
   font-variant-numeric: tabular-nums;
   color: var(--title-color);
   letter-spacing: 0.04em;
@@ -1987,6 +2058,7 @@ body {
   .win-headline-label,
   .win-new-best,
   .win-new-rating,
+  .win-freeze-used,
   .win-achievements-section,
   .win-achievement-card,
   .win-view[data-stars="3"]::before {
@@ -2128,7 +2200,8 @@ body {
 }
 
 .settings-skin-card[data-locked='true'] {
-  }
+  opacity: 0.72;
+}
 
   .settings-skin-web-cta {
   display: flex;
@@ -2219,23 +2292,24 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  background: var(--tile-bg);
-  border: 1px solid var(--tile-border);
-  color: var(--tile-letter);
+  background: var(--button-bg);
+  border: 1px solid var(--button-border);
+  border-radius: 10px;
+  color: var(--button-text);
   padding: 12px 14px;
   font-family: inherit;
   cursor: pointer;
   text-align: left;
+  opacity: 0.72;
 }
 
-/* Solved row — demoted from accent border. The cyan/accent stars and
-   the visible time in the meta column already mark the row as solved;
-   when every row is solved (a common state for engaged players), the
-   accent border was painting the entire archive in brand color with no
-   anchor. A subtle background tint instead of a colored border keeps
-   the differentiation without the visual noise. */
+/* Solved row — accent border + elevated bg, matches earned achievement
+   rows so the visual language is consistent across both list views. */
 .archive-row[data-solved="true"] {
-  background: color-mix(in srgb, var(--chrome-text) 6%, var(--tile-bg));
+  background: color-mix(in srgb, var(--primary-action-bg) 12%, var(--button-bg));
+  border-color: color-mix(in srgb, var(--primary-action-bg) 60%, transparent);
+  color: var(--title-color);
+  opacity: 1;
 }
 
 /* Label block: puzzle title is the dominant element, day number sits

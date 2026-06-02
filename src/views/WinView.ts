@@ -10,6 +10,12 @@ import type { WinPayload } from './types';
 import { getMonetizationContext } from '../services/MonetizationContext';
 import { track } from '../services/AnalyticsService';
 import { buildInstallCta } from '../components/InstallCta';
+import { showConfirmModal } from '../components/Modal';
+import {
+  shouldOfferDailyReminderPrompt,
+  markDailyReminderPrompted,
+  enableDailyNotification
+} from '../services/NotificationService';
 
 export class WinView {
   readonly element: HTMLDivElement;
@@ -32,7 +38,15 @@ export class WinView {
         showConfetti({
           count: 60,
           duration: 7000,
-          colors: ['var(--title-glow)', 'var(--title-color)']
+          // Draw from across the active skin's palette so the celebration
+          // reads as that skin (greens on Game Boy, ambers on Terminal, etc.).
+          colors: [
+            'var(--title-glow)',
+            'var(--title-color)',
+            'var(--tile-selected-border)',
+            'var(--path-grad-start)',
+            'var(--path-grad-end)'
+          ]
         });
       }, 600);
     }
@@ -105,9 +119,14 @@ export class WinView {
     newRating.textContent = t('win.new_rating');
     newRating.hidden = !payload.wasNewRating;
 
+    const freezePill = document.createElement('div');
+    freezePill.className = 'win-freeze-used';
+    freezePill.textContent = t('win.freeze_used');
+    freezePill.hidden = !payload.freezeUsed;
+
     const pillRow = document.createElement('div');
     pillRow.className = 'win-pill-row';
-    pillRow.append(newBest, newRating);
+    pillRow.append(newBest, newRating, freezePill);
 
     const showStreak = payload.currentStreak >= 2;
     const showMistakes = payload.mistakes > 0;
@@ -200,6 +219,30 @@ export class WinView {
     shell.append(...children);
     this.element.append(shell);
 
+    // First solve = the highest-intent moment to ask about daily reminders.
+    // Offered once, after the celebration settles; no-ops on web / if already
+    // enabled / if already asked (see NotificationService).
+    if (payload.solvedCount === 1) {
+      window.setTimeout(() => {
+        void this.offerDailyReminder();
+      }, 1500);
+    }
+  }
+
+  private async offerDailyReminder(): Promise<void> {
+    if (!this.element.isConnected) return;
+    if (!(await shouldOfferDailyReminderPrompt())) return;
+    // Mark first so it can never double-ask, regardless of their choice.
+    await markDailyReminderPrompted();
+    const accepted = await showConfirmModal({
+      title: t('reminder_prompt.title'),
+      body: t('reminder_prompt.body'),
+      confirmLabel: t('reminder_prompt.enable'),
+      cancelLabel: t('reminder_prompt.not_now')
+    });
+    if (accepted) {
+      await enableDailyNotification();
+    }
   }
 
   private renderAchievementsSection(unlockedAchievementIds: string[]): HTMLElement | null {

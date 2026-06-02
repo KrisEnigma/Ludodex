@@ -1,6 +1,6 @@
 import { Preferences } from '@capacitor/preferences';
 import { createIcon } from '../components/icons';
-import { ensureBundledPuzzlesLoaded, getDailyPuzzleIndex, getDayNumberSinceLaunch, getPuzzleAtIndex, getPuzzleForDay } from '../game/PuzzleLoader';
+import { ensureBundledPuzzlesLoaded, getDailyPuzzle, getDayNumberSinceLaunch, getPuzzleForDay } from '../game/PuzzleLoader';
 import { t } from '../i18n';
 import { normalizeStarRating } from '../services/ProgressService';
 import { getMenuData } from '../services/MenuDataCache';
@@ -26,16 +26,13 @@ export class MenuView {
 
   constructor(callbacks: MenuCallbacks) {
     const puzzles = ensureBundledPuzzlesLoaded();
-    const dailyIndex = getDailyPuzzleIndex(puzzles);
-    const dailyPuzzle = getPuzzleAtIndex(dailyIndex, puzzles);
+    const dailyPuzzle = getDailyPuzzle(puzzles); // null when catalog is exhausted
     const dayNumber = getDayNumberSinceLaunch();
-    const puzzleTitle = tp(dailyPuzzle.name, dailyPuzzle.id);
+    const puzzleTitle = dailyPuzzle ? tp(dailyPuzzle.name, dailyPuzzle.id) : null;
 
-    const gamePayload: RoutePayloads['game'] = {
-      puzzle: dailyPuzzle,
-      dayNumber,
-      isTodaysDaily: true
-    };
+    const gamePayload: RoutePayloads['game'] | null = dailyPuzzle
+      ? { puzzle: dailyPuzzle, dayNumber, isTodaysDaily: true }
+      : null;
 
     this.element = document.createElement('div');
     this.element.className = 'view menu-view';
@@ -145,24 +142,30 @@ export class MenuView {
 
     const dailyTitle = document.createElement('h2');
     dailyTitle.className = 'daily-card-title';
-    dailyTitle.textContent = puzzleTitle;
+    dailyTitle.textContent = puzzleTitle ?? t('menu.daily_no_puzzle_title');
 
     const dailyMeta = document.createElement('p');
     dailyMeta.className = 'daily-card-meta';
-    dailyMeta.textContent = `${dailyPuzzle.category} · ${dailyPuzzle.difficulty}`;
+    dailyMeta.textContent = dailyPuzzle
+      ? `${dailyPuzzle.category} · ${dailyPuzzle.difficulty}`
+      : t('menu.daily_no_puzzle_meta');
 
     const dailyPlayButton = document.createElement('button');
     dailyPlayButton.type = 'button';
     dailyPlayButton.className = 'daily-play-button button-primary';
     dailyPlayButton.textContent = t('menu.daily_play');
-    dailyPlayButton.addEventListener('click', (event) => {
-      event.stopPropagation();
-      callbacks.onPlay(gamePayload);
-    });
+    dailyPlayButton.disabled = gamePayload === null;
 
-    dailyCard.addEventListener('click', () => {
-      callbacks.onPlay(gamePayload);
-    });
+    if (gamePayload) {
+      dailyPlayButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        callbacks.onPlay(gamePayload);
+      });
+      dailyCard.addEventListener('click', () => {
+        callbacks.onPlay(gamePayload);
+      });
+    }
+
     dailyCard.append(dailyCardHead, dailyTitle, dailyMeta, dailyPlayButton);
     dailySection.append(dailyCard);
 
@@ -261,7 +264,7 @@ export class MenuView {
           root.insertBefore(banner, dailySection);
         }
 
-        if (solvedIds.includes(dailyPuzzle.id)) {
+        if (dailyPuzzle && solvedIds.includes(dailyPuzzle.id)) {
           dailyCard.dataset.solved = 'true';
           dailyPlayButton.textContent = t('menu.daily_play_again');
         }

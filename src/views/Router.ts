@@ -18,7 +18,7 @@ export type RouteName = 'menu' | 'game' | 'win' | 'settings' | 'archive' | 'how-
 
 export type RoutePayloads = {
   menu: undefined;
-  game: { puzzle: Puzzle; dayNumber: number; isTodaysDaily: boolean; isTutorial?: boolean };
+  game: { puzzle: Puzzle; dayNumber: number; isTodaysDaily: boolean; isTutorial?: boolean; isPreview?: boolean; previewToken?: string };
   win: WinPayload;
   settings: undefined;
   archive: undefined;

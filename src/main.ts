@@ -1,11 +1,19 @@
 import '@fontsource/space-mono/400.css';
 import '@fontsource/space-mono/700.css';
+// Skin display fonts. Bundled via Vite (relative asset URLs) so they work
+// offline on iOS/Android, same as Space Mono above. Latin-only subset and
+// only the weights each skin uses (Press Start 2P ships 400 only) — keeps
+// the bundle lean by skipping cyrillic/greek/vietnamese glyphs we never show.
+import '@fontsource/orbitron/latin-700.css';
+import '@fontsource/press-start-2p/latin-400.css';
+import '@fontsource/silkscreen/latin-700.css';
+import '@fontsource/vt323/latin-400.css'; // Terminal skin
 import './skins/skins.css';
 import './index.css';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { Preferences } from '@capacitor/preferences';
-import { ensureBundledPuzzlesLoaded } from './game/PuzzleLoader';
+import { loadPuzzles } from './game/PuzzleLoader';
 import { initI18n } from './i18n';
 import { applySkin, normalizeSkinId } from './skins/registry';
 import { initIAP } from './services/IAPService';
@@ -13,6 +21,7 @@ import { bootstrapProgress, getActiveSkinId, getSolvedTimes } from './services/P
 import { retroactivelyUnlockEarnedAchievements } from './services/AchievementService';
 import { initAnalytics, track, updateLocale } from './services/AnalyticsService';
 import { initSentry } from './services/SentryService';
+import { initDailyNotification } from './services/NotificationService';
 import { Router } from './views/Router';
 import { parseCurrentUrl, parseDeepLinkUrl, type ParsedDeepLink } from './services/DeepLinking';
 
@@ -29,7 +38,12 @@ void (async () => {
   // ── Critical path: everything needed before first render ──────────────────
   await initI18n();
   updateLocale();
-  ensureBundledPuzzlesLoaded();
+  // Load the live catalog from the remote store (editor → Worker/R2) before the
+  // first render so the daily + archive reflect published puzzles. loadPuzzles
+  // is bounded (≤1.8s fetch timeout) and falls back to cache then the bundled
+  // set on any failure, so startup never hangs or breaks if the network/store
+  // is unavailable.
+  await loadPuzzles();
   applySkin(normalizeSkinId(await getActiveSkinId()));
 
   // Route immediately — the user sees UI as soon as skin + i18n are ready.
@@ -68,6 +82,10 @@ void (async () => {
     } catch {
       // Keep web/dev startup resilient when native billing is unavailable.
     }
+
+    // Re-arm the daily reminder if the player opted in previously (native-only,
+    // never prompts — see NotificationService.initDailyNotification).
+    void initDailyNotification();
 
     const snapshot = await bootstrapProgress();
     track('app_opened', { is_first_open: snapshot.solvedCount === 0 });
@@ -139,6 +157,21 @@ function applyDeepLink(router: Router, link: ParsedDeepLink): void {
     track('deep_link_opened', { kind: 'archive_locked', day_number: link.dayNumber });
     router.replace('menu');
     router.push('archive');
+    return;
+  }
+  if (link.kind === 'preview-puzzle') {
+    // A puzzle encoded in the URL (editor "test in game" / tester share).
+    // dayNumber 0 + isPreview: this is a throwaway play — nothing persists
+    // (no solve record, streak, achievement, or ad cadence). See GameView.
+    track('deep_link_opened', { kind: 'preview' });
+    router.replace('menu');
+    router.push('game', {
+      puzzle: link.puzzle,
+      dayNumber: 0,
+      isTodaysDaily: false,
+      isPreview: true,
+      previewToken: link.token
+    });
     return;
   }
   router.replace('menu');

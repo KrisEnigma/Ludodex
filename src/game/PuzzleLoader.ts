@@ -13,8 +13,57 @@ import { parsePuzzle } from './PuzzleParser';
  * 9:00 local, configurable in future Settings additions) rather than a non-midnight
  * release time. See AGENTS.md or the design discussion for the full rationale.
  */
-const LAUNCH_DATE = new Date('2025-01-01T00:00:00');
-const REMOTE_PUZZLES_URL = 'https://cdn.ludodex.app/puzzles.json';
+/**
+ * Day-1 anchor for the daily sequence (device-local midnight). Public launch is
+ * 2026-06-29; the anchor is set 7 days earlier so launch day computes to day 8,
+ * which leaves a 7-puzzle starter archive available on launch. Override with
+ * VITE_LAUNCH_DATE (YYYY-MM-DD) to move the launch without a code change; the
+ * default below is used if it's unset or unparseable.
+ */
+const LAUNCH_DATE = (() => {
+  const raw = import.meta.env.VITE_LAUNCH_DATE?.trim();
+  if (raw) {
+    const parsed = new Date(`${raw}T00:00:00`);
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+  }
+  return new Date('2026-06-22T00:00:00');
+})();
+
+/**
+ * DEV-only override of "today's" day number, for testing the daily + archive
+ * without waiting real days. Set `?day=N` in the URL or
+ * `localStorage['ludodex.devday'] = 'N'`. Compiled out of production builds
+ * (import.meta.env.DEV is false there), so it can't be used to peek at future
+ * puzzles in the shipped app.
+ */
+function getDevDayOverride(): number | null {
+  if (!import.meta.env.DEV) return null;
+  try {
+    const fromUrl = new URLSearchParams(window.location.search).get('day');
+    const value = fromUrl ?? window.localStorage.getItem('ludodex.devday');
+    if (value && /^\d+$/.test(value)) return Math.max(1, parseInt(value, 10));
+  } catch {
+    // window/localStorage unavailable — ignore.
+  }
+  return null;
+}
+
+/**
+ * Remote puzzle catalog. The editor saves the catalog to `PUT /api/puzzles`
+ * (Worker → R2) on the app's own domain, and the game reads it back from the
+ * same place by default — derived from VITE_SHARE_BASE_URL so there's a single
+ * source of truth for the domain. Set VITE_PUZZLES_URL to override (e.g. a CDN).
+ * The GET is public, read-only game content; the authenticated PUT stays in the
+ * editor. fetchRemoteRawPuzzles + loadPuzzles fall back to cache then the
+ * bundled set on any failure, so a bad/empty response can't break startup.
+ */
+const REMOTE_PUZZLES_URL = (() => {
+  const explicit = import.meta.env.VITE_PUZZLES_URL?.trim();
+  if (explicit) return explicit;
+  const base = import.meta.env.VITE_SHARE_BASE_URL?.trim();
+  if (base) return `${base.replace(/\/+$/, '')}/api/puzzles`;
+  return 'https://ludodex.krisenigma.com/api/puzzles';
+})();
 const PUZZLES_REMOTE_KEY = 'puzzles_remote';
 
 let parsedPuzzles: Puzzle[] = [];
@@ -75,6 +124,20 @@ function parseRawPuzzles(raw: RawPuzzle[]): Puzzle[] {
     throw new Error('Puzzle source was empty');
   }
   return parsed;
+}
+
+/**
+ * Parse a single RawPuzzle (e.g. decoded from a preview link) into a Puzzle
+ * using the exact same transform as bundled/remote puzzles. Returns null if
+ * the raw puzzle can't be parsed, so callers can fall back gracefully.
+ */
+export function parseRawPuzzleToPuzzle(raw: RawPuzzle): Puzzle | null {
+  try {
+    const [puzzle] = parseRawPuzzles([raw]);
+    return puzzle ?? null;
+  } catch {
+    return null;
+  }
 }
 
 async function fetchRemoteRawPuzzles(): Promise<RawPuzzle[] | null> {
@@ -152,41 +215,47 @@ export function getPuzzleById(
   return puzzles.find((p) => p.id === puzzleId) ?? null;
 }
 
-export function getDailyPuzzle(puzzles = parsedPuzzles): Puzzle {
-  if (puzzles.length === 0) {
-    throw new Error('No puzzles loaded. Call loadPuzzles() first.');
-  }
-
-  return getPuzzleAtIndex(getDailyPuzzleIndex(puzzles), puzzles);
+/**
+ * Returns the puzzle for today, or null if the catalog has been exhausted.
+ * Puzzles are served positionally: day 1 → index 0, day 2 → index 1, etc.
+ * A puzzle with an explicit `date` field matching today is served first regardless
+ * of its position — this lets individual entries be pinned to a calendar date
+ * without breaking the overall sequence.
+ */
+export function getDailyPuzzle(puzzles = parsedPuzzles): Puzzle | null {
+  if (puzzles.length === 0) return null;
+  const idx = getDailyPuzzleIndex(puzzles);
+  if (idx < 0 || idx >= puzzles.length) return null;
+  return puzzles[idx] ?? null;
 }
 
+/**
+ * Returns the array index of today's puzzle, or -1 if no puzzle is available today.
+ * -1 means the catalog is exhausted for this day number — callers must handle null.
+ */
 export function getDailyPuzzleIndex(puzzles = parsedPuzzles): number {
   if (puzzles.length === 0) {
     throw new Error('No puzzles loaded. Call loadPuzzles() first.');
   }
 
+  // Explicit date-mapped puzzle takes priority.
   const todayDate = toLocalDateString(new Date());
   const datedIndex = puzzles.findIndex((puzzle) => puzzle.date === todayDate);
-  if (datedIndex >= 0) {
-    return datedIndex;
-  }
+  if (datedIndex >= 0) return datedIndex;
 
-  const rotationIndices = getRotationIndices(puzzles);
+  // Positional: derive from the day number so the DEV override (and the launch
+  // anchor) flow through consistently. Day number is 1-based; index is 0-based.
+  const dayIndex = getDayNumberSinceLaunch() - 1;
 
-  if (rotationIndices.length === 0) {
-    return 0;
-  }
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const dayIndex = Math.floor(
-    (today.getTime() - LAUNCH_DATE.getTime()) / 86400000
-  );
-
-  const poolIndex = ((dayIndex % rotationIndices.length) + rotationIndices.length) % rotationIndices.length;
-  return rotationIndices[poolIndex];
+  if (dayIndex < 0 || dayIndex >= puzzles.length) return -1;
+  return dayIndex;
 }
 
+/**
+ * Returns the puzzle for a given 1-based day number, or null if that day is
+ * beyond the current catalog. Puzzles never repeat — once the catalog is
+ * exhausted, subsequent day numbers return null.
+ */
 export function getPuzzleForDay(
   dayNumber: number,
   puzzles: Puzzle[] = parsedPuzzles
@@ -194,6 +263,7 @@ export function getPuzzleForDay(
   if (dayNumber < 1) return null;
   if (puzzles.length === 0) return null;
 
+  // Explicit date-mapped puzzle takes priority.
   const targetDate = getDateForDayNumber(dayNumber);
   const targetDateString = toLocalDateString(targetDate);
   const datedIndex = puzzles.findIndex((puzzle) => puzzle.date === targetDateString);
@@ -201,18 +271,19 @@ export function getPuzzleForDay(
     return { puzzle: puzzles[datedIndex], index: datedIndex };
   }
 
-  const rotationIndices = getRotationIndices(puzzles);
-  if (rotationIndices.length === 0) return null;
-
-  const poolIndex = (dayNumber - 1) % rotationIndices.length;
-  const puzzleIndex = rotationIndices[poolIndex];
-  const puzzle = puzzles[puzzleIndex];
+  // Positional — no modular wrap. Return null when out of catalog range.
+  const idx = dayNumber - 1;
+  if (idx >= puzzles.length) return null;
+  const puzzle = puzzles[idx];
   if (!puzzle) return null;
 
-  return { puzzle, index: puzzleIndex };
+  return { puzzle, index: idx };
 }
 
 export function getDayNumberSinceLaunch(now: Date = new Date()): number {
+  const override = getDevDayOverride();
+  if (override !== null) return override;
+
   const today = new Date(now);
   today.setHours(0, 0, 0, 0);
   const launch = new Date(LAUNCH_DATE);

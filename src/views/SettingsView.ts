@@ -1,10 +1,15 @@
 import { Capacitor } from '@capacitor/core';
 import { getLang, setLang, t, type Language } from '../i18n';
 import { applySkin, getCurrentSkinId, SKINS, type SkinId, type SkinMeta } from '../skins/registry';
-import { isOwned, purchase, restorePurchases } from '../services/IAPService';
+import { isSkinOwned, purchase, restorePurchases } from '../services/IAPService';
 import { track, updateLocale, setPaidStatus } from '../services/AnalyticsService';
 import { getActiveSkinId, resetAllProgress, setActiveSkinId } from '../services/ProgressService';
 import { getMonetizationContext } from '../services/MonetizationContext';
+import {
+  isDailyNotificationEnabled,
+  enableDailyNotification,
+  disableDailyNotification
+} from '../services/NotificationService';
 import { LEGAL_URLS, STORE_URLS } from '../config/legalUrls';
 import { showConfirmModal } from '../components/Modal';
 
@@ -15,6 +20,7 @@ export class SettingsView {
 
   private readonly status: HTMLParagraphElement;
   private readonly languageButtons = new Map<Language, HTMLButtonElement>();
+  private readonly reminderButtons = new Map<boolean, HTMLButtonElement>();
   private readonly skinButtons = new Map<SkinId, HTMLButtonElement>();
   private readonly skinPills = new Map<SkinId, HTMLSpanElement>();
   private readonly unlockedBySkin = new Map<SkinId, boolean>();
@@ -132,15 +138,8 @@ export class SettingsView {
 
     try {
       const result = await purchase(skin.productId, 'skin_preview');
-      const purchased = result.status === 'success';
 
-      if (!purchased && skin.bundleProductId) {
-        const bundleUnlocked = await isOwned(skin.bundleProductId);
-        this.unlockedBySkin.set(skin.id, bundleUnlocked);
-      } else {
-        this.unlockedBySkin.set(skin.id, purchased);
-      }
-
+      // Refresh entitlements regardless — isSkinOwned will check IAP + achievement + bundle.
       await this.refreshEntitlements();
 
       if (this.unlockedBySkin.get(skin.id)) {
@@ -171,12 +170,9 @@ export class SettingsView {
     this.element.className = 'view settings-view';
 
     for (const skin of SKINS) {
-      // On web, all skins are shown as "Web only — get the app" if not unlocked
-      if (!this.isNative && skin.productId) {
-        this.unlockedBySkin.set(skin.id, false);
-      } else {
-        this.unlockedBySkin.set(skin.id, skin.productId === null || !this.isNative);
-      }
+      // Optimistic initial state: free on web (all skins), or free if no productId.
+      // refreshEntitlements() (called in bootstrap()) will correct native state via isSkinOwned().
+      this.unlockedBySkin.set(skin.id, skin.productId === null || !context.isNative);
     }
 
     this.status = document.createElement('p');
@@ -186,6 +182,8 @@ export class SettingsView {
     this.element.append(
       this.renderTopBar(),
       this.renderLanguageSection(),
+      // Daily reminder is native-only (no web push surface).
+      ...(this.isNative ? [this.renderNotificationSection()] : []),
       this.renderSkinSection(),
       this.renderRestoreButton(),
       this.status,
@@ -272,6 +270,72 @@ export class SettingsView {
     this.onLanguageChange();
   }
 
+  // ── Daily reminder (native only) ──
+  private renderNotificationSection(): HTMLElement {
+    const section = document.createElement('section');
+    section.className = 'settings-section';
+
+    const heading = document.createElement('h3');
+    heading.className = 'settings-section-heading';
+    heading.textContent = t('settings.section_reminders');
+
+    const toggle = document.createElement('div');
+    toggle.className = 'settings-language-toggle';
+    toggle.append(
+      this.makeReminderButton(false, t('settings.reminder_off')),
+      this.makeReminderButton(true, t('settings.reminder_on'))
+    );
+
+    const hint = document.createElement('p');
+    hint.className = 'settings-reminder-hint';
+    hint.textContent = t('settings.reminder_hint');
+
+    section.append(heading, toggle, hint);
+    void this.refreshReminderButtons();
+    return section;
+  }
+
+  private makeReminderButton(enabled: boolean, label: string): HTMLButtonElement {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'settings-language-button';
+    button.textContent = label;
+    button.addEventListener('click', () => {
+      void this.onReminderToggle(enabled);
+    });
+    this.reminderButtons.set(enabled, button);
+    return button;
+  }
+
+  private async refreshReminderButtons(): Promise<void> {
+    const on = await isDailyNotificationEnabled();
+    this.reminderButtons.get(true)?.setAttribute('data-active', String(on));
+    this.reminderButtons.get(false)?.setAttribute('data-active', String(!on));
+  }
+
+  private async onReminderToggle(enable: boolean): Promise<void> {
+    const current = await isDailyNotificationEnabled();
+    if (enable === current) return;
+
+    if (enable) {
+      const granted = await enableDailyNotification();
+      if (!granted) {
+        // Permission denied at the OS level (or unavailable) — leave it off
+        // and point the player at system settings.
+        this.status.textContent = t('settings.reminder_denied');
+      } else {
+        this.status.textContent = '';
+        track('daily_reminder_enabled');
+      }
+    } else {
+      await disableDailyNotification();
+      this.status.textContent = '';
+      track('daily_reminder_disabled');
+    }
+
+    await this.refreshReminderButtons();
+  }
+
   private renderSkinSection(): HTMLElement {
     const section = document.createElement('section');
     section.className = 'settings-section';
@@ -304,6 +368,11 @@ export class SettingsView {
       preview.style.borderColor = skin.previewTile.border;
       preview.style.color = skin.previewTile.letter;
       preview.style.boxShadow = `0 0 12px ${skin.previewTile.glow}`;
+      // Show the skin's actual tile font, radius and glyph scale so the preview
+      // sells what's different about each skin — not just its colors.
+      preview.style.fontFamily = skin.previewTile.font;
+      preview.style.borderRadius = skin.previewTile.radius;
+      preview.style.fontSize = `calc(22px * ${skin.previewTile.scale})`;
       preview.textContent = 'A';
       left.append(preview);
 
@@ -394,24 +463,10 @@ export class SettingsView {
   }
 
   private async refreshEntitlements(): Promise<void> {
-    if (!this.isNative) {
-      for (const skin of SKINS) {
-        this.unlockedBySkin.set(skin.id, skin.productId === null);
-      }
-      return;
-    }
-
+    // isSkinOwned handles all platforms and all unlock paths (achievement + IAP).
     await Promise.all(
       SKINS.map(async (skin) => {
-        if (!skin.productId) {
-          this.unlockedBySkin.set(skin.id, true);
-          return;
-        }
-        let unlocked = await isOwned(skin.productId);
-        if (!unlocked && skin.bundleProductId) {
-          unlocked = await isOwned(skin.bundleProductId);
-        }
-        this.unlockedBySkin.set(skin.id, unlocked);
+        this.unlockedBySkin.set(skin.id, await isSkinOwned(skin.id));
       })
     );
   }
@@ -517,7 +572,11 @@ export class SettingsView {
 
       if (isActive) {
         pill.textContent = t('settings.skin_active');
+      } else if (!isUnlocked && skin.unlockHint) {
+        // Achievement-gated skin — show the earn condition on all platforms.
+        pill.textContent = t('settings.skin_earn_hint', { hint: skin.unlockHint });
       } else if (this.isNative && !isUnlocked) {
+        // IAP-only skin on native — show the price.
         pill.textContent = `${t('settings.skin_unlock')} ${this.getPriceLabel(skin.id)}`;
       } else {
         pill.textContent = '';
@@ -533,7 +592,10 @@ export class SettingsView {
   private getSkinName(skinId: SkinId): string {
     if (skinId === 'void') return t('skin.void.name');
     if (skinId === 'synthwave') return t('skin.synthwave.name');
-    return t('skin.gameboy.name');
+    if (skinId === 'gameboy') return t('skin.gameboy.name');
+    // Test skins (and any future skin without an i18n entry) fall back to the
+    // human-readable name in the registry.
+    return SKINS.find((s) => s.id === skinId)?.name ?? skinId;
   }
 
   private normalizeSkinId(value: string): SkinId {

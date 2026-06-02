@@ -54,8 +54,7 @@ export class GameView {
   readonly element: HTMLDivElement;
   private readonly gridWrap: HTMLDivElement;
   private readonly overlay: SVGSVGElement;
-  private readonly haloPath: SVGPathElement;
-  private readonly corePath: SVGPathElement;
+  private readonly pathSegments: SVGGElement;
   private readonly tileElements = new Map<Tile, HTMLDivElement>();
   private readonly tileByCoord = new Map<string, Tile>();
   private readonly pendingVisualDeactivationCoords = new Set<string>();
@@ -78,6 +77,7 @@ export class GameView {
   private readonly puzzle: Puzzle;
   private readonly isTodaysDaily: boolean;
   private readonly isTutorial: boolean;
+  private readonly isPreview: boolean;
   private readonly puzzleId: string;
   private readonly puzzleTitle: string;
   private readonly timerLabel: HTMLSpanElement;
@@ -99,7 +99,7 @@ export class GameView {
     payload: RoutePayloads['game'],
     callbacks: { onWin: (payload: WinPayload) => void; onMenu: () => void }
   ) {
-    const { puzzle, dayNumber, isTodaysDaily, isTutorial } = payload;
+    const { puzzle, dayNumber, isTodaysDaily, isTutorial, isPreview } = payload;
 
     this.onWin = callbacks.onWin;
     this.onMenu = callbacks.onMenu;
@@ -107,6 +107,7 @@ export class GameView {
     this.puzzle = puzzle;
     this.isTodaysDaily = isTodaysDaily;
     this.isTutorial = isTutorial ?? false;
+    this.isPreview = isPreview ?? false;
     this.puzzleId = puzzle.id;
     this.puzzleTitle = tp(puzzle.name, puzzle.id);
 
@@ -203,15 +204,11 @@ export class GameView {
     this.overlay.setAttribute('viewBox', '0 0 100 100');
     this.overlay.setAttribute('preserveAspectRatio', 'none');
 
-    this.haloPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    this.haloPath.setAttribute('class', 'path-halo');
-    this.haloPath.setAttribute('d', '');
+    // Per-segment ribbon container. redrawPath rebuilds its <line> children.
+    this.pathSegments = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    this.pathSegments.setAttribute('class', 'path-segments');
 
-    this.corePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    this.corePath.setAttribute('class', 'path-core');
-    this.corePath.setAttribute('d', '');
-
-    this.overlay.append(this.haloPath, this.corePath);
+    this.overlay.append(this.pathSegments);
     this.gridWrap.append(gridEl, this.overlay);
 
     const hints = document.createElement('div');
@@ -719,20 +716,31 @@ export class GameView {
     const rect = this.gridWrap.getBoundingClientRect();
     this.overlay.setAttribute('viewBox', `0 0 ${rect.width} ${rect.height}`);
 
+    // Rebuild the ribbon as one <line> per segment between consecutive tiles.
+    // Each segment carries --seg-t (its position along the swipe, 0→1); CSS
+    // turns that into the progress-gradient color, width, caps and glow from
+    // the active skin's variables. JS only supplies geometry + the fraction —
+    // never a color — so the look stays fully skin-driven.
+    while (this.pathSegments.firstChild) {
+      this.pathSegments.removeChild(this.pathSegments.firstChild);
+    }
+
     if (chain.length < 2) {
-      this.haloPath.setAttribute('d', '');
-      this.corePath.setAttribute('d', '');
       return;
     }
 
     const points = chain.map((tile) => this.getTileCenter(tile));
-    let d = `M ${points[0].x} ${points[0].y}`;
-    for (let i = 1; i < points.length; i++) {
-      d += ` L ${points[i].x} ${points[i].y}`;
+    const segCount = points.length - 1;
+    for (let i = 0; i < segCount; i++) {
+      const seg = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      seg.setAttribute('class', 'path-seg');
+      seg.setAttribute('x1', String(points[i].x));
+      seg.setAttribute('y1', String(points[i].y));
+      seg.setAttribute('x2', String(points[i + 1].x));
+      seg.setAttribute('y2', String(points[i + 1].y));
+      seg.style.setProperty('--seg-t', segCount > 1 ? String(i / (segCount - 1)) : '0');
+      this.pathSegments.appendChild(seg);
     }
-
-    this.haloPath.setAttribute('d', d);
-    this.corePath.setAttribute('d', d);
   }
 
   private getTileCenter(tile: Tile): { x: number; y: number } {
@@ -1107,20 +1115,28 @@ export class GameView {
         const previousBest = previousValues.length === 0 ? null : Math.min(...previousValues);
         const wasNewBest = previousBest !== null && elapsedSeconds < previousBest;
 
+        // Preview plays (editor "test in game" / tester links) must not touch
+        // any saved state. recordPuzzleCompletion already no-ops + returns the
+        // current snapshot when isTutorial is set, so we reuse that bypass for
+        // previews too; the side effects below are then skipped explicitly.
+        const skipPersistence = this.isTutorial || this.isPreview;
+
         const snapshot = await recordPuzzleCompletion(this.puzzleId, elapsedSeconds, {
           isTodaysDaily: this.isTodaysDaily,
           starRating,
-          isTutorial: this.isTutorial
+          isTutorial: skipPersistence
         });
 
-        // Invalidate the menu data cache so the next menu visit reflects the
-        // new solved state immediately rather than showing stale stats.
-        invalidateMenuCache();
+        if (!this.isPreview) {
+          // Invalidate the menu data cache so the next menu visit reflects the
+          // new solved state immediately rather than showing stale stats.
+          invalidateMenuCache();
 
-        await clearPuzzleReveals(this.puzzleId);
+          await clearPuzzleReveals(this.puzzleId);
+        }
 
         let unlockedAchievements: string[] = [];
-        if (!this.isTutorial) {
+        if (!skipPersistence) {
           unlockedAchievements = await detectAndUnlockAchievements({
             currentStreak: snapshot.currentStreak,
             solvedCount: snapshot.solvedCount,
@@ -1147,13 +1163,17 @@ export class GameView {
           mistakes,
           is_archive: !this.isTodaysDaily,
           is_tutorial: this.isTutorial,
+          is_preview: this.isPreview,
           was_new_best: wasNewBest,
           was_new_rating: wasNewRating
         });
 
-        // Record this solve toward the interstitial cadence counter.
+        // Record this solve toward the interstitial cadence counter (skipped
+        // for previews — a test play shouldn't push the player toward an ad).
         // The ad itself fires on the WinView→next-view transition (Router).
-        await recordSolveForInterstitial();
+        if (!this.isPreview) {
+          await recordSolveForInterstitial();
+        }
         await holdForAnimations;
         await fadeOut();
 
@@ -1170,7 +1190,8 @@ export class GameView {
           starRating,
           wasNewBest,
           wasNewRating,
-          unlockedAchievements
+          unlockedAchievements,
+          freezeUsed: snapshot.freezeUsed
         });
       } catch (err) {
         console.warn('[GameView] onPuzzleSolved failed', err);
@@ -1196,7 +1217,8 @@ export class GameView {
           starRating: this.getStarRating(),
           wasNewBest: false,
           wasNewRating: false,
-          unlockedAchievements: []
+          unlockedAchievements: [],
+          freezeUsed: false
         });
       }
     })();

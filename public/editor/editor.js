@@ -336,6 +336,45 @@ function copyGridJSON() {
   navigator.clipboard?.writeText(text).then(() => toast('JSON copied')).catch(() => toast('Copy failed', 'err'));
 }
 
+/* base64url-encode a UTF-8 string (matches src/services/PuzzleCodec.ts). */
+function b64urlEncode(str) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+/* Build a `/p/<token>` preview link for the current puzzle. The link encodes
+   the whole puzzle in the URL (no server). On a device with the app installed,
+   the OS opens it in the native app; otherwise it opens the web game. Returns
+   null if there's no current puzzle. */
+function previewLinkForCurrent() {
+  const p = serverPuzzles.find(x => x.id === gridEditId);
+  if (!p) return null;
+  const { data } = buildDataFromS();
+  const raw = { ...p, data };
+  delete raw.filler;
+  return `${location.origin}/p/${b64urlEncode(JSON.stringify(raw))}`;
+}
+
+/* Copy the preview link (for sending to a tester). Copy-only, so the clipboard
+   write happens with the editor focused and reliably succeeds. */
+function copyPreviewLink() {
+  const url = previewLinkForCurrent();
+  if (!url) return;
+  navigator.clipboard?.writeText(url)
+    .then(() => toast('Preview link copied'))
+    .catch(() => toast('Copy failed', 'err'));
+}
+
+/* Open the current puzzle in the real game (a throwaway preview play — nothing
+   is saved). Opens the native app on devices where it's installed. */
+function testGridInGame() {
+  const url = previewLinkForCurrent();
+  if (!url) return;
+  window.open(url, '_blank');
+}
+
 function saveGridDraft() {
   try { localStorage.setItem(GRID_KEY, JSON.stringify({ id: gridEditId, words: S.words, letters: S.letters })); } catch(e) {}
 }

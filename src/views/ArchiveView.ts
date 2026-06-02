@@ -1,4 +1,4 @@
-import { getDayNumberSinceLaunch, getPuzzleForDay } from '../game/PuzzleLoader';
+import { ensureBundledPuzzlesLoaded, getDayNumberSinceLaunch, getPuzzleForDay } from '../game/PuzzleLoader';
 import { t } from '../i18n';
 import { getSolvedIds, getSolvedTimes, getSolvedRatings, normalizeStarRating } from '../services/ProgressService';
 import type { Puzzle } from '../types/puzzle';
@@ -51,7 +51,9 @@ export class ArchiveView {
 
   private async populate(): Promise<void> {
     const today = getDayNumberSinceLaunch();
-    const lastArchiveDay = today - 1;
+    // Cap to puzzle catalog size — days beyond the catalog have no content.
+    const puzzleCount = ensureBundledPuzzlesLoaded().length;
+    const lastArchiveDay = Math.min(today - 1, puzzleCount);
     const ctx = getMonetizationContext();
 
     if (lastArchiveDay < 1) {

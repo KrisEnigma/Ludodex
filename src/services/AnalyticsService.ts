@@ -127,6 +127,8 @@ export type AnalyticsEvent =
   | 'skin_preview_buy_tapped'
   | 'skin_preview_cancelled'
   | 'achievement_unlocked'
+  | 'daily_reminder_enabled'
+  | 'daily_reminder_disabled'
 
   // ── IAP purchase funnel ────────────────────────────────────────────────────
   | 'iap_purchase_started'        // legacy — kept for IAPService.purchase() compat

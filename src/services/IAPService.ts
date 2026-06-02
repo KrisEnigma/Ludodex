@@ -2,6 +2,8 @@ import { Capacitor } from '@capacitor/core';
 import { track } from './AnalyticsService';
 import { getMonetizationContext } from './MonetizationContext';
 import { grantHints } from './HintService';
+import { isEarned } from './AchievementService';
+import { SKINS, type SkinId } from '../skins/registry';
 
 const FALLBACK_RC_KEY = 'RC_KEY';
 
@@ -50,6 +52,9 @@ export const PRODUCT_IDS = {
   STARTER_PACK: 'starter_pack',
   SKIN_SYNTHWAVE: 'skin_synthwave',
   SKIN_GAMEBOY:   'skin_gameboy',
+  // Multi-skin bundle (referenced by skins' bundleProductId). Owning it unlocks
+  // every skin whose bundleProductId points here.
+  SKIN_BUNDLE:    'skin_bundle',
 } as const;
 
 /**
@@ -72,6 +77,7 @@ const FALLBACK_CATALOG: Record<string, ProductInfo> = {
   [PRODUCT_IDS.STARTER_PACK]: { id: PRODUCT_IDS.STARTER_PACK, priceLabel: '$2.99', fallbackPriceLabel: '$2.99' },
   [PRODUCT_IDS.SKIN_SYNTHWAVE]: { id: PRODUCT_IDS.SKIN_SYNTHWAVE, priceLabel: '$1.99', fallbackPriceLabel: '$1.99' },
   [PRODUCT_IDS.SKIN_GAMEBOY]:   { id: PRODUCT_IDS.SKIN_GAMEBOY,   priceLabel: '$1.99', fallbackPriceLabel: '$1.99' },
+  [PRODUCT_IDS.SKIN_BUNDLE]:    { id: PRODUCT_IDS.SKIN_BUNDLE,    priceLabel: '$2.99', fallbackPriceLabel: '$2.99' },
 };
 
 export async function initIAP(): Promise<void> {
@@ -91,6 +97,42 @@ export async function isOwned(productId: string): Promise<boolean> {
   // TODO(native): Query entitlements from RevenueCat.
   //   const info = await Purchases.getCustomerInfo();
   //   return info.customerInfo.entitlements.active[productId] !== undefined;
+  return false;
+}
+
+/**
+ * Single source of truth for whether the player owns a given skin.
+ * Checks entitlement sources in priority order:
+ *   1. Always-free (productId === null) → owned
+ *   2. Web — all skins free (no IAP surface on web; skins are a native monetization path)
+ *   3. Achievement unlock → native only
+ *   4. IAP (RevenueCat) or bundle → native only
+ *
+ * This is the only function callers should use to gate skin access.
+ */
+export async function isSkinOwned(skinId: SkinId): Promise<boolean> {
+  const skin = SKINS.find((s) => s.id === skinId);
+  if (!skin) return false;
+
+  // Always-free skin (free on every platform).
+  if (skin.productId === null) return true;
+
+  // On web, all skins are free — there's no IAP surface and skins are
+  // a native-only monetization path.
+  const ctx = getMonetizationContext();
+  if (!ctx.isNative) return true;
+
+  // Achievement-based unlock.
+  if (skin.unlockedByAchievement) {
+    if (await isEarned(skin.unlockedByAchievement)) return true;
+  }
+
+  // IAP-based unlock.
+  if (skin.productId) {
+    if (await isOwned(skin.productId)) return true;
+    if (skin.bundleProductId && await isOwned(skin.bundleProductId)) return true;
+  }
+
   return false;
 }
 

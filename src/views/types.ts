@@ -13,4 +13,6 @@ export type WinPayload = {
   wasNewRating: boolean;
   /** Achievement IDs unlocked by the solve that produced this WinPayload. */
   unlockedAchievements: string[];
+  /** True if a streak freeze token was auto-consumed to cover a missed day this solve. */
+  freezeUsed: boolean;
 };

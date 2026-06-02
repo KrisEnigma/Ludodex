@@ -18,7 +18,8 @@
  */
 
 import { getMonetizationContext } from './MonetizationContext';
-import { getDayNumberSinceLaunch, getPuzzleForDay } from '../game/PuzzleLoader';
+import { getDayNumberSinceLaunch, getPuzzleForDay, parseRawPuzzleToPuzzle } from '../game/PuzzleLoader';
+import { decodePuzzleToken } from './PuzzleCodec';
 import type { Puzzle } from '../types/puzzle';
 
 /** Must match the constant in ArchiveView.ts. */
@@ -27,7 +28,8 @@ const WEB_FREE_DAYS = 7;
 export type ParsedDeepLink =
   | { kind: 'menu' }
   | { kind: 'puzzle'; puzzle: Puzzle; dayNumber: number; isTodaysDaily: boolean }
-  | { kind: 'archive-locked'; dayNumber: number };
+  | { kind: 'archive-locked'; dayNumber: number }
+  | { kind: 'preview-puzzle'; puzzle: Puzzle; token: string };
 
 /**
  * Parse a URL path (e.g. `/123`, `/`, `/menu`) into a deep-link intent.
@@ -40,8 +42,20 @@ export function parseDeepLinkPath(pathname: string): ParsedDeepLink {
   // Root → menu.
   if (trimmed === '') return { kind: 'menu' };
 
-  // Only the first segment is meaningful for now. Anything else → menu.
-  const firstSegment = trimmed.split('/')[0];
+  const segments = trimmed.split('/');
+  const firstSegment = segments[0];
+
+  // Preview link: `/p/<token>` carries a whole puzzle encoded in the URL
+  // (editor "test in game" / share-to-tester). Decode + validate; any failure
+  // falls through to menu. Preview puzzles are standalone and never persist
+  // (see GameView isPreview).
+  if (firstSegment === 'p' && segments[1]) {
+    const raw = decodePuzzleToken(segments[1]);
+    if (!raw) return { kind: 'menu' };
+    const puzzle = parseRawPuzzleToPuzzle(raw);
+    if (!puzzle) return { kind: 'menu' };
+    return { kind: 'preview-puzzle', puzzle, token: segments[1] };
+  }
 
   // Try to parse as a positive integer day number.
   if (!/^\d+$/.test(firstSegment)) return { kind: 'menu' };
@@ -103,8 +117,12 @@ export function parseDeepLinkUrl(url: string): ParsedDeepLink {
 export function pathForRoute(routeName: string, payload: unknown): string | null {
   if (routeName === 'menu') return '/';
   if (routeName === 'game') {
-    // Game payload includes dayNumber.
-    const p = payload as { dayNumber?: number } | undefined;
+    const p = payload as { dayNumber?: number; isPreview?: boolean; previewToken?: string } | undefined;
+    // Preview games keep their `/p/<token>` URL so the address bar stays
+    // shareable and a refresh reloads the same encoded puzzle.
+    if (p?.isPreview && p.previewToken) {
+      return `/p/${p.previewToken}`;
+    }
     if (typeof p?.dayNumber === 'number' && p.dayNumber >= 1) {
       return `/${p.dayNumber}`;
     }

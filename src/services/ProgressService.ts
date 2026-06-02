@@ -126,6 +126,10 @@ export type ProgressSnapshot = {
   pristineCount: number;
   consecutivePristineCount: number;
   archiveSolvesCount: number;
+  /** True if a streak freeze token was auto-consumed to cover a missed day this solve. */
+  freezeUsed: boolean;
+  /** Number of freeze tokens the player currently holds (after this solve's potential consumption). */
+  freezeCount: number;
 };
 
 export type StreakStatus = {
@@ -254,7 +258,8 @@ export async function getProgressSnapshot(): Promise<ProgressSnapshot> {
     lastPlayedDate,
     pristineCount,
     consecutivePristineCount,
-    archiveSolvesCount
+    archiveSolvesCount,
+    freezeCount
   ] = await Promise.all([
     getSolvedIds(),
     getPuzzlesSolvedCount(),
@@ -264,7 +269,8 @@ export async function getProgressSnapshot(): Promise<ProgressSnapshot> {
     getLastPlayedDate(),
     getPristineCount(),
     getConsecutivePristineCount(),
-    getArchiveSolvesCount()
+    getArchiveSolvesCount(),
+    getFreezeCount()
   ]);
 
   return {
@@ -276,7 +282,9 @@ export async function getProgressSnapshot(): Promise<ProgressSnapshot> {
     lastPlayedDate: lastPlayedDate ? toDayStamp(lastPlayedDate) : null,
     pristineCount,
     consecutivePristineCount,
-    archiveSolvesCount
+    archiveSolvesCount,
+    freezeUsed: false,
+    freezeCount
   };
 }
 
@@ -298,6 +306,7 @@ export async function getStreakStatus(now: Date = new Date()): Promise<StreakSta
 
 import { resetHintData } from './HintService';
 import { resetEarnedAchievements } from './AchievementService';
+import { consumeFreeze, getFreezeCount, recordWinForFreeze, resetFreezeData, resetFreezeProgress } from './FreezeService';
 
 export async function recordPuzzleCompletion(
   puzzleId: string,
@@ -330,7 +339,8 @@ export async function recordPuzzleCompletion(
     ratings,
     previousPristineCount,
     previousConsecutivePristineCount,
-    previousArchiveSolvesCount
+    previousArchiveSolvesCount,
+    previousFreezeCount
   ] = await Promise.all([
     getSolvedTimes(),
     getPuzzlesSolvedCount(),
@@ -340,7 +350,8 @@ export async function recordPuzzleCompletion(
     getSolvedRatings(),
     getPristineCount(),
     getConsecutivePristineCount(),
-    getArchiveSolvesCount()
+    getArchiveSolvesCount(),
+    getFreezeCount()
   ]);
 
   const existing = solvedTimes[puzzleId];
@@ -357,6 +368,8 @@ export async function recordPuzzleCompletion(
   const totalSolveAttempts = previousCount + 1;
   let currentStreak = previousStreak;
   let bestStreak = previousBestStreak;
+  let freezeUsed = false;
+  let freezeCount = previousFreezeCount;
 
   // Streak update — gated by suspect flag.
   if (options.isTodaysDaily && !streakSuspect) {
@@ -367,10 +380,31 @@ export async function recordPuzzleCompletion(
     if (lastStamp) {
       const diff = dayDiff(lastStamp, todayStamp);
       if (diff === 0) {
+        // Same-day replay — preserve streak, don't count toward freeze earn.
         currentStreak = Math.max(1, previousStreak);
       } else if (diff === 1) {
+        // Perfect consecutive day — count toward next freeze token.
         currentStreak = Math.max(1, previousStreak + 1);
+        void recordWinForFreeze();
+      } else if (diff === 2 && previousFreezeCount > 0) {
+        // Missed exactly one day and the player has a freeze token.
+        // Cover the gap: extend streak as if they hadn't missed.
+        // Win progress is NOT advanced — freeze was needed, not earned.
+        const missedStamp = toDayStamp(new Date(new Date(`${lastStamp}T00:00:00`).getTime() + 86_400_000).toISOString());
+        const consumed = await consumeFreeze(missedStamp);
+        if (consumed) {
+          currentStreak = Math.max(1, previousStreak + 1);
+          freezeUsed = true;
+          freezeCount = previousFreezeCount - 1;
+        }
+        // If consumeFreeze unexpectedly returned false, currentStreak stays 1 (reset).
+        // Either way the streak broke or was barely saved — reset earn progress.
+        void resetFreezeProgress();
+      } else {
+        // Streak broke with no freeze to save it — reset earn progress.
+        void resetFreezeProgress();
       }
+      // diff >= 3 with no freeze: currentStreak already set to 1 above.
     }
 
     bestStreak = Math.max(previousBestStreak, currentStreak);
@@ -428,7 +462,9 @@ export async function recordPuzzleCompletion(
     lastPlayedDate: options.isTodaysDaily && !streakSuspect ? toDayStamp(nowIso) : (lastPlayedDate ? toDayStamp(lastPlayedDate) : null),
     pristineCount,
     consecutivePristineCount,
-    archiveSolvesCount
+    archiveSolvesCount,
+    freezeUsed,
+    freezeCount
   };
 }
 
@@ -443,6 +479,7 @@ export async function resetAllProgress(): Promise<void> {
   // app was first installed and should survive a progress wipe.
   await resetHintData();
   await resetEarnedAchievements();
+  await resetFreezeData();
 }
 
 /**

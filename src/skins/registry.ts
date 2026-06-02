@@ -1,4 +1,4 @@
-export type SkinId = 'void' | 'synthwave' | 'gameboy';
+export type SkinId = 'void' | 'synthwave' | 'gameboy' | 'terminal' | 'crimson';
 
 /**
  * Tile-shaped preview token set. Drives the mini-tile shown in the Settings
@@ -20,6 +20,12 @@ export type SkinPreviewTile = {
   letter: string;
   /** Outer glow color (CSS `box-shadow` color). */
   glow: string;
+  /** Tile-letter font-family for this skin, so the preview shows the real font. */
+  font: string;
+  /** Corner radius as a CSS length ('8px', '0', …), mirroring the skin's tile radius. */
+  radius: string;
+  /** Font-size multiplier so display/pixel fonts sit correctly in the swatch. */
+  scale: number;
 };
 
 export type SkinMeta = {
@@ -27,6 +33,17 @@ export type SkinMeta = {
   name: string;
   productId: string | null;
   bundleProductId?: string;
+  /**
+   * Achievement ID that unlocks this skin for free on all platforms.
+   * If earned, the player owns the skin regardless of IAP status.
+   * IAP remains an alternative unlock path on native builds.
+   */
+  unlockedByAchievement?: string;
+  /**
+   * Human-readable unlock condition shown in the locked skin card,
+   * e.g. "10 puzzles solved" or "30-day streak".
+   */
+  unlockHint?: string;
   previewTile: SkinPreviewTile;
 };
 
@@ -39,7 +56,10 @@ export const SKINS: SkinMeta[] = [
       bg: 'linear-gradient(145deg, #0d3a42, #071e26)',
       border: '#00d4e8',
       letter: '#9af0ff',
-      glow: 'rgba(0, 212, 232, 0.4)'
+      glow: 'rgba(0, 212, 232, 0.4)',
+      font: "'Space Mono', ui-monospace, monospace",
+      radius: '8px',
+      scale: 1
     }
   },
   {
@@ -47,23 +67,61 @@ export const SKINS: SkinMeta[] = [
     name: 'Synthwave',
     productId: 'skin_synthwave',
     bundleProductId: 'skin_bundle',
+    unlockedByAchievement: 'solve_10',
+    unlockHint: '10 puzzles solved',
     previewTile: {
       bg: 'linear-gradient(145deg, #ff2bd6, #6a0f9a)',
       border: '#ff7af0',
       letter: '#ffffff',
-      glow: 'rgba(255, 43, 214, 0.6)'
+      glow: 'rgba(255, 43, 214, 0.6)',
+      font: "'Orbitron', sans-serif",
+      radius: '10px',
+      scale: 0.84
     }
   },
   {
     id: 'gameboy',
     name: 'Game Boy',
-    productId: 'skin_pixel',
+    productId: 'skin_gameboy',
     bundleProductId: 'skin_bundle',
+    unlockedByAchievement: 'streak_30',
+    unlockHint: '30-day streak',
     previewTile: {
       bg: 'linear-gradient(145deg, #b5d68f, #7ea05c)',
       border: '#1a2a1a',
       letter: '#0d1a0d',
-      glow: 'rgba(181, 214, 143, 0.6)'
+      glow: 'rgba(181, 214, 143, 0.6)',
+      font: "'Press Start 2P', monospace",
+      radius: '0',
+      scale: 0.62
+    }
+  },
+  {
+    id: 'terminal',
+    name: 'Terminal',
+    productId: null,
+    previewTile: {
+      bg: 'linear-gradient(145deg, #ffb000, #a86e00)',
+      border: '#ffd86a',
+      letter: '#1a1000',
+      glow: 'rgba(255, 176, 0, 0.5)',
+      font: "'VT323', monospace",
+      radius: '2px',
+      scale: 1.18
+    }
+  },
+  {
+    id: 'crimson',
+    name: 'Crimson',
+    productId: null,
+    previewTile: {
+      bg: 'linear-gradient(145deg, #ff2d2d, #8a0f12)',
+      border: '#ff8a3d',
+      letter: '#ffffff',
+      glow: 'rgba(255, 45, 45, 0.55)',
+      font: "'Orbitron', sans-serif",
+      radius: '6px',
+      scale: 0.84
     }
   }
 ];

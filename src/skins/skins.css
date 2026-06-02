@@ -41,6 +41,51 @@
   --skin-button-active-bg: rgba(13, 58, 66, 0.95);
   --skin-button-active-border: #00d4e8;
   --skin-button-active-text: #ddfaff;
+
+  /* ── Per-skin typography & shape (void baseline) ──
+     Consumed by .tile and .menu-logo in index.css. These are the neutral
+     defaults; each skin overrides only what it needs. Purely cosmetic —
+     tile-font-scale changes glyph size within the fixed cell, never the
+     cell/hitbox itself. */
+  --tile-font-family: 'Space Mono', ui-monospace, monospace;
+  --tile-font-weight: 700;
+  /* Per-font tile-size corrections (same idea as the display-scale-* block).
+     Defined once, referenced by skins so a font shared across skins (Orbitron
+     in Synthwave + Crimson) is tuned here. Kept separate from the display
+     scales because tiles and titles want different optical sizes per font. */
+  --tile-scale-orbitron: 0.84;
+  --tile-scale-press-start: 0.62;
+  --tile-scale-vt323: 1.18;
+  --tile-font-scale: 1;          /* active tile scale (Space Mono baseline) */
+  --tile-radius: 14px;
+  --wordmark-font-family: 'Space Mono', ui-monospace, monospace;
+  --wordmark-font-weight: 700;
+  --wordmark-letter-spacing: 0.18em;
+  /* Per-font display-size corrections. Different fonts fill their em-box
+     differently; these keep the wordmark + level title a consistent visual
+     size. Defined once here and referenced by skins, so a font shared across
+     skins (e.g. Orbitron in Synthwave + Crimson) is tuned in one place. */
+  --display-scale-orbitron: 0.9;
+  --display-scale-silkscreen: 1.0;
+  --display-scale-vt323: 1.45;
+  /* Active display-font scale for this skin (Space Mono baseline = 1.0). */
+  --display-font-scale: 1;
+  --glow-strength: 1;            /* multiplier on selection/wordmark glow blur */
+
+  /* ── Selection ribbon (void baseline) ──
+     The swipe trail is drawn as per-segment strokes under the tile letters
+     (see .path-seg in index.css). grad-start→grad-end tints the ribbon along
+     swipe order (the WordSalad progress gradient); set them equal for a flat
+     single-color ribbon. path-glow is a drop-shadow blur in px (0 = flat).
+     selected-letter-outline keeps the letter legible where the ribbon crosses
+     it. */
+  --path-grad-start: #00d4e8;
+  --path-grad-end: #9af0ff;
+  --path-width: 9px;
+  --path-cap: round;
+  --path-opacity: 0.95;
+  --path-glow: 7;
+  --selected-letter-outline: #04121a;
 }
 
 .skin-synthwave {
@@ -82,6 +127,29 @@
   --skin-button-active-bg: rgba(255, 43, 214, 0.22);
   --skin-button-active-border: #ff7af0;
   --skin-button-active-text: #ffffff;
+
+  /* ── Typography & shape ──
+     Orbitron = chrome/retro-futurist display face. Wider+taller than mono,
+     so the tile glyph is scaled down to sit comfortably in the cell. Softer
+     corners and a bigger neon bloom carry the retrowave feel. */
+  --tile-font-family: 'Orbitron', sans-serif;
+  --tile-font-weight: 700;
+  --tile-font-scale: var(--tile-scale-orbitron);
+  --tile-radius: 18px;
+  --wordmark-font-family: 'Orbitron', sans-serif;
+  --wordmark-font-weight: 700;
+  --wordmark-letter-spacing: 0.14em;
+  --display-font-scale: var(--display-scale-orbitron);
+  --glow-strength: 1.7;
+
+  /* Ribbon: neon magenta→cyan progress gradient with bloom (the showpiece). */
+  --path-grad-start: #ff2bd6;
+  --path-grad-end: #2bd6ff;
+  --path-width: 10px;
+  --path-cap: round;
+  --path-opacity: 0.95;
+  --path-glow: 14;
+  --selected-letter-outline: #3a0830;
 }
 
 .skin-gameboy {
@@ -141,4 +209,160 @@
   --skin-button-active-bg: #9bbc0f;
   --skin-button-active-border: #0f380f;
   --skin-button-active-text: #0f380f;
+
+  /* ── Typography & shape ──
+     Classic handheld pixel aesthetic. Press Start 2P for the single-letter
+     tiles (its ideal use); square corners (radius 0) read as LCD pixels;
+     glow off because an LCD doesn't bloom. Wordmark uses Silkscreen, a
+     narrower pixel face, so the 7-char LUDODEX fits on small screens where
+     Press Start 2P would overflow. Press Start 2P ships weight 400 only. */
+  --tile-font-family: 'Press Start 2P', monospace;
+  --tile-font-weight: 400;
+  --tile-font-scale: var(--tile-scale-press-start);
+  --tile-radius: 0px;
+  --wordmark-font-family: 'Silkscreen', monospace;
+  --wordmark-font-weight: 700;
+  --wordmark-letter-spacing: 0.06em;
+  --display-font-scale: var(--display-scale-silkscreen);
+  --glow-strength: 0;
+
+  /* Ribbon: flat, thin, no glow — a mid-tone connector that threads between
+     the bright selected tiles without washing out the dark inverted letter.
+     grad-start == grad-end, so no gradient (pixel aesthetic stays flat). */
+  --path-grad-start: #306230;
+  --path-grad-end: #306230;
+  --path-width: 6px;
+  --path-cap: butt;
+  --path-opacity: 1;
+  --path-glow: 0;
+  --selected-letter-outline: #9bbc0f;
+}
+
+/* ── Terminal ──
+   Amber phosphor CRT / DOS monochrome. Example of a skin that needs a NEW
+   bundled font (VT323, imported in main.ts). */
+.skin-terminal {
+  --bg-center: #0a0805;
+  --bg-edge: #050402;
+  --shell-bg: linear-gradient(180deg, rgba(14, 11, 5, 0.9), rgba(8, 6, 3, 0.95));
+  --shell-border: #3a2a0a;
+  --chrome-text: #b88a2e;
+  --title-color: #ffcf6a;
+  --title-glow: #ffb000;
+  --button-bg: #160f04;
+  --button-border: #3a2a0a;
+  --button-text: #ffcf6a;
+  --button-hover-bg: rgba(58, 42, 10, 0.7);
+  --button-active-bg: rgba(255, 176, 0, 0.18);
+  --button-active-border: #ffb000;
+  --button-active-text: #fff2d4;
+  --tile-bg: linear-gradient(145deg, #1c1405, #110b03);
+  --tile-border: #3a2a0a;
+  --tile-letter: #ffcf6a;
+  --tile-selected-bg: linear-gradient(145deg, #ffb000, #a86e00);
+  --tile-selected-border: #ffd86a;
+  --tile-selected-letter: #1a1000;
+  --tile-selected-glow: rgba(255, 176, 0, 0.5);
+  --tile-found-bg: linear-gradient(145deg, #2a1f08, #160f04);
+  --tile-found-border: #6e5212;
+  --tile-found-letter: #e0a838;
+  --path-color: #ffb000;
+  --primary-action-bg: #ffb000;
+  --primary-action-text: #1a1000;
+  --hint-empty-bg: rgba(28, 20, 5, 0.19);
+  --hint-empty-border: #3a2a0a;
+  --hint-solved-bg: #ffb000;
+  --hint-solved-border: #ffd86a;
+  --hint-solved-letter: #1a1000;
+  --skin-button-bg: rgba(28, 20, 5, 0.82);
+  --skin-button-border: #3a2a0a;
+  --skin-button-text: #ffcf6a;
+  --skin-button-active-bg: rgba(255, 176, 0, 0.18);
+  --skin-button-active-border: #ffb000;
+  --skin-button-active-text: #fff2d4;
+
+  /* Typography & shape — amber phosphor terminal */
+  --tile-font-family: 'VT323', monospace;
+  --tile-font-weight: 400;
+  --tile-font-scale: var(--tile-scale-vt323);
+  --tile-radius: 2px;
+  --wordmark-font-family: 'VT323', monospace;
+  --wordmark-font-weight: 400;
+  --wordmark-letter-spacing: 0.12em;
+  --display-font-scale: var(--display-scale-vt323);
+  --glow-strength: 1.2;
+
+  /* Ribbon: amber gradient, soft phosphor bloom */
+  --path-grad-start: #ff8a00;
+  --path-grad-end: #ffd86a;
+  --path-width: 8px;
+  --path-cap: round;
+  --path-opacity: 0.95;
+  --path-glow: 9;
+  --selected-letter-outline: #2a1500;
+}
+
+/* ── Crimson ──
+   Molten boss-fight red. Example of a skin with ZERO new fonts — reuses
+   Orbitron (already bundled for Synthwave): registry entry + this CSS block
+   is the entire cost. */
+.skin-crimson {
+  --bg-center: #1a0608;
+  --bg-edge: #0a0203;
+  --shell-bg: linear-gradient(180deg, rgba(24, 6, 9, 0.9), rgba(14, 3, 5, 0.95));
+  --shell-border: #5a1418;
+  --chrome-text: #d98a90;
+  --title-color: #ffd2d2;
+  --title-glow: #ff2d2d;
+  --button-bg: #1e0608;
+  --button-border: #5a1418;
+  --button-text: #ffd2d2;
+  --button-hover-bg: rgba(90, 20, 24, 0.7);
+  --button-active-bg: rgba(255, 45, 45, 0.2);
+  --button-active-border: #ff6a6a;
+  --button-active-text: #ffffff;
+  --tile-bg: linear-gradient(145deg, #2c0a0e, #170406);
+  --tile-border: #5a1418;
+  --tile-letter: #ffd2d2;
+  --tile-selected-bg: linear-gradient(145deg, #ff2d2d, #8a0f12);
+  --tile-selected-border: #ff8a3d;
+  --tile-selected-letter: #ffffff;
+  --tile-selected-glow: rgba(255, 45, 45, 0.55);
+  --tile-found-bg: linear-gradient(145deg, #3c1014, #1c0608);
+  --tile-found-border: #7a2024;
+  --tile-found-letter: #f09898;
+  --path-color: #ff2d2d;
+  --primary-action-bg: #ff2d2d;
+  --primary-action-text: #ffffff;
+  --hint-empty-bg: rgba(28, 6, 8, 0.19);
+  --hint-empty-border: #5a1418;
+  --hint-solved-bg: #ff2d2d;
+  --hint-solved-border: #ff8a3d;
+  --hint-solved-letter: #ffffff;
+  --skin-button-bg: rgba(28, 6, 8, 0.82);
+  --skin-button-border: #5a1418;
+  --skin-button-text: #ffd2d2;
+  --skin-button-active-bg: rgba(255, 45, 45, 0.2);
+  --skin-button-active-border: #ff6a6a;
+  --skin-button-active-text: #ffffff;
+
+  /* Typography & shape — reuses Orbitron (no new font dependency) */
+  --tile-font-family: 'Orbitron', sans-serif;
+  --tile-font-weight: 700;
+  --tile-font-scale: var(--tile-scale-orbitron);
+  --tile-radius: 6px;
+  --wordmark-font-family: 'Orbitron', sans-serif;
+  --wordmark-font-weight: 700;
+  --wordmark-letter-spacing: 0.16em;
+  --display-font-scale: var(--display-scale-orbitron);
+  --glow-strength: 1.3;
+
+  /* Ribbon: molten red→orange progress gradient */
+  --path-grad-start: #ff2d2d;
+  --path-grad-end: #ff8a3d;
+  --path-width: 10px;
+  --path-cap: round;
+  --path-opacity: 0.95;
+  --path-glow: 12;
+  --selected-letter-outline: #2a0606;
 }

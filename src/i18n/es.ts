@@ -36,6 +36,8 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'menu.daily_next_in': 'PRÓXIMO EN {time}',
   'menu.daily_play': '▶ Jugar',
   'menu.daily_play_again': '✓ Resuelto · Volver a jugar',
+  'menu.daily_no_puzzle_title': 'Nuevo puzzle próximamente',
+  'menu.daily_no_puzzle_meta': 'Vuelve mañana',
 
   // Menu - footer
   'menu.footer_archive': 'Archivo',
@@ -46,6 +48,7 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'settings.skin_section': 'Skin',
   'settings.skin_active': 'Activo',
   'settings.skin_unlock': 'Desbloquear',
+  'settings.skin_earn_hint': 'Gana: {hint}',
     'settings.skin_preview_banner_title': 'Vista previa de {name} — aún no desbloqueado',
   'settings.restore_purchases': 'Restaurar compras',
   'settings.badge_free': 'Gratis',
@@ -61,6 +64,11 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'settings.section_language': 'Idioma',
   'settings.section_skin': 'Skin',
     'settings.more_skins_in_app': 'Más skins en la app',
+  'settings.section_reminders': 'Recordatorio diario',
+  'settings.reminder_on': 'Activado',
+  'settings.reminder_off': 'Desactivado',
+  'settings.reminder_hint': 'Un aviso diario para que no rompas tu racha.',
+  'settings.reminder_denied': 'Permite las notificaciones en los ajustes del sistema para recibir recordatorios.',
   'settings.section_about': 'Acerca de',
   'settings.about_credit': 'Por KrisEnigma',
   'settings.version': 'Ludodex v{version}',
@@ -115,6 +123,7 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'win.share_fallback_close': 'Cerrar',
   'win.done_link': 'Listo',
   'win.new_rating': 'Nuevo nivel',
+  'win.freeze_used': '🛡 Congelación de racha usada',
   'win.play_again': 'Jugar otra vez',
 
   // Share string
@@ -283,6 +292,10 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'achievement.time_capsule.description': 'Puzzle de hace 30 días o más resuelto.',
 
   // Notification
-  'notification.daily_title': 'Tu Ludodex de hoy ya está',
-  'notification.daily_body': 'Tu puzzle diario te espera.',
+  'notification.daily_title': 'Mantén viva tu racha',
+  'notification.daily_body': 'El Ludodex de hoy ya está — resuélvelo para mantener tu racha.',
+  'reminder_prompt.title': '¿No te pierdas ni un día?',
+  'reminder_prompt.body': 'Recibe un aviso diario para no romper tu racha.',
+  'reminder_prompt.enable': 'Activar recordatorios',
+  'reminder_prompt.not_now': 'Ahora no',
 };
