@@ -2,8 +2,13 @@
 
 A complete, self-contained recipe for adding a new skin to Ludodex, from concept
 to a verified build. Written so an LLM (or a human) with **no prior context** can
-follow it end to end. Hand this whole file to the assistant along with the task
-"add a skin called X."
+follow it end to end.
+
+**To build a new skin, share these files with the assistant:**
+1. `docs/making-skins.md` — this file
+2. `src/skins/skins.css` — existing skins as color/font references
+3. `src/skins/registry.ts` — current `SkinId` union and `SKINS` array
+4. `docs/skins-roadmap.md` — candidate skin ideas, packs, and font licensing policy
 
 ---
 
@@ -85,10 +90,18 @@ Optional / rarely:
    hint-answer letters, and the win-screen `FLAWLESS` label + result time.
    **Functional chrome stays neutral mono** — the header (`← MENU`, timer, hint
    count), body copy, settings labels. Colors theme *everything*; fonts do not.
-4. **Optical sizing is per-font, not per-skin.** Different fonts fill their
+4. **One font or two — both are valid.** Most skins use one font for both tiles
+   (`--tile-font-family`) and the wordmark/titles (`--wordmark-font-family`).
+   But some aesthetics call for a split: a bold display font for the wordmark and
+   a different font for tiles. **Phobos** does this — AmazDooMRight2 for the
+   wordmark (the Doom logo feel) and DooM for tiles (the authentic HUD pixel font).
+   Use two fonts when the skin has a strong *title identity* that doesn't read well
+   at tile size, or a great *tile font* that's too quirky for headings. Don't split
+   just for variety — both fonts must serve the same aesthetic.
+5. **Optical sizing is per-font, not per-skin.** Different fonts fill their
    em-box differently, so each font has a tuned scale defined once and reused
    (see §5). Tiles and display text get *separate* scales for the same font.
-5. **Match font-weight to what the font ships.** Pixel/display fonts often ship a
+6. **Match font-weight to what the font ships.** Pixel/display fonts often ship a
    single weight (Press Start 2P 400, VT323 400). Set `--tile-font-weight` /
    `--wordmark-font-weight` to that weight, or the browser fakes bold and it looks
    wrong.
@@ -110,6 +123,14 @@ overrides any subset. Grouped by what they control.
 - `--title-color` — primary heading text color.
 - `--title-glow` — accent/brand color; used for glows, the wordmark color, the
   hint-counter, scanline FX, confetti, etc. **The skin's signature color.**
+  ⚠️ **Must be fully opaque.** Many UI elements use `--title-glow` as a text
+  color (hint counter, archive stars, achievement count, stat highlights). A
+  semi-transparent value (e.g. `rgba(…, 0.4)`) will cause low-contrast text
+  across the app. If your skin's glow effect needs transparency, apply it at
+  the use site (e.g. `color-mix`, `opacity` on a wrapper) — never in the
+  variable definition itself. On monochromatic skins (e.g. Dot Matrix),
+  `--title-glow` and `--title-color` will naturally be close in hue — that's
+  fine and expected.
 
 ### Buttons
 - `--button-bg`, `--button-border`, `--button-text`, `--button-hover-bg`,
@@ -157,9 +178,15 @@ overrides any subset. Grouped by what they control.
   (`0` = no glow, e.g. Game Boy; `1.7` = strong bloom, e.g. Synthwave).
 
 ### Per-font scale constants (defined in `:root`, referenced by skins — see §5)
-- Tile: `--tile-scale-orbitron`, `--tile-scale-press-start`, `--tile-scale-vt323`, …
-- Display: `--display-scale-orbitron`, `--display-scale-silkscreen`,
-  `--display-scale-vt323`, …
+| Font | `--tile-scale-*` | `--display-scale-*` | Weights bundled | Used by |
+|---|---|---|---|---|
+| Orbitron | `0.84` | `0.9` | 700 | Synthwave, Crimson |
+| Press Start 2P | `0.62` | `0.84` | 400 | Dot Matrix, Phobos (tiles) |
+| Silkscreen | _(tile only)_ | `1.0` | 700 | Dot Matrix (wordmark) |
+| VT323 | `1.18` | `1.45` | 400 | Terminal, Phosphor |
+| Cinzel | `0.78` | `1.0` | 400, 700 | Underworld |
+| AmazDooMRight2 | _(wordmark only)_ | `0.9` | 400 | Phobos (wordmark) |
+| DooM | `1.0` | _(tile only)_ | 400 | Phobos (tiles) |
 
 ---
 
@@ -386,6 +413,10 @@ export type SkinId = 'void' | 'synthwave' | 'gameboy' | 'terminal' | 'crimson' |
 7. **Flat ribbon = equal gradient endpoints.** Set `--path-grad-start` ==
    `--path-grad-end`. This also makes the win-screen glitch split collapse into a
    subtle same-color jitter (good for clean/LCD skins).
+8. **`--title-glow` must be opaque.** It is used as a `color:` value on text
+   elements throughout the app (archive stars, hint counter, achievement count,
+   stat highlights, etc.). A semi-transparent value silently breaks contrast on
+   all of them. Always define it as a solid hex or `rgb()`. See §4 Chrome & title.
 
 ---
 
@@ -423,13 +454,14 @@ word), hint slots (empty + a revealed letter + a solved word), and the win scree
 |---|---|---|---|---|---|---|---|
 | Void | `void` (`:root`) | Space Mono | Space Mono | 14px | 1 | cyan→light-cyan | default, free |
 | Synthwave | `synthwave` | Orbitron | Orbitron | 18px | 1.7 | magenta→cyan | solve_10 / IAP |
-| Game Boy | `gameboy` | Press Start 2P | Silkscreen | 0 | 0 | flat green (butt caps) | streak_30 / IAP |
+| Dot Matrix | `gameboy` | Press Start 2P | Silkscreen | 0 | 0 | flat green (butt caps) | streak_30 / IAP |
 | Terminal | `terminal` | VT323 | VT323 | 2px | 1.2 | amber gradient | free (`productId: null`) |
 | Crimson | `crimson` | Orbitron | Orbitron | 6px | 1.3 | red→orange | free (`productId: null`) |
 
 Read `src/skins/skins.css` for their exact values — they are the best examples to
 copy from. Synthwave/Crimson both use Orbitron and **reference the same
 `--*-scale-orbitron` constants**, which is the pattern to follow for reused fonts.
+See the table in §4 for all currently bundled fonts and their scale values.
 
 ---
 

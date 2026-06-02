@@ -427,7 +427,7 @@
   display: inline-block;
   text-align: right;
   font-size: var(--type-body-s);
-  color: var(--hint-solved-letter);
+  color: var(--title-glow);
   letter-spacing: 0.04em;
 }
 :root {
@@ -1277,15 +1277,6 @@ body {
 
 .win-play-again {
   flex: 1;
-  background: transparent;
-  border: 1px solid var(--button-border);
-  color: var(--button-text);
-  padding: 12px;
-  font-family: inherit;
-  font-size: var(--type-body-s);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  cursor: pointer;
 }
 
 .win-play-again:active {
@@ -2103,7 +2094,7 @@ body {
 
 .settings-skin-left {
   display: grid;
-  grid-template-columns: 60px minmax(0, 1fr);
+  grid-template-columns: 68px minmax(0, 1fr);
   align-items: center;
   gap: 10px;
   min-width: 0;
@@ -2115,19 +2106,47 @@ body {
    is what this skin's active tile looks like" instead of three
    abstract color swatches. Colors are inline-styled per skin (see
    SettingsView.renderSkinSection), this rule only handles shape. */
-.settings-skin-preview {
+/* Scoped container — carries the skin-X class so CSS vars resolve for both tiles */
+.settings-skin-preview-scope {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* Shared tile shape */
+.settings-skin-tile {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 8px;
+  width: 28px;
+  height: 28px;
   border: 1px solid;
-  font-family: 'Space Mono', monospace;
-  font-size: 22px;
   font-weight: 700;
   line-height: 1;
   flex-shrink: 0;
+  /* Font, radius and scale come from the skin's CSS variables */
+  font-family: var(--tile-font-family, 'Space Mono', monospace);
+  /* Clamp radius so swatch tiles never go circular — game tiles are ~3x larger
+     so a skin's --tile-radius looks proportionally correct at full size but
+     would turn these small swatches into circles without the cap. */
+  border-radius: min(var(--tile-radius, 8px), 6px);
+  font-size: calc(14px * var(--tile-font-scale, 1));
+}
+
+/* Unselected state */
+.settings-skin-tile--default {
+  background: var(--tile-bg);
+  border-color: var(--tile-border);
+  color: var(--tile-letter);
+}
+
+/* Selected state */
+.settings-skin-tile--selected {
+  background: var(--tile-selected-bg);
+  border-color: var(--tile-selected-border);
+  color: var(--tile-selected-letter);
+  box-shadow: 0 0 8px var(--tile-selected-glow);
 }
 
 
@@ -2649,10 +2668,6 @@ body {
   /* padding, border, color etc. come from button-secondary */
 }
 
-.win-install-cta-link:hover {
-  border-color: color-mix(in srgb, var(--title-glow) 60%, var(--button-border));
-  color: var(--title-glow);
-}
 
 /* ──────────── Archive — web install CTA ──────────── */
 /* Shares structure with .win-install-cta but with slightly different

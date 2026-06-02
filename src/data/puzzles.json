@@ -1,6 +1,6 @@
 [
   {
-    "id": "1",
+    "id": "video-game-heroes",
     "name": {
       "en": "Video Game Heroes",
       "es": "Héroes de Videojuegos"
@@ -9,7 +9,6 @@
     "difficulty": "medium",
     "date": null,
     "series": null,
-    "premium": false,
     "hint": {
       "en": "Classic heroes from three different decades",
       "es": "Héroes clásicos de tres décadas distintas"
@@ -21,7 +20,7 @@
     }
   },
   {
-    "id": "2",
+    "id": "chess-pieces",
     "name": {
       "en": "Chess Pieces"
     },
@@ -29,7 +28,6 @@
     "difficulty": "easy",
     "date": null,
     "series": null,
-    "premium": false,
     "hint": null,
     "data": {
       "PAWN": "a1a2a3b3",
@@ -40,7 +38,7 @@
     }
   },
   {
-    "id": "3",
+    "id": "solar-system",
     "name": {
       "en": "Solar System"
     },
@@ -48,7 +46,6 @@
     "difficulty": "medium",
     "date": null,
     "series": null,
-    "premium": false,
     "hint": null,
     "data": {
       "MARS": "c4b3c3b4",
@@ -60,7 +57,7 @@
     }
   },
   {
-    "id": "4",
+    "id": "street-fighters",
     "name": {
       "en": "Street Fighters"
     },
@@ -68,7 +65,6 @@
     "difficulty": "easy",
     "date": null,
     "series": null,
-    "premium": false,
     "hint": null,
     "data": {
       "KEN": "a1b2c3",
@@ -79,20 +75,15 @@
     }
   },
   {
-    "id": "5",
+    "id": "dark-souls-bosses",
     "category": "enemies",
     "difficulty": "hard",
     "name": {
-      "en": "Dark Souls Bosses",
-      "es": ""
+      "en": "Dark Souls Bosses"
     },
-    "hint": {
-      "en": "",
-      "es": ""
-    },
+    "hint": null,
     "date": null,
     "series": null,
-    "premium": false,
     "data": {
       "GWYN": "a1b2c3d4",
       "SEATH": "b1c1d1d2d3",

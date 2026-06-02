@@ -24,7 +24,7 @@ export class SettingsView {
   private readonly skinButtons = new Map<SkinId, HTMLButtonElement>();
   private readonly skinPills = new Map<SkinId, HTMLSpanElement>();
   private readonly unlockedBySkin = new Map<SkinId, boolean>();
-  private activeSkinId: SkinId = getCurrentSkinId();
+  private activeSkinId: SkinId = getCurrentSkinId(); // DOM read — correct since main.ts applies skin before routing
   private readonly isNative = Capacitor.isNativePlatform();
 
   // --- Skin preview state machine ---
@@ -194,7 +194,10 @@ export class SettingsView {
   }
 
   private async bootstrap(): Promise<void> {
+    // Set active skin and refresh cards immediately — don't wait on entitlements
+    // (IAP calls can be slow and would leave the wrong skin highlighted in the interim).
     this.activeSkinId = this.normalizeSkinId(await getActiveSkinId());
+    this.refreshSkinCards();
     await this.refreshEntitlements();
     this.refreshLanguageButtons();
     this.refreshSkinCards();
@@ -356,25 +359,23 @@ export class SettingsView {
       const left = document.createElement('span');
       left.className = 'settings-skin-left';
 
-      // Mini-tile preview rendered with the skin's actual selected-state
-      // tokens so the player can see what a tile in that skin looks like
-      // in the active moment of play — not just three abstract color
-      // swatches. The letter "A" is a representative glyph; any consonant
-      // works the same. Inline styles because the skin tokens live in CSS
-      // vars scoped to <html>.skin-X and don't apply to non-active skins.
-      const preview = document.createElement('span');
-      preview.className = 'settings-skin-preview';
-      preview.style.background = skin.previewTile.bg;
-      preview.style.borderColor = skin.previewTile.border;
-      preview.style.color = skin.previewTile.letter;
-      preview.style.boxShadow = `0 0 12px ${skin.previewTile.glow}`;
-      // Show the skin's actual tile font, radius and glyph scale so the preview
-      // sells what's different about each skin — not just its colors.
-      preview.style.fontFamily = skin.previewTile.font;
-      preview.style.borderRadius = skin.previewTile.radius;
-      preview.style.fontSize = `calc(22px * ${skin.previewTile.scale})`;
-      preview.textContent = 'A';
-      left.append(preview);
+      // Two-tile preview scoped inside a div carrying the skin's CSS class.
+      // CSS custom properties cascade normally into children, so all --tile-*
+      // variables resolve correctly without any hardcoded values.
+      // Left tile = unselected state, right tile = selected state.
+      const skinScope = document.createElement('div');
+      skinScope.className = `settings-skin-preview-scope${skin.id !== 'void' ? ` skin-${skin.id}` : ''}`;
+
+      const tileDefault = document.createElement('span');
+      tileDefault.className = 'settings-skin-tile settings-skin-tile--default';
+      tileDefault.textContent = 'A';
+
+      const tileSelected = document.createElement('span');
+      tileSelected.className = 'settings-skin-tile settings-skin-tile--selected';
+      tileSelected.textContent = 'A';
+
+      skinScope.append(tileDefault, tileSelected);
+      left.append(skinScope);
 
       const name = document.createElement('span');
       name.className = 'settings-skin-name';

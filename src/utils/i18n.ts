@@ -8,5 +8,5 @@ export function setLocale(locale: Locale) {
 
 export function t(str: LocalizedString | null, fallback = ''): string {
   if (!str) return fallback;
-  return str[currentLocale] ?? str.en ?? fallback;
+  return str[currentLocale] || str.en || fallback;
 }

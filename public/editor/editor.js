@@ -123,7 +123,6 @@ async function serverLoad() {
   serverStatus('Connecting…', 'busy');
   try {
     serverPuzzles = await apiList();
-    renumberIds();
     serverStatus(`${serverPuzzles.length} levels`, 'ok');
     $('login-group').classList.add('hidden');
     $('logged-group').classList.remove('hidden');
@@ -205,9 +204,19 @@ function uniqueValues(field, exceptId) {
   return [...set].sort((a, b) => a.localeCompare(b));
 }
 
-/* ids are simply the level's order number (1-based) */
-function renumberIds() {
-  serverPuzzles.forEach((p, i) => { p.id = String(i + 1); });
+/* generate a URL-safe slug from a string */
+function slugify(s) {
+  return (s || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+/* generate a unique slug for a puzzle, avoiding collisions */
+function uniqueSlug(base) {
+  const existing = new Set(serverPuzzles.map(p => p.id));
+  let slug = base || ('puzzle-' + Date.now());
+  if (!existing.has(slug)) return slug;
+  let n = 2;
+  while (existing.has(slug + '-' + n)) n++;
+  return slug + '-' + n;
 }
 
 /* validate a stored puzzle (data = words only). A valid level fills all 16
@@ -635,7 +644,7 @@ function openImport() {
     <div class="dialog" style="width:min(100%,520px)" onclick="event.stopPropagation()">
       <div class="dialog-icon primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
       <p class="dialog-title">Import level JSON</p>
-      <p class="dialog-msg">Paste a level object (name, category, hint, data…). It's added to the end of the library — its ID is assigned automatically from its position.</p>
+      <p class="dialog-msg">Paste a level object (name, category, hint, data…). It's added to the end of the library — its ID is generated from the puzzle name.</p>
       <textarea class="import-textarea" id="import-text" placeholder='{ "name": { "en": "…" }, "category": "characters", "data": { "WORD": "a1b1…" } }' style="margin-top:var(--s4)"></textarea>
       <div id="import-error" class="import-error"></div>
       <div class="dialog-actions">
@@ -653,12 +662,57 @@ function doImport() {
     const p = JSON.parse(raw);
     if (!p.data || typeof p.data !== 'object') { $('import-error').textContent = 'Missing or invalid "data" field.'; return; }
     delete p.filler;
+    // ensure imported puzzle has a valid slug id
+    if (!p.id || serverPuzzles.some(x => x.id === p.id)) {
+      p.id = uniqueSlug(slugify(p.name?.en || ''));
+    }
     serverPuzzles.push(p);
-    renumberIds();
     dialogState = null; renderDialog();
     renderLibrary();
     toast('Level imported');
   } catch(e) { $('import-error').textContent = 'Invalid JSON: ' + e.message; }
+}
+
+/* ============================================================
+   UPLOAD puzzles.json  (replace entire remote dataset)
+   ============================================================ */
+function openFileUpload() {
+  $('puzzles-file-input').value = ''; // reset so same file can be re-selected
+  $('puzzles-file-input').click();
+}
+
+async function handleFileUpload(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  let parsed;
+  try {
+    const text = await file.text();
+    parsed = JSON.parse(text);
+  } catch(e) {
+    toast('Invalid JSON: ' + e.message, 'err');
+    return;
+  }
+  if (!Array.isArray(parsed)) { toast('File must contain a JSON array of puzzles', 'err'); return; }
+
+  const ok = await promptConfirm({
+    title: 'Replace all puzzles?',
+    message: `Upload "${file.name}" and overwrite the remote puzzles with ${parsed.length} level${parsed.length !== 1 ? 's' : ''}? Current data will be replaced.`,
+    confirmText: 'Upload & replace',
+    variant: 'danger',
+  });
+  if (!ok) return;
+
+  serverStatus('Uploading…', 'busy');
+  try {
+    await apiPut(parsed);
+    serverPuzzles = parsed;
+    serverStatus(`${serverPuzzles.length} levels`, 'ok');
+    renderLibrary();
+    toast(`${parsed.length} levels uploaded`);
+  } catch(e) {
+    serverStatus('Upload failed', 'err');
+    toast('Upload failed: ' + e.message, 'err');
+  }
 }
 
 /* ============================================================
@@ -795,7 +849,8 @@ function renderMetaForm(p) {
         <label class="form-label">Difficulty</label>
         <div class="diff-seg" role="group">${DIFFS.map(d => `<button class="diff-opt${diff===d?' is-active':''}" data-diff="${d}" onclick="metaUpdateDiff('${id}','${d}')">${d}</button>`).join('')}</div>
       </div>
-      <div class="form-field"><label class="form-label">Release date</label><input class="field" type="date" value="${escapeHtml(p.date || '')}" oninput="metaUpdate('${id}','date',this.value)"></div>
+      <div class="form-field"><label class="form-label">Slug <span class="lang">ID</span></label><input class="field mono" type="text" value="${escapeHtml(p.id || '')}" data-slug-for="${id}" oninput="metaUpdateSlug(this.dataset.slugFor,this.value);this.dataset.slugFor=slugify(this.value)||this.dataset.slugFor" placeholder="e.g. dark-souls-bosses"></div>
+      <div class="form-field"><label class="form-label">Release date</label><input class="field" type="date" value="${escapeHtml(p.date || '')}" oninput="metaUpdate('${id}','date',this.value || null)"></div>
     </div>
 
     <details class="raw-json">
@@ -824,8 +879,17 @@ function metaUpdate(id, field, value) {
   const parts = field.split('.');
   if (parts.length === 2) { if (!p[parts[0]]) p[parts[0]] = {}; p[parts[0]][parts[1]] = value; }
   else p[field] = value;
+  // if this is a new puzzle (id starts with "new-puzzle") and the EN name was just set, mint a real slug
+  if (field === 'name.en' && id.startsWith('new-puzzle') && value.trim()) {
+    const newId = uniqueSlug(slugify(value));
+    p.id = newId;
+    expandedId = newId;
+    // re-key the DOM element so future updates find it
+    const domEl = document.querySelector(`.list-item[data-id="${CSS.escape(id)}"]`);
+    if (domEl) domEl.dataset.id = newId;
+  }
   // live-update the row header (name / badges / status) without collapsing
-  const el = document.querySelector(`.list-item[data-id="${CSS.escape(id)}"]`);
+  const el = document.querySelector(`.list-item[data-id="${CSS.escape(p.id)}"]`);
   if (el) {
     if (field.startsWith('name')) {
       const nm = p.name?.en || p.name?.es || '';
@@ -837,6 +901,30 @@ function metaUpdate(id, field, value) {
       if (value && b) b.textContent = value;
       else if (value && !b) { const badges = el.querySelector('.list-badges'); const s = document.createElement('span'); s.className = 'badge badge-cat'; s.textContent = value[0].toUpperCase() + value.slice(1); badges.prepend(s); }
     }
+  }
+}
+function metaUpdateSlug(id, rawValue) {
+  const p = serverPuzzles.find(x => x.id === id);
+  if (!p) return;
+  const newId = slugify(rawValue);
+  if (!newId || newId === id) return;
+  // check for collisions (ignore self)
+  if (serverPuzzles.some(x => x.id === newId && x !== p)) {
+    // show inline warning but don't apply yet
+    const el = document.querySelector(`.list-item[data-id="${CSS.escape(id)}"]`);
+    const inp = el?.querySelector('input[type="text"].mono');
+    if (inp) inp.style.borderColor = 'var(--color-err, #f87171)';
+    return;
+  }
+  p.id = newId;
+  expandedId = newId;
+  // re-key the DOM element
+  const el = document.querySelector(`.list-item[data-id="${CSS.escape(id)}"]`);
+  if (el) {
+    el.dataset.id = newId;
+    // update the id badge in the header if present
+    const idBadge = el.querySelector('.list-id');
+    if (idBadge) idBadge.textContent = newId;
   }
 }
 function metaUpdateDiff(id, diff) {
@@ -860,20 +948,18 @@ async function metaDelete(id) {
   const ok = await promptConfirm({ title: 'Delete level?', message: `Permanently delete "${p?.name?.en || id}"? This cannot be undone.`, confirmText: 'Delete', variant: 'danger' });
   if (!ok) return;
   serverPuzzles = serverPuzzles.filter(x => x.id !== id);
-  renumberIds();
   expandedId = null;
   serverStatus('Deleting…', 'busy');
   try { await apiPut(serverPuzzles); serverStatus('Deleted', 'ok'); toast('Level deleted'); renderLibrary(); }
-  catch(e) { serverStatus('Delete failed', 'err'); serverPuzzles.push(p); renumberIds(); renderLibrary(); }
+  catch(e) { serverStatus('Delete failed', 'err'); serverPuzzles.push(p); renderLibrary(); }
 }
 
 async function newLevel() {
   const p = {
-    id: String(serverPuzzles.length + 1), category: '', difficulty: 'medium',
+    id: uniqueSlug('new-puzzle'), category: '', difficulty: 'medium',
     name: { en: '', es: '' }, hint: { en: '', es: '' }, date: null, series: null, data: {},
   };
   serverPuzzles.push(p);
-  renumberIds();
   expandedId = p.id;
   listQuery = ''; const si = $('list-search-input'); if (si) si.value = '';
   renderLibrary();
@@ -887,9 +973,8 @@ async function newLevel() {
 async function saveOrder() {
   serverStatus('Saving order…', 'busy');
   try {
-    renumberIds();
     await apiPut(serverPuzzles);
-    orderDirty = false; serverStatus('Order saved', 'ok'); renderLibrary(); toast('Order saved — IDs renumbered');
+    orderDirty = false; serverStatus('Order saved', 'ok'); renderLibrary(); toast('Order saved');
   } catch(e) { serverStatus('Save failed', 'err'); }
 }
 

@@ -75,7 +75,7 @@ export const strings = {
   // Skin display names
   'skin.void.name': 'Void',
   'skin.synthwave.name': 'Synthwave',
-  'skin.gameboy.name': 'Game Boy',
+  'skin.gameboy.name': 'Dot Matrix',
 
   // Game view header
   'game.back': '← Menu',

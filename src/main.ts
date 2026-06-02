@@ -8,6 +8,8 @@ import '@fontsource/orbitron/latin-700.css';
 import '@fontsource/press-start-2p/latin-400.css';
 import '@fontsource/silkscreen/latin-700.css';
 import '@fontsource/vt323/latin-400.css'; // Terminal skin
+import '@fontsource/cinzel/latin-400.css'; // Underworld skin
+import '@fontsource/cinzel/latin-700.css'; // Underworld skin (wordmark)
 import './skins/skins.css';
 import './index.css';
 import { App as CapacitorApp } from '@capacitor/app';

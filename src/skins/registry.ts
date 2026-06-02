@@ -1,4 +1,4 @@
-export type SkinId = 'void' | 'synthwave' | 'gameboy' | 'terminal' | 'crimson';
+export type SkinId = 'void' | 'synthwave' | 'gameboy' | 'terminal' | 'phosphor' | 'phobos' | 'crimson' | 'underworld';
 
 /**
  * Tile-shaped preview token set. Drives the mini-tile shown in the Settings
@@ -81,7 +81,7 @@ export const SKINS: SkinMeta[] = [
   },
   {
     id: 'gameboy',
-    name: 'Game Boy',
+    name: 'Dot Matrix',
     productId: 'skin_gameboy',
     bundleProductId: 'skin_bundle',
     unlockedByAchievement: 'streak_30',
@@ -108,6 +108,48 @@ export const SKINS: SkinMeta[] = [
       font: "'VT323', monospace",
       radius: '2px',
       scale: 1.18
+    }
+  },
+  {
+    id: 'phosphor',
+    name: 'Phosphor',
+    productId: null,
+    previewTile: {
+      bg: 'linear-gradient(145deg, #39e832, #1a7a18)',
+      border: '#a8f0b8',
+      letter: '#010a02',
+      glow: 'rgba(57, 232, 50, 0.55)',
+      font: "'VT323', monospace",
+      radius: '2px',
+      scale: 1.18
+    }
+  },
+  {
+    id: 'phobos',
+    name: 'Phobos',
+    productId: null,
+    previewTile: {
+      bg: 'linear-gradient(145deg, #cc1111, #7a0a0a)',
+      border: '#ff4444',
+      letter: '#ffffff',
+      glow: 'rgba(204, 17, 17, 0.6)',
+      font: "'DooM', monospace",
+      radius: '0',
+      scale: 1
+    }
+  },
+  {
+    id: 'underworld',
+    name: 'Underworld',
+    productId: null,
+    previewTile: {
+      bg: 'linear-gradient(145deg, #e8a010, #9a6600)',
+      border: '#ffe080',
+      letter: '#1a0c00',
+      glow: 'rgba(232, 160, 16, 0.7)',
+      font: "'Cinzel', serif",
+      radius: '8px',
+      scale: 0.78
     }
   },
   {
