@@ -36,6 +36,18 @@
   src: url('../fonts/DooM.ttf') format('truetype');
 }
 
+/* Diablo: ornate dark-fantasy display face (Exocet-style caps). Used for the
+   Inferno wordmark/titles only; tiles use Cinzel. Self-hosted like the fonts
+   above — license is unverified (fan font), so keep Inferno FREE until the
+   license is confirmed for any paid use. */
+@font-face {
+  font-family: 'Diablo';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('../fonts/diablo.woff') format('woff');
+}
+
 /* ────────────────────────────────────────────────────────────────────────── */
 
 :root {
@@ -97,6 +109,8 @@
   --tile-scale-press-start: 0.62;
   --tile-scale-vt323: 1.18;
   --tile-scale-cinzel: 0.78;        /* Cinzel caps sit high in em-box; pull down slightly */
+  --tile-scale-oswald: 0.92;        /* Oswald is condensed; tall caps fill the cell, pull down a touch (Aperture) */
+  --tile-scale-silkscreen: 1.06;    /* Silkscreen pixel glyphs sit small in the em-box; nudge up for tiles (Pastel). Wordmark uses --display-scale-silkscreen. */
   --tile-font-scale: 1;          /* active tile scale (Space Mono baseline) */
   --tile-radius: 14px;
   --wordmark-font-family: 'Space Mono', ui-monospace, monospace;
@@ -111,6 +125,8 @@
   --display-scale-silkscreen: 1.0;
   --display-scale-vt323: 1.45;
   --display-scale-cinzel: 1;     /* Cinzel all-caps wordmark needs slight reduction */
+  --display-scale-diablo: 0.9;   /* Diablo ornate caps sit tall; pull down for the wordmark (Inferno). Tiles use Cinzel. */
+  --display-scale-oswald: 0.95;  /* Oswald condensed wordmark (Aperture) */
   /* Active display-font scale for this skin (Space Mono baseline = 1.0). */
   --display-font-scale: 1;
   --glow-strength: 1;            /* multiplier on selection/wordmark glow blur */
@@ -122,8 +138,8 @@
      single-color ribbon. path-glow is a drop-shadow blur in px (0 = flat).
      selected-letter-outline keeps the letter legible where the ribbon crosses
      it. */
-  --path-grad-start: #00d4e8;
-  --path-grad-end: #9af0ff;
+  --path-grad-start: #8a7bff;
+  --path-grad-end: #22e0f0;
   --path-width: 9px;
   --path-cap: round;
   --path-opacity: 0.95;
@@ -186,8 +202,8 @@
   --glow-strength: 1.7;
 
   /* Ribbon: neon magenta→cyan progress gradient with bloom (the showpiece). */
-  --path-grad-start: #ff2bd6;
-  --path-grad-end: #2bd6ff;
+  --path-grad-start: #2bd6ff;
+  --path-grad-end: #ffe24a;
   --path-width: 10px;
   --path-cap: round;
   --path-opacity: 0.95;
@@ -302,10 +318,10 @@
   --tile-bg: linear-gradient(145deg, #1c1405, #110b03);
   --tile-border: #3a2a0a;
   --tile-letter: #ffcf6a;
-  --tile-selected-bg: linear-gradient(145deg, #ffb000, #a86e00);
-  --tile-selected-border: #ffd86a;
-  --tile-selected-letter: #1a1000;
-  --tile-selected-glow: rgba(255, 176, 0, 0.5);
+  --tile-selected-bg: linear-gradient(145deg, #c47c00, #6e4500);  /* deep amber so the bright letter reads as glowing terminal */
+  --tile-selected-border: #ffc850;
+  --tile-selected-letter: #ffe8b0;
+  --tile-selected-glow: rgba(255, 176, 0, 0.55);
   --tile-found-bg: linear-gradient(145deg, #2a1f08, #160f04);
   --tile-found-border: #6e5212;
   --tile-found-letter: #e0a838;
@@ -336,7 +352,7 @@
   --glow-strength: 1.2;
 
   /* Ribbon: amber gradient, soft phosphor bloom */
-  --path-grad-start: #ff8a00;
+  --path-grad-start: #ff5a1e;
   --path-grad-end: #ffd86a;
   --path-width: 8px;
   --path-cap: round;
@@ -367,10 +383,10 @@
   --tile-bg: linear-gradient(145deg, #071a0a, #030d05);
   --tile-border: #0f3a1a;
   --tile-letter: #a8f0b8;
-  --tile-selected-bg: linear-gradient(145deg, #39e832, #1a7a18);
-  --tile-selected-border: #a8f0b8;
-  --tile-selected-letter: #010a02;
-  --tile-selected-glow: rgba(57, 232, 50, 0.55);
+  --tile-selected-bg: linear-gradient(145deg, #1ca81a, #0c5210);  /* deep glow-green so the bright letter reads as phosphor */
+  --tile-selected-border: #7bf06e;
+  --tile-selected-letter: #e0ffd6;
+  --tile-selected-glow: rgba(57, 232, 50, 0.6);
   --tile-found-bg: linear-gradient(145deg, #0d2e12, #050f07);
   --tile-found-border: #1c6628;
   --tile-found-letter: #6ed880;
@@ -405,13 +421,662 @@
   --glow-strength: 1.4;
 
   /* Ribbon: yellow-green → bright green, strong bloom */
-  --path-grad-start: #39e832;
-  --path-grad-end: #a8f0b8;
+  --path-grad-start: #d6ffba;
+  --path-grad-end: #39e832;
   --path-width: 8px;
   --path-cap: round;
   --path-opacity: 0.95;
   --path-glow: 11;
-  --selected-letter-outline: #010a02;
+  --selected-letter-outline: #04200a;
+}
+
+/* ── BIOS ──
+   Early-PC firmware setup screen. Dark navy field, light steel-blue text, and
+   an electric-blue selection "highlight bar" — when a tile is selected the
+   light text inverts to dark-on-bright, exactly like the moving cursor bar in
+   an AMI/Award/IBM BIOS menu. CRT sibling of Terminal/Phosphor (same VT323
+   text-mode face, same era), distinguished by hue: this is the only blue skin.
+   Reuses VT323 — no new font dependency. */
+.skin-bios {
+  --bg-center: #081835;
+  --bg-edge: #03070f;
+  --shell-bg: linear-gradient(180deg, rgba(8, 18, 40, 0.92), rgba(4, 9, 20, 0.97));
+  --shell-border: #1a3360;
+  --chrome-text: #6f8fc4;
+  --title-color: #e6f0ff;
+  --title-glow: #2f9bff;            /* electric BIOS blue — opaque (used as text color app-wide) */
+  --button-bg: #0c1c3c;
+  --button-border: #1f3a6e;
+  --button-text: #cfe0ff;
+  --button-hover-bg: rgba(31, 58, 110, 0.7);
+  --button-active-bg: rgba(47, 155, 255, 0.2);
+  --button-active-border: #5fb0ff;
+  --button-active-text: #ffffff;
+  --tile-bg: linear-gradient(145deg, #14305e, #0b1d3c);
+  --tile-border: #244a85;
+  --tile-letter: #cfe0ff;
+  --tile-selected-bg: linear-gradient(145deg, #2f9bff, #1357c8);  /* the highlight bar */
+  --tile-selected-border: #8cc6ff;
+  --tile-selected-letter: #ffffff;
+  --tile-selected-glow: rgba(47, 155, 255, 0.55);
+  --tile-found-bg: linear-gradient(145deg, #1c4a86, #11305e);
+  --tile-found-border: #3f74c4;
+  --tile-found-letter: #a8ccff;
+  --tile-deactivated-opacity: 0.45;
+  --path-color: #2f9bff;
+  --primary-action-bg: #2f9bff;
+  --primary-action-text: #03122c;
+  --hint-empty-bg: rgba(12, 28, 60, 0.25);
+  --hint-empty-border: #244a85;
+  --hint-empty-letter: transparent;
+  --hint-solved-bg: #2f9bff;        /* SOLID */
+  --hint-solved-border: #8cc6ff;
+  --hint-solved-letter: #03122c;    /* dark navy on bright blue — high contrast */
+  --skin-button-bg: rgba(10, 24, 52, 0.85);
+  --skin-button-border: #244a85;
+  --skin-button-text: #cfe0ff;
+  --skin-button-active-bg: rgba(47, 155, 255, 0.2);
+  --skin-button-active-border: #5fb0ff;
+  --skin-button-active-text: #ffffff;
+
+  /* VT323 like Terminal/Phosphor — same text-mode era, different screen.
+     Distinction from those siblings is hue (blue) + a slightly tighter 3px
+     corner that nods to blocky character cells. VT323 ships weight 400 only. */
+  --tile-font-family: 'VT323', monospace;
+  --tile-font-weight: 400;
+  --tile-font-scale: var(--tile-scale-vt323);
+  --tile-radius: 3px;
+  --wordmark-font-family: 'VT323', monospace;
+  --wordmark-font-weight: 400;
+  --wordmark-letter-spacing: 0.12em;
+  --display-font-scale: var(--display-scale-vt323);
+  --glow-strength: 1.2;
+
+  /* Ribbon: electric blue → pale sky, moderate CRT bloom */
+  --path-grad-start: #ffd23b;
+  --path-grad-end: #5fc8ff;
+  --path-width: 8px;
+  --path-cap: round;
+  --path-opacity: 0.95;
+  --path-glow: 9;
+  --selected-letter-outline: #052146;
+}
+
+/* ── Pastel ──
+   16-bit home console (US "SNES") inspired. The American unit was a soft
+   two-tone grey with a lilac power slider and lavender controller buttons;
+   this skin reads it as a calm, confident purple on a warm plum-grey ground —
+   gentler than the brand's neon skins. Selected tiles light up lilac (the
+   power LED); solved words settle to periwinkle (a nod to the blue face
+   button). Silkscreen — a fine, clean pixel face — sells the 16-bit step up
+   from Dot Matrix's chunkier 8-bit type. Already bundled (no new font). */
+.skin-pastel {
+  --bg-center: #241f33;
+  --bg-edge: #14111c;
+  --shell-bg: linear-gradient(180deg, rgba(34, 31, 51, 0.9), rgba(20, 17, 28, 0.95));
+  --shell-border: #463a63;
+  --chrome-text: #9a8fb8;
+  --title-color: #e6deff;
+  --title-glow: #b486e8;            /* luminous lilac signature — opaque */
+  --button-bg: #1f1a2e;
+  --button-border: #463a63;
+  --button-text: #e6deff;
+  --button-hover-bg: rgba(70, 58, 99, 0.7);
+  --button-active-bg: rgba(180, 134, 232, 0.2);
+  --button-active-border: #c9a3f0;
+  --button-active-text: #ffffff;
+  --tile-bg: linear-gradient(145deg, #3a3350, #272036);
+  --tile-border: #4d4168;
+  --tile-letter: #d8cfe8;
+  --tile-selected-bg: linear-gradient(145deg, #b486e8, #6d4fb0);
+  --tile-selected-border: #d8b8ff;
+  --tile-selected-letter: #ffffff;
+  --tile-selected-glow: rgba(180, 134, 232, 0.5);
+  --tile-found-bg: linear-gradient(145deg, #4a5290, #323a64);
+  --tile-found-border: #7080c4;
+  --tile-found-letter: #c6d0f2;
+  --tile-deactivated-opacity: 0.5;
+  --path-color: #b486e8;
+  --primary-action-bg: #b486e8;
+  --primary-action-text: #1a0f2e;
+  --hint-empty-bg: rgba(31, 26, 46, 0.25);
+  --hint-empty-border: #463a63;
+  --hint-empty-letter: transparent;
+  --hint-solved-bg: #b486e8;        /* SOLID */
+  --hint-solved-border: #d8b8ff;
+  --hint-solved-letter: #1a0f2e;    /* dark plum on lilac — high contrast */
+  --skin-button-bg: rgba(31, 26, 46, 0.85);
+  --skin-button-border: #463a63;
+  --skin-button-text: #e6deff;
+  --skin-button-active-bg: rgba(180, 134, 232, 0.2);
+  --skin-button-active-border: #c9a3f0;
+  --skin-button-active-text: #ffffff;
+
+  /* Silkscreen for both tiles and wordmark (it ships weight 700 only).
+     Soft 10px corners echo the console's rounded shell; gentle bloom keeps
+     the pastel mood. */
+  --tile-font-family: 'Silkscreen', monospace;
+  --tile-font-weight: 700;
+  --tile-font-scale: var(--tile-scale-silkscreen);
+  --tile-radius: 10px;
+  --wordmark-font-family: 'Silkscreen', monospace;
+  --wordmark-font-weight: 700;
+  --wordmark-letter-spacing: 0.08em;
+  --display-font-scale: var(--display-scale-silkscreen);
+  --glow-strength: 1.2;
+
+  /* Ribbon: lilac → pale lilac, soft bloom */
+  --path-grad-start: #7fe0c0;
+  --path-grad-end: #88b4f0;
+  --path-width: 9px;
+  --path-cap: round;
+  --path-opacity: 0.95;
+  --path-glow: 10;
+  --selected-letter-outline: #2a1a4a;
+}
+
+/* ── Toaster ──
+   8-bit home console (US "NES") inspired — named for the front-loader's
+   famous nickname. The hardware was a flat two-tone grey deck with a black
+   bezel and one decisive red stripe; the skin holds that discipline: charcoal
+   ground, dark-grey tiles, and a single bright red as the only color. Selected
+   tiles snap to red (the power LED / the stripe lighting up); solved words
+   emboss in the console's lighter grey trim. Press Start 2P tiles + Silkscreen
+   wordmark — the same proven 8-bit pairing as Dot Matrix, recolored. Square
+   corners, near-flat glow, butt-cap ribbon keep it pixel-honest. No new font. */
+.skin-toaster {
+  --bg-center: #1c1c1e;
+  --bg-edge: #0a0a0b;
+  --shell-bg: linear-gradient(180deg, rgba(26, 26, 28, 0.92), rgba(12, 12, 13, 0.97));
+  --shell-border: #3a3a3e;
+  --chrome-text: #9a9a9f;
+  --title-color: #e8e8ea;
+  --title-glow: #e8281f;            /* the red stripe — opaque */
+  --button-bg: #232325;
+  --button-border: #3a3a3e;
+  --button-text: #e8e8ea;
+  --button-hover-bg: rgba(58, 58, 62, 0.7);
+  --button-active-bg: rgba(232, 40, 31, 0.18);
+  --button-active-border: #ef5a52;
+  --button-active-text: #ffffff;
+  --tile-bg: linear-gradient(145deg, #2c2c30, #1d1d20);
+  --tile-border: #45454a;
+  --tile-letter: #d2d2d6;
+  --tile-selected-bg: linear-gradient(145deg, #e8281f, #9a0f0a);
+  --tile-selected-border: #ff6a5e;
+  --tile-selected-letter: #ffffff;
+  --tile-selected-glow: rgba(232, 40, 31, 0.55);
+  --tile-found-bg: linear-gradient(145deg, #6a6a70, #48484e);
+  --tile-found-border: #88888f;
+  --tile-found-letter: #f4f4f6;
+  --tile-deactivated-opacity: 0.45;
+  --path-color: #e8281f;
+  --primary-action-bg: #e8281f;
+  --primary-action-text: #ffffff;
+  --hint-empty-bg: rgba(28, 28, 30, 0.3);
+  --hint-empty-border: #45454a;
+  --hint-empty-letter: transparent;
+  --hint-solved-bg: #e8281f;        /* SOLID */
+  --hint-solved-border: #ff6a5e;
+  --hint-solved-letter: #ffffff;    /* white on red — high contrast */
+  --skin-button-bg: rgba(24, 24, 26, 0.86);
+  --skin-button-border: #3a3a3e;
+  --skin-button-text: #e8e8ea;
+  --skin-button-active-bg: rgba(232, 40, 31, 0.18);
+  --skin-button-active-border: #ef5a52;
+  --skin-button-active-text: #ffffff;
+
+  /* Press Start 2P tiles (8-bit blocky) + Silkscreen wordmark — Dot Matrix's
+     pairing, recolored to grey/red/black. Press Start 2P ships weight 400. */
+  --tile-font-family: 'Press Start 2P', monospace;
+  --tile-font-weight: 400;
+  --tile-font-scale: var(--tile-scale-press-start);
+  --tile-radius: 0px;
+  --wordmark-font-family: 'Silkscreen', monospace;
+  --wordmark-font-weight: 700;
+  --wordmark-letter-spacing: 0.06em;
+  --display-font-scale: var(--display-scale-silkscreen);
+  --glow-strength: 0.6;
+
+  /* Ribbon: red, flat and blocky (butt caps), minimal bloom */
+  --path-grad-start: #e8e8ea;
+  --path-grad-end: #b0b0b6;
+  --path-width: 7px;
+  --path-cap: butt;
+  --path-opacity: 1;
+  --path-glow: 4;
+  --selected-letter-outline: #3a0604;
+}
+
+/* ── Inferno ──
+   Diablo-inspired dark fantasy. Goes harder and darker than Crimson: an
+   oxblood near-black ground, hellfire ember on the active swipe, and GOLD as
+   the signature accent — solved words turn to brass/gold treasure. Two-font
+   split (like Phobos): the ornate self-hosted Diablo face carries the wordmark
+   identity, while Cinzel (Roman inscriptional caps, already bundled — the
+   guide's first pick for fantasy) keeps the single-letter tiles legible and
+   gothic. Strong bloom sells the hellfire. */
+.skin-inferno {
+  --bg-center: #1c0805;
+  --bg-edge: #0a0302;
+  --shell-bg: linear-gradient(180deg, rgba(28, 10, 6, 0.92), rgba(12, 4, 3, 0.97));
+  --shell-border: #5a2410;
+  --chrome-text: #a07a4e;
+  --title-color: #f0dcae;
+  --title-glow: #e0a82e;            /* ornate gold signature — opaque */
+  --button-bg: #220a06;
+  --button-border: #5a2410;
+  --button-text: #f0dcae;
+  --button-hover-bg: rgba(90, 36, 16, 0.7);
+  --button-active-bg: rgba(224, 168, 46, 0.18);
+  --button-active-border: #e0a82e;
+  --button-active-text: #fff2d0;
+  --tile-bg: linear-gradient(145deg, #2c0f08, #190805);
+  --tile-border: #5a2410;
+  --tile-letter: #d8a878;
+  --tile-selected-bg: linear-gradient(145deg, #ff7a1e, #9a1505);  /* hellfire ember */
+  --tile-selected-border: #ffb45a;
+  --tile-selected-letter: #fff5e0;
+  --tile-selected-glow: rgba(255, 90, 20, 0.6);
+  --tile-found-bg: linear-gradient(145deg, #8a5e12, #4e3408);     /* brass/gold treasure */
+  --tile-found-border: #c89a32;
+  --tile-found-letter: #f2d88c;
+  --tile-deactivated-opacity: 0.4;
+  --path-color: #ff5a18;
+  --primary-action-bg: #e0a82e;
+  --primary-action-text: #1a0805;
+  --hint-empty-bg: rgba(34, 10, 6, 0.3);
+  --hint-empty-border: #5a2410;
+  --hint-empty-letter: transparent;
+  --hint-solved-bg: #e0a82e;        /* SOLID gold */
+  --hint-solved-border: #ffd56a;
+  --hint-solved-letter: #1a0805;    /* dark oxblood on gold — high contrast */
+  --skin-button-bg: rgba(28, 8, 5, 0.86);
+  --skin-button-border: #5a2410;
+  --skin-button-text: #f0dcae;
+  --skin-button-active-bg: rgba(224, 168, 46, 0.18);
+  --skin-button-active-border: #e0a82e;
+  --skin-button-active-text: #fff2d0;
+
+  /* Diablo face for the wordmark/titles; Cinzel for legible gothic tiles
+     (Cinzel ships 400 + 700 — use 700 for weight on the small tile glyphs). */
+  --tile-font-family: 'Cinzel', serif;
+  --tile-font-weight: 700;
+  --tile-font-scale: var(--tile-scale-cinzel);
+  --tile-radius: 5px;
+  --wordmark-font-family: 'Diablo', 'Cinzel', serif;
+  --wordmark-font-weight: 400;
+  --wordmark-letter-spacing: 0.06em;
+  --display-font-scale: var(--display-scale-diablo);
+  --glow-strength: 1.5;
+
+  /* Ribbon: ember → gold hellfire gradient, broad with heavy bloom */
+  --path-grad-start: #ffd24a;
+  --path-grad-end: #e0a82e;
+  --path-width: 10px;
+  --path-cap: round;
+  --path-opacity: 0.95;
+  --path-glow: 13;
+  --selected-letter-outline: #3a0a02;
+}
+
+/* ── Aperture ──
+   Portal-inspired, and the FIRST light skin. Clean Aperture-lab surfaces:
+   light-grey ground, glossy white tile panels, dark slate text. The blue /
+   orange portal pair drives the tile states — a tile lights up PORTAL BLUE on
+   the active swipe and settles to PORTAL ORANGE once solved, and the ribbon
+   travels blue → orange between them. Safety-orange is the CTA. Oswald —
+   condensed industrial signage — is the testing-chamber voice (NEW font; see
+   main.ts + package.json). NOTE: light theme, so every color is inverted from
+   the dark skins — title/letters are dark, surfaces are light. */
+.skin-aperture {
+  color-scheme: light;
+  --bg-center: #f2f2f4;
+  --bg-edge: #d1d1d4;
+  --shell-bg: linear-gradient(135deg, #ffffff, #e8e8ec);
+  --shell-border: #c4c8d0;
+  --shell-shadow: rgba(40, 60, 80, 0.18);
+  --chrome-text: #5f6670;
+  --title-color: #2a2d33;           /* dark slate headings on light */
+  --title-glow: #1487bd;            /* deep Portal blue — legible as text on light, opaque */
+  --button-bg: #ffffff;
+  --button-border: #c8ccd4;
+  --button-text: #2a2d33;
+  --button-hover-bg: rgba(39, 167, 216, 0.08);
+  --button-active-bg: rgba(39, 167, 216, 0.14);
+  --button-active-border: #27a7d8;
+  --button-active-text: #0e5a7e;
+  --tile-bg: radial-gradient(circle at 50% 38%, #ffffff 30%, #f2f2f2 55%, #e6e6e6 75%, #d6d6da 100%);
+  --tile-border: #c4c8d0;
+  --tile-letter: #2f3338;           /* dark slate on the white panel */
+  --tile-selected-bg: radial-gradient(circle at 50% 38%, #5cc6ee, #1c93c8);  /* blue portal */
+  --tile-selected-border: #7fd6f4;
+  --tile-selected-letter: #ffffff;
+  --tile-selected-glow: rgba(39, 167, 216, 0.55);
+  --tile-found-bg: radial-gradient(circle at 50% 38%, #ffb84d, #ff9a00);     /* orange portal */
+  --tile-found-border: #ffc870;
+  --tile-found-letter: #3a2400;
+  --tile-deactivated-opacity: 0.4;
+  --path-color: #ff9a00;
+  --primary-action-bg: #ff9a00;     /* safety-orange CTA */
+  --primary-action-text: #2a1a00;
+  --hint-empty-bg: rgba(255, 255, 255, 0.55);
+  --hint-empty-border: #c4c8d0;
+  --hint-empty-letter: transparent;
+  --hint-solved-bg: #ff9a00;        /* SOLID orange (matches the solved tiles) */
+  --hint-solved-border: #ffc870;
+  --hint-solved-letter: #2a1a00;    /* dark on orange — high contrast */
+  --skin-button-bg: rgba(255, 255, 255, 0.7);
+  --skin-button-border: #c8ccd4;
+  --skin-button-text: #2a2d33;
+  --skin-button-active-bg: rgba(39, 167, 216, 0.14);
+  --skin-button-active-border: #27a7d8;
+  --skin-button-active-text: #0e5a7e;
+
+  /* Oswald — condensed industrial signage. Used for both tiles and wordmark.
+     Bundled weights: 500 (tiles) + 600 (wordmark). */
+  --tile-font-family: 'Oswald', sans-serif;
+  --tile-font-weight: 500;
+  --tile-font-scale: var(--tile-scale-oswald);
+  --tile-radius: 10px;
+  --wordmark-font-family: 'Oswald', sans-serif;
+  --wordmark-font-weight: 600;
+  --wordmark-letter-spacing: 0.16em;
+  --display-font-scale: var(--display-scale-oswald);
+  --glow-strength: 0.8;
+
+  /* Ribbon: flat safety-orange — the tiles are already blue, so the trail is a
+     single contrasting orange (no gradient) for maximum read against them. */
+  --path-grad-start: #ff9a00;
+  --path-grad-end: #ff9a00;
+  --path-width: 9px;
+  --path-cap: round;
+  --path-opacity: 0.95;
+  --path-glow: 8;
+  --selected-letter-outline: #0e5a7e;
+}
+
+/* ── Lumen ──
+   Void's light twin: the exact same monochrome-cyan identity (Space Mono,
+   14px radius, cyan signature, soft bloom) inverted to a clean light surface.
+   Where Void is cyan glow on deep navy, Lumen is deep cyan on airy white. The
+   accent is a deeper cyan-teal (#0094ab) so it stays legible as text on light,
+   while Void's bright #00d4e8 lives on the fills, selection and ribbon. Pairs
+   with Void as the dark/light default pair. No new font. */
+.skin-lumen {
+  color-scheme: light;
+  --bg-center: #eef2f6;
+  --bg-edge: #d4dae2;
+  --shell-bg: linear-gradient(180deg, #ffffff, #eef2f6);
+  --shell-border: #cdd5e0;
+  --shell-shadow: rgba(20, 40, 60, 0.15);
+  --chrome-text: #6a7689;
+  --title-color: #1f2733;           /* dark slate headings (inverse of Void's light) */
+  --title-glow: #0094ab;            /* deep cyan-teal — legible as text on light, opaque */
+  --button-bg: #ffffff;
+  --button-border: #cdd5e0;
+  --button-text: #1f2733;
+  --button-hover-bg: rgba(0, 212, 232, 0.08);
+  --button-active-bg: rgba(0, 212, 232, 0.14);
+  --button-active-border: #00d4e8;
+  --button-active-text: #006477;
+  --tile-bg: linear-gradient(145deg, #ffffff, #e8eef3);
+  --tile-border: #cdd5e0;
+  --tile-letter: #2a3340;           /* dark slate on the light panel */
+  --tile-selected-bg: linear-gradient(145deg, #4fddef, #00b9d4);  /* glowing cyan */
+  --tile-selected-border: #00d4e8;
+  --tile-selected-letter: #04323c;
+  --tile-selected-glow: rgba(0, 212, 232, 0.5);
+  --tile-found-bg: linear-gradient(145deg, #dbf3f8, #c2e8f0);     /* soft cyan wash (subtle, like Void) */
+  --tile-found-border: #8fd6e4;
+  --tile-found-letter: #0a5563;
+  --tile-deactivated-opacity: 0.45;
+  --path-color: #00c4dc;
+  --primary-action-bg: #00c4dc;
+  --primary-action-text: #053640;
+  --hint-empty-bg: rgba(255, 255, 255, 0.5);
+  --hint-empty-border: #cdd5e0;
+  --hint-empty-letter: transparent;
+  --hint-solved-bg: #00c4dc;        /* SOLID cyan */
+  --hint-solved-border: #6fe0f0;
+  --hint-solved-letter: #04323c;    /* dark teal on cyan — high contrast */
+  --skin-button-bg: rgba(255, 255, 255, 0.7);
+  --skin-button-border: #cdd5e0;
+  --skin-button-text: #1f2733;
+  --skin-button-active-bg: rgba(0, 212, 232, 0.14);
+  --skin-button-active-border: #00d4e8;
+  --skin-button-active-text: #006477;
+
+  /* Identical typography & shape to Void — that's the point. Space Mono,
+     14px corners, baseline scales, soft bloom. */
+  --tile-font-family: 'Space Mono', ui-monospace, monospace;
+  --tile-font-weight: 700;
+  --tile-font-scale: 1;
+  --tile-radius: 14px;
+  --wordmark-font-family: 'Space Mono', ui-monospace, monospace;
+  --wordmark-font-weight: 700;
+  --wordmark-letter-spacing: 0.18em;
+  --display-font-scale: 1;
+  --glow-strength: 1;
+
+  /* Ribbon: cyan → deeper teal so the trail stays visible on white (Void's
+     pale endpoint would vanish here) — same hue, inverted for the light bg. */
+  --path-grad-start: #3f5fd0;
+  --path-grad-end: #00c4dc;
+  --path-width: 9px;
+  --path-cap: round;
+  --path-opacity: 0.95;
+  --path-glow: 7;
+  --selected-letter-outline: #dff7fc;
+}
+
+/* ── Polygon ──
+   Sony PS1 inspired, and a LIGHT skin. The console was warm light grey; this
+   leans on that plus the four face-button colours as a playful accent system —
+   a tile lights CROSS-BLUE on the active swipe, solves to TRIANGLE-GREEN, and
+   the SQUARE-MAGENTA is the CTA. Space Mono keeps it neutral so the colours
+   carry the identity. Light theme (dark text on light panels). No new font. */
+.skin-polygon {
+  color-scheme: light;
+  --bg-center: #dedcd6;
+  --bg-edge: #c4c1b8;
+  --shell-bg: linear-gradient(180deg, #efeee9, #dedcd6);
+  --shell-border: #b8b4aa;
+  --shell-shadow: rgba(50, 48, 40, 0.16);
+  --chrome-text: #6e6a60;
+  --title-color: #3a3833;
+  --title-glow: #2f6fd6;            /* PlayStation blue — legible as text on light, opaque */
+  --button-bg: #ffffff;
+  --button-border: #c0bcb2;
+  --button-text: #3a3833;
+  --button-hover-bg: rgba(47, 111, 214, 0.08);
+  --button-active-bg: rgba(47, 111, 214, 0.14);
+  --button-active-border: #2f6fd6;
+  --button-active-text: #1c3f7a;
+  --tile-bg: linear-gradient(145deg, #ffffff, #e6e4dd);
+  --tile-border: #c0bcb2;
+  --tile-letter: #3a3833;
+  --tile-selected-bg: linear-gradient(145deg, #5aa8e8, #2f6fd6);   /* cross blue */
+  --tile-selected-border: #8fc4f0;
+  --tile-selected-letter: #ffffff;
+  --tile-selected-glow: rgba(47, 111, 214, 0.5);
+  --tile-found-bg: linear-gradient(145deg, #4ecf9c, #1f9e76);      /* triangle green */
+  --tile-found-border: #7fdcb8;
+  --tile-found-letter: #06311f;
+  --tile-deactivated-opacity: 0.45;
+  --path-color: #2f6fd6;
+  --primary-action-bg: #d94db0;     /* square magenta CTA */
+  --primary-action-text: #ffffff;
+  --hint-empty-bg: rgba(255, 255, 255, 0.5);
+  --hint-empty-border: #c0bcb2;
+  --hint-empty-letter: transparent;
+  --hint-solved-bg: #1f9e76;        /* SOLID green (matches solved tiles) */
+  --hint-solved-border: #7fdcb8;
+  --hint-solved-letter: #06331f;
+  --skin-button-bg: rgba(255, 255, 255, 0.7);
+  --skin-button-border: #c0bcb2;
+  --skin-button-text: #3a3833;
+  --skin-button-active-bg: rgba(47, 111, 214, 0.14);
+  --skin-button-active-border: #2f6fd6;
+  --skin-button-active-text: #1c3f7a;
+
+  --tile-font-family: 'Space Mono', ui-monospace, monospace;
+  --tile-font-weight: 700;
+  --tile-font-scale: 1;
+  --tile-radius: 8px;
+  --wordmark-font-family: 'Space Mono', ui-monospace, monospace;
+  --wordmark-font-weight: 700;
+  --wordmark-letter-spacing: 0.18em;
+  --display-font-scale: 1;
+  --glow-strength: 0.8;
+
+  /* Ribbon: blue → green (cross to triangle), clean */
+  --path-grad-start: #d94db0;
+  --path-grad-end: #2fb98f;
+  --path-width: 9px;
+  --path-cap: round;
+  --path-opacity: 0.95;
+  --path-glow: 7;
+  --selected-letter-outline: #dceaf8;
+}
+
+/* ── Ring ──
+   Xbox 360 inspired (the "Ring of Light"), and a LIGHT skin. Off-white shell,
+   silver-grey frame, and the Xbox green as the signature — tiles light up
+   green on the active swipe like the power ring, solved words settle to a soft
+   green. Oswald gives the clean dashboard voice. Light theme. No new font. */
+.skin-ring {
+  color-scheme: light;
+  --bg-center: #eef0ee;
+  --bg-edge: #d6dad6;
+  --shell-bg: linear-gradient(180deg, #ffffff, #eef1ef);
+  --shell-border: #c6ccc6;
+  --shell-shadow: rgba(30, 50, 35, 0.15);
+  --chrome-text: #6a726a;
+  --title-color: #283028;
+  --title-glow: #138a13;            /* Xbox green — legible as text on light, opaque */
+  --button-bg: #ffffff;
+  --button-border: #c6ccc6;
+  --button-text: #283028;
+  --button-hover-bg: rgba(43, 197, 43, 0.08);
+  --button-active-bg: rgba(43, 197, 43, 0.14);
+  --button-active-border: #2bc52b;
+  --button-active-text: #0c5a14;
+  --tile-bg: linear-gradient(145deg, #ffffff, #e8ece8);
+  --tile-border: #c6ccc6;
+  --tile-letter: #2a322a;
+  --tile-selected-bg: linear-gradient(145deg, #4cd44e, #0e9e14);   /* ring green */
+  --tile-selected-border: #7fe87f;
+  --tile-selected-letter: #052a05;
+  --tile-selected-glow: rgba(43, 197, 43, 0.5);
+  --tile-found-bg: linear-gradient(145deg, #d6f0d8, #bfe6c2);      /* soft solved green */
+  --tile-found-border: #8fce93;
+  --tile-found-letter: #0a4a12;
+  --tile-deactivated-opacity: 0.45;
+  --path-color: #16a51a;
+  --primary-action-bg: #0e8a14;
+  --primary-action-text: #ffffff;
+  --hint-empty-bg: rgba(255, 255, 255, 0.5);
+  --hint-empty-border: #c6ccc6;
+  --hint-empty-letter: transparent;
+  --hint-solved-bg: #16a51a;        /* SOLID green */
+  --hint-solved-border: #7fe87f;
+  --hint-solved-letter: #052a05;
+  --skin-button-bg: rgba(255, 255, 255, 0.7);
+  --skin-button-border: #c6ccc6;
+  --skin-button-text: #283028;
+  --skin-button-active-bg: rgba(43, 197, 43, 0.14);
+  --skin-button-active-border: #2bc52b;
+  --skin-button-active-text: #0c5a14;
+
+  --tile-font-family: 'Oswald', sans-serif;
+  --tile-font-weight: 500;
+  --tile-font-scale: var(--tile-scale-oswald);
+  --tile-radius: 12px;
+  --wordmark-font-family: 'Oswald', sans-serif;
+  --wordmark-font-weight: 600;
+  --wordmark-letter-spacing: 0.16em;
+  --display-font-scale: var(--display-scale-oswald);
+  --glow-strength: 0.9;
+
+  /* Ribbon: green → bright green */
+  --path-grad-start: #0c6e16;
+  --path-grad-end: #06330a;
+  --path-width: 9px;
+  --path-cap: round;
+  --path-opacity: 0.95;
+  --path-glow: 8;
+  --selected-letter-outline: #dff5df;
+}
+
+/* ── Spirit ──
+   Sega Dreamcast inspired, and a LIGHT skin. The console was a warm cream-white
+   with the optimistic orange swirl; this is orange energy on cream, with the
+   swirl's blue for solved words. Active swipe glows swirl-ORANGE, solved tiles
+   go DREAMCAST-BLUE, and the ribbon is the orange swirl trail. Space Mono,
+   warm and friendly. Light theme. No new font. */
+.skin-spirit {
+  color-scheme: light;
+  --bg-center: #f2efe9;
+  --bg-edge: #ddd8ce;
+  --shell-bg: linear-gradient(180deg, #fffdf9, #f2efe9);
+  --shell-border: #ccc6ba;
+  --shell-shadow: rgba(60, 45, 25, 0.15);
+  --chrome-text: #786f60;
+  --title-color: #332f28;
+  --title-glow: #d96309;            /* Dreamcast swirl orange — opaque, legible on cream */
+  --button-bg: #fffdf9;
+  --button-border: #ccc6ba;
+  --button-text: #332f28;
+  --button-hover-bg: rgba(244, 123, 32, 0.08);
+  --button-active-bg: rgba(244, 123, 32, 0.14);
+  --button-active-border: #f47b20;
+  --button-active-text: #8a3c04;
+  --tile-bg: linear-gradient(145deg, #fffdf9, #ece7dd);
+  --tile-border: #ccc6ba;
+  --tile-letter: #332f28;
+  --tile-selected-bg: linear-gradient(145deg, #ff9a3c, #ef6a08);   /* swirl orange */
+  --tile-selected-border: #ffbc78;
+  --tile-selected-letter: #fff5ec;
+  --tile-selected-glow: rgba(244, 123, 32, 0.5);
+  --tile-found-bg: linear-gradient(145deg, #bfe0f0, #9fcfe8);      /* swirl blue (solved) */
+  --tile-found-border: #6fb8e0;
+  --tile-found-letter: #0a3a55;
+  --tile-deactivated-opacity: 0.45;
+  --path-color: #f47b20;
+  --primary-action-bg: #f47b20;
+  --primary-action-text: #2a1400;
+  --hint-empty-bg: rgba(255, 255, 255, 0.5);
+  --hint-empty-border: #ccc6ba;
+  --hint-empty-letter: transparent;
+  --hint-solved-bg: #2f93cf;        /* SOLID swirl blue (matches solved tiles) */
+  --hint-solved-border: #8fc8ec;
+  --hint-solved-letter: #042838;
+  --skin-button-bg: rgba(255, 253, 249, 0.75);
+  --skin-button-border: #ccc6ba;
+  --skin-button-text: #332f28;
+  --skin-button-active-bg: rgba(244, 123, 32, 0.14);
+  --skin-button-active-border: #f47b20;
+  --skin-button-active-text: #8a3c04;
+
+  --tile-font-family: 'Space Mono', ui-monospace, monospace;
+  --tile-font-weight: 700;
+  --tile-font-scale: 1;
+  --tile-radius: 14px;
+  --wordmark-font-family: 'Space Mono', ui-monospace, monospace;
+  --wordmark-font-weight: 700;
+  --wordmark-letter-spacing: 0.18em;
+  --display-font-scale: 1;
+  --glow-strength: 1;
+
+  /* Ribbon: the orange swirl trail */
+  --path-grad-start: #2f93cf;
+  --path-grad-end: #8fd0f0;
+  --path-width: 9px;
+  --path-cap: round;
+  --path-opacity: 0.95;
+  --path-glow: 8;
+  --selected-letter-outline: #5a2800;
 }
 
 /* ── Phobos ──
@@ -471,8 +1136,8 @@
   --display-font-scale: 2;
   --glow-strength: 0.7;
 
-  --path-grad-start: #cc1111;
-  --path-grad-end: #ff4444;
+  --path-grad-start: #a8e060;
+  --path-grad-end: #4a7a20;
   --path-width: 8px;
   --path-cap: butt;
   --path-opacity: 0.98;
@@ -536,8 +1201,8 @@
   --glow-strength: 1.3;
 
   /* Ribbon: molten red→orange progress gradient */
-  --path-grad-start: #ff2d2d;
-  --path-grad-end: #ff8a3d;
+  --path-grad-start: #ffb03a;
+  --path-grad-end: #ff2d2d;
   --path-width: 10px;
   --path-cap: round;
   --path-opacity: 0.95;
@@ -569,9 +1234,9 @@
   --tile-bg: linear-gradient(145deg, #241848, #160f30);
   --tile-border: #3d2860;
   --tile-letter: #c0a0e8;
-  --tile-selected-bg: linear-gradient(145deg, #e8a010, #9a6600);
+  --tile-selected-bg: linear-gradient(145deg, #cf8c0e, #7a4e00);  /* deep gold so the pale-gold letter reads (was near-black on bright gold) */
   --tile-selected-border: #ffe080;
-  --tile-selected-letter: #1a0c00;
+  --tile-selected-letter: #fff2cc;
   --tile-selected-glow: rgba(232, 160, 16, 0.7);
   --tile-found-bg: linear-gradient(145deg, #381a68, #220f45);
   --tile-found-border: #8040d0;
@@ -605,11 +1270,11 @@
   --glow-strength: 1.5;
 
   /* Ribbon: gold → bright gold, broad and luminous */
-  --path-grad-start: #e8a010;
-  --path-grad-end: #ffe080;
+  --path-grad-start: #e0344a;
+  --path-grad-end: #8040d0;
   --path-width: 10px;
   --path-cap: round;
   --path-opacity: 0.95;
   --path-glow: 14;
-  --selected-letter-outline: #1a0c00;
+  --selected-letter-outline: #3a2400;
 }

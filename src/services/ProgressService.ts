@@ -196,6 +196,18 @@ export async function getActiveSkinId(): Promise<string> {
   return value || 'void';
 }
 
+/**
+ * Raw stored skin id, or null if the player has never explicitly chosen one.
+ * Unlike getActiveSkinId (which collapses "unset" into 'void'), this lets the
+ * boot logic tell "never chosen" apart from "chose Void", so a brand-new
+ * player on a light-mode device can default to the light skin (Lumen) while a
+ * player who deliberately picked Void is always honored. See main.ts.
+ */
+export async function getStoredSkinId(): Promise<string | null> {
+  const { value } = await Preferences.get({ key: ACTIVE_SKIN_KEY });
+  return value ?? null;
+}
+
 export async function setActiveSkinId(skinId: string): Promise<void> {
   await Preferences.set({ key: ACTIVE_SKIN_KEY, value: skinId });
 }

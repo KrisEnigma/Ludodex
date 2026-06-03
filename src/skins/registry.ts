@@ -1,4 +1,4 @@
-export type SkinId = 'void' | 'synthwave' | 'gameboy' | 'terminal' | 'phosphor' | 'phobos' | 'crimson' | 'underworld';
+export type SkinId = 'void' | 'lumen' | 'synthwave' | 'gameboy' | 'terminal' | 'phosphor' | 'bios' | 'pastel' | 'toaster' | 'inferno' | 'aperture' | 'polygon' | 'ring' | 'spirit' | 'phobos' | 'crimson' | 'underworld';
 
 /**
  * Tile-shaped preview token set. Drives the mini-tile shown in the Settings
@@ -57,6 +57,20 @@ export const SKINS: SkinMeta[] = [
       border: '#00d4e8',
       letter: '#9af0ff',
       glow: 'rgba(0, 212, 232, 0.4)',
+      font: "'Space Mono', ui-monospace, monospace",
+      radius: '8px',
+      scale: 1
+    }
+  },
+  {
+    id: 'lumen',
+    name: 'Lumen',
+    productId: null,
+    previewTile: {
+      bg: 'linear-gradient(145deg, #4fddef, #00b9d4)',
+      border: '#00d4e8',
+      letter: '#04323c',
+      glow: 'rgba(0, 212, 232, 0.5)',
       font: "'Space Mono', ui-monospace, monospace",
       radius: '8px',
       scale: 1
@@ -122,6 +136,118 @@ export const SKINS: SkinMeta[] = [
       font: "'VT323', monospace",
       radius: '2px',
       scale: 1.18
+    }
+  },
+  {
+    id: 'bios',
+    name: 'BIOS',
+    productId: null,
+    previewTile: {
+      bg: 'linear-gradient(145deg, #2f9bff, #1357c8)',
+      border: '#8cc6ff',
+      letter: '#ffffff',
+      glow: 'rgba(47, 155, 255, 0.55)',
+      font: "'VT323', monospace",
+      radius: '3px',
+      scale: 1.18
+    }
+  },
+  {
+    id: 'pastel',
+    name: 'Pastel',
+    productId: null,
+    previewTile: {
+      bg: 'linear-gradient(145deg, #b486e8, #6d4fb0)',
+      border: '#d8b8ff',
+      letter: '#ffffff',
+      glow: 'rgba(180, 134, 232, 0.5)',
+      font: "'Silkscreen', monospace",
+      radius: '10px',
+      scale: 1.06
+    }
+  },
+  {
+    id: 'toaster',
+    name: 'Toaster',
+    productId: null,
+    previewTile: {
+      bg: 'linear-gradient(145deg, #e8281f, #9a0f0a)',
+      border: '#ff6a5e',
+      letter: '#ffffff',
+      glow: 'rgba(232, 40, 31, 0.55)',
+      font: "'Press Start 2P', monospace",
+      radius: '0',
+      scale: 0.62
+    }
+  },
+  {
+    id: 'inferno',
+    name: 'Inferno',
+    productId: null,
+    previewTile: {
+      bg: 'linear-gradient(145deg, #ff7a1e, #9a1505)',
+      border: '#ffb45a',
+      letter: '#fff5e0',
+      glow: 'rgba(255, 90, 20, 0.6)',
+      font: "'Cinzel', serif",
+      radius: '5px',
+      scale: 0.78
+    }
+  },
+  {
+    id: 'aperture',
+    name: 'Aperture',
+    productId: null,
+    previewTile: {
+      bg: 'radial-gradient(circle at 50% 38%, #5cc6ee, #1c93c8)',
+      border: '#7fd6f4',
+      letter: '#ffffff',
+      glow: 'rgba(39, 167, 216, 0.55)',
+      font: "'Oswald', sans-serif",
+      radius: '10px',
+      scale: 0.92
+    }
+  },
+  {
+    id: 'polygon',
+    name: 'Polygon',
+    productId: null,
+    previewTile: {
+      bg: 'linear-gradient(145deg, #5aa8e8, #2f6fd6)',
+      border: '#8fc4f0',
+      letter: '#ffffff',
+      glow: 'rgba(47, 111, 214, 0.5)',
+      font: "'Space Mono', ui-monospace, monospace",
+      radius: '8px',
+      scale: 1
+    }
+  },
+  {
+    id: 'ring',
+    name: 'Ring',
+    productId: null,
+    previewTile: {
+      bg: 'linear-gradient(145deg, #4cd44e, #0e9e14)',
+      border: '#7fe87f',
+      letter: '#052a05',
+      glow: 'rgba(43, 197, 43, 0.5)',
+      font: "'Oswald', sans-serif",
+      radius: '10px',
+      scale: 0.92
+    }
+  },
+  {
+    id: 'spirit',
+    name: 'Spirit',
+    productId: null,
+    previewTile: {
+      bg: 'linear-gradient(145deg, #ff9a3c, #ef6a08)',
+      border: '#ffbc78',
+      letter: '#fff5ec',
+      glow: 'rgba(244, 123, 32, 0.5)',
+      font: "'Space Mono', ui-monospace, monospace",
+      radius: '12px',
+      scale: 1
     }
   },
   {

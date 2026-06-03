@@ -17,7 +17,7 @@ const DIFFS = ['easy','medium','hard'];
 let serverPuzzles = [];
 let gridEditId = null;
 let gridSavedSnapshot = '';
-let S = { letters: {}, words: [], drawIdx: null, path: [], newWord: '' };
+let S = { letters: {}, words: [], drawIdx: null, drawFromGrid: false, path: [], newWord: '' };
 
 /* ---- real API ---- */
 const API_URL = '/api/puzzles';
@@ -274,7 +274,7 @@ function openGridEditor(id) {
   const parsed = parsePuzzleData(p);
   S.words = parsed.words;
   S.letters = parsed.letters;
-  S.drawIdx = null; S.path = []; S.newWord = '';
+  S.drawIdx = null; S.drawFromGrid = false; S.path = []; S.newWord = '';
   gridSavedSnapshot = JSON.stringify(buildDataFromS());
   $('library-view').classList.add('hidden');
   $('grid-view').classList.remove('hidden');
@@ -400,7 +400,7 @@ function renderGrid() {
   const label = $('grid-fill-label');
   if (label) label.textContent = `${filled}/16`;
 
-  const drawing = S.drawIdx !== null;
+  const drawing = S.drawIdx !== null || S.drawFromGrid;
   wrap.classList.toggle('is-drawing', drawing);
   wrap.innerHTML = '';
 
@@ -470,6 +470,72 @@ function renderGrid() {
 
 /* type letters directly into cells */
 function nextCellOf(cell) { const i = CELL_ORDER.indexOf(cell); return CELL_ORDER[i + 1] || null; }
+
+function cellToXY(cell) {
+  return { x: COLS.indexOf(cell[0]), y: ROWS.indexOf(cell[1]) };
+}
+
+function xyToCell(x, y) {
+  return COLS[x] + ROWS[y];
+}
+
+function mapCellRotate90(cell) {
+  const { x, y } = cellToXY(cell);
+  return xyToCell(3 - y, x);
+}
+
+function mapCellRotateNeg90(cell) {
+  const { x, y } = cellToXY(cell);
+  return xyToCell(y, 3 - x);
+}
+
+function mapCellFlipHorizontal(cell) {
+  const { x, y } = cellToXY(cell);
+  return xyToCell(3 - x, y);
+}
+
+function mapCellFlipVertical(cell) {
+  const { x, y } = cellToXY(cell);
+  return xyToCell(x, 3 - y);
+}
+
+function transformPath(path, mapFn) {
+  const coords = path.match(/.{2}/g) || [];
+  return coords.map(c => mapFn(c)).join('');
+}
+
+function applyGridTransform(label, mapFn) {
+  if (S.drawIdx !== null || S.drawFromGrid) { S.drawIdx = null; S.drawFromGrid = false; S.path = []; }
+
+  S.words = S.words.map(w => ({ ...w, path: transformPath(w.path || '', mapFn) }));
+
+  const nextLetters = {};
+  Object.entries(S.letters).forEach(([cell, letter]) => {
+    nextLetters[mapFn(cell)] = letter;
+  });
+  S.letters = nextLetters;
+
+  _focusCell = null;
+  renderGridAll();
+  toast(`${label} applied`);
+}
+
+function rotateGrid90() {
+  applyGridTransform('90° rotate', mapCellRotate90);
+}
+
+function rotateGridNeg90() {
+  applyGridTransform('-90° rotate', mapCellRotateNeg90);
+}
+
+function flipGridHorizontal() {
+  applyGridTransform('Horizontal swap', mapCellFlipHorizontal);
+}
+
+function flipGridVertical() {
+  applyGridTransform('Vertical swap', mapCellFlipVertical);
+}
+
 function onCellInput(cell, inp) {
   const ch = (inp.value || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(-1);
   if (ch) S.letters[cell] = ch; else delete S.letters[cell];
@@ -489,7 +555,7 @@ function onCellKeydown(cell, inp, e) {
 }
 
 function onTileDown(cell) {
-  if (S.drawIdx === null) return;
+  if (S.drawIdx === null && !S.drawFromGrid) return;
   if (S.path.length && S.path[S.path.length - 1] === cell) return;
   if (S.path.includes(cell)) S.path = S.path.slice(0, S.path.indexOf(cell) + 1);
   else if (S.path.length === 0) S.path = [cell];
@@ -497,11 +563,27 @@ function onTileDown(cell) {
   renderGrid(); renderDrawBanner();
 }
 function onTileEnter(cell) {
-  if (S.drawIdx === null || S.path.length === 0) return;
+  if ((S.drawIdx === null && !S.drawFromGrid) || S.path.length === 0) return;
   if (!S.path.includes(cell)) { S.path.push(cell); renderGrid(); renderDrawBanner(); }
 }
 function onTileUp() {
-  if (S.drawIdx === null || S.path.length === 0) return;
+  if ((S.drawIdx === null && !S.drawFromGrid) || S.path.length === 0) return;
+
+  if (S.drawFromGrid) {
+    if (S.path.length < 2) { toast('Draw at least 2 cells', 'err'); renderDrawBanner(); return; }
+    const letters = S.path.map(c => S.letters[c] || '');
+    if (letters.some(ch => !ch)) { toast('Path must stay on filled letters', 'err'); renderDrawBanner(); return; }
+    const display = letters.join('');
+    if (S.words.some(w => w.display === display)) { toast('That word already exists', 'err'); renderDrawBanner(); return; }
+    S.words.push({ id: `word${Date.now()}`, display, path: S.path.join(''), color: WC[S.words.length % WC.length] });
+    S.drawFromGrid = false;
+    S.path = [];
+    renderGridAll();
+    toast(`"${display}" added from grid`);
+    if (isMobile()) scrollToEl($('nw'), 84);
+    return;
+  }
+
   const word = S.words[S.drawIdx];
   if (!word) return;
   const need = word.display.replace(/ /g,'').length;
@@ -522,7 +604,23 @@ function onTileUp() {
 function renderDrawBanner() {
   const el = $('draw-banner');
   if (!el) return;
-  if (S.drawIdx === null) { el.className = 'draw-banner'; el.innerHTML = ''; return; }
+  if (S.drawIdx === null && !S.drawFromGrid) { el.className = 'draw-banner'; el.innerHTML = ''; return; }
+
+  if (S.drawFromGrid) {
+    el.className = 'draw-banner is-active';
+    el.style.setProperty('--wc', 'var(--accent)');
+    const progress = S.path.length;
+    el.innerHTML = `
+      <span class="draw-badge">Draw from grid</span>
+      <span class="draw-word">Use filled letters</span>
+      <span class="draw-progress">${progress} cells</span>
+      <button class="btn btn-soft btn-sm" onclick="cancelDraw()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Done
+      </button>`;
+    return;
+  }
+
   const word = S.words[S.drawIdx];
   if (!word) { el.className = 'draw-banner'; return; }
   el.className = 'draw-banner is-active';
@@ -538,12 +636,15 @@ function renderDrawBanner() {
       Done
     </button>`;
 }
-function cancelDraw() { S.drawIdx = null; S.path = []; renderGridAll(); }
+function cancelDraw() { S.drawIdx = null; S.drawFromGrid = false; S.path = []; renderGridAll(); }
 
 function renderGridHint() {
   const el = $('grid-hint');
   if (!el) return;
-  if (S.drawIdx !== null) {
+  if (S.drawFromGrid) {
+    el.className = 'grid-hint is-drawing';
+    el.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Draw across already-filled cells to create a new word.`;
+  } else if (S.drawIdx !== null) {
     el.className = 'grid-hint is-drawing';
     el.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Tap or drag tiles in order to spell the word.`;
   } else {
@@ -607,9 +708,21 @@ function addWord() {
   if (S.words.some(w => w.display === raw)) { S.newWord = ''; if ($('nw')) $('nw').value = ''; toast('That word already exists', 'err'); return; }
   S.words.push({ id: `word${Date.now()}`, display: raw, path: '', color: WC[S.words.length % WC.length] });
   S.newWord = ''; if ($('nw')) $('nw').value = '';
+  S.drawFromGrid = false;
   S.drawIdx = S.words.length - 1; S.path = [];
   renderGridAll();
   if (isMobile()) scrollToTop(); // bring the grid into view to draw the new word
+}
+
+function startDrawFromGrid() {
+  S.drawIdx = null;
+  S.drawFromGrid = !S.drawFromGrid;
+  S.path = [];
+  renderGridAll();
+  if (S.drawFromGrid) {
+    toast('Draw a path across filled letters');
+    if (isMobile()) scrollToTop();
+  }
 }
 function removeWord(i) {
   // remove the word + its path; the letters stay on the grid (you can reuse
@@ -628,6 +741,7 @@ function clearWordPath(i) {
   renderGridAll();
 }
 function startDraw(i) {
+  S.drawFromGrid = false;
   S.drawIdx = (S.drawIdx === i) ? null : i;
   S.path = [];
   renderGridAll();

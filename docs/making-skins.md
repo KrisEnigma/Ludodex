@@ -21,7 +21,10 @@ font):
 
 1. `src/skins/skins.css` — add a `.skin-<id> { … }` block of variable overrides.
 2. `src/skins/registry.ts` — add the `SkinId` and a `SKINS` entry (with a preview tile).
-3. `src/main.ts` + `package.json` — only if the skin uses a **new font**.
+3. `src/main.ts` + `package.json` — only if the skin uses a **new `@fontsource`
+   font** (a new *self-hosted* font instead just adds an `@font-face` to
+   `skins.css` — no `main.ts`/`package.json` change). A new **dark/light auto-pair**
+   also touches `main.ts` (see §13).
 
 Then build-verify. No changes to game logic, the grid, the ribbon code, or the
 settings UI are ever needed — they all read the variables.
@@ -105,6 +108,24 @@ Optional / rarely:
    single weight (Press Start 2P 400, VT323 400). Set `--tile-font-weight` /
    `--wordmark-font-weight` to that weight, or the browser fakes bold and it looks
    wrong.
+7. **The ribbon must CONTRAST the selected tile — never echo it.** The swipe trail
+   is painted over the selected tiles it connects, so if `--path-grad-*` matches
+   the selected-tile color the trail dissolves into them and is lost. Give the
+   ribbon a distinct secondary/complementary hue (Aperture: blue tiles → flat
+   **orange** line; Underworld: gold tiles → **crimson→amethyst**; Phobos: red
+   tiles → **toxic green**). For monochrome skins where another hue would be wrong
+   (Dot Matrix), use a strong *value* contrast instead (its darkest green).
+8. **Active-letter legibility on bright tiles.** A near-black letter on a bright,
+   saturated selected tile reads as a dead "cutout" — especially bad on glow
+   themes (Terminal/Phosphor/Underworld originally did this and looked wrong).
+   Prefer the pattern most skins use: a bright-to-darker selected gradient with a
+   **light/glowing letter** (white or a pale tint of the accent). If you want a
+   bright accent fill, deepen the gradient so the light letter still reads.
+9. **Light skins are supported — invert everything.** A skin may be a light theme
+   (see §12). Set `color-scheme: light` and give *every* variable a light value
+   (dark text on light surfaces). The catch is `--title-glow`: it doubles as a text
+   color app-wide, so on light it must be a **deep** shade of the accent (a deep
+   cyan-teal, not bright cyan) — keep the bright accent for fills/selection/ribbon.
 
 ---
 
@@ -130,7 +151,9 @@ overrides any subset. Grouped by what they control.
   the use site (e.g. `color-mix`, `opacity` on a wrapper) — never in the
   variable definition itself. On monochromatic skins (e.g. Dot Matrix),
   `--title-glow` and `--title-color` will naturally be close in hue — that's
-  fine and expected.
+  fine and expected. On **light** skins, `--title-glow` must be a *deep* shade of
+  the accent (it is used as text on light surfaces); keep the bright accent for
+  fills/selection/ribbon instead.
 
 ### Buttons
 - `--button-bg`, `--button-border`, `--button-text`, `--button-hover-bg`,
@@ -138,17 +161,28 @@ overrides any subset. Grouped by what they control.
 - `--primary-action-bg`, `--primary-action-text` — the primary CTA (PLAY/SHARE).
 
 ### Tiles — grid cells
-- Idle: `--tile-bg` (gradient), `--tile-border`, `--tile-letter`.
-- Selected (during a swipe): `--tile-selected-bg` (gradient), `--tile-selected-border`,
-  `--tile-selected-letter`, `--tile-selected-glow`.
-- Found/solved: `--tile-found-bg` (gradient), `--tile-found-border`, `--tile-found-letter`.
-- `--tile-deactivated-opacity` — dimming for unusable tiles.
+The grid shows three steady-state tile states during play:
+- **Idle** (available): `--tile-bg` (gradient), `--tile-border`, `--tile-letter`.
+- **Selected** (in the current swipe): `--tile-selected-bg` (gradient),
+  `--tile-selected-border`, `--tile-selected-letter`, `--tile-selected-glow`.
+  Keep the letter legible — don't use near-black on a bright fill (§3.8).
+- **Deactivated** (no longer needed once their words are solved): the tile
+  **shrinks and dims** via `--tile-deactivated-opacity` (e.g. `0.4`). This is the
+  state used-up letters end in — *not* a "found color".
+- `--tile-found-*` (`-bg` gradient / `-border` / `-letter`) is only the brief
+  found-flash during a solve reveal. **The persistent "solved" color lives in the
+  HINT row (`--hint-solved-*`), not on the grid** — solved-word tiles deactivate,
+  they don't stay tinted. Don't design expecting a secondary/found color to sit on
+  the steady-state grid.
 
 ### Selection ribbon (the swipe trail)
 - `--path-grad-start`, `--path-grad-end` — the ribbon is tinted along swipe order
   between these two colors (a progress gradient). **Set them equal for a flat,
-  single-color ribbon** (Game Boy does this). These are **also reused** for the
-  win-screen glitch chromatic split.
+  single-color ribbon** (Game Boy, Aperture). These are **also reused** for the
+  win-screen glitch chromatic split. ⚠️ **Make these CONTRAST the selected-tile
+  color, not match it** (§3.7) — the trail is drawn over the selected tiles it
+  links, so an echoing color disappears. (The ribbon only ever connects *adjacent*
+  selected tiles, so it never crosses an unselected tile.)
 - `--path-width` (e.g. `9px`), `--path-cap` (`round` | `butt`), `--path-opacity`,
   `--path-glow` (drop-shadow blur in px; `0` = flat, no glow).
 - `--path-color` — legacy single color; still used by the tutorial trail. Keep it
@@ -181,12 +215,16 @@ overrides any subset. Grouped by what they control.
 | Font | `--tile-scale-*` | `--display-scale-*` | Weights bundled | Used by |
 |---|---|---|---|---|
 | Orbitron | `0.84` | `0.9` | 700 | Synthwave, Crimson |
-| Press Start 2P | `0.62` | `0.84` | 400 | Dot Matrix, Phobos (tiles) |
-| Silkscreen | _(tile only)_ | `1.0` | 700 | Dot Matrix (wordmark) |
-| VT323 | `1.18` | `1.45` | 400 | Terminal, Phosphor |
-| Cinzel | `0.78` | `1.0` | 400, 700 | Underworld |
-| AmazDooMRight2 | _(wordmark only)_ | `0.9` | 400 | Phobos (wordmark) |
-| DooM | `1.0` | _(tile only)_ | 400 | Phobos (tiles) |
+| Press Start 2P | `0.62` | `0.84` | 400 | Dot Matrix, Toaster |
+| Silkscreen | `1.06` | `1.0` | 700 | Pastel (tiles+wordmark); Dot Matrix/Toaster (wordmark) |
+| VT323 | `1.18` | `1.45` | 400 | Terminal, Phosphor, BIOS |
+| Cinzel | `0.78` | `1.0` | 400, 700 | Underworld; Inferno (tiles) |
+| Oswald | `0.92` | `0.95` | 500, 600 | Aperture, Ring |
+| AmazDooMRight2 | _(wordmark only)_ | `0.9` | 400 (self-hosted) | Phobos (wordmark) |
+| DooM | `1.0` | _(tile only)_ | 400 (self-hosted) | Phobos (tiles) |
+| Diablo | _(wordmark only)_ | `0.9` | 400 (self-hosted .woff) | Inferno (wordmark) |
+
+Space Mono (the Void / Lumen / Polygon / Spirit baseline) is `1.0` and needs no constant.
 
 ---
 
@@ -229,8 +267,17 @@ palette (bg, accent, tile colors, etc.), tile font, wordmark font, corner radius
 and glow level. Keep it on-theme for a video-game word puzzle.
 
 ### Step 2 — Fonts (skip if reusing an already-bundled font)
-Already bundled: **Space Mono**, **Orbitron**, **Press Start 2P**, **Silkscreen**,
-**VT323**. If the skin reuses one of these, do nothing here.
+Already bundled (via `@fontsource`, imported in `main.ts`): **Space Mono**,
+**Orbitron**, **Press Start 2P**, **Silkscreen**, **VT323**, **Cinzel**,
+**Oswald**. If the skin reuses one of these, do nothing here.
+
+Self-hosted (not on `@fontsource` — declared with `@font-face` at the top of
+`skins.css`, the .ttf/.woff lives in `src/fonts/`): **DooM**, **AmazDooM***,
+**Diablo**. Reusing one of these also needs no new dependency. To add a *new*
+self-hosted font: drop the file in `src/fonts/`, add an `@font-face` block in
+`skins.css` (no `main.ts`/`package.json` change), then add its scale constant(s).
+⚠️ Self-hosted game fonts often have **unverified licenses** — keep such skins
+free (`productId: null`) until the license is confirmed (see roadmap policy).
 
 For a **new** font:
 1. Add the dependency to `package.json` (e.g. `"@fontsource/<font>": "^5.x"`).
@@ -417,6 +464,24 @@ export type SkinId = 'void' | 'synthwave' | 'gameboy' | 'terminal' | 'crimson' |
    elements throughout the app (archive stars, hint counter, achievement count,
    stat highlights, etc.). A semi-transparent value silently breaks contrast on
    all of them. Always define it as a solid hex or `rgb()`. See §4 Chrome & title.
+9. **Ribbon vs. selected tile.** The swipe trail paints over the selected tiles it
+   connects. If `--path-grad-*` echoes the selected-tile color it vanishes. Use a
+   contrasting hue (or a strong value contrast on monochrome skins). See §3.7.
+10. **No "found" color on the steady-state grid.** Solved-word tiles **deactivate**
+    (shrink + dim via `--tile-deactivated-opacity`); the solved color shows in the
+    **hint row** (`--hint-solved-*`). Don't design expecting a green/secondary tile
+    color to persist on the grid. `--tile-found-*` is only the brief reveal flash.
+11. **Active letters can't be near-black on bright tiles** — they read as dead
+    cutouts (worst on glow skins). Use a light/glowing letter on a deepened
+    selected gradient. See §3.8.
+12. **Light skins: set `color-scheme: light` and invert every variable.** The app
+    was built dark-first, so sanity-check modals, the achievements list, and the
+    win-screen glitch in a real build. `--title-glow` must be a deep shade (it's
+    used as text on light). See §12.
+13. **Self-hosted fonts use `@font-face`, not `@fontsource`.** Non-Google fonts
+    (DooM, Diablo) are declared at the top of `skins.css` with
+    `src: url('../fonts/…')` and bundled by Vite — no `main.ts` import, no
+    `package.json` dep. Match the `@font-face` `font-weight` to the file.
 
 ---
 
@@ -448,20 +513,44 @@ word), hint slots (empty + a revealed letter + a solved word), and the win scree
 
 ---
 
-## 10. Worked reference: the five existing skins
+## 10. Worked reference: the current lineup
+
+17 skins ship today — **12 dark, 5 light**. Read `src/skins/skins.css` for exact
+values; they're the best examples to copy from. Skins that share a font reference
+the **same** `--*-scale-<font>` constants (the pattern to follow). Note the ribbon
+column: every ribbon is a *contrasting* color to its selected tile (§3.7).
+
+**Dark skins**
 
 | Skin | id | Tile font | Wordmark font | Radius | Glow | Ribbon | Availability |
 |---|---|---|---|---|---|---|---|
-| Void | `void` (`:root`) | Space Mono | Space Mono | 14px | 1 | cyan→light-cyan | default, free |
-| Synthwave | `synthwave` | Orbitron | Orbitron | 18px | 1.7 | magenta→cyan | solve_10 / IAP |
-| Dot Matrix | `gameboy` | Press Start 2P | Silkscreen | 0 | 0 | flat green (butt caps) | streak_30 / IAP |
-| Terminal | `terminal` | VT323 | VT323 | 2px | 1.2 | amber gradient | free (`productId: null`) |
-| Crimson | `crimson` | Orbitron | Orbitron | 6px | 1.3 | red→orange | free (`productId: null`) |
+| Void | `void` (`:root`) | Space Mono | Space Mono | 14px | 1 | violet→cyan | default, free |
+| Synthwave | `synthwave` | Orbitron | Orbitron | 18px | 1.7 | cyan→gold | solve_10 / IAP |
+| Dot Matrix | `gameboy` | Press Start 2P | Silkscreen | 0 | 0 | flat green (butt) | streak_30 / IAP |
+| Terminal | `terminal` | VT323 | VT323 | 2px | 1.2 | ember→amber | free |
+| Phosphor | `phosphor` | VT323 | VT323 | 2px | 1.4 | lime→green | free |
+| BIOS | `bios` | VT323 | VT323 | 3px | 1.2 | yellow→sky | free |
+| Pastel | `pastel` | Silkscreen | Silkscreen | 10px | 1.2 | mint→periwinkle | free |
+| Toaster | `toaster` | Press Start 2P | Silkscreen | 0 | 0.6 | console grey | free |
+| Inferno | `inferno` | Cinzel | Diablo* | 5px | 1.5 | gold | free |
+| Phobos | `phobos` | DooM* | AmazDooMRight2* | 0 | 0.7 | toxic green | free |
+| Crimson | `crimson` | Orbitron | Orbitron | 6px | 1.3 | gold-orange→red | free |
+| Underworld | `underworld` | Cinzel | Cinzel | 8px | 1.5 | crimson→amethyst | free |
 
-Read `src/skins/skins.css` for their exact values — they are the best examples to
-copy from. Synthwave/Crimson both use Orbitron and **reference the same
-`--*-scale-orbitron` constants**, which is the pattern to follow for reused fonts.
-See the table in §4 for all currently bundled fonts and their scale values.
+**Light skins** (`color-scheme: light` — see §12)
+
+| Skin | id | Tile font | Wordmark font | Radius | Glow | Accent | Ribbon | Availability |
+|---|---|---|---|---|---|---|---|---|
+| Lumen | `lumen` | Space Mono | Space Mono | 14px | 1 | deep cyan | indigo→cyan | free |
+| Aperture | `aperture` | Oswald | Oswald | 10px | 0.8 | portal blue + orange | flat orange | free |
+| Polygon | `polygon` | Space Mono | Space Mono | 8px | 0.8 | PS blue | magenta→green | free |
+| Ring | `ring` | Oswald | Oswald | 12px | 0.9 | Xbox green | deep green | free |
+| Spirit | `spirit` | Space Mono | Space Mono | 14px | 1 | Dreamcast orange | swirl blue | free |
+
+\* self-hosted font (`@font-face` in `skins.css`, file in `src/fonts/`).
+
+**Void ⟷ Lumen are a dark/light pair** (same cyan + Space Mono DNA, inverted),
+wired as the auto default by OS theme — see §13.
 
 ---
 
@@ -536,3 +625,51 @@ literals in the registry that **must match** `PRODUCT_IDS` / `FALLBACK_CATALOG`:
 | Free everywhere (also the simplest way to trial a skin) | `productId: null` |
 | Earned by playing (recommended; works now) | `unlockedByAchievement` + `unlockHint` |
 | Paid on native (needs RevenueCat wiring) | `productId` (+ catalog entry); optional achievement as an alt path |
+
+---
+
+## 12. Light skins
+
+A skin can be a **light theme** \u2014 five ship today (Lumen, Aperture, Polygon, Ring,
+Spirit). Everything still flows through the same variables; you invert the values
+and add one declaration. Checklist:
+
+- **`color-scheme: light;`** as the first line of the block (so native scrollbars /
+  inputs match). The `:root` default is `dark`.
+- **Surfaces light, text dark.** `--bg-center/-edge` light greys; `--shell-bg` a
+  white/very-light gradient; `--tile-bg` a near-white panel; `--title-color` and
+  `--tile-letter` dark slate; `--chrome-text` a mid grey.
+- **`--title-glow` must be a DEEP shade of the accent.** It is used as a *text*
+  color across the app (wordmark, hint counter, stars, stat highlights). A bright
+  accent (e.g. `#27a7d8`) is illegible as text on white \u2014 use a deep version
+  (e.g. `#1487bd`) for the variable, and keep the bright accent for fills,
+  selection, and the ribbon.
+- **Selected tiles still take a light/white letter** on a saturated fill.
+- **The ribbon must show on BOTH the light gaps and the selected tiles.** A pale
+  color vanishes on white; pick a saturated or deep hue. (Ring uses a *dark* green
+  trail so it reads on white.)
+- **Sanity-check the whole app in a real build** \u2014 modals, achievements list, the
+  win-screen glitch \u2014 because the app was authored dark-first. Everything is on
+  variables, so any fix is a token tweak, not new CSS.
+
+Lumen is the simplest reference: Void inverted (same Space Mono, 14px, cyan) with a
+deeper cyan accent.
+
+---
+
+## 13. Auto light/dark default (Void \u27f7 Lumen)
+
+New players follow their OS theme on first launch: light-mode devices boot **Lumen**,
+dark-mode boot **Void**. Once a player picks *any* skin, that choice always wins.
+
+Wiring (already in place):
+- `getStoredSkinId()` in `ProgressService.ts` returns the **raw** stored id, or
+  `null` if the player never chose \u2014 unlike `getActiveSkinId()`, which collapses
+  unset \u2192 `'void'` and so can't tell \"never chose\" from \"chose Void\".
+- `main.ts` `resolveBootSkin(stored)` honors a stored choice, else returns
+  `'lumen'` / `'void'` by `matchMedia('(prefers-color-scheme: light)')`.
+- `watchSystemThemeForDefaultSkin()` keeps following OS-theme changes live **until**
+  the player picks a skin, then stops touching it.
+
+To designate a different dark/light auto-pair, change those two ids in
+`resolveBootSkin` and the watcher.

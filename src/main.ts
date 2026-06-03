@@ -5,6 +5,8 @@ import '@fontsource/space-mono/latin-700.css';
 // only the weights each skin uses (Press Start 2P ships 400 only) — keeps
 // the bundle lean by skipping cyrillic/greek/vietnamese glyphs we never show.
 import '@fontsource/orbitron/latin-700.css';
+import '@fontsource/oswald/latin-500.css'; // Aperture skin (tiles)
+import '@fontsource/oswald/latin-600.css'; // Aperture skin (wordmark)
 import '@fontsource/press-start-2p/latin-400.css';
 import '@fontsource/silkscreen/latin-700.css';
 import '@fontsource/vt323/latin-400.css'; // Terminal skin
@@ -19,7 +21,7 @@ import { loadPuzzles } from './game/PuzzleLoader';
 import { initI18n } from './i18n';
 import { applySkin, normalizeSkinId } from './skins/registry';
 import { initIAP } from './services/IAPService';
-import { bootstrapProgress, getActiveSkinId, getSolvedTimes } from './services/ProgressService';
+import { bootstrapProgress, getStoredSkinId, getSolvedTimes } from './services/ProgressService';
 import { retroactivelyUnlockEarnedAchievements } from './services/AchievementService';
 import { initAnalytics, track, updateLocale } from './services/AnalyticsService';
 import { initSentry } from './services/SentryService';
@@ -46,7 +48,14 @@ void (async () => {
   // set on any failure, so startup never hangs or breaks if the network/store
   // is unavailable.
   await loadPuzzles();
-  applySkin(normalizeSkinId(await getActiveSkinId()));
+  // Skin on boot: honor the player's explicit choice if they've made one. If
+  // they never have, follow the OS theme — light-mode devices land on Lumen
+  // (Void's light twin), dark-mode on Void. resolveBootSkin keeps the
+  // "explicit Void" vs "never chose" distinction (see getStoredSkinId).
+  const storedSkin = await getStoredSkinId();
+  applySkin(resolveBootSkin(storedSkin));
+  // Keep following the OS theme live until the player picks a skin themselves.
+  watchSystemThemeForDefaultSkin(getStoredSkinId);
 
   // Route immediately — the user sees UI as soon as skin + i18n are ready.
   const router = new Router(app);
@@ -107,6 +116,54 @@ void (async () => {
     });
   })();
 })();
+
+/**
+ * Decide which skin to show on boot.
+ *  - If the player has explicitly chosen a skin before (any stored value,
+ *    including 'void'), honor it.
+ *  - If they never have, follow the OS colour scheme: light-mode devices get
+ *    Lumen (Void's light twin), everything else gets Void.
+ */
+function resolveBootSkin(storedSkinId: string | null): ReturnType<typeof normalizeSkinId> {
+  if (storedSkinId) {
+    return normalizeSkinId(storedSkinId);
+  }
+  return prefersLightScheme() ? 'lumen' : 'void';
+}
+
+function prefersLightScheme(): boolean {
+  return typeof window !== 'undefined'
+    && typeof window.matchMedia === 'function'
+    && window.matchMedia('(prefers-color-scheme: light)').matches;
+}
+
+/**
+ * While the player has NOT explicitly picked a skin, keep the default in sync
+ * with the OS theme live: flipping the device to light mode swaps to Lumen,
+ * back to dark swaps to Void. Once they choose a skin (getStored returns a
+ * value), this stops touching the skin — their choice wins from then on.
+ */
+function watchSystemThemeForDefaultSkin(getStored: () => Promise<string | null>): void {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return;
+  }
+  const query = window.matchMedia('(prefers-color-scheme: light)');
+  const onChange = (event: MediaQueryListEvent): void => {
+    void (async () => {
+      // Respect an explicit choice — never override a skin the player picked.
+      if (await getStored()) {
+        return;
+      }
+      applySkin(event.matches ? 'lumen' : 'void');
+    })();
+  };
+  if (typeof query.addEventListener === 'function') {
+    query.addEventListener('change', onChange);
+  } else if (typeof query.addListener === 'function') {
+    // Safari < 14 fallback.
+    query.addListener(onChange);
+  }
+}
 
 /**
  * Resolve the deep link that opened the app, for cold-start routing.

@@ -1508,8 +1508,13 @@ body {
 }
 
 .modal-button-destructive {
-  border-color: color-mix(in srgb, #c0392b 80%, var(--shell-border));
-  background: color-mix(in srgb, #c0392b 90%, var(--shell-bg));
+  /* The one sanctioned non-skin color: stays red. Uses a SOLID mix partner
+     (--button-bg), never --shell-bg, because shell-bg is a gradient and
+     color-mix() drops on gradients — which previously left the fill transparent
+     and the white text invisible on light skins (e.g. Lumen). Full 1px border
+     to match the confirm/cancel buttons. */
+  border: 1px solid color-mix(in srgb, #c0392b 80%, var(--shell-border));
+  background: color-mix(in srgb, #c0392b 90%, var(--button-bg));
   color: #ffffff;
 }
 

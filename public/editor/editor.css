@@ -311,6 +311,22 @@ select.field {
   background: var(--accent-subtle); color: var(--accent-hi); flex-shrink: 0;
 }
 .card-icon svg { width: 15px; height: 15px; }
+.grid-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.grid-xform-btn {
+  min-width: 46px;
+  min-height: 40px;
+  padding: 0 10px;
+  font-size: 1.3rem;
+  line-height: 1;
+  font-weight: 700;
+  font-family: var(--font-ui);
+}
 .card-meta { font-size: var(--fs-xs); color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .card-body { padding: var(--s5); }
 
@@ -457,7 +473,8 @@ select.field {
 /* ============================================================
    WORDS
    ============================================================ */
-.words-add { display: flex; gap: var(--s2); }
+.words-add { display: flex; gap: var(--s2); flex-wrap: wrap; }
+.words-add .field { flex: 1 1 240px; }
 .words-add .field { font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.05em; }
 
 .words-list { display: flex; flex-direction: column; gap: var(--s2); margin-top: var(--s4); }
@@ -878,6 +895,12 @@ select.field {
   .grid-stage { padding: var(--s4) var(--s3) var(--s3); }
   .tile-grid { max-width: none; gap: 8px; }
   .tile-letter { font-size: clamp(20px, 7vw, 30px); }
+  .grid-tools { width: 100%; justify-content: space-between; }
+  .grid-xform-btn {
+    min-width: 44px;
+    min-height: 38px;
+    font-size: 1.2rem;
+  }
 
   /* bigger touch targets */
   .word-actions .btn { width: 46px; min-height: 46px; }
