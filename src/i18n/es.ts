@@ -163,13 +163,13 @@ export const strings: Record<keyof typeof enStrings, string> = {
   // Starter Pack offer
   'starter_pack.title': 'Pack de inicio',
   'starter_pack.subtitle': 'Oferta única — expira en {time}',
-  'starter_pack.body': 'Sin anuncios · 30 pistas · Skin Synthwave',
+  'starter_pack.body': 'Sin anuncios · 30 pistas · Skin Neon Horizon',
   'starter_pack.cta': 'Obtener el pack — {price}',
   'starter_pack.dismiss': 'No, gracias',
   'starter_pack.badge': 'Oferta de lanzamiento',
   'starter_pack.item_remove_ads': 'Sin anuncios — para siempre',
   'starter_pack.item_hints': '30 pistas para usar cuando quieras',
-  'starter_pack.item_skin': 'Skin Synthwave desbloqueada',
+  'starter_pack.item_skin': 'Skin Neon Horizon desbloqueada',
 
   // Remove Ads launch promo
   'remove_ads.title': 'Eliminar anuncios',

@@ -1709,7 +1709,7 @@ body {
 
 /* Puzzle title — moved from accent + hardcoded cyan glow to plain white
    text. Three reasons: (1) the hardcoded #00d4e866 wasn't theme-aware
-   and showed cyan on Synthwave/Game Boy where it shouldn't; (2) the
+  and showed cyan on Neon Horizon/Game Boy where it shouldn't; (2) the
    PLAY button already carries the accent on this card; (3) the title
    is identity info, not a celebration moment. */
 .daily-card-title {

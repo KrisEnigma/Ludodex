@@ -36,7 +36,7 @@ an archive.
   `--path-glow`, `--selected-letter-outline`).
 - **Optical sizing is per-font**, defined once in `:root` and referenced by skins:
   `--tile-scale-{orbitron,press-start,vt323}` and `--display-scale-{orbitron,silkscreen,vt323}`.
-  Reused fonts (Orbitron in Synthwave + Crimson) share one tuned value.
+  Reused fonts (Orbitron in Neon Horizon + Crimson) share one tuned value.
 - **Selection ribbon** rewritten in `GameView.redrawPath` as one `<line>` per
   segment (`.path-seg`), tinted along swipe order via `--seg-t` + `color-mix`
   (a WordSalad-style progress gradient; equal endpoints = flat). Letters now
@@ -44,7 +44,7 @@ an archive.
   selected-state `transform/z-index` dropped (they created a stacking context
   that trapped the letter under the ribbon). The selection "pop" lives on the
   letter now.
-- **5 skins**: `void` (default), `synthwave`, `gameboy`, `terminal` (amber CRT,
+- **5 skins**: `void` (default), `neon-horizon`, `gameboy`, `terminal` (amber CRT,
   VT323), `crimson` (red, Orbitron). Terminal + Crimson are `productId: null` =
   **free on every platform** (the old `webOnly`/`isWeb` concept was removed —
   see decisions below).
@@ -63,7 +63,7 @@ label and the result timer use the skin display font. Level title
 
 **Monetization ids reconciled:** registry `gameboy.productId` is `skin_gameboy`
 (was a mismatched `skin_pixel`); `skin_bundle` is declared in `PRODUCT_IDS` +
-`FALLBACK_CATALOG`. Achievement unlocks work today (Synthwave = `solve_10`,
+`FALLBACK_CATALOG`. Achievement unlocks work today (Neon Horizon = `solve_10`,
 Game Boy = `streak_30`); the **IAP purchase path is scaffolded but stubbed**
 (`initIAP`/`isOwned`/`purchase` are RevenueCat TODOs).
 

@@ -79,7 +79,7 @@ export const SKINS: SkinMeta[] = [
   {
     id: 'neon-horizon',
     name: 'Neon Horizon',
-    productId: 'skin_synthwave',
+    productId: 'skin_neon_horizon',
     bundleProductId: 'skin_bundle',
     unlockedByAchievement: 'solve_10',
     unlockHint: '10 puzzles solved',
@@ -522,31 +522,7 @@ const SKIN_CLASS_PREFIX = 'skin-';
 const SKIN_CLASS_NAMES = SKINS.map((skin) => `${SKIN_CLASS_PREFIX}${skin.id}`);
 
 export function normalizeSkinId(id: string | null | undefined): SkinId {
-  const legacyIdMap: Record<string, SkinId> = {
-    synthwave: 'neon-horizon',
-    vector: 'laser-vector',
-    cabinet: 'maze-chase',
-    phantom: 'phantom-thieves',
-    pastel: 'super-16-bit-lilac',
-    inferno: 'lord-of-terror',
-    ring: 'ring-of-light',
-    spirit: 'dream-spiral',
-    phobos: 'rip-tear',
-    underworld: 'blood-darkness',
-    zerg: 'swarm',
-    aperture: 'test-chamber',
-    yharnam: 'paleblood',
-    zebes: 'star-hunter',
-    'hyrule-antique': 'relic-gold',
-    'dream-land': 'puff-star',
-    kingdom: 'overworld-8bit',
-    'dinosaur-land': 'cape-16bit',
-    'green-hill': 'blue-blur',
-    kamurocho: 'dragon-heat',
-    'graffiti-soul': 'radio-tag'
-  };
-  const canonicalId = id ? legacyIdMap[id] ?? id : id;
-  return SKINS.some((skin) => skin.id === canonicalId) ? (canonicalId as SkinId) : 'void';
+  return SKINS.some((skin) => skin.id === id) ? (id as SkinId) : 'void';
 }
 
 export function getCurrentSkinId(): SkinId {

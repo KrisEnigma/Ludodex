@@ -103,7 +103,7 @@
   --tile-font-weight: 700;
   /* Per-font tile-size corrections (same idea as the display-scale-* block).
      Defined once, referenced by skins so a font shared across skins (Orbitron
-     in Synthwave + Crimson) is tuned here. Kept separate from the display
+   in Neon Horizon + Crimson) is tuned here. Kept separate from the display
      scales because tiles and titles want different optical sizes per font. */
   --tile-scale-orbitron: 0.84;
   --tile-scale-press-start: 0.62;
@@ -121,7 +121,7 @@
   /* Per-font display-size corrections. Different fonts fill their em-box
      differently; these keep the wordmark + level title a consistent visual
      size. Defined once here and referenced by skins, so a font shared across
-     skins (e.g. Orbitron in Synthwave + Crimson) is tuned in one place. */
+   skins (e.g. Orbitron in Neon Horizon + Crimson) is tuned in one place. */
   --display-scale-orbitron: 0.9;
   --display-scale-press-start: 0.84;
   --display-scale-silkscreen: 1.0;
@@ -162,7 +162,7 @@
   --selected-letter-outline: #04121a;
 }
 
-/* ── Neon Horizon ── Synthwave neon skyline with magenta-cyan glow rails and arcade bloom. */
+/* ── Neon Horizon ── neon skyline with magenta-cyan glow rails and arcade bloom. */
 .skin-neon-horizon {
   --bg-center: #1a0826;
   --bg-edge: #0a0414;

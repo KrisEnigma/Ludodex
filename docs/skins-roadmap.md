@@ -1,14 +1,14 @@
 # Skins Roadmap
 
 ## Current skins (shipped)
-All current skins are **free** (`productId: null`); Synthwave & Dot Matrix also
+All current skins are **free** (`productId: null`); Neon Horizon & Dot Matrix also
 unlock via achievement on native. 17 skins ship: **12 dark, 5 light**.
 
 | ID | Display name | Theme | Inspiration |
 |---|---|---|---|
 | void | Void | dark | baseline (cyan) |
 | lumen | Lumen | light | Void's light twin |
-| synthwave | Synthwave | dark | retrowave |
+| neon-horizon | Neon Horizon | dark | retrowave |
 | gameboy | Dot Matrix | dark | Game Boy LCD |
 | terminal | Terminal | dark | amber CRT |
 | phosphor | Phosphor | dark | P31 green CRT |
@@ -106,7 +106,7 @@ Silkscreen, VT323, Cinzel, **Oswald**. Self-hosted via `@font-face` in `skins.cs
 - **Cinzel** (OFL, `@fontsource/cinzel`) — Roman inscriptional caps. In use for Underworld and Inferno **tiles**. First choice for any ancient/fantasy/mythology skin.
 - **Oswald** (OFL, `@fontsource/oswald`) — condensed industrial signage. In use for Aperture + Ring. Good for clean/console/modern skins.
 - **VT323** (bundled) — terminal/retro; in use for Terminal, Phosphor, BIOS.
-- **Orbitron** (bundled) — sci-fi; in use for Synthwave, Crimson.
+- **Orbitron** (bundled) — sci-fi; in use for Neon Horizon, Crimson.
 - **Diablo** (self-hosted `.woff`, license **UNVERIFIED**) — ornate dark-fantasy caps; in use for the Inferno **wordmark** (Cinzel handles its tiles). Keep Inferno free until the license is confirmed.
 - **AmazDooMRight / AmazDooMRight2** (license TBD — Phobos wordmark) — Doom title-style, self-hosted TTF in `src/fonts/amazdoom-cdnfonts/`.
 - **DooM** (license TBD — Phobos tiles) — authentic Doom HUD pixel font, `src/fonts/DooM.ttf`.

@@ -2,7 +2,7 @@
  * StarterPackModal — full-screen launch offer overlay.
  *
  * Shown exactly once on day 2 or 3 after install (eligibility gated by
- * StarterPackService). Bundles remove_ads + 30 hints + Synthwave skin at
+ * StarterPackService). Bundles remove_ads + 30 hints + Neon Horizon skin at
  * a single discounted price, presented with a 24-hour countdown clock.
  *
  * ## Lifecycle
@@ -15,7 +15,7 @@
  * ## Atomic grant on purchase
  *  - Calls purchase(PRODUCT_IDS.STARTER_PACK, 'starter_pack').
  *  - On success: immediately grants 30 hints via grantHints().
- *    The remove_ads entitlement and Synthwave skin are recorded by RevenueCat
+ *    The remove_ads entitlement and Neon Horizon skin are recorded by RevenueCat
  *    and reflected the next time isOwned() is called (SettingsView, AdService).
  */
 
@@ -136,7 +136,7 @@ export async function showStarterPackModal(): Promise<void> {
 
         if (result.status === 'success') {
           // Atomic hint grant — RevenueCat handles the entitlement for
-          // remove_ads and skin_synthwave; hints live in local storage.
+          // remove_ads and skin_neon_horizon; hints live in local storage.
           await grantHints(30);
           track('starter_pack_purchased', {});
           close();

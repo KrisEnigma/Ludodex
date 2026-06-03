@@ -160,13 +160,13 @@ export const strings = {
   // Starter Pack offer
   'starter_pack.title': 'Starter Pack',
   'starter_pack.subtitle': 'One-time offer — expires in {time}',
-  'starter_pack.body': 'Remove ads · 30 hints · Synthwave skin',
+  'starter_pack.body': 'Remove ads · 30 hints · Neon Horizon skin',
   'starter_pack.cta': 'Get the Pack — {price}',
   'starter_pack.dismiss': 'No thanks',
   'starter_pack.badge': 'Launch Sale',
   'starter_pack.item_remove_ads': 'Remove Ads — forever',
   'starter_pack.item_hints': '30 Hints to use anytime',
-  'starter_pack.item_skin': 'Synthwave skin unlocked',
+  'starter_pack.item_skin': 'Neon Horizon skin unlocked',
 
   // Remove Ads launch promo (shown within first 14 days)
   'remove_ads.title': 'Remove Ads',

@@ -209,12 +209,12 @@ The grid shows three steady-state tile states during play:
   display font).
 - `--display-font-scale` — optical size for the wordmark/titles (see §5).
 - `--glow-strength` — multiplier on selection-glow and wordmark/title glow blur
-  (`0` = no glow, e.g. Game Boy; `1.7` = strong bloom, e.g. Synthwave).
+  (`0` = no glow, e.g. Game Boy; `1.7` = strong bloom, e.g. Neon Horizon).
 
 ### Per-font scale constants (defined in `:root`, referenced by skins — see §5)
 | Font | `--tile-scale-*` | `--display-scale-*` | Weights bundled | Used by |
 |---|---|---|---|---|
-| Orbitron | `0.84` | `0.9` | 700 | Synthwave, Crimson |
+| Orbitron | `0.84` | `0.9` | 700 | Neon Horizon, Crimson |
 | Press Start 2P | `0.62` | `0.84` | 400 | Dot Matrix, Toaster |
 | Silkscreen | `1.06` | `1.0` | 700 | Pastel (tiles+wordmark); Dot Matrix/Toaster (wordmark) |
 | VT323 | `1.18` | `1.45` | 400 | Terminal, Phosphor, BIOS |
@@ -244,7 +244,7 @@ the same font:
 A skin **references** the constant; it does not hardcode a number:
 
 ```css
-.skin-synthwave {
+.skin-neon-horizon {
   --tile-font-scale: var(--tile-scale-orbitron);
   --display-font-scale: var(--display-scale-orbitron);
 }
@@ -407,7 +407,7 @@ If you added a new font, also add to `:root`:
 ### 7.2 `registry.ts` entry
 ```ts
 // 1) add to the union:
-export type SkinId = 'void' | 'synthwave' | 'gameboy' | 'terminal' | 'crimson' | '<id>';
+export type SkinId = 'void' | 'neon-horizon' | 'gameboy' | 'terminal' | 'crimson' | '<id>';
 
 // 2) add to the SKINS array:
 {
@@ -525,7 +525,7 @@ column: every ribbon is a *contrasting* color to its selected tile (§3.7).
 | Skin | id | Tile font | Wordmark font | Radius | Glow | Ribbon | Availability |
 |---|---|---|---|---|---|---|---|
 | Void | `void` (`:root`) | Space Mono | Space Mono | 14px | 1 | violet→cyan | default, free |
-| Synthwave | `synthwave` | Orbitron | Orbitron | 18px | 1.7 | cyan→gold | solve_10 / IAP |
+| Neon Horizon | `neon-horizon` | Orbitron | Orbitron | 18px | 1.7 | cyan→gold | solve_10 / IAP |
 | Dot Matrix | `gameboy` | Press Start 2P | Silkscreen | 0 | 0 | flat green (butt) | streak_30 / IAP |
 | Terminal | `terminal` | VT323 | VT323 | 2px | 1.2 | ember→amber | free |
 | Phosphor | `phosphor` | VT323 | VT323 | 2px | 1.4 | lime→green | free |
@@ -583,7 +583,7 @@ All skins are free. Nothing to configure beyond the registry entry.
   **This path is fully functional on web and native** (it's local-storage based;
   the Game Center / Play Games submission is a separate best-effort stub and is
   not required for the skin to unlock).
-- Live examples: Synthwave unlocks at `solve_10`, Game Boy at `streak_30`.
+- Live examples: Neon Horizon unlocks at `solve_10`, Game Boy at `streak_30`.
 
 ### IAP purchase — ⚠️ scaffolded, not live yet
 The plumbing exists (canonical product IDs, a fallback price catalog, analytics,
@@ -611,8 +611,8 @@ native a Buy button shows the price and calls `attemptPurchaseFromPreview` →
 Because `registry.ts` can't import `IAPService` (circular), product ids are string
 literals in the registry that **must match** `PRODUCT_IDS` / `FALLBACK_CATALOG`:
 - Each skin's `productId` must equal a `PRODUCT_IDS` entry that also has a
-  `FALLBACK_CATALOG` price (e.g. `skin_synthwave`, `skin_gameboy`).
-- `bundleProductId` (currently `skin_bundle`, shared by Synthwave + Game Boy) must
+  `FALLBACK_CATALOG` price (e.g. `skin_neon_horizon`, `skin_gameboy`).
+- `bundleProductId` (currently `skin_bundle`, shared by Neon Horizon + Game Boy) must
   also be declared in `PRODUCT_IDS` + `FALLBACK_CATALOG`.
 - If `getProductInfo(id)` returns null, the id is mismatched — the price label
   silently falls back. (The previously-mismatched `gameboy` id `skin_pixel` and the

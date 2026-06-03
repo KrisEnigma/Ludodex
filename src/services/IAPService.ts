@@ -50,7 +50,7 @@ export const PRODUCT_IDS = {
   HINTS_50:     'hints_50',
   HINTS_200:    'hints_200',
   STARTER_PACK: 'starter_pack',
-  SKIN_SYNTHWAVE: 'skin_synthwave',
+  SKIN_NEON_HORIZON: 'skin_neon_horizon',
   SKIN_GAMEBOY:   'skin_gameboy',
   // Multi-skin bundle (referenced by skins' bundleProductId). Owning it unlocks
   // every skin whose bundleProductId points here.
@@ -75,7 +75,7 @@ const FALLBACK_CATALOG: Record<string, ProductInfo> = {
   [PRODUCT_IDS.HINTS_50]:     { id: PRODUCT_IDS.HINTS_50,     priceLabel: '$2.99', fallbackPriceLabel: '$2.99' },
   [PRODUCT_IDS.HINTS_200]:    { id: PRODUCT_IDS.HINTS_200,    priceLabel: '$7.99', fallbackPriceLabel: '$7.99' },
   [PRODUCT_IDS.STARTER_PACK]: { id: PRODUCT_IDS.STARTER_PACK, priceLabel: '$2.99', fallbackPriceLabel: '$2.99' },
-  [PRODUCT_IDS.SKIN_SYNTHWAVE]: { id: PRODUCT_IDS.SKIN_SYNTHWAVE, priceLabel: '$1.99', fallbackPriceLabel: '$1.99' },
+  [PRODUCT_IDS.SKIN_NEON_HORIZON]: { id: PRODUCT_IDS.SKIN_NEON_HORIZON, priceLabel: '$1.99', fallbackPriceLabel: '$1.99' },
   [PRODUCT_IDS.SKIN_GAMEBOY]:   { id: PRODUCT_IDS.SKIN_GAMEBOY,   priceLabel: '$1.99', fallbackPriceLabel: '$1.99' },
   [PRODUCT_IDS.SKIN_BUNDLE]:    { id: PRODUCT_IDS.SKIN_BUNDLE,    priceLabel: '$2.99', fallbackPriceLabel: '$2.99' },
 };
