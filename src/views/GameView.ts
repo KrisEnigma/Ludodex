@@ -169,6 +169,14 @@ export class GameView {
     title.textContent = this.puzzleTitle;
     titleRow.append(title);
 
+    const puzzleHintText = tp(puzzle.hint, '').trim();
+    const puzzleHint = puzzleHintText
+      ? Object.assign(document.createElement('p'), {
+          className: 'game-puzzle-hint',
+          textContent: puzzleHintText
+        })
+      : null;
+
     this.gridWrap = document.createElement('div');
     this.gridWrap.className = 'grid-wrap';
 
@@ -369,7 +377,7 @@ export class GameView {
       if (solvedIds.length > 0) tutorialLabel.hidden = true;
     })();
 
-    this.element.append(header, titleRow, this.gridWrap, hints, tutorialLabel);
+    this.element.append(header, titleRow, ...(puzzleHint ? [puzzleHint] : []), this.gridWrap, hints, tutorialLabel);
 
     track('puzzle_started', {
       puzzle_id: this.puzzleId,

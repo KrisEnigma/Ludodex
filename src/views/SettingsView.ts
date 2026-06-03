@@ -1,6 +1,13 @@
 import { Capacitor } from '@capacitor/core';
 import { getLang, setLang, t, type Language } from '../i18n';
-import { applySkin, getCurrentSkinId, SKINS, type SkinId, type SkinMeta } from '../skins/registry';
+import {
+  applySkin,
+  getCurrentSkinId,
+  normalizeSkinId as normalizeRegistrySkinId,
+  SKINS,
+  type SkinId,
+  type SkinMeta
+} from '../skins/registry';
 import { isSkinOwned, purchase, restorePurchases } from '../services/IAPService';
 import { track, updateLocale, setPaidStatus } from '../services/AnalyticsService';
 import { getActiveSkinId, resetAllProgress, setActiveSkinId } from '../services/ProgressService';
@@ -592,7 +599,6 @@ export class SettingsView {
 
   private getSkinName(skinId: SkinId): string {
     if (skinId === 'void') return t('skin.void.name');
-    if (skinId === 'synthwave') return t('skin.synthwave.name');
     if (skinId === 'gameboy') return t('skin.gameboy.name');
     // Test skins (and any future skin without an i18n entry) fall back to the
     // human-readable name in the registry.
@@ -600,10 +606,7 @@ export class SettingsView {
   }
 
   private normalizeSkinId(value: string): SkinId {
-    if (value === 'void' || value === 'synthwave' || value === 'gameboy') {
-      return value;
-    }
-    return 'void';
+    return normalizeRegistrySkinId(value);
   }
 
   // Hidden Reset Progress flow

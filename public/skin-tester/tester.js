@@ -65,6 +65,7 @@ const puzzleMarkup = `
       <div class="game-title-row">
         <h2 class="view-title">Dark Souls Bosses</h2>
       </div>
+      <p class="game-puzzle-hint">I bet you died many times</p>
 
       <div class="grid-wrap">
         <div class="grid" aria-label="Static puzzle preview">

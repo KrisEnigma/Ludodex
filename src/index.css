@@ -593,6 +593,16 @@ body {
   margin: 0;
 }
 
+.game-puzzle-hint {
+  margin: -8px 0 2px;
+  font-size: var(--type-label);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--chrome-text);
+  opacity: 0.86;
+  text-align: center;
+}
+
 .game-instructions {
   margin: 2px 0 0;
   font-size: var(--type-label);

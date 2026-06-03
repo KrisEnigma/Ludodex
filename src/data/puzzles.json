@@ -81,7 +81,9 @@
     "name": {
       "en": "Dark Souls Bosses"
     },
-    "hint": null,
+    "hint": {
+      "en": "I bet you died many times"
+    },
     "date": null,
     "series": null,
     "data": {
