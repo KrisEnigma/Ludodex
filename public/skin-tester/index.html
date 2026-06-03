@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ludodex Skin Tester</title>
+    <link rel="stylesheet" href="/src/skin-tester/fonts.css?v=2026-06-08" />
+    <link rel="stylesheet" href="/src/skins/skins.css?v=2026-06-08" />
+    <link rel="stylesheet" href="/src/index.css?v=2026-06-08" />
+    <link rel="stylesheet" href="/skin-tester/tester.css?v=2026-06-08" />
+  </head>
+  <body>
+    <main class="skin-tester-page">
+      <section class="tester-controls" aria-label="Skin tester controls">
+        <label for="skinSelect">Skin</label>
+        <select id="skinSelect" class="tester-select" aria-label="Select skin"></select>
+        <label class="tester-toggle" for="compareSelectedSkins">
+          <input id="compareSelectedSkins" type="checkbox" />
+          Compare selected
+        </label>
+        <label class="tester-toggle" for="showAllSkins">
+          <input id="showAllSkins" type="checkbox" />
+          Show all skins
+        </label>
+        <details class="tester-compare" id="testerComparePanel">
+          <summary>Select skins to compare</summary>
+          <div class="tester-compare-actions">
+            <button type="button" id="selectAllSkins">Select all</button>
+            <button type="button" id="clearAllSkins">Clear</button>
+            <span id="selectedSkinsCount" aria-live="polite"></span>
+          </div>
+          <div id="skinChecklist" class="tester-checklist" role="group" aria-label="Skins checklist"></div>
+        </details>
+      </section>
+
+      <section id="skinCards" class="tester-grid" aria-live="polite"></section>
+    </main>
+
+    <script src="/skin-tester/tester.js"></script>
+  </body>
+</html>

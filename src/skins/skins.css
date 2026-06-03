@@ -135,6 +135,12 @@
      --display-font-scale for current behavior. */
   --title-font-scale: var(--display-font-scale);
   --wordmark-font-scale: var(--display-font-scale);
+  /* Role scales keep typography intent explicit across views.
+     By default they inherit current behavior, but can be tuned globally
+     without breaking per-skin font identity tokens. */
+  --level-title-scale: var(--title-font-scale);
+  --menu-logo-scale: var(--title-font-scale);
+  --win-timer-scale: var(--title-font-scale);
   --title-letter-spacing: 0.04em;
   --title-text-transform: none;
   --glow-strength: 1;            /* multiplier on selection/wordmark glow blur */
@@ -2304,19 +2310,19 @@
   --bg-edge: #050505;
   --shell-bg: linear-gradient(180deg, rgba(14, 14, 12, 0.93), rgba(6, 6, 5, 0.97));
   --shell-border: #3a1a1a;
-  --chrome-text: #8a6060;
-  --title-color: #d4b8b8;
+   --chrome-text: #8b7d62;
+   --title-color: #d2c49c;
   --title-glow: #cc1111;
   --button-bg: #1a1212;
   --button-border: #3a1a1a;
-  --button-text: #d4b8b8;
+   --button-text: #d2c49c;
   --button-hover-bg: rgba(58, 26, 26, 0.75);
   --button-active-bg: rgba(204, 17, 17, 0.2);
   --button-active-border: #cc1111;
   --button-active-text: #ffdddd;
   --tile-bg: linear-gradient(145deg, #1c1414, #0f0b0b);
   --tile-border: #3a2020;
-  --tile-letter: #d4b8b8;
+   --tile-letter: #cfc08e;
   --tile-selected-bg: linear-gradient(145deg, #cc1111, #7a0a0a);
   --tile-selected-border: #ff4444;
   --tile-selected-letter: #ffffff;
@@ -2335,7 +2341,7 @@
   --hint-solved-letter: #a8e060;
   --skin-button-bg: rgba(18, 12, 12, 0.86);
   --skin-button-border: #3a2020;
-  --skin-button-text: #d4b8b8;
+   --skin-button-text: #d2c49c;
   --skin-button-active-bg: rgba(204, 17, 17, 0.2);
   --skin-button-active-border: #cc1111;
   --skin-button-active-text: #ffdddd;

@@ -562,12 +562,12 @@ body {
 
 .view-title {
   margin: 0;
-  font-size: calc(var(--type-h1) * var(--title-font-scale, var(--display-font-scale, 1)));
+  font-size: calc(var(--type-h1) * var(--level-title-scale, var(--title-font-scale, var(--display-font-scale, 1))));
   /* Level/win title follows the skin title typography tokens; defaults fall
      back to wordmark tokens so older skins remain compatible. */
   font-family: var(--title-font-family, var(--wordmark-font-family, 'Space Mono', ui-monospace, monospace));
   font-weight: var(--title-font-weight, var(--wordmark-font-weight, 700));
-  letter-spacing: var(--title-letter-spacing, 0.04em);
+  letter-spacing: var(--title-letter-spacing, var(--wordmark-letter-spacing, 0.04em));
   text-transform: var(--title-text-transform, none);
   color: var(--title-color);
   text-shadow: 0 0 12px color-mix(in srgb, var(--title-glow) var(--title-glow-alpha, 40%), transparent);
@@ -1021,6 +1021,34 @@ body {
   );
 }
 
+.path-segments-outro .path-seg {
+  transform-origin: center;
+  animation: path-ribbon-outro 180ms cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+
+@keyframes path-ribbon-outro {
+  0% {
+    stroke-opacity: var(--path-opacity, 0.95);
+    stroke-width: var(--path-width, 9px);
+  }
+  65% {
+    stroke-opacity: 0.45;
+    stroke-width: calc(var(--path-width, 9px) * 0.68);
+  }
+  100% {
+    stroke-opacity: 0;
+    stroke-width: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .path-segments-outro .path-seg {
+    animation: none;
+    stroke-opacity: 0;
+    stroke-width: 0;
+  }
+}
+
 .hints {
   width: min(82vw, 332px);
   max-width: 100%;
@@ -1261,7 +1289,7 @@ body {
   letter-spacing: var(--title-letter-spacing, var(--wordmark-letter-spacing, 0.18em));
   line-height: 1.05;
   margin: 0 0 22px;
-  font-size: calc(var(--type-display-s) * var(--title-font-scale, var(--wordmark-font-scale, var(--display-font-scale, 1))));
+  font-size: calc(var(--type-display-s) * var(--menu-logo-scale, var(--title-font-scale, var(--wordmark-font-scale, var(--display-font-scale, 1)))));
   color: var(--title-glow);
   text-shadow: 0 0 calc(14px * var(--glow-strength, 1)) color-mix(in srgb, var(--title-glow) 30%, transparent);
 }
@@ -1883,9 +1911,7 @@ body {
 }
 
 .win-view .view-title {
-  font-size: var(--type-h1);
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  font-size: calc(var(--type-h1) * var(--level-title-scale, var(--title-font-scale, var(--display-font-scale, 1))));
   text-align: center;
   color: var(--title-color);
   margin: 6px 0;
@@ -1939,9 +1965,9 @@ body {
 .win-headline-label {
   /* Celebratory label ("FLAWLESS") — follows the skin display font like the
      win title, instead of staying mono. */
-  font-family: var(--wordmark-font-family, 'Space Mono', ui-monospace, monospace);
-  font-size: calc(var(--type-h2) * var(--display-font-scale, 1));
-  font-weight: var(--wordmark-font-weight, 700);
+  font-family: var(--title-font-family, var(--wordmark-font-family, 'Space Mono', ui-monospace, monospace));
+  font-size: calc(var(--type-h2) * var(--title-font-scale, var(--display-font-scale, 1)));
+  font-weight: var(--title-font-weight, var(--wordmark-font-weight, 700));
   letter-spacing: 0.28em;
   text-transform: uppercase;
   color: var(--title-glow);
@@ -1950,15 +1976,14 @@ body {
 }
 
 .win-time {
-  /* Big result time in the skin display font (a retro digital clock on the
-     pixel/terminal skins). tabular-nums keeps the digits from shifting; all
-     the bundled display fonts are fixed-width or expose tnum. */
-  font-family: var(--wordmark-font-family, 'Space Mono', ui-monospace, monospace);
-  font-size: calc(var(--type-display-l) * var(--display-font-scale, 1));
-  font-weight: var(--wordmark-font-weight, 700);
+  /* Final timer follows the same title typography chain as menu/game/win
+     titles so each skin presents one coherent display voice across views. */
+  font-family: var(--title-font-family, var(--wordmark-font-family, 'Space Mono', ui-monospace, monospace));
+  font-size: calc(var(--type-display-l) * var(--win-timer-scale, var(--title-font-scale, var(--display-font-scale, 1))));
+  font-weight: var(--title-font-weight, var(--wordmark-font-weight, 700));
   font-variant-numeric: tabular-nums;
   color: var(--title-color);
-  letter-spacing: 0.04em;
+  letter-spacing: var(--title-letter-spacing, var(--wordmark-letter-spacing, 0.04em));
   margin: 4px 0;
   line-height: 1;
   animation: time-scale-in 520ms cubic-bezier(0.34, 1.4, 0.64, 1) 700ms backwards;

@@ -49,6 +49,7 @@ export class GameView {
   private static readonly EXIT_FADE_MS = GameView.GLITCH_CORRUPT_MS + GameView.GLITCH_COLLAPSE_MS;
   private static readonly TILE_REVEAL_STAGGER_MS = 50;
   private static readonly TILE_REVEAL_DURATION_MS = 360;
+  private static readonly RIBBON_OUTRO_MS = 180;
   private static readonly GLITCH_CHARS =
     'ÀÁÂÃÄÅÆĆČĐÈÉÊËĞĐÌÍÎÏÑÒÓÔÕÖØŒÙÚÛÜÝŠŽß#@%&*<>?!~∆ΩΣΨ█▓▒░╳';
   readonly element: HTMLDivElement;
@@ -930,12 +931,33 @@ export class GameView {
       this.applyTileVisualState(tile);
     }
 
+    this.animateRibbonOutro();
     this.inputManager.clearChain();
 
     const solvedAllParts = this.solvedPartIds.size === this.partEntriesById.size;
     if (solvedAllParts) {
       this.onPuzzleSolved();
     }
+  }
+
+  private animateRibbonOutro(): void {
+    if (!this.pathSegments.firstChild) return;
+
+    const svgNs = 'http://www.w3.org/2000/svg';
+    const outroGroup = document.createElementNS(svgNs, 'g');
+    outroGroup.setAttribute('class', 'path-segments path-segments-outro');
+
+    for (const child of this.pathSegments.childNodes) {
+      outroGroup.appendChild(child.cloneNode(true));
+    }
+
+    this.overlay.appendChild(outroGroup);
+
+    window.setTimeout(() => {
+      if (outroGroup.isConnected) {
+        outroGroup.remove();
+      }
+    }, GameView.RIBBON_OUTRO_MS + 20);
   }
 
   private triggerTileFoundAnimation(path: string[]): void {
