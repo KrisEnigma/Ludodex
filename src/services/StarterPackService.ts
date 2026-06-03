@@ -30,9 +30,9 @@ const STARTER_PACK_SHOWN_AT_KEY = 'ludodex.starter_pack.shown_at';
 
 /**
  * The skin included in the Starter Pack. Must map to an existing SkinId.
- * Change this to 'synthwave' or 'gameboy' once those are in the catalog.
+ * Change this to another SkinId (for example 'gameboy') if needed.
  */
-export const STARTER_PACK_SKIN_ID = 'synthwave';
+export const STARTER_PACK_SKIN_ID = 'neon-horizon';
 
 export type StarterPackEligibility =
   | { eligible: true; shownAt: null }

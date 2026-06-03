@@ -1,4 +1,4 @@
-export type SkinId = 'void' | 'lumen' | 'synthwave' | 'vector' | 'cabinet' | 'zerg' | 'phantom' | 'catalyst' | 'yharnam' | 'aero' | 'zebes' | 'hyrule-antique' | 'dream-land' | 'kingdom' | 'dinosaur-land' | 'green-hill' | 'kamurocho' | 'graffiti-soul' | 'cyber-shinobi' | 'gameboy' | 'terminal' | 'phosphor' | 'bios' | 'pastel' | 'toaster' | 'inferno' | 'aperture' | 'polygon' | 'ring' | 'spirit' | 'phobos' | 'crimson' | 'underworld';
+export type SkinId = 'void' | 'lumen' | 'neon-horizon' | 'laser-vector' | 'maze-chase' | 'swarm' | 'phantom-thieves' | 'catalyst' | 'paleblood' | 'aero' | 'star-hunter' | 'relic-gold' | 'puff-star' | 'overworld-8bit' | 'cape-16bit' | 'blue-blur' | 'dragon-heat' | 'radio-tag' | 'cyber-shinobi' | 'gameboy' | 'terminal' | 'phosphor' | 'bios' | 'super-16-bit-lilac' | 'toaster' | 'lord-of-terror' | 'test-chamber' | 'polygon' | 'ring-of-light' | 'dream-spiral' | 'rip-tear' | 'crimson' | 'blood-darkness';
 
 /**
  * Tile-shaped preview token set. Drives the mini-tile shown in the Settings
@@ -77,8 +77,8 @@ export const SKINS: SkinMeta[] = [
     }
   },
   {
-    id: 'synthwave',
-    name: 'Synthwave',
+    id: 'neon-horizon',
+    name: 'Neon Horizon',
     productId: 'skin_synthwave',
     bundleProductId: 'skin_bundle',
     unlockedByAchievement: 'solve_10',
@@ -94,8 +94,8 @@ export const SKINS: SkinMeta[] = [
     }
   },
   {
-    id: 'vector',
-    name: 'Vector',
+    id: 'laser-vector',
+    name: 'Laser Vector',
     productId: null,
     previewTile: {
       bg: 'linear-gradient(145deg, #004050, #001a24)',
@@ -108,8 +108,8 @@ export const SKINS: SkinMeta[] = [
     }
   },
   {
-    id: 'cabinet',
-    name: 'Cabinet',
+    id: 'maze-chase',
+    name: 'Maze Chase',
     productId: null,
     previewTile: {
       bg: 'linear-gradient(145deg, #181826, #050510)',
@@ -122,8 +122,8 @@ export const SKINS: SkinMeta[] = [
     }
   },
   {
-    id: 'zerg',
-    name: 'Zerg',
+    id: 'swarm',
+    name: 'Swarm',
     productId: null,
     previewTile: {
       bg: 'linear-gradient(145deg, #7a1f60, #3a0a2c)',
@@ -136,8 +136,8 @@ export const SKINS: SkinMeta[] = [
     }
   },
   {
-    id: 'phantom',
-    name: 'Phantom',
+    id: 'phantom-thieves',
+    name: 'Phantom Thieves',
     productId: null,
     previewTile: {
       bg: 'linear-gradient(145deg, #ff1235, #8a0013)',
@@ -164,8 +164,8 @@ export const SKINS: SkinMeta[] = [
     }
   },
   {
-    id: 'yharnam',
-    name: 'Yharnam',
+    id: 'paleblood',
+    name: 'Paleblood',
     productId: null,
     previewTile: {
       bg: 'linear-gradient(145deg, #300c14, #180307)',
@@ -192,8 +192,8 @@ export const SKINS: SkinMeta[] = [
     }
   },
   {
-    id: 'zebes',
-    name: 'Zebes',
+    id: 'star-hunter',
+    name: 'Star Hunter',
     productId: null,
     previewTile: {
       bg: 'linear-gradient(145deg, #e65c00, #993d00)',
@@ -206,8 +206,8 @@ export const SKINS: SkinMeta[] = [
     }
   },
   {
-    id: 'hyrule-antique',
-    name: 'Hyrule Antique',
+    id: 'relic-gold',
+    name: 'Relic Gold',
     productId: null,
     previewTile: {
       bg: 'linear-gradient(145deg, #1f4480, #0f2447)',
@@ -220,8 +220,8 @@ export const SKINS: SkinMeta[] = [
     }
   },
   {
-    id: 'dream-land',
-    name: 'Dream Land',
+    id: 'puff-star',
+    name: 'Puff Star',
     productId: null,
     previewTile: {
       bg: 'linear-gradient(145deg, #ff66b2, #cc3377)',
@@ -234,8 +234,8 @@ export const SKINS: SkinMeta[] = [
     }
   },
   {
-    id: 'kingdom',
-    name: 'Kingdom',
+    id: 'overworld-8bit',
+    name: '8-Bit Overworld',
     productId: null,
     previewTile: {
       bg: 'linear-gradient(145deg, #fc9838, #bc6800)',
@@ -248,8 +248,8 @@ export const SKINS: SkinMeta[] = [
     }
   },
   {
-    id: 'dinosaur-land',
-    name: 'Dinosaur Land',
+    id: 'cape-16bit',
+    name: '16-Bit Cape',
     productId: null,
     previewTile: {
       bg: 'linear-gradient(145deg, #ffcc00, #cc9900)',
@@ -262,8 +262,8 @@ export const SKINS: SkinMeta[] = [
     }
   },
   {
-    id: 'green-hill',
-    name: 'Green Hill',
+    id: 'blue-blur',
+    name: 'Blue Blur',
     productId: null,
     previewTile: {
       bg: 'linear-gradient(145deg, #0055ff, #0022aa)',
@@ -276,8 +276,8 @@ export const SKINS: SkinMeta[] = [
     }
   },
   {
-    id: 'kamurocho',
-    name: 'Kamurocho',
+    id: 'dragon-heat',
+    name: 'Dragon Heat',
     productId: null,
     previewTile: {
       bg: 'linear-gradient(145deg, #d6001c, #4a0005)',
@@ -290,8 +290,8 @@ export const SKINS: SkinMeta[] = [
     }
   },
   {
-    id: 'graffiti-soul',
-    name: 'Graffiti Soul',
+    id: 'radio-tag',
+    name: 'Radio Tag',
     productId: null,
     previewTile: {
       bg: 'linear-gradient(145deg, #00e676, #006020)',
@@ -377,8 +377,8 @@ export const SKINS: SkinMeta[] = [
     }
   },
   {
-    id: 'pastel',
-    name: 'Pastel',
+    id: 'super-16-bit-lilac',
+    name: 'Super 16-Bit Lilac',
     productId: null,
     previewTile: {
       bg: 'linear-gradient(145deg, #b486e8, #6d4fb0)',
@@ -405,8 +405,8 @@ export const SKINS: SkinMeta[] = [
     }
   },
   {
-    id: 'inferno',
-    name: 'Inferno',
+    id: 'lord-of-terror',
+    name: 'Lord of Terror',
     productId: null,
     previewTile: {
       bg: 'linear-gradient(145deg, #ff7a1e, #9a1505)',
@@ -419,8 +419,8 @@ export const SKINS: SkinMeta[] = [
     }
   },
   {
-    id: 'aperture',
-    name: 'Aperture',
+    id: 'test-chamber',
+    name: 'Test Chamber',
     productId: null,
     previewTile: {
       bg: 'radial-gradient(circle at 50% 38%, #5cc6ee, #1c93c8)',
@@ -441,14 +441,14 @@ export const SKINS: SkinMeta[] = [
       border: '#8fc4f0',
       letter: '#ffffff',
       glow: 'rgba(47, 111, 214, 0.5)',
-      font: "'Space Mono', ui-monospace, monospace",
+      font: "'Share Tech Mono', monospace",
       radius: '8px',
-      scale: 1
+      scale: 1.02
     }
   },
   {
-    id: 'ring',
-    name: 'Ring',
+    id: 'ring-of-light',
+    name: 'Ring of Light',
     productId: null,
     previewTile: {
       bg: 'linear-gradient(145deg, #4cd44e, #0e9e14)',
@@ -461,22 +461,22 @@ export const SKINS: SkinMeta[] = [
     }
   },
   {
-    id: 'spirit',
-    name: 'Spirit',
+    id: 'dream-spiral',
+    name: 'Dream Spiral',
     productId: null,
     previewTile: {
       bg: 'linear-gradient(145deg, #ff9a3c, #ef6a08)',
       border: '#ffbc78',
       letter: '#fff5ec',
       glow: 'rgba(244, 123, 32, 0.5)',
-      font: "'Space Mono', ui-monospace, monospace",
+      font: "'Comfortaa', cursive",
       radius: '12px',
-      scale: 1
+      scale: 0.9
     }
   },
   {
-    id: 'phobos',
-    name: 'Phobos',
+    id: 'rip-tear',
+    name: 'Rip & Tear',
     productId: null,
     previewTile: {
       bg: 'linear-gradient(145deg, #cc1111, #7a0a0a)',
@@ -489,8 +489,8 @@ export const SKINS: SkinMeta[] = [
     }
   },
   {
-    id: 'underworld',
-    name: 'Underworld',
+    id: 'blood-darkness',
+    name: 'Blood & Darkness',
     productId: null,
     previewTile: {
       bg: 'linear-gradient(145deg, #e8a010, #9a6600)',
@@ -511,9 +511,9 @@ export const SKINS: SkinMeta[] = [
       border: '#ff8a3d',
       letter: '#ffffff',
       glow: 'rgba(255, 45, 45, 0.55)',
-      font: "'Orbitron', sans-serif",
+      font: "'Unbounded', sans-serif",
       radius: '6px',
-      scale: 0.84
+      scale: 0.82
     }
   }
 ];
@@ -522,7 +522,31 @@ const SKIN_CLASS_PREFIX = 'skin-';
 const SKIN_CLASS_NAMES = SKINS.map((skin) => `${SKIN_CLASS_PREFIX}${skin.id}`);
 
 export function normalizeSkinId(id: string | null | undefined): SkinId {
-  return SKINS.some((skin) => skin.id === id) ? (id as SkinId) : 'void';
+  const legacyIdMap: Record<string, SkinId> = {
+    synthwave: 'neon-horizon',
+    vector: 'laser-vector',
+    cabinet: 'maze-chase',
+    phantom: 'phantom-thieves',
+    pastel: 'super-16-bit-lilac',
+    inferno: 'lord-of-terror',
+    ring: 'ring-of-light',
+    spirit: 'dream-spiral',
+    phobos: 'rip-tear',
+    underworld: 'blood-darkness',
+    zerg: 'swarm',
+    aperture: 'test-chamber',
+    yharnam: 'paleblood',
+    zebes: 'star-hunter',
+    'hyrule-antique': 'relic-gold',
+    'dream-land': 'puff-star',
+    kingdom: 'overworld-8bit',
+    'dinosaur-land': 'cape-16bit',
+    'green-hill': 'blue-blur',
+    kamurocho: 'dragon-heat',
+    'graffiti-soul': 'radio-tag'
+  };
+  const canonicalId = id ? legacyIdMap[id] ?? id : id;
+  return SKINS.some((skin) => skin.id === canonicalId) ? (canonicalId as SkinId) : 'void';
 }
 
 export function getCurrentSkinId(): SkinId {

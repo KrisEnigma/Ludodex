@@ -75,7 +75,7 @@ export const strings: Record<keyof typeof enStrings, string> = {
 
   // Skin names - same in both languages
   'skin.void.name': 'Void',
-  'skin.synthwave.name': 'Synthwave',
+  'skin.neon-horizon.name': 'Neon Horizon',
   'skin.gameboy.name': 'Dot Matrix',
 
   // Game view header

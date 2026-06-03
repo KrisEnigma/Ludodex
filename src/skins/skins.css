@@ -156,7 +156,8 @@
   --selected-letter-outline: #04121a;
 }
 
-.skin-synthwave {
+/* ── Neon Horizon ── Synthwave neon skyline with magenta-cyan glow rails and arcade bloom. */
+.skin-neon-horizon {
   --bg-center: #1a0826;
   --bg-edge: #0a0414;
   --shell-bg: linear-gradient(180deg, rgba(18, 7, 28, 0.9), rgba(12, 5, 20, 0.95));
@@ -220,8 +221,8 @@
   --selected-letter-outline: #3a0830;
 }
 
-/* ── Vector ── Retro-futuristic arcade vector graphics theme with glowing neon beams. */
-.skin-vector {
+/* ── Laser Vector ── Retro-futuristic arcade vector graphics theme with glowing neon beams. */
+.skin-laser-vector {
    /* Background & shell */
   --bg-center: #040507;
   --bg-edge: #000000;
@@ -291,8 +292,8 @@
   --selected-letter-outline: #001a24;  /* contrasts the selected letter */
 }
 
-/* ── Cabinet ── Classic arcade cabinet aesthetic with deep maze black, electric blue borders, and neon ghost paths. */
-.skin-cabinet {
+/* ── Maze Chase ── Classic arcade cabinet aesthetic with deep maze black, electric blue borders, and neon ghost paths. */
+.skin-maze-chase {
    /* Background & shell */
   --bg-center: #000000;
   --bg-edge: #050508;
@@ -362,8 +363,8 @@
   --selected-letter-outline: #000000;  /* contrasts the selected letter */
 }
 
-/* ── Zerg ── StarCraft-inspired alien look with organic carapace purples, creep magentas, and toxic acid beams. */
-.skin-zerg {
+/* ── Swarm ── Alien hive look with organic carapace purples, creep magentas, and toxic acid beams. */
+.skin-swarm {
    /* Background & shell */
   --bg-center: #160526;
   --bg-edge: #06010c;
@@ -433,8 +434,8 @@
   --selected-letter-outline: #3a0a2c; /* contrasts the selected letter */
 }
 
-/* ── Phantom ── Persona 5-inspired picaresque style featuring raw crimson red, stark solid blacks, and cutout whites. */
-.skin-phantom {
+/* ── Phantom Thieves ── Picaresque style featuring raw crimson red, stark solid blacks, and cutout whites. */
+.skin-phantom-thieves {
    /* Background & shell */
   --bg-center: #1a0003;
   --bg-edge: #000000;
@@ -584,8 +585,8 @@
   --selected-letter-outline: #11141a;
 }
 
-/* ── Yharnam ── Grim Victorian gothic atmosphere with cold blood-moon accents and a thick coagulated crimson trail. */
-.skin-yharnam {
+/* ── Paleblood ── Grim Victorian gothic atmosphere with cold blood-moon accents and a thick coagulated crimson trail. */
+.skin-paleblood {
    /* Background & shell */
   --bg-center: #121318;
   --bg-edge: #08090c;
@@ -735,8 +736,8 @@
   --selected-letter-outline: #0b4566;
 }
 
-/* ── Zebes ── Inspired by Super Metroid (SNES). Deep subterranean alien caverns with high-contrast power-suit energy blooms. */
-.skin-zebes {
+/* ── Star Hunter ── Deep subterranean alien caverns with high-contrast power-suit energy blooms. */
+.skin-star-hunter {
    /* Background & shell */
    --bg-center: #0d0816;
    --bg-edge: #030206;
@@ -811,8 +812,8 @@
    --selected-letter-outline: #1f0800;
 }
 
-/* ── Hyrule Antique ── Inspired by The Legend of Zelda: A Link to the Past (SNES). Heavy dungeon stone textures with radiant Triforce gold blooms. */
-.skin-hyrule-antique {
+/* ── Relic Gold ── Heavy dungeon stone textures with radiant triforce-gold blooms. */
+.skin-relic-gold {
    /* Background & shell */
    --bg-center: #16140f;
    --bg-edge: #080705;
@@ -889,8 +890,8 @@
    --selected-letter-outline: #071224;
 }
 
-/* ── Dream Land ── Inspired by Kirby's Adventure (NES). Dream-fountain deep indigo night skies with bright bubblegum cloud blooms. */
-.skin-dream-land {
+/* ── Puff Star ── Dream-fountain deep indigo night skies with bright bubblegum cloud blooms. */
+.skin-puff-star {
    /* Background & shell */
    --bg-center: #120a2a;
    --bg-edge: #060310;
@@ -965,8 +966,8 @@
    --selected-letter-outline: #4a0025;
 }
 
-/* ── Kingdom ── Inspired by Super Mario Bros. (NES). Clean 8-bit overworld aesthetics featuring iconic sky blues, brick-red cells, and warp-pipe green trails. */
-.skin-kingdom {
+/* ── 8-Bit Overworld ── Clean 8-bit overworld aesthetics featuring sky blues, brick-red cells, and warp-pipe green trails. */
+.skin-overworld-8bit {
    /* Background & shell */
    --bg-center: #5c94fc;             /* canonical nes overworld sky blue */
    --bg-edge: #4470da;
@@ -1042,8 +1043,8 @@
 }
 
 
-/* ── Dinosaur Land ── Inspired by Super Mario World (SNES). Rich chocolate island foundations, warm overworld creams, flashing cape-gold selections, and a bright sky-blue trail. */
-.skin-dinosaur-land {
+/* ── 16-Bit Cape ── Rich chocolate island foundations, warm overworld creams, flashing cape-gold selections, and a bright sky-blue trail. */
+.skin-cape-16bit {
    /* Background & shell */
    --bg-center: #261507;             /* chocolate island ground tone */
    --bg-edge: #0f0803;
@@ -1118,8 +1119,8 @@
 }
 
 
-/* ── Green Hill ── Inspired by Sonic the Hedgehog (Sega Genesis). Vibrant loops of checkerboard terracotta cells, deep Sonic cobalt selections, and radiant golden ring trails. */
-.skin-green-hill {
+/* ── Blue Blur ── Vibrant loops of checkerboard terracotta cells, deep cobalt selections, and radiant golden ring trails. */
+.skin-blue-blur {
    /* Background & shell */
    --bg-center: #2277ff;             /* iconic bright overworld sky blue */
    --bg-edge: #0044cc;
@@ -1194,8 +1195,8 @@
    --selected-letter-outline: #0022aa;
 }
 
-/* ── Kamurocho ── Inspired by SEGA's Like a Dragon / Yakuza series. Nightlife underworld aesthetic featuring heavy cabaret asphalt blacks, fierce Heat-action crimson red selections, and glowing billboard neon-gold trails. */
-.skin-kamurocho {
+/* ── Dragon Heat ── Nightlife underworld aesthetic featuring heavy asphalt blacks, fierce heat-action crimson selections, and neon-gold trails. */
+.skin-dragon-heat {
    /* Background & shell */
    --bg-center: #140204;
    --bg-edge: #000000;
@@ -1270,8 +1271,8 @@
    --selected-letter-outline: #4a0005;
 }
 
-/* ── Graffiti Soul ── Inspired by Jet Set Radio (Dreamcast). Cell-shaded counter-culture chaos with spray-can orange chrome, toxic-green tags, and thick marker trails. */
-.skin-graffiti-soul {
+/* ── Radio Tag ── Cell-shaded counter-culture chaos with spray-can orange chrome, toxic-green tags, and thick marker trails. */
+.skin-radio-tag {
    color-scheme: light;
 
    /* Background & shell */
@@ -1713,7 +1714,7 @@
   --selected-letter-outline: #052146;
 }
 
-/* ── Pastel ──
+/* ── Super 16-Bit Lilac ──
    16-bit home console (US "SNES") inspired. The American unit was a soft
    two-tone grey with a lilac power slider and lavender controller buttons;
    this skin reads it as a calm, confident purple on a warm plum-grey ground —
@@ -1721,7 +1722,7 @@
    power LED); solved words settle to periwinkle (a nod to the blue face
    button). Silkscreen — a fine, clean pixel face — sells the 16-bit step up
    from Dot Matrix's chunkier 8-bit type. Already bundled (no new font). */
-.skin-pastel {
+.skin-super-16-bit-lilac {
   --bg-center: #241f33;
   --bg-edge: #14111c;
   --shell-bg: linear-gradient(180deg, rgba(34, 31, 51, 0.9), rgba(20, 17, 28, 0.95));
@@ -1859,7 +1860,7 @@
   --selected-letter-outline: #3a0604;
 }
 
-/* ── Inferno ──
+/* ── Lord of Terror ──
    Diablo-inspired dark fantasy. Goes harder and darker than Crimson: an
    oxblood near-black ground, hellfire ember on the active swipe, and GOLD as
    the signature accent — solved words turn to brass/gold treasure. Two-font
@@ -1867,7 +1868,7 @@
    identity, while Cinzel (Roman inscriptional caps, already bundled — the
    guide's first pick for fantasy) keeps the single-letter tiles legible and
    gothic. Strong bloom sells the hellfire. */
-.skin-inferno {
+.skin-lord-of-terror {
   --bg-center: #1c0805;
   --bg-edge: #0a0302;
   --shell-bg: linear-gradient(180deg, rgba(28, 10, 6, 0.92), rgba(12, 4, 3, 0.97));
@@ -1931,7 +1932,7 @@
   --selected-letter-outline: #3a0a02;
 }
 
-/* ── Aperture ──
+/* ── Test Chamber ──
    Portal-inspired, and the FIRST light skin. Clean Aperture-lab surfaces:
    light-grey ground, glossy white tile panels, dark slate text. The blue /
    orange portal pair drives the tile states — a tile lights up PORTAL BLUE on
@@ -1940,7 +1941,7 @@
    condensed industrial signage — is the testing-chamber voice (NEW font; see
    main.ts + package.json). NOTE: light theme, so every color is inverted from
    the dark skins — title/letters are dark, surfaces are light. */
-.skin-aperture {
+.skin-test-chamber {
   color-scheme: light;
   --bg-center: #f2f2f4;
   --bg-edge: #d1d1d4;
@@ -2135,14 +2136,14 @@
   --skin-button-active-border: #2f6fd6;
   --skin-button-active-text: #1c3f7a;
 
-  --tile-font-family: 'Space Mono', ui-monospace, monospace;
+   --tile-font-family: 'Share Tech Mono', monospace;
   --tile-font-weight: 700;
-  --tile-font-scale: 1;
+   --tile-font-scale: 1.02;
   --tile-radius: 8px;
-  --wordmark-font-family: 'Space Mono', ui-monospace, monospace;
-  --wordmark-font-weight: 700;
-  --wordmark-letter-spacing: 0.18em;
-  --display-font-scale: 1;
+   --wordmark-font-family: 'Audiowide', cursive;
+   --wordmark-font-weight: 400;
+   --wordmark-letter-spacing: 0.1em;
+   --display-font-scale: 0.95;
   --glow-strength: 0.8;
 
   /* Ribbon: blue → green (cross to triangle), clean */
@@ -2155,12 +2156,12 @@
   --selected-letter-outline: #dceaf8;
 }
 
-/* ── Ring ──
+/* ── Ring of Light ──
    Xbox 360 inspired (the "Ring of Light"), and a LIGHT skin. Off-white shell,
    silver-grey frame, and the Xbox green as the signature — tiles light up
    green on the active swipe like the power ring, solved words settle to a soft
    green. Oswald gives the clean dashboard voice. Light theme. No new font. */
-.skin-ring {
+.skin-ring-of-light {
   color-scheme: light;
   --bg-center: #eef0ee;
   --bg-edge: #d6dad6;
@@ -2224,13 +2225,13 @@
   --selected-letter-outline: #dff5df;
 }
 
-/* ── Spirit ──
+/* ── Dream Spiral ──
    Sega Dreamcast inspired, and a LIGHT skin. The console was a warm cream-white
    with the optimistic orange swirl; this is orange energy on cream, with the
    swirl's blue for solved words. Active swipe glows swirl-ORANGE, solved tiles
    go DREAMCAST-BLUE, and the ribbon is the orange swirl trail. Space Mono,
    warm and friendly. Light theme. No new font. */
-.skin-spirit {
+.skin-dream-spiral {
   color-scheme: light;
   --bg-center: #f2efe9;
   --bg-edge: #ddd8ce;
@@ -2274,14 +2275,14 @@
   --skin-button-active-border: #f47b20;
   --skin-button-active-text: #8a3c04;
 
-  --tile-font-family: 'Space Mono', ui-monospace, monospace;
+   --tile-font-family: 'Comfortaa', cursive;
   --tile-font-weight: 700;
-  --tile-font-scale: 1;
+   --tile-font-scale: 0.9;
   --tile-radius: 14px;
-  --wordmark-font-family: 'Space Mono', ui-monospace, monospace;
-  --wordmark-font-weight: 700;
-  --wordmark-letter-spacing: 0.18em;
-  --display-font-scale: 1;
+   --wordmark-font-family: 'Exo 2', sans-serif;
+   --wordmark-font-weight: 700;
+   --wordmark-letter-spacing: 0.12em;
+   --display-font-scale: 1.05;
   --glow-strength: 1;
 
   /* Ribbon: the orange swirl trail */
@@ -2294,11 +2295,11 @@
   --selected-letter-outline: #5a2800;
 }
 
-/* ── Phobos ──
+/* ── Rip & Tear ──
    Doom-inspired. Dark concrete grey — NOT brown. Blood red accent (#cc1111).
    Toxic green for found words (Doom radiation barrel). Flat, harsh — Doom didn't bloom.
    Press Start 2P for tiles (same era as Dot Matrix is fine — palette sells the difference). */
-.skin-phobos {
+.skin-rip-tear {
   --bg-center: #0d0d0b;
   --bg-edge: #050505;
   --shell-bg: linear-gradient(180deg, rgba(14, 14, 12, 0.93), rgba(6, 6, 5, 0.97));
@@ -2361,9 +2362,7 @@
 }
 
 /* ── Crimson ──
-   Molten boss-fight red. Example of a skin with ZERO new fonts — reuses
-   Orbitron (already bundled for Synthwave): registry entry + this CSS block
-   is the entire cost. */
+   Molten boss-fight red with a brutalist slab typography profile. */
 .skin-crimson {
   --bg-center: #1a0608;
   --bg-edge: #0a0203;
@@ -2404,15 +2403,15 @@
   --skin-button-active-border: #ff6a6a;
   --skin-button-active-text: #ffffff;
 
-  /* Typography & shape — reuses Orbitron (no new font dependency) */
-  --tile-font-family: 'Orbitron', sans-serif;
+   /* Typography & shape */
+   --tile-font-family: 'Unbounded', sans-serif;
   --tile-font-weight: 700;
-  --tile-font-scale: var(--tile-scale-orbitron);
+   --tile-font-scale: 0.82;
   --tile-radius: 6px;
-  --wordmark-font-family: 'Orbitron', sans-serif;
-  --wordmark-font-weight: 700;
-  --wordmark-letter-spacing: 0.16em;
-  --display-font-scale: var(--display-scale-orbitron);
+   --wordmark-font-family: 'Russo One', sans-serif;
+   --wordmark-font-weight: 400;
+   --wordmark-letter-spacing: 0.08em;
+   --display-font-scale: 1.05;
   --glow-strength: 1.3;
 
   /* Ribbon: molten red→orange progress gradient */
@@ -2425,13 +2424,13 @@
   --selected-letter-outline: #2a0606;
 }
 
-/* ── Underworld ──
+/* ── Blood & Darkness ──
    Hades-inspired. Near-black with deep violet undertones. Rich gold is the
    signature accent — selected tiles go gold, which sells the "treasure of
    the underworld" moment. Found tiles shift to amethyst (the Greek gem of
    the dead). Crimson energy on the path. Orbitron — bold, confident, fits
    Hades' sleek mythological UI perfectly. */
-.skin-underworld {
+.skin-blood-darkness {
   --bg-center: #0e0b18;
   --bg-edge: #070509;
   --shell-bg: linear-gradient(180deg, rgba(14, 11, 24, 0.93), rgba(8, 5, 12, 0.97));
