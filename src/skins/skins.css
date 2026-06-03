@@ -48,6 +48,16 @@
   src: url('../fonts/diablo.woff') format('woff');
 }
 
+@font-face {
+  font-family: 'Squada One';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    url('https://cdn.jsdelivr.net/fontsource/fonts/squada-one@latest/latin-400-normal.woff2') format('woff2'),
+    url('https://cdn.jsdelivr.net/fontsource/fonts/squada-one@latest/latin-400-normal.woff') format('woff');
+}
+
 /* ────────────────────────────────────────────────────────────────────────── */
 
 :root {
@@ -160,6 +170,21 @@
   --path-opacity: 0.95;
   --path-glow: 7;
   --selected-letter-outline: #04121a;
+}
+
+/* Settings skin selector baseline preview for the Void swatch. */
+.skin-void {
+  --tile-font-family: 'Space Mono', ui-monospace, monospace;
+  --tile-font-weight: 700;
+  --tile-font-scale: 1;
+  --tile-radius: 14px;
+  --tile-bg: linear-gradient(145deg, #1e2236, #131824);
+  --tile-border: #2a3148;
+  --tile-letter: #cfd6e1;
+  --tile-selected-bg: linear-gradient(145deg, #0d3a42, #071e26);
+  --tile-selected-border: #00d4e8;
+  --tile-selected-letter: #9af0ff;
+  --tile-selected-glow: rgba(0, 212, 232, 0.4);
 }
 
 /* ── Neon Horizon ── neon skyline with magenta-cyan glow rails and arcade bloom. */
@@ -972,82 +997,152 @@
    --selected-letter-outline: #4a0025;
 }
 
-/* ── 8-Bit Overworld ── Clean 8-bit overworld aesthetics featuring sky blues, brick-red cells, and warp-pipe green trails. */
-.skin-overworld-8bit {
-   /* Background & shell */
-   --bg-center: #5c94fc;             /* canonical nes overworld sky blue */
-   --bg-edge: #4470da;
-   --shell-bg: linear-gradient(180deg, rgba(16, 12, 8, 0.95), rgba(0, 0, 0, 0.98)); /* dark chassis for high text legibility */
-   --shell-border: #fc9838;          /* question block orange frame */
-   --shell-shadow: rgba(0, 0, 0, 0.5);
+/* ── Mushroom Kingdom ── High-fidelity NES arcade chassis layout. Flat overworld graphics, white sprite text, and warp pipe tracking lanes. */
+.skin-mushroom-kingdom {
+  color-scheme: dark;
 
-   /* Chrome & title */
-   --chrome-text: #b8b8b8;
-   --title-color: #ffffff;
-   --title-glow: #fc9838;            /* coins & power-ups flash signature */
+  /* Background & shell */
+  --bg-center: #5c94fc;             /* Flat, uniform 1985 overworld sky blue */
+  --bg-edge: #5c94fc;
+  --shell-bg: linear-gradient(180deg, #000000, #050505); /* Stark black cabinet framing stabilizes focus */
+  --shell-border: #ffffff;          /* White accent borders mimic retro console packaging */
+  --shell-shadow: rgba(0, 0, 0, 0.5);
 
-   /* Buttons */
-   --button-bg: #000000;
-   --button-border: #fc9838;
-   --button-text: #fc9838;
-   --button-hover-bg: rgba(252, 152, 56, 0.12);
-   --button-active-bg: rgba(255, 255, 255, 0.2);
-   --button-active-border: #ffffff;
-   --button-active-text: #ffffff;
+  /* Chrome & interface text */
+  --chrome-text: #ffffff;           /* Stark white status labels handle engine filters without washing out */
+  --title-color: #ffffff;           /* Crisp white headlines match arcade status readouts */
+  --title-glow: #fca044;            /* Brilliant coin gold for archive stars and level metrics */
 
-   /* Tiles */
-   --tile-bg: linear-gradient(145deg, #b83400, #801000); /* ground brick terracotta */
-   --tile-border: #000000;
-   --tile-letter: #ffffff;
-   --tile-selected-bg: linear-gradient(145deg, #fc9838, #bc6800); /* item block flashing gold */
-   --tile-selected-border: #ffffff;
-   --tile-selected-letter: #000000;  /* clean black cutout lettering */
-   --tile-selected-glow: rgba(252, 152, 56, 0.55);
-   --tile-found-bg: linear-gradient(145deg, #00a800, #005800);     /* warp pipe green flash */
-   --tile-found-border: #ffffff;
-   --tile-found-letter: #ffffff;
-   --tile-deactivated-opacity: 0.45;
+  /* Buttons & Stats Cards — Formatted as Overworld ground bricks */
+  --button-bg: #b83400;             /* Saturated NES ground brick terracotta */
+  --button-border: #000000;         /* Clear structural framing lines */
+  --button-text: #ffffff;           /* White text scoring inside the brick matrices */
+  --button-hover-bg: rgba(252, 160, 68, 0.18);
+  --button-active-bg: rgba(0, 252, 0, 0.2);
+  --button-active-border: #00fc00;
+  --button-active-text: #ffffff;
 
-   /* Path / primary action / hints / skin-buttons */
-   --path-color: #00a800;
-   --primary-action-bg: #fc9838;
-   --primary-action-text: #000000;
-   --hint-empty-bg: rgba(0, 0, 0, 0.4);
-   --hint-empty-border: #3a3a3a;
-   --hint-solved-bg: #fc9838;        /* SOLID power-up fill */
-   --hint-solved-border: #ffffff;
-   --hint-solved-letter: #000000;
-   --skin-button-bg: rgba(0, 0, 0, 0.8);
-   --skin-button-border: #fc9838;
-   --skin-button-text: #b8b8b8;
-   --skin-button-active-bg: rgba(252, 152, 56, 0.15);
-   --skin-button-active-border: #fc9838;
-   --skin-button-active-text: #ffffff;
+  /* Primary Action (Play / Share) */
+  --primary-action-bg: #00a800;     /* Green Warp Pipes define focus targets */
+  --primary-action-text: #ffffff;
 
-   /* Typography & shape */
-   --tile-font-family: 'Pixelify Sans', monospace;
-   --tile-font-weight: 700;
-   --tile-font-scale: 1.0;
-   --tile-radius: 0px;               /* strict blocky architecture */
-   --wordmark-font-family: 'Bungee', sans-serif;
-   --wordmark-font-weight: 400;
-   --wordmark-letter-spacing: 0.04em;
-   --display-font-scale: 1.0;
-   --title-text-transform: uppercase;
-   --title-letter-spacing: 0.03em;
-   --title-glow-alpha: 34%;
-   --glow-strength: 0.6;             /* crisp CRT emission feel rather than modern bleed bloom */
+  /* Tiles — Question Blocks that deactivate into empty brick containers when hit */
+  --tile-bg: linear-gradient(145deg, #fcc044, #e45c10);    /* Question Block Gold */
+  --tile-border: #000000;                                   /* Strong pixel-art borders */
+  --tile-letter: #ffffff;                                   /* Pure white sprite letters replace muddy blacks */
+  
+  /* Selection Shift: High-contrast Mario Crimson Red block flash with crisp white letters */
+  --tile-selected-bg: linear-gradient(145deg, #ff3c1a, #b81400); 
+  --tile-selected-border: #000000;
+  --tile-selected-letter: #ffffff;
+  --tile-selected-glow: rgba(228, 18, 0, 0.4);
+  
+  --tile-found-bg: linear-gradient(145deg, #00fc00, #00a800);      /* Warp Pipe green flash */
+  --tile-found-border: #000000;
+  --tile-found-letter: #ffffff;
+  
+  /* Baseline deactivated opacity for universal gameplay consistency across core modes */
+  --tile-deactivated-opacity: 0.45;
 
-   /* Selection ribbon */
-   --path-grad-start: #00fc00;       /* vibrant warp pipe green provides perfect contrast over standard red cells */
-   --path-grad-end: #00a800;
-   --path-width: 8px;
-   --path-cap: butt;                 /* hard pixel termination values */
-   --path-opacity: 1;
-   --path-glow: 0;                   /* strictly flat aesthetic */
-   --selected-letter-outline: #ffffff;
+  /* Selection ribbon */
+  --path-grad-start: #00fc00;       /* Luminous green tracking rail */
+  --path-grad-end: #00a800;         /* Bold secondary trail contrast slicing over blocks */
+  --path-width: 8px;
+  --path-cap: butt;                 /* Rectangular 8-bit connection geometry */
+  --path-opacity: 1;
+  --path-glow: 0;                   /* Disables dropshadow blurs for pixel fidelity */
+  --selected-letter-outline: #000000; /* Crisp shadow border keeps selected text ultra-sharp */
+
+  /* Hints — Transparent arcade HUD slot arrays replace hard black blocks */
+  --hint-empty-bg: rgba(0, 0, 0, 0.4); /* Translucent dark menu row layout */
+  --hint-empty-border: #ffffff;     /* Sharp white bounding grids match status typography */
+  --hint-empty-letter: transparent;
+  --hint-solved-bg: #00a800;        /* Solid Warp Pipe Green slot fill */
+  --hint-solved-border: #ffffff;
+  --hint-solved-letter: #ffffff;
+
+  /* Skin-selector buttons */
+  --skin-button-bg: #b83400;
+  --skin-button-border: #000000;
+  --skin-button-text: #ffffff;
+  --skin-button-active-bg: #00a800;
+  --skin-button-active-border: #000000;
+  --skin-button-active-text: #ffffff;
+
+  /* Typography & font scaling (Precision Font Split) */
+  --tile-font-family: 'Press Start 2P', monospace;
+  --tile-font-weight: 400;
+  --tile-font-scale: var(--tile-scale-press-start);
+  --tile-radius: 0px;               /* Mandatory blocky layouts */
+  --title-font-family: 'Squada One', sans-serif;
+  --title-font-weight: 400;
+  --title-font-scale: 1.8;
+  --title-letter-spacing: 0.03em;
+  --title-text-transform: uppercase;
+
+  /* Wordmarks and UI headers use Squada One for the Mushroom Kingdom display style */
+  --wordmark-font-family: 'Squada One', sans-serif;
+  --wordmark-font-weight: 400;
+  --wordmark-letter-spacing: 0.03em;
+  --display-font-scale: 1.8;        /* Custom calibrated text container scale */
+
+  /* Disables blurred glow blurs completely to match pixel rendering boundaries */
+  --glow-strength: 0;
+  --title-glow-alpha: 0%;
 }
 
+/* Custom 3D Drop-Shadow Blocks — Accurately reconstructs the original box-art look */
+.skin-mushroom-kingdom .view-title,
+.skin-mushroom-kingdom .menu-logo,
+.skin-mushroom-kingdom .win-headline-label {
+  color: #fcecd2 !important;        /* Pure original light cream text fill */
+  text-shadow: 3px 3px 0px #000000, 
+               4px 4px 0px #000000 !important; /* Flat, crisp unblurred black block extrusions */
+  animation: none !important;       /* Hard locks text rendering to prevent alignment issues */
+}
+
+.skin-mushroom-kingdom .header-timer,
+.skin-mushroom-kingdom .win-time {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.55em;
+  padding: 3px 12px 2px;
+  border: 1px solid var(--button-border);
+  border-radius: 10px;
+  background: var(--button-bg);
+  color: var(--title-color);
+  text-shadow: 0 0 0 transparent;
+  box-shadow: 0 2px 0 #000000;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+}
+
+/* Custom Sprite Outline for active gameplay letter matrices to emulate original outline typography */
+.skin-mushroom-kingdom .tile[data-state="idle"] .tile-letter,
+.skin-mushroom-kingdom .tile[data-state="selected"] .tile-letter {
+  text-shadow: 
+    -2px -2px 0 #000000,  
+     2px -2px 0 #000000,
+    -2px  2px 0 #000000,
+     2px  2px 0 #000000,
+    -2px  0px 0 #000000,
+     2px  0px 0 #000000,
+     0px -2px 0 #000000,
+     0px  2px 0 #000000;
+}
+
+/* Override deactivated borders to cleanly blend out into the blue background sky */
+.skin-mushroom-kingdom .tile[data-state="deactivated"] {
+  border-color: #5c94fc !important;
+}
+
+/* Enforce crisp double outlines on active settings selections */
+.skin-mushroom-kingdom .settings-language-button[data-active="true"],
+.skin-mushroom-kingdom .settings-skin-card[data-active="true"] {
+  border: 2px solid #000000 !important;
+  box-shadow: 0 0 0 2px #ffffff !important; 
+}
 
 /* ── 16-Bit Cape ── Rich chocolate island foundations, warm overworld creams, flashing cape-gold selections, and a bright sky-blue trail. */
 .skin-cape-16bit {

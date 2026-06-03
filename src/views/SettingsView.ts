@@ -367,11 +367,11 @@ export class SettingsView {
       left.className = 'settings-skin-left';
 
       // Two-tile preview scoped inside a div carrying the skin's CSS class.
-      // CSS custom properties cascade normally into children, so all --tile-*
-      // variables resolve correctly without any hardcoded values.
+      // CSS custom properties cascade normally into children, so all --tile-
+      // and --tile-selected-* values resolve from the skin stylesheet.
       // Left tile = unselected state, right tile = selected state.
       const skinScope = document.createElement('div');
-      skinScope.className = `settings-skin-preview-scope${skin.id !== 'void' ? ` skin-${skin.id}` : ''}`;
+      skinScope.className = `settings-skin-preview-scope skin-${skin.id}`;
 
       const tileDefault = document.createElement('span');
       tileDefault.className = 'settings-skin-tile settings-skin-tile--default';

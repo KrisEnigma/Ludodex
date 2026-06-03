@@ -2141,11 +2141,11 @@ body {
 }
 
 /* Mini-tile preview in the Settings skin selector. Renders a single
-   tile in the skin's selected-state styling — background gradient,
+   tile in each skin's selected-state styling — background gradient,
    border, glow, letter color — so the player sees a tangible "this
    is what this skin's active tile looks like" instead of three
-   abstract color swatches. Colors are inline-styled per skin (see
-   SettingsView.renderSkinSection), this rule only handles shape. */
+   abstract color swatches. CSS variables come from the skin class
+   applied to the preview scope; this rule only handles shape. */
 /* Scoped container — carries the skin-X class so CSS vars resolve for both tiles */
 .settings-skin-preview-scope {
   display: flex;
