@@ -259,71 +259,61 @@ body {
 
 .tester-confetti-piece {
   position: absolute;
-  width: 12px;
-  height: 18px;
-  border-radius: 3px;
-  box-shadow: 0 0 10px currentColor;
-  border: 1px solid color-mix(in srgb, currentColor 70%, #ffffff 30%);
-  background: color-mix(in srgb, currentColor 85%, transparent);
+  width: 18px;
+  height: 28px;
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.18);
 }
 
 .tester-confetti-a {
-  top: 8%;
-  left: 10%;
-  color: var(--title-glow);
-  transform: rotate(24deg);
-}
-
-.tester-confetti-b {
-  top: 12%;
-  left: 24%;
-  color: var(--path-grad-start);
+  top: 14%;
+  left: 20%;
   transform: rotate(-18deg);
 }
 
+.tester-confetti-b {
+  top: 28%;
+  left: 38%;
+  transform: rotate(14deg);
+}
+
 .tester-confetti-c {
-  top: 9%;
-  right: 12%;
-  color: var(--path-grad-end);
-  transform: rotate(12deg);
+  top: 18%;
+  right: 18%;
+  transform: rotate(-6deg);
 }
 
 .tester-confetti-d {
-  top: 16%;
-  right: 27%;
-  color: var(--tile-selected-border);
-  transform: rotate(-28deg);
+  bottom: 24%;
+  left: 26%;
+  transform: rotate(24deg);
 }
 
 .tester-confetti-e {
-  top: 19%;
-  left: 43%;
-  color: var(--title-color);
-  transform: rotate(8deg);
+  bottom: 18%;
+  right: 28%;
+  transform: rotate(-21deg);
 }
 
 .tester-confetti-f {
-  top: 7%;
-  right: 34%;
-  color: var(--primary-action-bg);
-  transform: rotate(-10deg);
+  top: 10%;
+  right: 40%;
+  transform: rotate(9deg);
 }
 
 .tester-confetti-g {
-  top: 15%;
-  left: 60%;
-  color: var(--tile-selected-letter);
-  transform: rotate(30deg);
+  bottom: 40%;
+  left: 12%;
+  transform: rotate(-12deg);
 }
 
 .tester-confetti-h {
-  top: 22%;
-  right: 45%;
-  color: var(--title-glow);
-  transform: rotate(-35deg);
+  bottom: 12%;
+  right: 10%;
+  transform: rotate(16deg);
 }
 
-@media (max-width: 760px) {
+@media (max-width: 900px) {
   .skin-tester-page {
     padding: 12px;
   }
@@ -333,7 +323,6 @@ body {
   }
 
   .tester-stage-grid {
-    grid-template-columns: repeat(2, minmax(320px, 1fr));
+    grid-template-columns: 1fr;
   }
-
 }
