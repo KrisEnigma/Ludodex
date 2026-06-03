@@ -562,15 +562,15 @@ body {
 
 .view-title {
   margin: 0;
-  font-size: calc(var(--type-h1) * var(--display-font-scale, 1));
-  /* Level/win title follows the skin's display font (same family as the
-     LUDODEX wordmark). Weight tracks the wordmark too, so single-weight
-     display fonts (e.g. VT323 400) don't get faux-bolded. */
-  font-family: var(--wordmark-font-family, 'Space Mono', ui-monospace, monospace);
-  font-weight: var(--wordmark-font-weight, 700);
-  letter-spacing: 0.04em;
+  font-size: calc(var(--type-h1) * var(--title-font-scale, var(--display-font-scale, 1)));
+  /* Level/win title follows the skin title typography tokens; defaults fall
+     back to wordmark tokens so older skins remain compatible. */
+  font-family: var(--title-font-family, var(--wordmark-font-family, 'Space Mono', ui-monospace, monospace));
+  font-weight: var(--title-font-weight, var(--wordmark-font-weight, 700));
+  letter-spacing: var(--title-letter-spacing, 0.04em);
+  text-transform: var(--title-text-transform, none);
   color: var(--title-color);
-  text-shadow: 0 0 12px color-mix(in srgb, var(--title-glow) 40%, transparent);
+  text-shadow: 0 0 12px color-mix(in srgb, var(--title-glow) var(--title-glow-alpha, 40%), transparent);
 }
 
 .view-subtitle {
@@ -1256,12 +1256,12 @@ body {
 .menu-logo {
   width: 100%;
   text-align: center;
-  font-family: var(--wordmark-font-family, 'Space Mono', ui-monospace, monospace);
-  font-weight: var(--wordmark-font-weight, 700);
-  letter-spacing: var(--wordmark-letter-spacing, 0.18em);
+  font-family: var(--title-font-family, var(--wordmark-font-family, 'Space Mono', ui-monospace, monospace));
+  font-weight: var(--title-font-weight, var(--wordmark-font-weight, 700));
+  letter-spacing: var(--title-letter-spacing, var(--wordmark-letter-spacing, 0.18em));
   line-height: 1.05;
   margin: 0 0 22px;
-  font-size: calc(var(--type-display-s) * var(--display-font-scale, 1));
+  font-size: calc(var(--type-display-s) * var(--title-font-scale, var(--wordmark-font-scale, var(--display-font-scale, 1))));
   color: var(--title-glow);
   text-shadow: 0 0 calc(14px * var(--glow-strength, 1)) color-mix(in srgb, var(--title-glow) 30%, transparent);
 }

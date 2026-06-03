@@ -1,4 +1,4 @@
-export type SkinId = 'void' | 'lumen' | 'synthwave' | 'gameboy' | 'terminal' | 'phosphor' | 'bios' | 'pastel' | 'toaster' | 'inferno' | 'aperture' | 'polygon' | 'ring' | 'spirit' | 'phobos' | 'crimson' | 'underworld';
+export type SkinId = 'void' | 'lumen' | 'synthwave' | 'vector' | 'cabinet' | 'zerg' | 'phantom' | 'catalyst' | 'yharnam' | 'aero' | 'zebes' | 'hyrule-antique' | 'dream-land' | 'kingdom' | 'dinosaur-land' | 'green-hill' | 'kamurocho' | 'graffiti-soul' | 'cyber-shinobi' | 'gameboy' | 'terminal' | 'phosphor' | 'bios' | 'pastel' | 'toaster' | 'inferno' | 'aperture' | 'polygon' | 'ring' | 'spirit' | 'phobos' | 'crimson' | 'underworld';
 
 /**
  * Tile-shaped preview token set. Drives the mini-tile shown in the Settings
@@ -91,6 +91,230 @@ export const SKINS: SkinMeta[] = [
       font: "'Orbitron', sans-serif",
       radius: '10px',
       scale: 0.84
+    }
+  },
+  {
+    id: 'vector',
+    name: 'Vector',
+    productId: null,
+    previewTile: {
+      bg: 'linear-gradient(145deg, #004050, #001a24)',
+      border: '#00f0ff',
+      letter: '#ffffff',
+      glow: 'rgba(0, 240, 255, 0.5)',
+      font: "'Orbitron', sans-serif",
+      radius: '4px',
+      scale: 0.84
+    }
+  },
+  {
+    id: 'cabinet',
+    name: 'Cabinet',
+    productId: null,
+    previewTile: {
+      bg: 'linear-gradient(145deg, #181826, #050510)',
+      border: '#ffde00',
+      letter: '#ffde00',
+      glow: 'rgba(255, 222, 0, 0.45)',
+      font: "'Press Start 2P', monospace",
+      radius: '0',
+      scale: 0.62
+    }
+  },
+  {
+    id: 'zerg',
+    name: 'Zerg',
+    productId: null,
+    previewTile: {
+      bg: 'linear-gradient(145deg, #7a1f60, #3a0a2c)',
+      border: '#ff66d4',
+      letter: '#ffffff',
+      glow: 'rgba(255, 102, 212, 0.5)',
+      font: "'Orbitron', sans-serif",
+      radius: '12px',
+      scale: 0.84
+    }
+  },
+  {
+    id: 'phantom',
+    name: 'Phantom',
+    productId: null,
+    previewTile: {
+      bg: 'linear-gradient(145deg, #ff1235, #8a0013)',
+      border: '#ffffff',
+      letter: '#ffffff',
+      glow: 'rgba(255, 27, 61, 0.62)',
+      font: "'Oswald', sans-serif",
+      radius: '3px',
+      scale: 0.92
+    }
+  },
+  {
+    id: 'catalyst',
+    name: 'Catalyst',
+    productId: null,
+    previewTile: {
+      bg: 'linear-gradient(145deg, #222630, #11141a)',
+      border: '#11141a',
+      letter: '#ffffff',
+      glow: 'rgba(0, 0, 0, 0.15)',
+      font: "'Antonio', sans-serif",
+      radius: '6px',
+      scale: 0.95
+    }
+  },
+  {
+    id: 'yharnam',
+    name: 'Yharnam',
+    productId: null,
+    previewTile: {
+      bg: 'linear-gradient(145deg, #300c14, #180307)',
+      border: '#801a24',
+      letter: '#ffffff',
+      glow: 'rgba(128, 26, 36, 0.5)',
+      font: "'Almendra', serif",
+      radius: '2px',
+      scale: 0.9
+    }
+  },
+  {
+    id: 'aero',
+    name: 'Aero',
+    productId: null,
+    previewTile: {
+      bg: 'linear-gradient(145deg, #3da7e1, #106294)',
+      border: '#7ec5f0',
+      letter: '#ffffff',
+      glow: 'rgba(61, 167, 225, 0.5)',
+      font: "'Comfortaa', cursive",
+      radius: '16px',
+      scale: 0.88
+    }
+  },
+  {
+    id: 'zebes',
+    name: 'Zebes',
+    productId: null,
+    previewTile: {
+      bg: 'linear-gradient(145deg, #e65c00, #993d00)',
+      border: '#ff944d',
+      letter: '#ffffff',
+      glow: 'rgba(230, 92, 0, 0.6)',
+      font: "'Share Tech Mono', monospace",
+      radius: '6px',
+      scale: 1.02
+    }
+  },
+  {
+    id: 'hyrule-antique',
+    name: 'Hyrule Antique',
+    productId: null,
+    previewTile: {
+      bg: 'linear-gradient(145deg, #1f4480, #0f2447)',
+      border: '#4682b4',
+      letter: '#ffffff',
+      glow: 'rgba(31, 68, 128, 0.6)',
+      font: "'Almendra', serif",
+      radius: '4px',
+      scale: 0.88
+    }
+  },
+  {
+    id: 'dream-land',
+    name: 'Dream Land',
+    productId: null,
+    previewTile: {
+      bg: 'linear-gradient(145deg, #ff66b2, #cc3377)',
+      border: '#ff99cc',
+      letter: '#ffffff',
+      glow: 'rgba(255, 102, 178, 0.6)',
+      font: "'Comfortaa', cursive",
+      radius: '16px',
+      scale: 0.85
+    }
+  },
+  {
+    id: 'kingdom',
+    name: 'Kingdom',
+    productId: null,
+    previewTile: {
+      bg: 'linear-gradient(145deg, #fc9838, #bc6800)',
+      border: '#ffffff',
+      letter: '#000000',
+      glow: 'rgba(252, 152, 56, 0.55)',
+      font: "'Pixelify Sans', monospace",
+      radius: '0',
+      scale: 1
+    }
+  },
+  {
+    id: 'dinosaur-land',
+    name: 'Dinosaur Land',
+    productId: null,
+    previewTile: {
+      bg: 'linear-gradient(145deg, #ffcc00, #cc9900)',
+      border: '#ffffff',
+      letter: '#1a0d00',
+      glow: 'rgba(255, 204, 0, 0.6)',
+      font: "'DotGothic16', sans-serif",
+      radius: '8px',
+      scale: 1.05
+    }
+  },
+  {
+    id: 'green-hill',
+    name: 'Green Hill',
+    productId: null,
+    previewTile: {
+      bg: 'linear-gradient(145deg, #0055ff, #0022aa)',
+      border: '#80b3ff',
+      letter: '#ffffff',
+      glow: 'rgba(0, 85, 255, 0.6)',
+      font: "'Rubik Mono One', sans-serif",
+      radius: '12px',
+      scale: 0.82
+    }
+  },
+  {
+    id: 'kamurocho',
+    name: 'Kamurocho',
+    productId: null,
+    previewTile: {
+      bg: 'linear-gradient(145deg, #d6001c, #4a0005)',
+      border: '#ff4d62',
+      letter: '#ffffff',
+      glow: 'rgba(214, 0, 28, 0.55)',
+      font: "'RocknRoll One', sans-serif",
+      radius: '2px',
+      scale: 0.85
+    }
+  },
+  {
+    id: 'graffiti-soul',
+    name: 'Graffiti Soul',
+    productId: null,
+    previewTile: {
+      bg: 'linear-gradient(145deg, #00e676, #006020)',
+      border: '#000000',
+      letter: '#ffffff',
+      glow: 'rgba(0, 230, 118, 0.4)',
+      font: "'Permanent Marker', cursive",
+      radius: '8px',
+      scale: 0.9
+    }
+  },
+  {
+    id: 'cyber-shinobi',
+    name: 'Cyber Shinobi',
+    productId: null,
+    previewTile: {
+      bg: 'linear-gradient(145deg, #ffffff, #99aab8)',
+      border: '#ffffff',
+      letter: '#05081a',
+      glow: 'rgba(255, 255, 255, 0.5)',
+      font: "'Electrolize', sans-serif",
+      radius: '0',
+      scale: 0.98
     }
   },
   {
@@ -204,7 +428,7 @@ export const SKINS: SkinMeta[] = [
       letter: '#ffffff',
       glow: 'rgba(39, 167, 216, 0.55)',
       font: "'Oswald', sans-serif",
-      radius: '10px',
+      radius: '0',
       scale: 0.92
     }
   },

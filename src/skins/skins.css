@@ -116,6 +116,8 @@
   --wordmark-font-family: 'Space Mono', ui-monospace, monospace;
   --wordmark-font-weight: 700;
   --wordmark-letter-spacing: 0.18em;
+  --title-font-family: var(--wordmark-font-family);
+  --title-font-weight: var(--wordmark-font-weight);
   /* Per-font display-size corrections. Different fonts fill their em-box
      differently; these keep the wordmark + level title a consistent visual
      size. Defined once here and referenced by skins, so a font shared across
@@ -129,7 +131,14 @@
   --display-scale-oswald: 0.95;  /* Oswald condensed wordmark (Aperture) */
   /* Active display-font scale for this skin (Space Mono baseline = 1.0). */
   --display-font-scale: 1;
+  /* Optional split controls. If unset by a skin, both fall back to
+     --display-font-scale for current behavior. */
+  --title-font-scale: var(--display-font-scale);
+  --wordmark-font-scale: var(--display-font-scale);
+  --title-letter-spacing: 0.04em;
+  --title-text-transform: none;
   --glow-strength: 1;            /* multiplier on selection/wordmark glow blur */
+  --title-glow-alpha: 40%;       /* level/win title shadow intensity */
 
   /* ── Selection ribbon (void baseline) ──
      The swipe trail is drawn as per-segment strokes under the tile letters
@@ -209,6 +218,1208 @@
   --path-opacity: 0.95;
   --path-glow: 14;
   --selected-letter-outline: #3a0830;
+}
+
+/* ── Vector ── Retro-futuristic arcade vector graphics theme with glowing neon beams. */
+.skin-vector {
+   /* Background & shell */
+  --bg-center: #040507;
+  --bg-edge: #000000;
+  --shell-bg: linear-gradient(180deg, rgba(5, 6, 10, 0.9), rgba(0, 0, 0, 0.95));
+  --shell-border: #1a2233;
+
+   /* Chrome & title */
+  --chrome-text: #5b6c8f;
+  --title-color: #ffffff;
+  --title-glow: #00f0ff;            /* signature accent */
+
+   /* Buttons */
+  --button-bg: #0a0f1d;
+  --button-border: #162342;
+  --button-text: #00f0ff;
+  --button-hover-bg: rgba(0, 240, 255, 0.1);
+  --button-active-bg: rgba(0, 240, 255, 0.2);
+  --button-active-border: #00f0ff;
+  --button-active-text: #ffffff;
+
+   /* Tiles */
+  --tile-bg: linear-gradient(145deg, #070b14, #020408);
+  --tile-border: #162342;
+  --tile-letter: #8ba3cb;
+  --tile-selected-bg: linear-gradient(145deg, #004050, #001a24);
+  --tile-selected-border: #00f0ff;
+  --tile-selected-letter: #ffffff;
+  --tile-selected-glow: rgba(0, 240, 255, 0.5);
+  --tile-found-bg: linear-gradient(145deg, #ff007f, #99004c);
+  --tile-found-border: #ff66b2;
+  --tile-found-letter: #ffffff;
+
+   /* Path / primary action / hints / skin-buttons */
+  --path-color: #ff007f;
+  --primary-action-bg: #ff007f;
+  --primary-action-text: #ffffff;
+  --hint-empty-bg: rgba(10, 15, 29, 0.3);
+  --hint-empty-border: #162342;
+  --hint-solved-bg: #00f0ff;        /* SOLID, not a gradient */
+  --hint-solved-border: #80f7ff;
+  --hint-solved-letter: #001a24;    /* must contrast --hint-solved-bg */
+  --skin-button-bg: rgba(10, 15, 29, 0.8);
+  --skin-button-border: #162342;
+  --skin-button-text: #8ba3cb;
+  --skin-button-active-bg: rgba(0, 240, 255, 0.15);
+  --skin-button-active-border: #00f0ff;
+  --skin-button-active-text: #ffffff;
+
+   /* Typography & shape */
+  --tile-font-family: 'Orbitron', sans-serif;
+  --tile-font-weight: 700;
+  --tile-font-scale: var(--tile-scale-orbitron);
+  --tile-radius: 4px;
+  --wordmark-font-family: 'Orbitron', sans-serif;
+  --wordmark-font-weight: 700;
+  --wordmark-letter-spacing: 0.14em;
+  --display-font-scale: var(--display-scale-orbitron);
+  --glow-strength: 1.5;
+
+   /* Selection ribbon */
+  --path-grad-start: #ff007f;
+  --path-grad-end: #ff55aa;
+  --path-width: 8px;
+  --path-cap: round;
+  --path-opacity: 0.95;
+  --path-glow: 12;
+  --selected-letter-outline: #001a24;  /* contrasts the selected letter */
+}
+
+/* ── Cabinet ── Classic arcade cabinet aesthetic with deep maze black, electric blue borders, and neon ghost paths. */
+.skin-cabinet {
+   /* Background & shell */
+  --bg-center: #000000;
+  --bg-edge: #050508;
+  --shell-bg: linear-gradient(180deg, rgba(10, 10, 15, 0.95), rgba(0, 0, 0, 1));
+  --shell-border: #2121de;
+
+   /* Chrome & title */
+  --chrome-text: #5555ff;
+  --title-color: #ffffff;
+  --title-glow: #ffde00;            /* signature pac-man yellow accent */
+
+   /* Buttons */
+  --button-bg: #0b0b14;
+  --button-border: #2121de;
+  --button-text: #ffde00;
+  --button-hover-bg: rgba(33, 33, 222, 0.15);
+  --button-active-bg: rgba(255, 222, 0, 0.2);
+  --button-active-border: #ffde00;
+  --button-active-text: #ffffff;
+
+   /* Tiles */
+  --tile-bg: linear-gradient(145deg, #101015, #000000);
+  --tile-border: #2121de;
+  --tile-letter: #ffffff;
+  --tile-selected-bg: linear-gradient(145deg, #181826, #050510);
+  --tile-selected-border: #ffde00;
+  --tile-selected-letter: #ffde00;
+  --tile-selected-glow: rgba(255, 222, 0, 0.45);
+  --tile-found-bg: linear-gradient(145deg, #00ffff, #008899);
+  --tile-found-border: #80ffff;
+  --tile-found-letter: #000000;
+
+   /* Path / primary action / hints / skin-buttons */
+  --path-color: #00ffff;
+  --primary-action-bg: #ffde00;
+  --primary-action-text: #000000;
+  --hint-empty-bg: rgba(11, 11, 20, 0.3);
+  --hint-empty-border: #2121de;
+  --hint-solved-bg: #ffde00;        /* SOLID, not a gradient */
+  --hint-solved-border: #2121de;
+  --hint-solved-letter: #000000;    /* must contrast --hint-solved-bg */
+  --skin-button-bg: rgba(11, 11, 20, 0.85);
+  --skin-button-border: #2121de;
+  --skin-button-text: #8ba3cb;
+  --skin-button-active-bg: rgba(255, 222, 0, 0.15);
+  --skin-button-active-border: #ffde00;
+  --skin-button-active-text: #ffffff;
+
+   /* Typography & shape */
+  --tile-font-family: 'Press Start 2P', monospace;
+  --tile-font-weight: 400;
+  --tile-font-scale: var(--tile-scale-press-start);
+  --tile-radius: 0px;
+  --wordmark-font-family: 'Silkscreen', monospace;
+  --wordmark-font-weight: 700;
+  --wordmark-letter-spacing: 0.06em;
+  --display-font-scale: var(--display-scale-silkscreen);
+  --glow-strength: 1.1;
+
+   /* Selection ribbon */
+  --path-grad-start: #00ffff;       /* == end for a flat arcade ribbon */
+  --path-grad-end: #00ffff;
+  --path-width: 7px;
+  --path-cap: butt;                 /* square pixel caps */
+  --path-opacity: 1;
+  --path-glow: 6;
+  --selected-letter-outline: #000000;  /* contrasts the selected letter */
+}
+
+/* ── Zerg ── StarCraft-inspired alien look with organic carapace purples, creep magentas, and toxic acid beams. */
+.skin-zerg {
+   /* Background & shell */
+  --bg-center: #160526;
+  --bg-edge: #06010c;
+  --shell-bg: linear-gradient(180deg, rgba(22, 5, 38, 0.92), rgba(10, 2, 18, 0.97));
+  --shell-border: #3a105c;
+
+   /* Chrome & title */
+  --chrome-text: #8560b8;
+  --title-color: #f0e6ff;
+  --title-glow: #39e832;            /* toxic signature accent */
+
+   /* Buttons */
+  --button-bg: #120320;
+  --button-border: #3a105c;
+  --button-text: #39e832;
+  --button-hover-bg: rgba(57, 232, 50, 0.08);
+  --button-active-bg: rgba(57, 232, 50, 0.15);
+  --button-active-border: #39e832;
+  --button-active-text: #ffffff;
+
+   /* Tiles */
+  --tile-bg: linear-gradient(145deg, #22063a, #0e021a);
+  --tile-border: #3a105c;
+  --tile-letter: #cfb2f0;
+  --tile-selected-bg: linear-gradient(145deg, #7a1f60, #3a0a2c); /* pulsing creep magenta */
+  --tile-selected-border: #ff66d4;
+  --tile-selected-letter: #ffffff;
+  --tile-selected-glow: rgba(255, 102, 212, 0.5);
+  --tile-found-bg: linear-gradient(145deg, #39e832, #187a15);     /* acid splash */
+  --tile-found-border: #7bf06e;
+  --tile-found-letter: #ffffff;
+
+   /* Path / primary action / hints / skin-buttons */
+  --path-color: #39e832;
+  --primary-action-bg: #39e832;
+  --primary-action-text: #06010c;
+  --hint-empty-bg: rgba(22, 5, 38, 0.25);
+  --hint-empty-border: #3a105c;
+  --hint-solved-bg: #39e832;        /* SOLID, not a gradient */
+  --hint-solved-border: #7bf06e;
+  --hint-solved-letter: #06010c;    /* must contrast --hint-solved-bg */
+  --skin-button-bg: rgba(18, 4, 30, 0.85);
+  --skin-button-border: #3a105c;
+  --skin-button-text: #8560b8;
+  --skin-button-active-bg: rgba(57, 232, 50, 0.15);
+  --skin-button-active-border: #39e832;
+  --skin-button-active-text: #ffffff;
+
+   /* Typography & shape */
+  --tile-font-family: 'Orbitron', sans-serif;
+  --tile-font-weight: 700;
+  --tile-font-scale: var(--tile-scale-orbitron);
+  --tile-radius: 12px;              /* organic armor plating curves */
+  --wordmark-font-family: 'Orbitron', sans-serif;
+  --wordmark-font-weight: 700;
+  --wordmark-letter-spacing: 0.14em;
+  --display-font-scale: var(--display-scale-orbitron);
+  --glow-strength: 1.4;
+
+   /* Selection ribbon */
+  --path-grad-start: #39e832;       /* acidic green-yellow beam */
+  --path-grad-end: #a8f032;         /* pops cleanly over the creep magenta tiles */
+  --path-width: 9px;
+  --path-cap: round;
+  --path-opacity: 0.95;
+  --path-glow: 10;
+  --selected-letter-outline: #3a0a2c; /* contrasts the selected letter */
+}
+
+/* ── Phantom ── Persona 5-inspired picaresque style featuring raw crimson red, stark solid blacks, and cutout whites. */
+.skin-phantom {
+   /* Background & shell */
+  --bg-center: #1a0003;
+  --bg-edge: #000000;
+  --shell-bg: linear-gradient(180deg, rgba(20, 0, 3, 0.95), rgba(0, 0, 0, 1));
+  --shell-border: #d6001c;
+
+   /* Chrome & title */
+  --chrome-text: #b79ca0;
+  --title-color: #ffffff;
+  --title-glow: #ff1b3d;            /* phantom crimson accent */
+
+   /* Buttons */
+  --button-bg: #050505;
+  --button-border: #d6001c;
+  --button-text: #ffffff;
+  --button-hover-bg: rgba(214, 0, 28, 0.15);
+  --button-active-bg: rgba(214, 0, 28, 0.28);
+  --button-active-border: #ffffff;
+  --button-active-text: #ffffff;
+
+   /* Tiles */
+  --tile-bg: linear-gradient(145deg, #121212, #000000);
+  --tile-border: #3a0a12;
+  --tile-letter: #ffffff;
+  --tile-selected-bg: linear-gradient(145deg, #ff1235, #8a0013);
+  --tile-selected-border: #ffffff;
+  --tile-selected-letter: #ffffff;
+  --tile-selected-glow: rgba(255, 27, 61, 0.62);
+  --tile-found-bg: linear-gradient(145deg, #ffffff, #e7e7e7);
+  --tile-found-border: #ffffff;
+  --tile-found-letter: #000000;
+
+   /* Path / primary action / hints / skin-buttons */
+  --path-color: #ffffff;
+  --primary-action-bg: #d6001c;
+  --primary-action-text: #ffffff;
+  --hint-empty-bg: rgba(0, 0, 0, 0.4);
+  --hint-empty-border: #2a2a2a;
+  --hint-solved-bg: #d6001c;        /* SOLID crimson fill */
+  --hint-solved-border: #ffffff;
+  --hint-solved-letter: #ffffff;    /* must contrast --hint-solved-bg */
+  --skin-button-bg: rgba(10, 0, 2, 0.85);
+  --skin-button-border: #d6001c;
+  --skin-button-text: #b79ca0;
+  --skin-button-active-bg: rgba(255, 255, 255, 0.15);
+  --skin-button-active-border: #ffffff;
+  --skin-button-active-text: #ffffff;
+
+   /* Typography & shape */
+  --tile-font-family: 'Oswald', sans-serif;
+  --tile-font-weight: 500;
+  --tile-font-scale: var(--tile-scale-oswald);
+  --tile-radius: 3px;               /* sharp, stylized angles */
+  --wordmark-font-family: 'Oswald', sans-serif;
+  --wordmark-font-weight: 600;
+  --wordmark-letter-spacing: 0.08em;
+  --display-font-scale: var(--display-scale-oswald);
+  --title-font-scale: 1.12;
+  --title-letter-spacing: 0;
+  --title-text-transform: uppercase;
+  --title-glow-alpha: 55%;
+  --glow-strength: 1.3;
+
+   /* Selection ribbon */
+  --path-grad-start: #ffffff;       /* flat stark white ribbon */
+  --path-grad-end: #ffffff;         /* completely slices across the crimson tiles */
+  --path-width: 10px;
+  --path-cap: butt;
+  --path-opacity: 0.98;
+  --path-glow: 7;
+  --selected-letter-outline: #000000;  /* keeps the white letters crisp against a white ribbon */
+}
+
+/* ── Catalyst ── Dystopian minimalist clean layout with sterile whites, slate typography, and high-velocity orange routes. */
+.skin-catalyst {
+   color-scheme: light;
+
+   /* Background & shell */
+  --bg-center: #fdfdfd;
+  --bg-edge: #e6e8eb;
+  --shell-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(240, 242, 245, 0.98));
+  --shell-border: #cbd0d8;
+
+   /* Chrome & title */
+  --chrome-text: #606877;
+  --title-color: #11141a;
+  --title-glow: #e63400;            /* deep opaque action orange */
+
+   /* Buttons */
+  --button-bg: #ffffff;
+  --button-border: #cbd0d8;
+  --button-text: #11141a;
+  --button-hover-bg: rgba(230, 52, 0, 0.08);
+  --button-active-bg: rgba(230, 52, 0, 0.15);
+  --button-active-border: #e63400;
+  --button-active-text: #11141a;
+
+   /* Tiles */
+  --tile-bg: linear-gradient(145deg, #ffffff, #e1e4e8);
+  --tile-border: #cbd0d8;
+  --tile-letter: #11141a;
+  --tile-selected-bg: linear-gradient(145deg, #222630, #11141a); /* stark contrast flip */
+  --tile-selected-border: #11141a;
+  --tile-selected-letter: #ffffff;
+  --tile-selected-glow: rgba(0, 0, 0, 0.15);
+  --tile-found-bg: linear-gradient(145deg, #ff5522, #e63400);
+  --tile-found-border: #ff7744;
+  --tile-found-letter: #ffffff;
+
+   /* Path / primary action / hints / skin-buttons */
+  --path-color: #e63400;
+  --primary-action-bg: #e63400;
+  --primary-action-text: #ffffff;
+  --hint-empty-bg: rgba(0, 0, 0, 0.05);
+  --hint-empty-border: #cbd0d8;
+  --hint-solved-bg: #e63400;        /* SOLID, not a gradient */
+  --hint-solved-border: #ff7744;
+  --hint-solved-letter: #ffffff;
+  --skin-button-bg: rgba(255, 255, 255, 0.8);
+  --skin-button-border: #cbd0d8;
+  --skin-button-text: #606877;
+  --skin-button-active-bg: rgba(230, 52, 0, 0.15);
+  --skin-button-active-border: #e63400;
+  --skin-button-active-text: #ffffff;
+
+   /* Typography & shape */
+  --tile-font-family: 'Antonio', sans-serif;
+  --tile-font-weight: 700;
+  --tile-font-scale: 0.95;
+  --tile-radius: 6px;
+  --wordmark-font-family: 'Syncopate', sans-serif;
+  --wordmark-font-weight: 700;
+  --wordmark-letter-spacing: 0.25em;
+  --display-font-scale: 0.8;
+  --title-text-transform: uppercase;
+  --title-letter-spacing: 0.06em;
+  --title-glow-alpha: 22%;
+  --glow-strength: 0.4;
+
+   /* Selection ribbon */
+  --path-grad-start: #e63400;       /* pure safety trail cuts over the dark selection blocks */
+  --path-grad-end: #ff5522;
+  --path-width: 8px;
+  --path-cap: round;
+  --path-opacity: 0.95;
+  --path-glow: 4;
+  --selected-letter-outline: #11141a;
+}
+
+/* ── Yharnam ── Grim Victorian gothic atmosphere with cold blood-moon accents and a thick coagulated crimson trail. */
+.skin-yharnam {
+   /* Background & shell */
+  --bg-center: #121318;
+  --bg-edge: #08090c;
+  --shell-bg: linear-gradient(180deg, rgba(16, 18, 24, 0.94), rgba(8, 9, 12, 0.98));
+  --shell-border: #2c3240;
+
+   /* Chrome & title */
+  --chrome-text: #6f788a;
+  --title-color: #d2d6de;
+  --title-glow: #b82531;            /* pale hunt red signature */
+
+   /* Buttons */
+  --button-bg: #14161f;
+  --button-border: #2c3240;
+  --button-text: #b82531;
+  --button-hover-bg: rgba(184, 37, 49, 0.1);
+  --button-active-bg: rgba(184, 37, 49, 0.2);
+  --button-active-border: #b82531;
+  --button-active-text: #ffffff;
+
+   /* Tiles */
+  --tile-bg: linear-gradient(145deg, #1d212c, #10121a);
+  --tile-border: #2c3240;
+  --tile-letter: #8ca0ba;
+  --tile-selected-bg: linear-gradient(145deg, #300c14, #180307); /* deep bruised overcoat tint */
+  --tile-selected-border: #801a24;
+  --tile-selected-letter: #ffffff;
+  --tile-selected-glow: rgba(128, 26, 36, 0.5);
+  --tile-found-bg: linear-gradient(145deg, #80000a, #400003);
+  --tile-found-border: #b82531;
+  --tile-found-letter: #ffffff;
+  --tile-deactivated-opacity: 0.45;
+
+   /* Path / primary action / hints / skin-buttons */
+  --path-color: #80000a;
+  --primary-action-bg: #80000a;
+  --primary-action-text: #ffffff;
+  --hint-empty-bg: rgba(16, 18, 24, 0.4);
+  --hint-empty-border: #2c3240;
+  --hint-solved-bg: #80000a;        /* SOLID */
+  --hint-solved-border: #b82531;
+  --hint-solved-letter: #ffffff;
+  --skin-button-bg: rgba(16, 18, 24, 0.85);
+  --skin-button-border: #2c3240;
+  --skin-button-text: #6f788a;
+  --skin-button-active-bg: rgba(184, 37, 49, 0.2);
+  --skin-button-active-border: #b82531;
+  --skin-button-active-text: #ffffff;
+
+   /* Typography & shape */
+  --tile-font-family: 'Almendra', serif;
+  --tile-font-weight: 700;
+  --tile-font-scale: 0.9;
+  --tile-radius: 2px;               /* sharp historic cuts */
+  --wordmark-font-family: 'UnifrakturMaguntia', serif;
+  --wordmark-font-weight: 400;
+  --wordmark-letter-spacing: 0.08em;
+  --title-font-family: 'Almendra', serif;
+  --title-font-weight: 700;
+  --display-font-scale: 1.3;
+  --title-glow-alpha: 45%;
+  --glow-strength: 1.1;
+
+   /* Selection ribbon */
+  --path-grad-start: #5a0005;       /* coagulated dark-to-light red gradient */
+  --path-grad-end: #9e000c;
+  --path-width: 10px;
+  --path-cap: round;
+  --path-opacity: 0.95;
+  --path-glow: 8;
+  --selected-letter-outline: #180307;
+}
+
+/* ── Aero ── Glossy mid-2000s tech style with fluid gradients, glassy panels, and a radioactive loop trail. */
+.skin-aero {
+   color-scheme: light;
+
+   /* Background & shell */
+  --bg-center: #dcf2fd;
+  --bg-edge: #aeddf5;
+  --shell-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(220, 240, 253, 0.92));
+  --shell-border: rgba(255, 255, 255, 0.6);
+  --shell-shadow: rgba(40, 60, 80, 0.15);
+
+   /* Chrome & title */
+  --chrome-text: #456885;
+  --title-color: #123456;
+  --title-glow: #1f82c0;            /* deep glass blue */
+
+   /* Buttons */
+  --button-bg: rgba(255, 255, 255, 0.6);
+  --button-border: rgba(255, 255, 255, 0.8);
+  --button-text: #1f82c0;
+  --button-hover-bg: rgba(61, 167, 225, 0.12);
+  --button-active-bg: rgba(61, 167, 225, 0.22);
+  --button-active-border: #3da7e1;
+  --button-active-text: #0b4566;
+
+   /* Tiles */
+  --tile-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 248, 255, 0.7) 50%, rgba(215, 235, 250, 0.8) 100%);
+  --tile-border: rgba(255, 255, 255, 0.9);
+  --tile-letter: #1a3a54;
+  --tile-selected-bg: linear-gradient(145deg, #3da7e1, #106294); /* water-cool pump fill */
+  --tile-selected-border: #7ec5f0;
+  --tile-selected-letter: #ffffff;
+  --tile-selected-glow: rgba(61, 167, 225, 0.5);
+  --tile-found-bg: linear-gradient(145deg, #39e832, #1bb018);
+  --tile-found-border: #7bf06e;
+  --tile-found-letter: #ffffff;
+  --tile-deactivated-opacity: 0.45;
+
+   /* Path / primary action / hints / skin-buttons */
+  --path-color: #39e832;
+  --primary-action-bg: #3da7e1;
+  --primary-action-text: #ffffff;
+  --hint-empty-bg: rgba(255, 255, 255, 0.4);
+  --hint-empty-border: rgba(255, 255, 255, 0.7);
+  --hint-solved-bg: #3da7e1;        /* SOLID */
+  --hint-solved-border: #7ec5f0;
+  --hint-solved-letter: #ffffff;
+  --skin-button-bg: rgba(255, 255, 255, 0.7);
+  --skin-button-border: rgba(255, 255, 255, 0.8);
+  --skin-button-text: #456885;
+  --skin-button-active-bg: rgba(61, 167, 225, 0.22);
+  --skin-button-active-border: #3da7e1;
+  --skin-button-active-text: #0b4566;
+
+   /* Typography & shape */
+  --tile-font-family: 'Comfortaa', cursive;
+  --tile-font-weight: 700;
+  --tile-font-scale: 0.88;
+  --tile-radius: 16px;              /* bubbly fluid capsule curves */
+  --wordmark-font-family: 'Audiowide', cursive;
+  --wordmark-font-weight: 400;
+  --wordmark-letter-spacing: 0.1em;
+  --display-font-scale: 0.95;
+  --title-glow-alpha: 28%;
+  --glow-strength: 1.3;
+
+   /* Selection ribbon */
+  --path-grad-start: #39e832;       /* flat neon-green cooling fluid trail */
+  --path-grad-end: #39e832;         /* completely contrasts against glossy blue tiles */
+  --path-width: 10px;
+  --path-cap: round;
+  --path-opacity: 0.9;
+  --path-glow: 12;
+  --selected-letter-outline: #0b4566;
+}
+
+/* ── Zebes ── Inspired by Super Metroid (SNES). Deep subterranean alien caverns with high-contrast power-suit energy blooms. */
+.skin-zebes {
+   /* Background & shell */
+   --bg-center: #0d0816;
+   --bg-edge: #030206;
+   --shell-bg: linear-gradient(180deg, rgba(15, 10, 24, 0.92), rgba(5, 3, 8, 0.98));
+   --shell-border: #331a5e;
+   --shell-shadow: rgba(0, 0, 0, 0.65);
+
+   /* Chrome & title */
+   --chrome-text: #766396;
+   --title-color: #ffffff;
+   --title-glow: #39e832;            /* toxic brinstar acid green - opaque text safe */
+
+   /* Buttons */
+   --button-bg: #110b1c;
+   --button-border: #331a5e;
+   --button-text: #39e832;
+   --button-hover-bg: rgba(57, 232, 50, 0.08);
+   --button-active-bg: rgba(57, 232, 50, 0.15);
+   --button-active-border: #39e832;
+   --button-active-text: #ffffff;
+
+   /* Tiles */
+   --tile-bg: linear-gradient(145deg, #191226, #090510);
+   --tile-border: #331a5e;
+   --tile-letter: #b3a2cf;
+   --tile-selected-bg: linear-gradient(145deg, #e65c00, #993d00); /* varia suit orange fill */
+   --tile-selected-border: #ff944d;
+   --tile-selected-letter: #ffffff;
+   --tile-selected-glow: rgba(230, 92, 0, 0.6);
+   --tile-found-bg: linear-gradient(145deg, #39e832, #187a15);
+   --tile-found-border: #7bf06e;
+   --tile-found-letter: #ffffff;
+   --tile-deactivated-opacity: 0.4;
+
+   /* Path / primary action / hints / skin-buttons */
+   --path-color: #39e832;
+   --primary-action-bg: #39e832;
+   --primary-action-text: #030206;
+   --hint-empty-bg: rgba(17, 11, 28, 0.3);
+   --hint-empty-border: #331a5e;
+   --hint-solved-bg: #39e832;
+   --hint-solved-border: #7bf06e;
+   --hint-solved-letter: #030206;
+   --skin-button-bg: rgba(13, 8, 20, 0.88);
+   --skin-button-border: #331a5e;
+   --skin-button-text: #766396;
+   --skin-button-active-bg: rgba(57, 232, 50, 0.15);
+   --skin-button-active-border: #39e832;
+   --skin-button-active-text: #ffffff;
+
+   /* Typography & shape */
+   --tile-font-family: 'Share Tech Mono', monospace;
+   --tile-font-weight: 400;
+   --tile-font-scale: 1.02;
+   --tile-radius: 6px;               /* mechanical alien architecture hints */
+   --wordmark-font-family: 'Russo One', sans-serif;
+   --wordmark-font-weight: 400;
+   --wordmark-letter-spacing: 0.08em;
+   --display-font-scale: 1.05;
+   --title-text-transform: uppercase;
+   --title-letter-spacing: 0.03em;
+   --title-glow-alpha: 46%;
+   --glow-strength: 1.4;
+
+   /* Selection ribbon */
+   --path-grad-start: #39e832;       /* toxic plasma trail cuts cleanly over the hot suit-orange tiles */
+   --path-grad-end: #a8f032;
+   --path-width: 9px;
+   --path-cap: round;
+   --path-opacity: 0.95;
+   --path-glow: 11;
+   --selected-letter-outline: #1f0800;
+}
+
+/* ── Hyrule Antique ── Inspired by The Legend of Zelda: A Link to the Past (SNES). Heavy dungeon stone textures with radiant Triforce gold blooms. */
+.skin-hyrule-antique {
+   /* Background & shell */
+   --bg-center: #16140f;
+   --bg-edge: #080705;
+   --shell-bg: linear-gradient(180deg, rgba(26, 24, 18, 0.94), rgba(12, 11, 8, 0.98));
+   --shell-border: #4a3c25;
+   --shell-shadow: rgba(0, 0, 0, 0.7);
+
+   /* Chrome & title */
+   --chrome-text: #968463;
+   --title-color: #f5ebd5;
+   --title-glow: #ffcc00;            /* pure triforce gold signature - opaque text safe */
+
+   /* Buttons */
+   --button-bg: #1f1b13;
+   --button-border: #4a3c25;
+   --button-text: #ffcc00;
+   --button-hover-bg: rgba(255, 204, 0, 0.08);
+   --button-active-bg: rgba(255, 204, 0, 0.15);
+   --button-active-border: #ffcc00;
+   --button-active-text: #ffffff;
+
+   /* Tiles */
+   --tile-bg: linear-gradient(145deg, #2b251b, #14120d);
+   --tile-border: #4a3c25;
+   --tile-letter: #d2c5ab;
+   --tile-selected-bg: linear-gradient(145deg, #1f4480, #0f2447); /* deep master sword sapphire */
+   --tile-selected-border: #4682b4;
+   --tile-selected-letter: #ffffff;
+   --tile-selected-glow: rgba(31, 68, 128, 0.6);
+   --tile-found-bg: linear-gradient(145deg, #ffcc00, #b38f00);
+   --tile-found-border: #ffe680;
+   --tile-found-letter: #14120d;
+   --tile-deactivated-opacity: 0.35;
+
+   /* Path / primary action / hints / skin-buttons */
+   --path-color: #ffcc00;
+   --primary-action-bg: #ffcc00;
+   --primary-action-text: #14120d;
+   --hint-empty-bg: rgba(26, 23, 17, 0.3);
+   --hint-empty-border: #4a3c25;
+   --hint-solved-bg: #ffcc00;
+   --hint-solved-border: #ffe680;
+   --hint-solved-letter: #14120d;
+   --skin-button-bg: rgba(20, 18, 13, 0.88);
+   --skin-button-border: #4a3c25;
+   --skin-button-text: #968463;
+   --skin-button-active-bg: rgba(255, 204, 0, 0.15);
+   --skin-button-active-border: #ffcc00;
+   --skin-button-active-text: #ffffff;
+
+   /* Typography & shape */
+   --tile-font-family: 'Almendra', serif;
+   --tile-font-weight: 700;
+   --tile-font-scale: 0.88;
+   --tile-radius: 4px;               /* chiseled fantasy blocks */
+   --wordmark-font-family: 'Cinzel Decorative', serif;
+   --wordmark-font-weight: 700;
+   --wordmark-letter-spacing: 0.1em;
+   --title-font-family: 'Almendra', serif;
+   --title-font-weight: 700;
+   --display-font-scale: 1.15;
+   --title-text-transform: uppercase;
+   --title-letter-spacing: 0.04em;
+   --title-glow-alpha: 36%;
+   --glow-strength: 1.2;
+
+   /* Selection ribbon */
+   --path-grad-start: #ffcc00;       /* brilliant gold light trails slice beautifully over sword-blue tiles */
+   --path-grad-end: #ffaa00;
+   --path-width: 8px;
+   --path-cap: round;
+   --path-opacity: 0.95;
+   --path-glow: 10;
+   --selected-letter-outline: #071224;
+}
+
+/* ── Dream Land ── Inspired by Kirby's Adventure (NES). Dream-fountain deep indigo night skies with bright bubblegum cloud blooms. */
+.skin-dream-land {
+   /* Background & shell */
+   --bg-center: #120a2a;
+   --bg-edge: #060310;
+   --shell-bg: linear-gradient(180deg, rgba(22, 13, 51, 0.9), rgba(10, 5, 24, 0.95));
+   --shell-border: #4a297a;
+   --shell-shadow: rgba(0, 0, 0, 0.55);
+
+   /* Chrome & title */
+   --chrome-text: #9f86c0;
+   --title-color: #ffb3d9;
+   --title-glow: #ff66b2;            /* rich bubblegum signature - opaque text safe */
+
+   /* Buttons */
+   --button-bg: #170d33;
+   --button-border: #4a297a;
+   --button-text: #ff66b2;
+   --button-hover-bg: rgba(255, 102, 178, 0.08);
+   --button-active-bg: rgba(255, 102, 178, 0.15);
+   --button-active-border: #ff99cc;
+   --button-active-text: #ffffff;
+
+   /* Tiles */
+   --tile-bg: linear-gradient(145deg, #261654, #100924);
+   --tile-border: #4a297a;
+   --tile-letter: #ffb3d9;
+   --tile-selected-bg: linear-gradient(145deg, #ff66b2, #cc3377); /* rich puff pink */
+   --tile-selected-border: #ff99cc;
+   --tile-selected-letter: #ffffff;
+   --tile-selected-glow: rgba(255, 102, 178, 0.6);
+   --tile-found-bg: linear-gradient(145deg, #ffcc00, #cc9900);
+   --tile-found-border: #ffe680;
+   --tile-found-letter: #100924;
+   --tile-deactivated-opacity: 0.5;
+
+   /* Path / primary action / hints / skin-buttons */
+   --path-color: #ffcc00;
+   --primary-action-bg: #ff66b2;
+   --primary-action-text: #ffffff;
+   --hint-empty-bg: rgba(23, 13, 51, 0.25);
+   --hint-empty-border: #4a297a;
+   --hint-solved-bg: #ff66b2;
+   --hint-solved-border: #ff99cc;
+   --hint-solved-letter: #ffffff;
+   --skin-button-bg: rgba(18, 10, 41, 0.85);
+   --skin-button-border: #4a297a;
+   --skin-button-text: #9f86c0;
+   --skin-button-active-bg: rgba(255, 102, 178, 0.15);
+   --skin-button-active-border: #ff99cc;
+   --skin-button-active-text: #ffffff;
+
+   /* Typography & shape */
+   --tile-font-family: 'Comfortaa', cursive;
+   --tile-font-weight: 700;
+   --tile-font-scale: 0.85;
+   --tile-radius: 16px;              /* extremely puffy capsule roundness */
+   --wordmark-font-family: 'Titan One', cursive;
+   --wordmark-font-weight: 400;
+   --wordmark-letter-spacing: 0.04em;
+   --display-font-scale: 1.1;
+   --title-text-transform: uppercase;
+   --title-letter-spacing: 0.03em;
+   --title-glow-alpha: 48%;
+   --glow-strength: 1.5;
+
+   /* Selection ribbon */
+   --path-grad-start: #ffcc00;       /* radiant star-rod gold trail pops dynamically against the pink tile background */
+   --path-grad-end: #ffe600;
+   --path-width: 10px;
+   --path-cap: round;
+   --path-opacity: 0.95;
+   --path-glow: 12;
+   --selected-letter-outline: #4a0025;
+}
+
+/* ── Kingdom ── Inspired by Super Mario Bros. (NES). Clean 8-bit overworld aesthetics featuring iconic sky blues, brick-red cells, and warp-pipe green trails. */
+.skin-kingdom {
+   /* Background & shell */
+   --bg-center: #5c94fc;             /* canonical nes overworld sky blue */
+   --bg-edge: #4470da;
+   --shell-bg: linear-gradient(180deg, rgba(16, 12, 8, 0.95), rgba(0, 0, 0, 0.98)); /* dark chassis for high text legibility */
+   --shell-border: #fc9838;          /* question block orange frame */
+   --shell-shadow: rgba(0, 0, 0, 0.5);
+
+   /* Chrome & title */
+   --chrome-text: #b8b8b8;
+   --title-color: #ffffff;
+   --title-glow: #fc9838;            /* coins & power-ups flash signature */
+
+   /* Buttons */
+   --button-bg: #000000;
+   --button-border: #fc9838;
+   --button-text: #fc9838;
+   --button-hover-bg: rgba(252, 152, 56, 0.12);
+   --button-active-bg: rgba(255, 255, 255, 0.2);
+   --button-active-border: #ffffff;
+   --button-active-text: #ffffff;
+
+   /* Tiles */
+   --tile-bg: linear-gradient(145deg, #b83400, #801000); /* ground brick terracotta */
+   --tile-border: #000000;
+   --tile-letter: #ffffff;
+   --tile-selected-bg: linear-gradient(145deg, #fc9838, #bc6800); /* item block flashing gold */
+   --tile-selected-border: #ffffff;
+   --tile-selected-letter: #000000;  /* clean black cutout lettering */
+   --tile-selected-glow: rgba(252, 152, 56, 0.55);
+   --tile-found-bg: linear-gradient(145deg, #00a800, #005800);     /* warp pipe green flash */
+   --tile-found-border: #ffffff;
+   --tile-found-letter: #ffffff;
+   --tile-deactivated-opacity: 0.45;
+
+   /* Path / primary action / hints / skin-buttons */
+   --path-color: #00a800;
+   --primary-action-bg: #fc9838;
+   --primary-action-text: #000000;
+   --hint-empty-bg: rgba(0, 0, 0, 0.4);
+   --hint-empty-border: #3a3a3a;
+   --hint-solved-bg: #fc9838;        /* SOLID power-up fill */
+   --hint-solved-border: #ffffff;
+   --hint-solved-letter: #000000;
+   --skin-button-bg: rgba(0, 0, 0, 0.8);
+   --skin-button-border: #fc9838;
+   --skin-button-text: #b8b8b8;
+   --skin-button-active-bg: rgba(252, 152, 56, 0.15);
+   --skin-button-active-border: #fc9838;
+   --skin-button-active-text: #ffffff;
+
+   /* Typography & shape */
+   --tile-font-family: 'Pixelify Sans', monospace;
+   --tile-font-weight: 700;
+   --tile-font-scale: 1.0;
+   --tile-radius: 0px;               /* strict blocky architecture */
+   --wordmark-font-family: 'Bungee', sans-serif;
+   --wordmark-font-weight: 400;
+   --wordmark-letter-spacing: 0.04em;
+   --display-font-scale: 1.0;
+   --title-text-transform: uppercase;
+   --title-letter-spacing: 0.03em;
+   --title-glow-alpha: 34%;
+   --glow-strength: 0.6;             /* crisp CRT emission feel rather than modern bleed bloom */
+
+   /* Selection ribbon */
+   --path-grad-start: #00fc00;       /* vibrant warp pipe green provides perfect contrast over standard red cells */
+   --path-grad-end: #00a800;
+   --path-width: 8px;
+   --path-cap: butt;                 /* hard pixel termination values */
+   --path-opacity: 1;
+   --path-glow: 0;                   /* strictly flat aesthetic */
+   --selected-letter-outline: #ffffff;
+}
+
+
+/* ── Dinosaur Land ── Inspired by Super Mario World (SNES). Rich chocolate island foundations, warm overworld creams, flashing cape-gold selections, and a bright sky-blue trail. */
+.skin-dinosaur-land {
+   /* Background & shell */
+   --bg-center: #261507;             /* chocolate island ground tone */
+   --bg-edge: #0f0803;
+   --shell-bg: linear-gradient(180deg, rgba(38, 21, 7, 0.93), rgba(15, 8, 3, 0.97));
+   --shell-border: #8a4f1c;
+
+   /* Chrome & title */
+   --chrome-text: #cfa67b;
+   --title-color: #ffffff;
+   --title-glow: #22b846;            /* yoshi-green brand highlight - opaque */
+
+   /* Buttons */
+   --button-bg: #140b03;
+   --button-border: #6e3e14;
+   --button-text: #f7e2c8;
+   --button-hover-bg: rgba(217, 136, 56, 0.1);
+   --button-active-bg: rgba(0, 204, 255, 0.15);
+   --button-active-border: #00ccff;
+   --button-active-text: #ffffff;
+
+   /* Tiles */
+   --tile-bg: linear-gradient(145deg, #f7eec8, #dfd4a8); /* classic 16-bit block cream */
+   --tile-border: #472608;
+   --tile-letter: #261507;
+   --tile-selected-bg: linear-gradient(145deg, #ffcc00, #cc9900); /* flashing spin-jump cape gold */
+   --tile-selected-border: #ffffff;
+   --tile-selected-letter: #1a0d00;
+   --tile-selected-glow: rgba(255, 204, 0, 0.6);
+   --tile-found-bg: linear-gradient(145deg, #22b846, #115c23);    /* yoshi green reveal flash */
+   --tile-found-border: #ffffff;
+   --tile-found-letter: #ffffff;
+   --tile-deactivated-opacity: 0.4;
+
+   /* Path / primary action / hints / skin-buttons */
+   --path-color: #00ccff;
+   --primary-action-bg: #22b846;
+   --primary-action-text: #ffffff;
+   --hint-empty-bg: rgba(20, 11, 3, 0.3);
+   --hint-empty-border: #472608;
+   --hint-solved-bg: #22b846;        /* SOLID yoshi green slot background */
+   --hint-solved-border: #ffffff;
+   --hint-solved-letter: #ffffff;    /* high-contrast white readout */
+   --skin-button-bg: rgba(20, 11, 3, 0.85);
+   --skin-button-border: #6e3e14;
+   --skin-button-text: #cfa67b;
+   --skin-button-active-bg: rgba(0, 204, 255, 0.15);
+   --skin-button-active-border: #00ccff;
+   --skin-button-active-text: #ffffff;
+
+   /* Typography & shape */
+   --tile-font-family: 'DotGothic16', sans-serif;
+   --tile-font-weight: 400;
+   --tile-font-scale: 1.05;          /* balances crisp 16-bit pixels in grid boundaries */
+   --tile-radius: 8px;               /* friendly, rounded cartridge era block geometry */
+   --wordmark-font-family: 'Dela Gothic One', sans-serif;
+   --wordmark-font-weight: 400;
+   --wordmark-letter-spacing: 0.04em;
+   --display-font-scale: 0.9;        /* heavy, impactful layout weight correction */
+   --title-text-transform: uppercase;
+   --title-letter-spacing: 0.02em;
+   --title-glow-alpha: 36%;
+   --glow-strength: 1.1;
+
+   /* Selection ribbon */
+   --path-grad-start: #00ccff;       /* crisp overworld sky blue cuts fiercely over golden selection blocks */
+   --path-grad-end: #00ccff;         /* flat ribbon values match vintage asset styling rules */
+   --path-width: 9px;
+   --path-cap: round;
+   --path-opacity: 0.95;
+   --path-glow: 6;
+   --selected-letter-outline: #ffffff;
+}
+
+
+/* ── Green Hill ── Inspired by Sonic the Hedgehog (Sega Genesis). Vibrant loops of checkerboard terracotta cells, deep Sonic cobalt selections, and radiant golden ring trails. */
+.skin-green-hill {
+   /* Background & shell */
+   --bg-center: #2277ff;             /* iconic bright overworld sky blue */
+   --bg-edge: #0044cc;
+   --shell-bg: linear-gradient(180deg, rgba(10, 25, 60, 0.94), rgba(4, 10, 30, 0.98));
+   --shell-border: #ffcc00;          /* golden ring yellow frame brace */
+   --shell-shadow: rgba(0, 20, 50, 0.5);
+
+   /* Chrome & title */
+   --chrome-text: #8fa6d9;
+   --title-color: #ffffff;
+   --title-glow: #00ff66;            /* chaos emerald green signature - opaque text safe */
+
+   /* Buttons */
+   --button-bg: #051433;
+   --button-border: #2277ff;
+   --button-text: #ffcc00;
+   --button-hover-bg: rgba(34, 119, 255, 0.15);
+   --button-active-bg: rgba(255, 204, 0, 0.2);
+   --button-active-border: #ffcc00;
+   --button-active-text: #ffffff;
+
+   /* Tiles */
+   --tile-bg: linear-gradient(145deg, #d87838, #984818); /* loop-the-loop soil checkerboard terracotta */
+   --tile-border: #4a2000;
+   --tile-letter: #ffffff;
+   --tile-selected-bg: linear-gradient(145deg, #0055ff, #0022aa); /* sonic cobalt blue blur */
+   --tile-selected-border: #80b3ff;
+   --tile-selected-letter: #ffffff;
+   --tile-selected-glow: rgba(0, 85, 255, 0.6);
+   --tile-found-bg: linear-gradient(145deg, #00ff66, #00993d);     /* chaos emerald reveal flash */
+   --tile-found-border: #ffffff;
+   --tile-found-letter: #ffffff;
+   --tile-deactivated-opacity: 0.5;
+
+   /* Path / primary action / hints / skin-buttons */
+   --path-color: #ffcc00;
+   --primary-action-bg: #ffcc00;     /* golden ring primary action */
+   --primary-action-text: #051433;
+   --hint-empty-bg: rgba(5, 20, 51, 0.4);
+   --hint-empty-border: #2277ff;
+   --hint-solved-bg: #ffcc00;        /* SOLID ring-gold slot foundations */
+   --hint-solved-border: #ffffff;
+   --hint-solved-letter: #051433;    /* dark navy on gold - high contrast */
+   --skin-button-bg: rgba(4, 12, 36, 0.88);
+   --skin-button-border: #2277ff;
+   --skin-button-text: #8fa6d9;
+   --skin-button-active-bg: rgba(255, 204, 0, 0.15);
+   --skin-button-active-border: #ffcc00;
+   --skin-button-active-text: #ffffff;
+
+   /* Typography & shape */
+   --tile-font-family: 'Rubik Mono One', sans-serif;
+   --tile-font-weight: 400;
+   --tile-font-scale: 0.82;          /* fatter block metrics require optical downsizing inside cells */
+   --tile-radius: 12px;              /* smooth arcade rolling curves */
+   --wordmark-font-family: 'Righteous', sans-serif;
+   --wordmark-font-weight: 400;
+   --wordmark-letter-spacing: 0.06em;
+   --display-font-scale: 1.15;       /* geometric display scaling factor weight correction */
+   --title-text-transform: uppercase;
+   --title-letter-spacing: 0.03em;
+   --title-glow-alpha: 40%;
+   --glow-strength: 1.3;
+
+   /* Selection ribbon */
+   --path-grad-start: #ffea00;       /* blinding golden trail loops cleanly over dark sonic-blue selection cells */
+   --path-grad-end: #ffcc00;
+   --path-width: 9px;
+   --path-cap: round;
+   --path-opacity: 0.95;
+   --path-glow: 10;
+   --selected-letter-outline: #0022aa;
+}
+
+/* ── Kamurocho ── Inspired by SEGA's Like a Dragon / Yakuza series. Nightlife underworld aesthetic featuring heavy cabaret asphalt blacks, fierce Heat-action crimson red selections, and glowing billboard neon-gold trails. */
+.skin-kamurocho {
+   /* Background & shell */
+   --bg-center: #140204;
+   --bg-edge: #000000;
+   --shell-bg: linear-gradient(180deg, rgba(20, 5, 8, 0.94), rgba(5, 0, 2, 0.98));
+   --shell-border: #4a0810;
+   --shell-shadow: rgba(0, 0, 0, 0.65);
+
+   /* Chrome & title */
+   --chrome-text: #a88285;
+   --title-color: #ffffff;
+   --title-glow: #ffcc00;            /* blazing kabukicho neon gold - opaque text safe */
+
+   /* Buttons */
+   --button-bg: #0d0204;
+   --button-border: #4a0810;
+   --button-text: #ffcc00;
+   --button-hover-bg: rgba(214, 0, 28, 0.12);
+   --button-active-bg: rgba(214, 0, 28, 0.22);
+   --button-active-border: #d6001c;
+   --button-active-text: #ffffff;
+
+   /* Tiles */
+   --tile-bg: linear-gradient(145deg, #1c0508, #0a0002);
+   --tile-border: #4a0810;
+   --tile-letter: #e6c5c8;
+   --tile-selected-bg: linear-gradient(145deg, #d6001c, #4a0005); /* back-alley dragon crimson red */
+   --tile-selected-border: #ff4d62;
+   --tile-selected-letter: #ffffff;
+   --tile-selected-glow: rgba(214, 0, 28, 0.55);
+   --tile-found-bg: linear-gradient(145deg, #ffcc00, #997a00);
+   --tile-found-border: #ffe680;
+   --tile-found-letter: #000000;
+   --tile-deactivated-opacity: 0.45;
+
+   /* Path / primary action / hints / skin-buttons */
+   --path-color: #ffcc00;
+   --primary-action-bg: #d6001c;
+   --primary-action-text: #ffffff;
+   --hint-empty-bg: rgba(13, 2, 4, 0.3);
+   --hint-empty-border: #4a0810;
+   --hint-solved-bg: #d6001c;        /* SOLID crimson */
+   --hint-solved-border: #ff4d62;
+   --hint-solved-letter: #ffffff;
+   --skin-button-bg: rgba(10, 2, 3, 0.88);
+   --skin-button-border: #4a0810;
+   --skin-button-text: #a88285;
+   --skin-button-active-bg: rgba(214, 0, 28, 0.22);
+   --skin-button-active-border: #d6001c;
+   --skin-button-active-text: #ffffff;
+
+   /* Typography & shape */
+   --tile-font-family: 'RocknRoll One', sans-serif;
+   --tile-font-weight: 400;
+   --tile-font-scale: 0.85;          /* dense pop-subculture metrics downsizing */
+   --tile-radius: 2px;               /* sharp monolithic cuts */
+   --wordmark-font-family: 'Teko', sans-serif;
+   --wordmark-font-weight: 600;
+   --wordmark-letter-spacing: 0.08em;
+   --display-font-scale: 1.35;       /* vertically ultra-condensed title corrections */
+   --title-text-transform: uppercase;
+   --title-letter-spacing: 0.03em;
+   --title-glow-alpha: 36%;
+   --glow-strength: 1.4;
+
+   /* Selection ribbon */
+   --path-grad-start: #ffcc00;       /* pure piercing neon-billboard light path contrast over red cells */
+   --path-grad-end: #ffe066;
+   --path-width: 9px;
+   --path-cap: round;
+   --path-opacity: 0.95;
+   --path-glow: 12;
+   --selected-letter-outline: #4a0005;
+}
+
+/* ── Graffiti Soul ── Inspired by Jet Set Radio (Dreamcast). Cell-shaded counter-culture chaos with spray-can orange chrome, toxic-green tags, and thick marker trails. */
+.skin-graffiti-soul {
+   color-scheme: light;
+
+   /* Background & shell */
+   --bg-center: #ffb700;             /* loud, saturated graffiti background yellow */
+   --bg-edge: #cc8100;
+   --shell-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 235, 180, 0.96));
+   --shell-border: #ff5500;          /* spray can warning orange accent framework */
+   --shell-shadow: rgba(80, 50, 0, 0.2);
+   --chrome-text: #5c4300;
+   --title-color: #241100;
+   --title-glow: #ff5500;            /* opaque pop-art orange boundary */
+
+   /* Buttons */
+   --button-bg: #ffffff;
+   --button-border: #ff5500;
+   --button-text: #ff5500;
+   --button-hover-bg: rgba(255, 85, 0, 0.1);
+   --button-active-bg: rgba(0, 230, 118, 0.2);
+   --button-active-border: #00e676;
+   --button-active-text: #004d26;
+
+   /* Tiles */
+   --tile-bg: linear-gradient(145deg, #ffffff, #ffeaa8);
+   --tile-border: #ff5500;
+   --tile-letter: #241100;
+   --tile-selected-bg: linear-gradient(145deg, #00e676, #006020); /* raw radioactive spray tag green */
+   --tile-selected-border: #000000;
+   --tile-selected-letter: #ffffff;
+   --tile-selected-glow: rgba(0, 230, 118, 0.4);
+   --tile-found-bg: linear-gradient(145deg, #ff007f, #99004c);
+   --tile-found-border: #000000;
+   --tile-found-letter: #ffffff;
+   --tile-deactivated-opacity: 0.4;
+
+   /* Path / primary action / hints / skin-buttons */
+   --path-color: #ff007f;
+   --primary-action-bg: #ff5500;
+   --primary-action-text: #ffffff;
+   --hint-empty-bg: rgba(255, 255, 255, 0.6);
+   --hint-empty-border: #ff5500;
+   --hint-solved-bg: #00e676;        /* SOLID tag green */
+   --hint-solved-border: #000000;
+   --hint-solved-letter: #ffffff;
+   --skin-button-bg: rgba(255, 255, 255, 0.8);
+   --skin-button-border: #ff5500;
+   --skin-button-text: #5c4300;
+   --skin-button-active-bg: rgba(0, 230, 118, 0.15);
+   --skin-button-active-border: #00e676;
+   --skin-button-active-text: #004d26;
+
+   /* Typography & shape */
+   --tile-font-family: 'Permanent Marker', cursive;
+   --tile-font-weight: 400;
+   --tile-font-scale: 0.9;
+   --tile-radius: 8px;               /* blocky, asymmetric street angles */
+   --wordmark-font-family: 'Luckiest Guy', cursive;
+   --wordmark-font-weight: 400;
+   --wordmark-letter-spacing: 0.04em;
+   --display-font-scale: 1.25;       /* explosive sticker font weights */
+   --title-text-transform: uppercase;
+   --title-letter-spacing: 0.02em;
+   --title-glow-alpha: 24%;
+   --glow-strength: 0.7;             /* cell-shaded punch, no bloom bleed */
+
+   /* Selection ribbon */
+   --path-grad-start: #ff007f;       /* thick fluid wide-tip graffiti marker trail slices over green selections */
+   --path-grad-end: #ff007f;
+   --path-width: 11px;
+   --path-cap: square;               /* marker chisel tip simulation values */
+   --path-opacity: 0.95;
+   --path-glow: 0;
+   --selected-letter-outline: #000000;
+}
+
+/* ── Cyber Shinobi ── Inspired by Shinobi III: Return of the Ninja Master (Mega Drive). Midnight espionage shadow-blue arrays, razor steel selections, and electrified ninjutsu trails. */
+.skin-cyber-shinobi {
+   /* Background & shell */
+   --bg-center: #05081a;
+   --bg-edge: #010208;
+   --shell-bg: linear-gradient(180deg, rgba(8, 12, 30, 0.92), rgba(2, 4, 12, 0.97));
+   --shell-border: #142850;
+   --shell-shadow: rgba(0, 0, 0, 0.6);
+
+   /* Chrome & title */
+   --chrome-text: #4e6ca6;
+   --title-color: #dae5f8;
+   --title-glow: #00e5ff;            /* ninjutsu lightning cyan signature - opaque text safe */
+
+   /* Buttons */
+   --button-bg: #030614;
+   --button-border: #142850;
+   --button-text: #00e5ff;
+   --button-hover-bg: rgba(0, 229, 255, 0.1);
+   --button-active-bg: rgba(0, 229, 255, 0.18);
+   --button-active-border: #00e5ff;
+   --button-active-text: #ffffff;
+
+   /* Tiles */
+   --tile-bg: linear-gradient(145deg, #091226, #02050c);
+   --tile-border: #142850;
+   --tile-letter: #8ca3d4;
+   --tile-selected-bg: linear-gradient(145deg, #ffffff, #99aab8); /* flashing kunai cold forged steel */
+   --tile-selected-border: #ffffff;
+   --tile-selected-letter: #05081a; /* deep inverse contrast readout cut under trail */
+   --tile-selected-glow: rgba(255, 255, 255, 0.5);
+   --tile-found-bg: linear-gradient(145deg, #00e5ff, #00778c);
+   --tile-found-border: #80f2ff;
+   --tile-found-letter: #ffffff;
+   --tile-deactivated-opacity: 0.4;
+
+   /* Path / primary action / hints / skin-buttons */
+   --path-color: #00e5ff;
+   --primary-action-bg: #00e5ff;
+   --primary-action-text: #010208;
+   --hint-empty-bg: rgba(3, 6, 20, 0.3);
+   --hint-empty-border: #142850;
+   --hint-solved-bg: #00e5ff;
+   --hint-solved-border: #80f2ff;
+   --hint-solved-letter: #010208;
+   --skin-button-bg: rgba(4, 8, 24, 0.86);
+   --skin-button-border: #142850;
+   --skin-button-text: #4e6ca6;
+   --skin-button-active-bg: rgba(0, 229, 255, 0.18);
+   --skin-button-active-border: #00e5ff;
+   --skin-button-active-text: #ffffff;
+
+   /* Typography & shape */
+   --tile-font-family: 'Electrolize', sans-serif;
+   --tile-font-weight: 400;
+   --tile-font-scale: 0.98;
+   --tile-radius: 0px;               /* chiseled tech stealth framing boundaries */
+   --wordmark-font-family: 'Major Mono Display', monospace;
+   --wordmark-font-weight: 400;
+   --wordmark-letter-spacing: 0.14em;
+   --display-font-scale: 1.1;        /* avant-garde code matrix grid alignments */
+   --title-text-transform: uppercase;
+   --title-letter-spacing: 0.04em;
+   --title-glow-alpha: 38%;
+   --glow-strength: 1.3;
+
+   /* Selection ribbon */
+   --path-grad-start: #00e5ff;       /* lightning charge path shears across silver kunai blocks beautifully */
+   --path-grad-end: #00a1ff;
+   --path-width: 8px;
+   --path-cap: round;
+   --path-opacity: 0.95;
+   --path-glow: 10;
+   --selected-letter-outline: #ffffff;
 }
 
 .skin-gameboy {
@@ -778,12 +1989,16 @@
   --tile-font-family: 'Oswald', sans-serif;
   --tile-font-weight: 500;
   --tile-font-scale: var(--tile-scale-oswald);
-  --tile-radius: 10px;
+  --tile-radius: 0px;
   --wordmark-font-family: 'Oswald', sans-serif;
   --wordmark-font-weight: 600;
   --wordmark-letter-spacing: 0.16em;
   --display-font-scale: var(--display-scale-oswald);
+  --title-font-scale: 1.08;
+  --title-letter-spacing: 0;
+  --title-text-transform: uppercase;
   --glow-strength: 0.8;
+  --title-glow-alpha: 0%;        /* signage-style: crisp title, no glow */
 
   /* Ribbon: flat safety-orange — the tiles are already blue, so the trail is a
      single contrasting orange (no gradient) for maximum read against them. */
