@@ -23,6 +23,7 @@
     "@capacitor/share": "^8.0.0",
     "@capacitor/status-bar": "^8.0.0",
     "@fontsource/almendra": "^5.2.8",
+    "@fontsource/anton": "^5.2.7",
     "@fontsource/antonio": "^5.2.8",
     "@fontsource/audiowide": "^5.2.7",
     "@fontsource/bungee": "^5.2.7",
