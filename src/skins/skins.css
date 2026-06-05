@@ -97,6 +97,9 @@
   --hint-solved-bg: #0d3a42;
   --hint-solved-border: #00d4e8;
   --hint-solved-letter: #9af0ff;
+  --hint-empty-letter-outline: transparent;
+  --hint-solved-letter-outline: transparent;
+  --hint-radius: 6px;
   --skin-button-bg: rgba(19, 24, 36, 0.8);
   --skin-button-border: #2a3148;
   --skin-button-text: #cfd6e1;
@@ -170,6 +173,10 @@
   --path-opacity: 0.95;
   --path-glow: 7;
   --selected-letter-outline: #04121a;
+
+/* Hint legibility */
+--hint-empty-letter-outline: transparent;
+--hint-solved-letter-outline: transparent;
 }
 
 /* Settings skin selector baseline preview for the Void swatch. */
@@ -467,78 +474,105 @@
 
 /* ── Phantom Thieves ── Picaresque style featuring raw crimson red, stark solid blacks, and cutout whites. */
 .skin-phantom-thieves {
-   /* Background & shell */
-  --bg-center: #1a0003;
-  --bg-edge: #000000;
-  --shell-bg: linear-gradient(180deg, rgba(20, 0, 3, 0.95), rgba(0, 0, 0, 1));
-  --shell-border: #d6001c;
+/* Background & shell */
+--bg-center: #220005;
+--bg-edge: #000000;
+--shell-bg: linear-gradient(
+165deg,
+rgba(32, 0, 6, 0.98) 0%,
+rgba(0, 0, 0, 1) 70%
+);
+--shell-border: #ff1038;
 
-   /* Chrome & title */
-  --chrome-text: #b79ca0;
-  --title-color: #ffffff;
-  --title-glow: #ff1b3d;            /* phantom crimson accent */
+/* Chrome & title */
+--chrome-text: #d8c7cb;
+--title-color: #ffffff;
+--title-glow: #ff1038;
 
-   /* Buttons */
-  --button-bg: #050505;
-  --button-border: #d6001c;
-  --button-text: #ffffff;
-  --button-hover-bg: rgba(214, 0, 28, 0.15);
-  --button-active-bg: rgba(214, 0, 28, 0.28);
-  --button-active-border: #ffffff;
-  --button-active-text: #ffffff;
+/* Buttons */
+--button-bg: #000000;
+--button-border: #ff1038;
+--button-text: #ffffff;
+--button-hover-bg: rgba(255, 16, 56, 0.18);
+--button-active-bg: rgba(255, 16, 56, 0.32);
+--button-active-border: #ffffff;
+--button-active-text: #ffffff;
 
-   /* Tiles */
-  --tile-bg: linear-gradient(145deg, #121212, #000000);
-  --tile-border: #3a0a12;
-  --tile-letter: #ffffff;
-  --tile-selected-bg: linear-gradient(145deg, #ff1235, #8a0013);
-  --tile-selected-border: #ffffff;
-  --tile-selected-letter: #ffffff;
-  --tile-selected-glow: rgba(255, 27, 61, 0.62);
-  --tile-found-bg: linear-gradient(145deg, #ffffff, #e7e7e7);
-  --tile-found-border: #ffffff;
-  --tile-found-letter: #000000;
+/* Tiles */
+--tile-bg: linear-gradient(
+145deg,
+#151515,
+#000000
+);
+--tile-border: #520815;
+--tile-letter: #ffffff;
 
-   /* Path / primary action / hints / skin-buttons */
-  --path-color: #ffffff;
-  --primary-action-bg: #d6001c;
-  --primary-action-text: #ffffff;
-  --hint-empty-bg: rgba(0, 0, 0, 0.4);
-  --hint-empty-border: #2a2a2a;
-  --hint-solved-bg: #d6001c;        /* SOLID crimson fill */
-  --hint-solved-border: #ffffff;
-  --hint-solved-letter: #ffffff;    /* must contrast --hint-solved-bg */
-  --skin-button-bg: rgba(10, 0, 2, 0.85);
-  --skin-button-border: #d6001c;
-  --skin-button-text: #b79ca0;
-  --skin-button-active-bg: rgba(255, 255, 255, 0.15);
-  --skin-button-active-border: #ffffff;
-  --skin-button-active-text: #ffffff;
+--tile-selected-bg: linear-gradient(
+145deg,
+#ff2149,
+#a0001e
+);
+--tile-selected-border: #ffffff;
+--tile-selected-letter: #ffffff;
+--tile-selected-glow: rgba(255, 16, 56, 0.75);
 
-   /* Typography & shape */
-  --tile-font-family: 'Oswald', sans-serif;
-  --tile-font-weight: 500;
-  --tile-font-scale: var(--tile-scale-oswald);
-  --tile-radius: 3px;               /* sharp, stylized angles */
-  --wordmark-font-family: 'Oswald', sans-serif;
-  --wordmark-font-weight: 600;
-  --wordmark-letter-spacing: 0.08em;
-  --display-font-scale: var(--display-scale-oswald);
-  --title-font-scale: 1.12;
-  --title-letter-spacing: 0;
-  --title-text-transform: uppercase;
-  --title-glow-alpha: 55%;
-  --glow-strength: 1.3;
+--tile-found-bg: #ffffff;
+--tile-found-border: #ffffff;
+--tile-found-letter: #000000;
 
-   /* Selection ribbon */
-  --path-grad-start: #ffffff;       /* flat stark white ribbon */
-  --path-grad-end: #ffffff;         /* completely slices across the crimson tiles */
-  --path-width: 10px;
-  --path-cap: butt;
-  --path-opacity: 0.98;
-  --path-glow: 7;
-  --selected-letter-outline: #000000;  /* keeps the white letters crisp against a white ribbon */
+/* Path / actions / hints */
+--path-color: #ffffff;
+
+--primary-action-bg: #ff1038;
+--primary-action-text: #ffffff;
+
+--hint-empty-bg: rgba(0, 0, 0, 0.45);
+--hint-empty-border: #2d2d2d;
+
+--hint-solved-bg: #ff1038;
+--hint-solved-border: #ffffff;
+--hint-solved-letter: #ffffff;
+
+--skin-button-bg: rgba(0, 0, 0, 0.85);
+--skin-button-border: #ff1038;
+--skin-button-text: #d8c7cb;
+
+--skin-button-active-bg: rgba(255, 255, 255, 0.16);
+--skin-button-active-border: #ffffff;
+--skin-button-active-text: #ffffff;
+
+/* Typography */
+--tile-font-family: 'Anton', sans-serif;
+--tile-font-weight: 400;
+--tile-font-scale: var(--tile-scale-anton);
+
+--wordmark-font-family: 'Anton', sans-serif;
+--wordmark-font-weight: 400;
+--wordmark-letter-spacing: 0.03em;
+
+--display-font-scale: var(--display-scale-anton);
+
+--title-font-scale: 1.18;
+--title-letter-spacing: -0.02em;
+--title-text-transform: uppercase;
+--title-glow-alpha: 65%;
+
+/* Shape */
+--tile-radius: 2px;
+
+--glow-strength: 1.45;
+
+/* Selection ribbon */
+--path-grad-start: #ffffff;
+--path-grad-end: #ffffff;
+--path-width: 11px;
+--path-cap: butt;
+--path-opacity: 1;
+--path-glow: 9;
+
+--selected-letter-outline: #000000;
 }
+
 
 /* ── Catalyst ── Dystopian minimalist clean layout with sterile whites, slate typography, and high-velocity orange routes. */
 .skin-catalyst {
@@ -693,78 +727,147 @@
 
 /* ── Aero ── Glossy mid-2000s tech style with fluid gradients, glassy panels, and a radioactive loop trail. */
 .skin-aero {
-   color-scheme: light;
+  color-scheme: light;
 
-   /* Background & shell */
-  --bg-center: #dcf2fd;
-  --bg-edge: #aeddf5;
-  --shell-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(220, 240, 253, 0.92));
-  --shell-border: rgba(255, 255, 255, 0.6);
-  --shell-shadow: rgba(40, 60, 80, 0.15);
+  /* Background & shell */
+--bg-center: #eefcff;
+--bg-edge: #73d5ff;
 
-   /* Chrome & title */
-  --chrome-text: #456885;
-  --title-color: #123456;
-  --title-glow: #1f82c0;            /* deep glass blue */
+  --shell-bg: linear-gradient(
+    180deg,
+    rgba(255,255,255,0.96) 0%,
+    rgba(232,248,255,0.94) 55%,
+    rgba(195,236,255,0.90) 100%
+  );
 
-   /* Buttons */
-  --button-bg: rgba(255, 255, 255, 0.6);
-  --button-border: rgba(255, 255, 255, 0.8);
-  --button-text: #1f82c0;
-  --button-hover-bg: rgba(61, 167, 225, 0.12);
-  --button-active-bg: rgba(61, 167, 225, 0.22);
-  --button-active-border: #3da7e1;
-  --button-active-text: #0b4566;
+  --shell-border: rgba(255,255,255,0.98);
+  --shell-shadow: rgba(40,60,80,0.18);
 
-   /* Tiles */
-  --tile-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 248, 255, 0.7) 50%, rgba(215, 235, 250, 0.8) 100%);
-  --tile-border: rgba(255, 255, 255, 0.9);
-  --tile-letter: #1a3a54;
-  --tile-selected-bg: linear-gradient(145deg, #3da7e1, #106294); /* water-cool pump fill */
-  --tile-selected-border: #7ec5f0;
+  /* Chrome & title */
+  --chrome-text: #5f8ea8;
+  --title-color: #2b6f95;
+  --title-glow: #8ce26b;
+
+  /* Buttons */
+  --button-bg: rgba(255,255,255,0.82);
+  --button-border: rgba(255,255,255,1);
+  --button-text: #2283b7;
+
+  --button-hover-bg: rgba(73,216,255,0.18);
+  --button-active-bg: rgba(73,216,255,0.30);
+  --button-active-border: #8ce26b;
+  --button-active-text: #0d4768;
+
+  /* Tiles */
+  --tile-bg: linear-gradient(
+    180deg,
+    rgba(255,255,255,1) 0%,
+    rgba(255,255,255,0.98) 18%,
+    rgba(230,247,255,0.96) 55%,
+    rgba(178,225,245,0.95) 100%
+  );
+
+  --tile-border: rgba(255,255,255,1);
+  --tile-letter: #17425e;
+
+  --tile-selected-bg: linear-gradient(
+    145deg,
+    #7fefff,
+    #29b7ff
+  );
+
+  --tile-selected-border: #e6fdff;
   --tile-selected-letter: #ffffff;
-  --tile-selected-glow: rgba(61, 167, 225, 0.5);
-  --tile-found-bg: linear-gradient(145deg, #39e832, #1bb018);
-  --tile-found-border: #7bf06e;
+  --tile-selected-glow: rgba(73,216,255,0.85);
+
+  --tile-found-bg: linear-gradient(
+    145deg,
+    #b8f58f,
+    #79de67
+  );
+
+  --tile-found-border: #eaffdf;
   --tile-found-letter: #ffffff;
-  --tile-deactivated-opacity: 0.45;
 
-   /* Path / primary action / hints / skin-buttons */
-  --path-color: #39e832;
-  --primary-action-bg: #3da7e1;
+  --tile-deactivated-opacity: 0.42;
+
+  /* Ribbon */
+  --path-color: #8ce26b;
+
+  --path-grad-start: #9be973;
+  --path-grad-end: #72d85f;
+
+  --path-width: 11px;
+  --path-cap: round;
+  --path-opacity: 1;
+  --path-glow: 20;
+
+  --selected-letter-outline: #0d4768;
+
+  /* Primary action */
+  --primary-action-bg: #35cfff;
   --primary-action-text: #ffffff;
-  --hint-empty-bg: rgba(255, 255, 255, 0.4);
-  --hint-empty-border: rgba(255, 255, 255, 0.7);
-  --hint-solved-bg: #3da7e1;        /* SOLID */
-  --hint-solved-border: #7ec5f0;
-  --hint-solved-letter: #ffffff;
-  --skin-button-bg: rgba(255, 255, 255, 0.7);
-  --skin-button-border: rgba(255, 255, 255, 0.8);
-  --skin-button-text: #456885;
-  --skin-button-active-bg: rgba(61, 167, 225, 0.22);
-  --skin-button-active-border: #3da7e1;
-  --skin-button-active-text: #0b4566;
 
-   /* Typography & shape */
+  /* Hints */
+
+  --hint-radius: 12px;
+
+  --hint-empty-bg: rgba(255,255,255,0.90);
+  --hint-empty-border: #8adfff;
+  --hint-empty-letter: transparent;
+  --hint-empty-letter-outline: transparent;
+
+  --hint-solved-bg: linear-gradient(
+    180deg,
+    #b6f49b,
+    #72d85f
+  );
+
+  --hint-solved-border: #ffffff;
+  --hint-solved-letter: #17425e;
+
+
+  /* Skin buttons */
+  --skin-button-bg: rgba(255,255,255,0.82);
+  --skin-button-border: rgba(255,255,255,1);
+  --skin-button-text: #5f8ea8;
+
+  --skin-button-active-bg: rgba(73,216,255,0.28);
+  --skin-button-active-border: #49d8ff;
+  --skin-button-active-text: #0d4768;
+
+  /* Typography */
   --tile-font-family: 'Comfortaa', cursive;
   --tile-font-weight: 700;
   --tile-font-scale: 0.88;
-  --tile-radius: 16px;              /* bubbly fluid capsule curves */
+
   --wordmark-font-family: 'Audiowide', cursive;
   --wordmark-font-weight: 400;
-  --wordmark-letter-spacing: 0.1em;
-  --display-font-scale: 0.95;
-  --title-glow-alpha: 28%;
-  --glow-strength: 1.3;
+  --wordmark-letter-spacing: 0.14em;
 
-   /* Selection ribbon */
-  --path-grad-start: #39e832;       /* flat neon-green cooling fluid trail */
-  --path-grad-end: #39e832;         /* completely contrasts against glossy blue tiles */
-  --path-width: 10px;
-  --path-cap: round;
-  --path-opacity: 0.9;
-  --path-glow: 12;
-  --selected-letter-outline: #0b4566;
+  --display-font-scale: 0.98;
+
+  /* Shape */
+  --tile-radius: 18px;
+
+  /* Glow */
+  --title-glow-alpha: 50%;
+  --glow-strength: 2;
+
+  --shell-radius: 24px;
+}
+
+.skin-aero .tile::before {
+  content: "";
+  position: absolute;
+  inset: 2px 2px 55% 2px;
+  border-radius: inherit;
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0.75),
+    rgba(255,255,255,0)
+  );
+  pointer-events: none;
 }
 
 /* ── Star Hunter ── Deep subterranean alien caverns with high-contrast power-suit energy blooms. */

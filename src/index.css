@@ -385,16 +385,24 @@
   animation: hint-reveal-rise 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   pointer-events: none;
 }
-.hint-slot[data-revealing]::after {
-  content: '';
-  position: absolute;
-  inset: -14px;
-  border-radius: 50%;
-  background: radial-gradient(circle, var(--title-glow) 0%, transparent 65%);
-  opacity: 0;
-  z-index: -1;
-  pointer-events: none;
-  animation: hint-charging-halo 700ms ease-out forwards;
+.hint-slot {
+  position: relative;
+  isolation: isolate;
+  width: 22px;
+  height: 30px;
+  border-radius: var(--hint-radius);
+  background: var(--hint-empty-bg);
+  border: 1px solid var(--hint-empty-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--type-body);
+  font-family: var(--tile-font-family, 'Space Mono', ui-monospace, monospace);
+  font-weight: var(--tile-font-weight, 700);
+  transition:
+    background 200ms ease,
+    border-color 200ms ease,
+    color 200ms ease;
 }
 @keyframes hint-reveal-rise {
   0% { height: 0; opacity: 1; }
@@ -1115,7 +1123,11 @@ body {
   z-index: 2;
   pointer-events: none;
   color: var(--hint-empty-letter);
-  transition: color 200ms ease;
+  -webkit-text-stroke-width: 1px;
+  -webkit-text-stroke-color: var(--hint-empty-letter-outline);
+  transition:
+    color 200ms ease,
+    -webkit-text-stroke-color 200ms ease;
 }
 
 /* Revealed (filled but the word isn't solved yet): the slot stays on the dark
@@ -1124,6 +1136,7 @@ body {
    light-bg skins like Terminal/Game Boy) and therefore invisible here. */
 .hint-slot[data-filled="true"] .hint-slot-letter {
   color: var(--tile-letter);
+  -webkit-text-stroke-color: transparent;
 }
 
 /* Solved word: fill the slot with the solid --hint-solved-* triple. Was a
@@ -1137,6 +1150,7 @@ body {
 
 .hint-row[data-solved="true"] .hint-slot[data-filled="true"] .hint-slot-letter {
   color: var(--hint-solved-letter);
+  -webkit-text-stroke-color: var(--hint-solved-letter-outline);
 }
 
 @media (prefers-reduced-motion: reduce) {

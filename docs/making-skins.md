@@ -127,6 +127,14 @@ Optional / rarely:
    (dark text on light surfaces). The catch is `--title-glow`: it doubles as a text
    color app-wide, so on light it must be a **deep** shade of the accent (a deep
    cyan-teal, not bright cyan) — keep the bright accent for fills/selection/ribbon.
+10. **Use outlines before sacrificing palette identity.**
+    When a bright fill and a light letter belong to the aesthetic (CRT glow,
+    Frutiger Aero glass, neon themes, etc.), prefer
+    `--selected-letter-outline`,
+    `--hint-empty-letter-outline`, or
+    `--hint-solved-letter-outline`
+    before changing the core colors. Contrast helpers exist so skins can keep
+    their intended palette while remaining readable. Hint letters are small, so a border doesn't always look good.
 
 ---
 
@@ -193,10 +201,24 @@ The grid shows three steady-state tile states during play:
   contrasts the letter (dark outline for light letters, light for dark).
 
 ### Hints — the answer slots at the bottom
-- Empty: `--hint-empty-bg`, `--hint-empty-border`, `--hint-empty-letter`
-  (usually `transparent`).
-- Solved/revealed: `--hint-solved-bg`,
-  `--hint-solved-border`, `--hint-solved-letter` (must contrast `--hint-solved-bg`).
+- Empty:
+  - `--hint-empty-bg`
+  - `--hint-empty-border`
+  - `--hint-empty-letter` (usually `transparent`)
+  - `--hint-empty-letter-outline` (usually `transparent`; useful when a skin needs
+    extra contrast on light backgrounds)
+
+- Solved/revealed:
+  - `--hint-solved-bg`
+  - `--hint-solved-border`
+  - `--hint-solved-letter`
+  - `--hint-solved-letter-outline`
+
+  The solved letter must contrast the solved background.
+
+- Shape:
+  - `--hint-radius` — corner radius of hint slots. Lets a skin match the geometry
+    of its tiles (square Game Boy hints, rounded Aero hints, etc.).
 
 ### Skin-selector buttons (Settings)
 - `--skin-button-bg`, `--skin-button-border`, `--skin-button-text`,
