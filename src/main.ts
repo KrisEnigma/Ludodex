@@ -36,7 +36,7 @@ import '@fontsource/silkscreen/latin-700.css';
 import '@fontsource/vt323/latin-400.css'; // Terminal skin
 import '@fontsource/cinzel/latin-400.css'; // Underworld skin
 import '@fontsource/cinzel/latin-700.css'; // Underworld skin (wordmark)
-import '@fontsource/anton/latin-400.css'; // Phantom Thieves skin
+import '@fontsource/squada-one/latin-400.css';  // Mushroom Kingdom skin (tiles)
 import './skins/skins.css';
 import './index.css';
 import { App as CapacitorApp } from '@capacitor/app';

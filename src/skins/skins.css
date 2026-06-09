@@ -48,16 +48,6 @@
   src: url('../fonts/diablo.woff') format('woff');
 }
 
-@font-face {
-  font-family: 'Squada One';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src:
-    url('https://cdn.jsdelivr.net/fontsource/fonts/squada-one@latest/latin-400-normal.woff2') format('woff2'),
-    url('https://cdn.jsdelivr.net/fontsource/fonts/squada-one@latest/latin-400-normal.woff') format('woff');
-}
-
 /* ────────────────────────────────────────────────────────────────────────── */
 
 :root {

@@ -243,7 +243,6 @@ The grid shows three steady-state tile states during play:
 | VT323 | `1.18` | `1.45` | 400 | Terminal, Phosphor, BIOS |
 | Cinzel | `0.78` | `1.0` | 400, 700 | Underworld; Inferno (tiles) |
 | Oswald | `0.92` | `0.95` | 500, 600 | Aperture, Ring |
-| Squada One | _(reconstructed)_ | `1.8` | 400 | Mushroom Kingdom (wordmark) |
 | AmazDooMRight2 | _(wordmark only)_ | `0.9` | 400 (self-hosted) | Phobos (wordmark) |
 | DooM | `1.0` | _(tile only)_ | 400 (self-hosted) | Phobos (tiles) |
 | Diablo | _(wordmark only)_ | `0.9` | 400 (self-hosted .woff) | Inferno (wordmark) |
