@@ -112,6 +112,7 @@
   --tile-scale-press-start: 0.62;
   --tile-scale-vt323: 1.18;
   --tile-scale-cinzel: 0.78;        /* Cinzel caps sit high in em-box; pull down slightly */
+  --tile-scale-anton: 0.9;          /* Anton condensed bold caps; slight reduction for tile size */
   --tile-scale-oswald: 0.92;        /* Oswald is condensed; tall caps fill the cell, pull down a touch (Aperture) */
   --tile-scale-silkscreen: 1.06;    /* Silkscreen pixel glyphs sit small in the em-box; nudge up for tiles (Pastel). Wordmark uses --display-scale-silkscreen. */
   --tile-font-scale: 1;          /* active tile scale (Space Mono baseline) */
@@ -131,6 +132,7 @@
   --display-scale-vt323: 1.45;
   --display-scale-cinzel: 1;     /* Cinzel all-caps wordmark needs slight reduction */
   --display-scale-diablo: 0.9;   /* Diablo ornate caps sit tall; pull down for the wordmark (Inferno). Tiles use Cinzel. */
+  --display-scale-anton: 0.9;    /* Anton condensed bold wordmark (Phantom Thieves) */
   --display-scale-oswald: 0.95;  /* Oswald condensed wordmark (Aperture) */
   /* Active display-font scale for this skin (Space Mono baseline = 1.0). */
   --display-font-scale: 1;

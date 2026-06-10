@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ludodex Skin Creator</title>
+    <link rel="stylesheet" href="/src/fonts.css?v=2026-06-09" />
+    <link rel="stylesheet" href="/src/skins/skins.css?v=2026-06-09" />
+    <link rel="stylesheet" href="/src/index.css?v=2026-06-10" />
+    <link rel="stylesheet" href="/src/skin-tester/tester.css?v=2026-06-09" />
+    <link rel="stylesheet" href="/src/skin-creator/creator.css?v=2026-06-09f" />
+  </head>
+  <body>
+    <div class="creator-layout">
+
+      <!-- Top bar -->
+      <header class="creator-topbar">
+        <span class="creator-topbar-logo">Skin Creator</span>
+        <div class="creator-topbar-controls">
+          <label class="creator-label" for="creatorSkinName">Skin name</label>
+          <input id="creatorSkinName" class="creator-input creator-name-input" type="text" value="My Skin" spellcheck="false" />
+          <label class="creator-label" for="creatorSkinDesc">Description</label>
+          <input id="creatorSkinDesc" class="creator-input creator-desc-input" type="text" spellcheck="false" placeholder="Short vibe — one sentence" />
+          <label class="creator-label" for="creatorPresetSelect">Load preset</label>
+          <select id="creatorPresetSelect" class="creator-select"></select>
+        </div>
+        <div class="creator-topbar-actions">
+          <button id="creatorResetDefaults" class="creator-btn creator-btn-ghost" type="button">Reset</button>
+          <button id="creatorExport" class="creator-btn creator-btn-primary" type="button">Export CSS</button>
+        </div>
+      </header>
+
+      <!-- Two-panel body -->
+      <div class="creator-body">
+
+        <!-- Left: editor panel -->
+        <aside class="creator-editor" id="creatorEditor">
+          <div class="creator-editor-inner" id="creatorEditorInner">
+            <!-- Fully populated by creator.js, including the Custom CSS section -->
+          </div>
+        </aside>
+
+        <!-- Right: preview panel -->
+        <main class="creator-preview-panel">
+          <!-- Screen tabs -->
+          <nav class="creator-screen-tabs" id="creatorScreenTabs" aria-label="Preview screen"></nav>
+
+          <!-- Preview stage -->
+          <div class="creator-stage-wrap">
+            <div class="creator-stage" id="creatorStage">
+              <div class="creator-preview" id="creatorPreview">
+                <!-- Populated by creator.js -->
+              </div>
+            </div>
+          </div>
+        </main>
+
+      </div>
+    </div>
+
+    <!-- Export modal -->
+    <div class="creator-modal-backdrop" id="exportModal" hidden>
+      <div class="creator-modal" role="dialog" aria-modal="true" aria-labelledby="exportModalTitle">
+        <div class="creator-modal-head">
+          <h2 class="creator-modal-title" id="exportModalTitle">Export skin</h2>
+          <button class="creator-modal-close" id="exportModalClose" type="button" aria-label="Close">✕</button>
+        </div>
+
+        <p class="creator-modal-hint"><strong>1 of 3 — CSS</strong> &nbsp;Paste into <code>src/skins/skins.css</code>. Only changed variables are emitted.</p>
+        <textarea id="exportOutput" class="creator-textarea creator-export-textarea" readonly></textarea>
+        <div class="creator-modal-actions">
+          <button id="exportCopy" class="creator-btn creator-btn-primary" type="button">Copy CSS</button>
+        </div>
+
+        <p class="creator-modal-hint" style="margin-top:16px"><strong>2 of 3 — registry.ts</strong> &nbsp;Add to <code>src/skins/registry.ts</code>.</p>
+        <textarea id="exportRegistry" class="creator-textarea creator-export-textarea" readonly></textarea>
+        <div class="creator-modal-actions">
+          <button id="exportCopyRegistry" class="creator-btn creator-btn-primary" type="button">Copy registry entry</button>
+        </div>
+
+        <p class="creator-modal-hint" style="margin-top:16px"><strong>3 of 3 — Font setup</strong> &nbsp;Only needed if your skin uses a font not already in <code>src/fonts.css</code>.</p>
+        <textarea id="exportFonts" class="creator-textarea creator-export-textarea" readonly></textarea>
+        <div class="creator-modal-actions">
+          <button id="exportCopyFonts" class="creator-btn creator-btn-primary" type="button">Copy font setup</button>
+          <button id="exportClose2" class="creator-btn creator-btn-ghost" type="button">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="/src/skin-creator/creator.js?v=2026-06-09f"></script>
+  </body>
+</html>

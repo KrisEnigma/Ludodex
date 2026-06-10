@@ -1,0 +1,46 @@
+/* ── Ludodex skin fonts ───────────────────────────────────────────────────────
+   Single source of truth for all @fontsource font imports.
+   - Imported by main.ts (app bundle — works offline on iOS/Android)
+   - Linked by skin-tester/index.html and skin-creator/index.html
+   Adding a new font: package.json dep + one line here. That's it.
+   Latin-only subset, only the weights each skin uses — keeps the bundle lean.
+   -------------------------------------------------------------------------- */
+
+@import '@fontsource/space-mono/latin-400.css';
+@import '@fontsource/space-mono/latin-700.css';
+
+/* — Skin display fonts — */
+@import '@fontsource/orbitron/latin-700.css';           /* Neon Horizon, Crimson */
+@import '@fontsource/oswald/latin-500.css';             /* Test Chamber (tiles) */
+@import '@fontsource/oswald/latin-600.css';             /* Test Chamber (wordmark) */
+@import '@fontsource/antonio/latin-700.css';            /* Catalyst (tiles) */
+@import '@fontsource/syncopate/latin-700.css';          /* Catalyst (wordmark) */
+@import '@fontsource/almendra/latin-700.css';           /* Paleblood, Relic Gold (tiles) */
+@import '@fontsource/unifrakturmaguntia/latin-400.css'; /* Paleblood (wordmark) */
+@import '@fontsource/comfortaa/latin-700.css';          /* Aero (tiles) */
+@import '@fontsource/audiowide/latin-400.css';          /* Aero (wordmark) */
+@import '@fontsource/share-tech-mono/latin-400.css';    /* Star Hunter, Polygon (tiles) */
+@import '@fontsource/russo-one/latin-400.css';          /* Star Hunter, Crimson (wordmark) */
+@import '@fontsource/cinzel-decorative/latin-700.css';  /* Relic Gold (wordmark) */
+@import '@fontsource/titan-one/latin-400.css';          /* Puff Star (wordmark) */
+@import '@fontsource/pixelify-sans/latin-700.css';      /* Mushroom Kingdom skin (tiles) */
+@import '@fontsource/bungee/latin-400.css';             /* Mushroom Kingdom (wordmark) */
+@import '@fontsource/dotgothic16/latin-400.css';        /* 16-Bit Cape (tiles) */
+@import '@fontsource/dela-gothic-one/latin-400.css';    /* 16-Bit Cape (wordmark) */
+@import '@fontsource/rubik-mono-one/latin-400.css';     /* Blue Blur (tiles) */
+@import '@fontsource/righteous/latin-400.css';          /* Blue Blur (wordmark) */
+@import '@fontsource/rocknroll-one/latin-400.css';      /* Dragon Heat (tiles) */
+@import '@fontsource/teko/latin-600.css';               /* Dragon Heat (wordmark) */
+@import '@fontsource/permanent-marker/latin-400.css';   /* Radio Tag (tiles) */
+@import '@fontsource/luckiest-guy/latin-400.css';       /* Radio Tag (wordmark) */
+@import '@fontsource/electrolize/latin-400.css';        /* Cyber Shinobi (tiles) */
+@import '@fontsource/major-mono-display/latin-400.css'; /* Cyber Shinobi (wordmark) */
+@import '@fontsource/exo-2/latin-700.css';              /* Spirit (wordmark) */
+@import '@fontsource/unbounded/latin-700.css';          /* Crimson (tiles) */
+@import '@fontsource/squada-one/latin-400.css';         /* Mushroom Kingdom (wordmark) */
+@import '@fontsource/anton/latin-400.css';              /* Phantom Thieves */
+@import '@fontsource/press-start-2p/latin-400.css';     /* Dot Matrix, Toaster */
+@import '@fontsource/silkscreen/latin-700.css';         /* Dot Matrix, Toaster (wordmark) */
+@import '@fontsource/vt323/latin-400.css';              /* Terminal, Phosphor, BIOS */
+@import '@fontsource/cinzel/latin-400.css';             /* Underworld */
+@import '@fontsource/cinzel/latin-700.css';             /* Underworld (wordmark) */

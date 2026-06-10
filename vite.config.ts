@@ -13,6 +13,9 @@ export default defineConfig({
         if (url.pathname === '/editor' || url.pathname === '/editor/' || url.pathname === '/editor.html') {
           req.url = '/editor/index.html';
         }
+        if (url.pathname === '/skin-creator' || url.pathname === '/skin-creator/' || url.pathname === '/skin-creator/index.html') {
+          req.url = `/src/skin-creator/index.html${url.search}`;
+        }
         next();
       });
     }

@@ -1,42 +1,5 @@
-import '@fontsource/space-mono/latin-400.css';
-import '@fontsource/space-mono/latin-700.css';
-// Skin display fonts. Bundled via Vite (relative asset URLs) so they work
-// offline on iOS/Android, same as Space Mono above. Latin-only subset and
-// only the weights each skin uses (Press Start 2P ships 400 only) — keeps
-// the bundle lean by skipping cyrillic/greek/vietnamese glyphs we never show.
-import '@fontsource/orbitron/latin-700.css';
-import '@fontsource/oswald/latin-500.css'; // Test Chamber skin (tiles)
-import '@fontsource/oswald/latin-600.css'; // Test Chamber skin (wordmark)
-import '@fontsource/antonio/latin-700.css'; // Catalyst skin (tiles)
-import '@fontsource/syncopate/latin-700.css'; // Catalyst skin (wordmark)
-import '@fontsource/almendra/latin-700.css'; // Paleblood + Relic Gold skin (tiles)
-import '@fontsource/unifrakturmaguntia/latin-400.css'; // Paleblood skin (wordmark)
-import '@fontsource/comfortaa/latin-700.css'; // Aero skin (tiles)
-import '@fontsource/audiowide/latin-400.css'; // Aero skin (wordmark)
-import '@fontsource/share-tech-mono/latin-400.css'; // Star Hunter + Polygon skin (tiles)
-import '@fontsource/russo-one/latin-400.css'; // Star Hunter + Crimson skin (wordmark)
-import '@fontsource/cinzel-decorative/latin-700.css'; // Relic Gold skin (wordmark)
-import '@fontsource/titan-one/latin-400.css'; // Puff Star skin (wordmark)
-import '@fontsource/pixelify-sans/latin-700.css'; // 8-Bit Overworld skin (tiles)
-import '@fontsource/bungee/latin-400.css'; // 8-Bit Overworld skin (wordmark)
-import '@fontsource/dotgothic16/latin-400.css'; // 16-Bit Cape skin (tiles)
-import '@fontsource/dela-gothic-one/latin-400.css'; // 16-Bit Cape skin (wordmark)
-import '@fontsource/rubik-mono-one/latin-400.css'; // Blue Blur skin (tiles)
-import '@fontsource/righteous/latin-400.css'; // Blue Blur skin (wordmark)
-import '@fontsource/rocknroll-one/latin-400.css'; // Dragon Heat skin (tiles)
-import '@fontsource/teko/latin-600.css'; // Dragon Heat skin (wordmark)
-import '@fontsource/permanent-marker/latin-400.css'; // Radio Tag skin (tiles)
-import '@fontsource/luckiest-guy/latin-400.css'; // Radio Tag skin (wordmark)
-import '@fontsource/electrolize/latin-400.css'; // Cyber Shinobi skin (tiles)
-import '@fontsource/major-mono-display/latin-400.css'; // Cyber Shinobi skin (wordmark)
-import '@fontsource/exo-2/latin-700.css'; // Spirit skin (wordmark)
-import '@fontsource/unbounded/latin-700.css'; // Crimson skin (tiles)
-import '@fontsource/press-start-2p/latin-400.css';
-import '@fontsource/silkscreen/latin-700.css';
-import '@fontsource/vt323/latin-400.css'; // Terminal skin
-import '@fontsource/cinzel/latin-400.css'; // Underworld skin
-import '@fontsource/cinzel/latin-700.css'; // Underworld skin (wordmark)
-import '@fontsource/squada-one/latin-400.css';  // Mushroom Kingdom skin (tiles)
+// All skin fonts live in one place. See src/fonts.css — add new fonts there.
+import './fonts.css';
 import './skins/skins.css';
 import './index.css';
 import { App as CapacitorApp } from '@capacitor/app';
