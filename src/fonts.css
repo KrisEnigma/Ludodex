@@ -1,7 +1,7 @@
 /* ── Ludodex skin fonts ───────────────────────────────────────────────────────
    Single source of truth for all @fontsource font imports.
    - Imported by main.ts (app bundle — works offline on iOS/Android)
-   - Linked by skin-tester/index.html and skin-creator/index.html
+   - Linked by skin-creator/index.html
    Adding a new font: package.json dep + one line here. That's it.
    Latin-only subset, only the weights each skin uses — keeps the bundle lean.
    -------------------------------------------------------------------------- */
@@ -18,7 +18,7 @@
 @import '@fontsource/almendra/latin-700.css';           /* Paleblood, Relic Gold (tiles) */
 @import '@fontsource/unifrakturmaguntia/latin-400.css'; /* Paleblood (wordmark) */
 @import '@fontsource/comfortaa/latin-700.css';          /* Aero (tiles) */
-@import '@fontsource/audiowide/latin-400.css';          /* Aero (wordmark) */
+@import '@fontsource/audiowide/latin-400.css';          /* Aero (wordmark), Cyber Shinobi (tiles) */
 @import '@fontsource/share-tech-mono/latin-400.css';    /* Star Hunter, Polygon (tiles) */
 @import '@fontsource/russo-one/latin-400.css';          /* Star Hunter, Crimson (wordmark) */
 @import '@fontsource/cinzel-decorative/latin-700.css';  /* Relic Gold (wordmark) */
@@ -33,8 +33,8 @@
 @import '@fontsource/teko/latin-600.css';               /* Dragon Heat (wordmark) */
 @import '@fontsource/permanent-marker/latin-400.css';   /* Radio Tag (tiles) */
 @import '@fontsource/luckiest-guy/latin-400.css';       /* Radio Tag (wordmark) */
-@import '@fontsource/electrolize/latin-400.css';        /* Cyber Shinobi (tiles) */
-@import '@fontsource/major-mono-display/latin-400.css'; /* Cyber Shinobi (wordmark) */
+@import '@fontsource/electrolize/latin-400.css';        /* Cyber Shinobi (wordmark) */
+@import '@fontsource/major-mono-display/latin-400.css'; /* (available, unused by shipped skins) */
 @import '@fontsource/exo-2/latin-700.css';              /* Spirit (wordmark) */
 @import '@fontsource/unbounded/latin-700.css';          /* Crimson (tiles) */
 @import '@fontsource/squada-one/latin-400.css';         /* Mushroom Kingdom (wordmark) */

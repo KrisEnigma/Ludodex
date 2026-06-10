@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="/src/skins/skins.css?v=2026-06-09" />
     <link rel="stylesheet" href="/src/index.css?v=2026-06-10" />
     <link rel="stylesheet" href="/src/skin-tester/tester.css?v=2026-06-09" />
-    <link rel="stylesheet" href="/src/skin-creator/creator.css?v=2026-06-09f" />
+    <link rel="stylesheet" href="/src/skin-creator/creator.css?v=2026-06-10b" />
   </head>
   <body>
     <div class="creator-layout">
@@ -17,10 +17,6 @@
       <header class="creator-topbar">
         <span class="creator-topbar-logo">Skin Creator</span>
         <div class="creator-topbar-controls">
-          <label class="creator-label" for="creatorSkinName">Skin name</label>
-          <input id="creatorSkinName" class="creator-input creator-name-input" type="text" value="My Skin" spellcheck="false" />
-          <label class="creator-label" for="creatorSkinDesc">Description</label>
-          <input id="creatorSkinDesc" class="creator-input creator-desc-input" type="text" spellcheck="false" placeholder="Short vibe — one sentence" />
           <label class="creator-label" for="creatorPresetSelect">Load preset</label>
           <select id="creatorPresetSelect" class="creator-select"></select>
         </div>
@@ -66,27 +62,48 @@
           <button class="creator-modal-close" id="exportModalClose" type="button" aria-label="Close">✕</button>
         </div>
 
-        <p class="creator-modal-hint"><strong>1 of 3 — CSS</strong> &nbsp;Paste into <code>src/skins/skins.css</code>. Only changed variables are emitted.</p>
-        <textarea id="exportOutput" class="creator-textarea creator-export-textarea" readonly></textarea>
-        <div class="creator-modal-actions">
-          <button id="exportCopy" class="creator-btn creator-btn-primary" type="button">Copy CSS</button>
-        </div>
+        <div class="creator-modal-body">
 
-        <p class="creator-modal-hint" style="margin-top:16px"><strong>2 of 3 — registry.ts</strong> &nbsp;Add to <code>src/skins/registry.ts</code>.</p>
-        <textarea id="exportRegistry" class="creator-textarea creator-export-textarea" readonly></textarea>
-        <div class="creator-modal-actions">
-          <button id="exportCopyRegistry" class="creator-btn creator-btn-primary" type="button">Copy registry entry</button>
-        </div>
+          <div class="creator-modal-section">
+            <div class="creator-modal-hint">
+              <span><strong>1 — CSS</strong> &nbsp;<code>src/skins/skins.css</code></span>
+              <button id="exportCopy" class="creator-btn creator-btn-primary" type="button">Copy</button>
+            </div>
+            <textarea id="exportOutput" class="creator-textarea creator-export-textarea" readonly></textarea>
+          </div>
 
-        <p class="creator-modal-hint" style="margin-top:16px"><strong>3 of 3 — Font setup</strong> &nbsp;Only needed if your skin uses a font not already in <code>src/fonts.css</code>.</p>
-        <textarea id="exportFonts" class="creator-textarea creator-export-textarea" readonly></textarea>
-        <div class="creator-modal-actions">
-          <button id="exportCopyFonts" class="creator-btn creator-btn-primary" type="button">Copy font setup</button>
-          <button id="exportClose2" class="creator-btn creator-btn-ghost" type="button">Close</button>
+          <div class="creator-modal-section">
+            <div class="creator-modal-hint">
+              <span><strong>2 — SkinId union</strong> &nbsp;<code>src/skins/registry.ts</code></span>
+              <button id="exportCopyRegistryId" class="creator-btn creator-btn-primary" type="button">Copy</button>
+            </div>
+            <textarea id="exportRegistryId" class="creator-textarea creator-export-textarea" readonly></textarea>
+          </div>
+
+          <div class="creator-modal-section">
+            <div class="creator-modal-hint">
+              <span><strong>3 — SKINS array entry</strong> &nbsp;<code>src/skins/registry.ts</code></span>
+              <button id="exportCopyRegistryArray" class="creator-btn creator-btn-primary" type="button">Copy</button>
+            </div>
+            <textarea id="exportRegistryArray" class="creator-textarea creator-export-textarea" readonly></textarea>
+          </div>
+
+          <div class="creator-modal-section" id="exportSectionFonts">
+            <div class="creator-modal-hint">
+              <span><strong>4 — Font setup</strong> &nbsp;<code>src/fonts.css</code> — only if your skin uses a new font.</span>
+              <button id="exportCopyFonts" class="creator-btn creator-btn-primary" type="button">Copy</button>
+            </div>
+            <textarea id="exportFonts" class="creator-textarea creator-export-textarea" readonly></textarea>
+          </div>
+
+          <div class="creator-modal-actions creator-modal-footer">
+            <button id="exportClose2" class="creator-btn creator-btn-ghost" type="button">Close</button>
+          </div>
+
         </div>
       </div>
     </div>
 
-    <script src="/src/skin-creator/creator.js?v=2026-06-09f"></script>
+    <script src="/src/skin-creator/creator.js?v=2026-06-10b"></script>
   </body>
 </html>

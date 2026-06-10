@@ -2,33 +2,48 @@
 
 ## Current skins (shipped)
 All current skins are **free** (`productId: null`); Neon Horizon & Dot Matrix also
-unlock via achievement on native. 17 skins ship: **12 dark, 5 light**.
+unlock via achievement on native. **33 skins ship.** All are built on the
+10-token semantic model with cascade shield (see `docs/making-skins.md §1`).
 
-| ID | Display name | Theme | Inspiration |
-|---|---|---|---|
-| void | Void | dark | baseline (cyan) |
-| lumen | Lumen | light | Void's light twin |
-| neon-horizon | Neon Horizon | dark | retrowave |
-| gameboy | Dot Matrix | dark | Game Boy LCD |
-| terminal | Terminal | dark | amber CRT |
-| phosphor | Phosphor | dark | P31 green CRT |
-| bios | BIOS | dark | PC BIOS (blue) |
-| pastel | Pastel | dark | SNES lavender |
-| toaster | Toaster | dark | NES (grey/red) |
-| inferno | Inferno | dark | Diablo (gold/fire) |
-| aperture | Aperture | light | Portal (blue/orange) |
-| polygon | Polygon | light | Sony PS1 |
-| ring | Ring | light | Xbox 360 (green) |
-| spirit | Spirit | light | Sega Dreamcast |
-| phobos | Phobos | dark | Doom |
-| crimson | Crimson | dark | molten red |
-| underworld | Underworld | dark | Hades (gold/violet) |
+| ID | Display name | Theme |
+|---|---|---|
+| void | Void | dark — baseline (cyan), Space Mono |
+| lumen | Lumen | light — Void's OS-theme twin |
+| neon-horizon | Neon Horizon | dark — retrowave; achieve solve_10 |
+| laser-vector | Laser Vector | dark — vector arcade |
+| maze-chase | Maze Chase | dark — Pac-Man |
+| swarm | Swarm | dark — Space Invaders |
+| phantom-thieves | Phantom Thieves | dark — Persona 5 red/black |
+| catalyst | Catalyst | dark — Portal |
+| paleblood | Paleblood | dark — Bloodborne moon/violet |
+| aero | Aero | dark — Windows Vista glass |
+| star-hunter | Star Hunter | dark — Metroid / space |
+| relic-gold | Relic Gold | dark — Diablo gold |
+| puff-star | Puff Star | dark — Kirby pastel |
+| mushroom-kingdom | Mushroom Kingdom | dark — Mario; achieve streak_30 |
+| cape-16bit | 16-Bit Cape | dark — Batman SNES-era |
+| blue-blur | Blue Blur | dark — Sonic |
+| dragon-heat | Dragon Heat | dark — Dragon's Lair fire |
+| radio-tag | Radio Tag | dark — Jet Set Radio graffiti |
+| cyber-shinobi | Cyber Shinobi | dark — Shinobi neon |
+| gameboy | Dot Matrix | dark — Game Boy LCD; achieve streak_30 |
+| terminal | Terminal | dark — amber CRT; VT323 |
+| phosphor | Phosphor | dark — green CRT; VT323 |
+| bios | BIOS | dark — PC BIOS blue; VT323 |
+| super-16-bit-lilac | Super 16-Bit Lilac | dark — SNES lavender; Silkscreen |
+| toaster | Toaster | dark — NES grey/red |
+| lord-of-terror | Lord of Terror | dark — Diablo gold/fire; Cinzel + Diablo* |
+| test-chamber | Test Chamber | light — Portal blue/orange; Oswald |
+| polygon | Polygon | light — Sony PS1 |
+| ring-of-light | Ring of Light | light — Xbox 360; Oswald |
+| dream-spiral | Dream Spiral | light — Sega Dreamcast |
+| rip-tear | Rip & Tear | dark — Doom; DooM* + AmazDooMRight2* |
+| blood-darkness | Blood & Darkness | dark — Hades gold/violet; Cinzel |
+| crimson | Crimson | dark — molten red; Orbitron |
+
+\* self-hosted font.
 
 **Void ⟷ Lumen** are wired as the OS-theme auto-default (light devices boot Lumen).
-Console-brand coverage: Nintendo (Dot Matrix, Pastel, Toaster), Sony (Polygon),
-Microsoft (Ring), Sega (Spirit). Lumen, Toaster, Ring weren't in the original
-candidate list below — they came out of session work (a Void light twin; filling
-the NES/Sony/Xbox/Sega gap with light skins).
 
 ---
 

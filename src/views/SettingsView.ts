@@ -384,10 +384,24 @@ export class SettingsView {
       skinScope.append(tileDefault, tileSelected);
       left.append(skinScope);
 
+      const info = document.createElement('span');
+      info.className = 'settings-skin-info';
+
       const name = document.createElement('span');
       name.className = 'settings-skin-name';
       name.textContent = this.getSkinName(skin.id);
-      left.append(name);
+      info.append(name);
+
+      const descKey = `skin.${skin.id}.desc` as Parameters<typeof t>[0];
+      const descText = t(descKey);
+      if (descText && descText !== descKey) {
+        const desc = document.createElement('span');
+        desc.className = 'settings-skin-desc';
+        desc.textContent = descText;
+        info.append(desc);
+      }
+
+      left.append(info);
 
       card.append(left);
 

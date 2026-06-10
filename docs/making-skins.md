@@ -19,7 +19,7 @@ variables, plus **one entry** in a TypeScript registry. Everything visual flows
 from those variables. To add a skin you touch **2 files** (3 if it needs a new
 font):
 
-1. `src/skins/skins.css` — add a `.skin-<id> { … }` block of variable overrides.
+1. `src/skins/skins.css` — add a `.skin-<id> { … }` block.
 2. `src/skins/registry.ts` — add the `SkinId` and a metadata `SKINS` entry.
 3. `src/main.ts` + `package.json` — only if the skin uses a **new @fontsource
    font** (a new *self-hosted* font instead just adds an `@font-face` to
@@ -34,6 +34,14 @@ swatch menu flow dynamically from the CSS classes, decoupling presentation from 
 skins are cosmetic only (never change layout or hitboxes); display fonts go on
 identity text only, not functional chrome (see §3).
 
+### Skin creator
+
+There is a visual editor at `src/skin-creator/` (open `index.html` in the Vite
+dev server). It exposes the 11 semantic token controls, live-previews across all
+screens (game, win, menu, settings, …), and exports a ready-to-paste CSS block
+and exports a ready-to-paste CSS block. Use it to
+design and iterate before touching `skins.css` by hand.
+
 ---
 
 ## 1. How skins work (architecture)
@@ -42,9 +50,22 @@ identity text only, not functional chrome (see §3).
   `<html>`. CSS variables scoped to `.skin-<id>` then cascade to the whole app.
   `void` is the default and is represented by the **`:root` block itself** — it has
   no `.skin-void` class; absence of any skin class = void.
+- **Token model:** `:root` defines **11 semantic tokens** — the minimal set of
+  design decisions for a skin — and derives every old variable from them. Skin
+  classes override tokens; `:root`'s `var()` chains propagate the changes
+  automatically to all consumers. Skins that need to deviate from the derivation
+  (e.g. a custom `--shell-bg`) can still override any derived var directly.
+- **Preview isolation via `@scope`:** `skins.css` contains a single
+  `@scope (.settings-skin-preview-scope)` rule that re-anchors the 7 derived tile
+  vars (`--tile-bg`, `--tile-border`, `--tile-letter`, `--tile-selected-bg`,
+  `--tile-selected-border`, `--tile-selected-letter`, `--tile-selected-glow`) as
+  `var()` references directly on each preview card. This prevents the active skin
+  from bleeding into preview elements via CSS custom-property inheritance — no
+  per-skin boilerplate required. Skins that deviate from the defaults simply declare
+  those vars directly (they win on specificity).
 - **Source of truth for color/typography:** `src/skins/skins.css`. `:root` holds
   the void baseline (every variable, defined once). Each `.skin-<id>` block
-  overrides only what differs.
+  overrides tokens plus any explicit overrides.
 - **Consumers:** `src/index.css` styles every component using `var(--…)`. You do
   **not** edit `index.css` to add a skin — it already consumes the variables.
 - **Registry:** `src/skins/registry.ts` — defines the `SkinId` union, the `SKINS` array 
@@ -143,8 +164,34 @@ Optional / rarely:
 Every variable below is defined in `:root` (void baseline) in `skins.css`. A skin
 overrides any subset. Grouped by what they control.
 
+### Semantic tokens (the 11 inputs — set these first)
+
+These are the high-level design decisions. `:root` derives all other vars from
+them automatically. A skin only needs to set these 11 tokens to be complete.
+Fine-tuning overrides are always available.
+
+| Token | Type | Void default | Derives… |
+|---|---|---|---|
+| `--bg-top` | color | `#0d1118` | `--bg-center` |
+| `--bg-bottom` | color | `#07090e` | `--bg-edge`, `--primary-action-text`, `--selected-letter-outline` |
+| `--surface` | **color only** (not gradient) | `#131824` | `--shell-bg`, `--button-bg`, `--button-hover-bg`, `--hint-empty-bg`, `--skin-button-bg` |
+| `--border` | color | `#2a3148` | `--tile-border`, `--tile-found-border`, `--button-border`, `--hint-empty-border`, `--skin-button-border` |
+| `--text` | color | `#cfd6e1` | `--title-color`, `--tile-letter`, `--tile-found-letter`, `--button-text`, `--skin-button-text` |
+| `--text-dim` | color | `#8590a7` | `--chrome-text` |
+| `--accent` | color | `#00d4e8` | `--title-glow`, `--tile-selected-border`, `--tile-selected-glow`, `--button-active-border`, `--hint-solved-border`, `--skin-button-active-border` |
+| `--action` | color | `#00d4e8` | `--path-color`, `--path-grad-end`, `--primary-action-bg`, `--hint-solved-bg`, `--button-active-bg`, `--skin-button-active-bg` |
+| `--tile` | gradient | `linear-gradient(145deg, #1e2236, #131824)` | `--tile-bg`, `--tile-found-bg` |
+| `--tile-sel` | gradient | `linear-gradient(145deg, #0d3a42, #071e26)` | `--tile-selected-bg` |
+| `--path-start` | color | `#8a7bff` | `--path-grad-start` |
+
+`--accent` and `--action` are separate so selection ring color and action/path
+color can differ. Set them equal for a unified palette.
+
+`--surface` **must be a flat color** — it feeds into `color-mix()` derivations
+(`--button-hover-bg`, `--hint-empty-bg`, etc.). Gradients silently break those.
+
 ### Background & shell
-- `--bg-center`, `--bg-edge` — radial page background (center → edge).
+- `--bg-center`, `--bg-edge` — radial page background (center → edge). *Derived from `--bg-top`/`--bg-bottom`.*
 - `--shell-bg` — app shell panel background (**gradient** — see gotcha §8).
 - `--shell-border`, `--shell-shadow` — shell frame.
 
@@ -321,10 +368,14 @@ subset — don't.)
 
 ### Step 3 — Add the `.skin-<id>` block in `skins.css`
 
-Copy the template in §7.1 and fill in every variable. Use the existing skins as
-color references. Set `--tile-font-scale` / `--display-font-scale` to the
-per-font constants. Match `--tile-font-weight` / `--wordmark-font-weight` to what
-the font ships. Previews for the Settings grid populate from this CSS block automatically.
+**Option A — Skin creator (recommended for new skins):** Open `src/skin-creator/`
+in the dev server. Adjust the 11 semantic token controls, preview across screens,
+then hit Export. The exported CSS block is ready to paste into `skins.css`.
+
+**Option B — Hand-write:** Copy the template in §7.1. Set the 11 tokens, then
+add any fine-tuning overrides. Use the existing skins as color references. Set
+`--tile-font-scale` / `--display-font-scale` to the per-font constants. Match
+weights to what the font ships.
 
 ### Step 4 — Register it in `registry.ts`
 
@@ -362,86 +413,73 @@ scale numbers and any low-contrast colors. Confirm the Settings swatch looks cor
 
 ### 7.1 `skins.css` block
 
+The token-first template. Set the 11 semantic tokens, then add overrides for
+anything that diverges from the default derivations.
+
 ```css
 /* ── <Name> ── short description of the concept. */
 .skin-<id> {
-  /* Background & shell */
-  --bg-center: #______;
-  --bg-edge: #______;
-  --shell-bg: linear-gradient(180deg, rgba(_,_,_,0.9), rgba(_,_,_,0.95));
-  --shell-border: #______;
+  color-scheme: dark;   /* or light — see §12 */
 
-  /* Chrome & title */
-  --chrome-text: #______;
-  --title-color: #______;
-  --title-glow: #______;            /* signature accent */
+  /* ── 11 semantic tokens ────────────────────────────────────────── */
+  --bg-top:     #______;
+  --bg-bottom:  #______;
+  --surface:    #______;    /* FLAT COLOR ONLY — feeds color-mix() */
+  --border:     #______;
+  --text:       #______;
+  --text-dim:   #______;
+  --accent:     #______;    /* selection ring, glow, title */
+  --action:     #______;    /* path, primary CTA, hints — often == accent */
+  --tile:       linear-gradient(145deg, #______, #______);
+  --tile-sel:   linear-gradient(145deg, #______, #______);
+  --path-start: #______;    /* ribbon trail start — contrast the selected tile */
 
-  /* Buttons */
-  --button-bg: #______;
-  --button-border: #______;
-  --button-text: #______;
-  --button-hover-bg: rgba(_,_,_,0.7);
-  --button-active-bg: rgba(_,_,_,0.22);
-  --button-active-border: #______;
-  --button-active-text: #______;
+  /* ── Fine-tuning overrides (add only what differs from tokens) ─── */
+  /* The @scope rule in skins.css handles preview-card isolation       */
+  /* automatically. Only add these if your skin deviates from the      */
+  /* defaults: --tile-selected-letter (default #ffffff),               */
+  /* --tile-selected-glow (default color-mix(accent 40% transparent)), */
+  /* --tile-border (default = --border), --tile-letter (default =      */
+  /* --text), --tile-selected-border (default = --accent).             */
+  /* --shell-bg: linear-gradient(…);   */
+  /* --shell-border: #______;          */
+  /* --hint-solved-bg: #______;        */
+  /* --hint-solved-letter: #ffffff;    */
+  /* --primary-action-text: #ffffff;   */
+  /* --selected-letter-outline: #____; */
+  /* --tile-deactivated-opacity: 0.45; */
+  /* --glow-strength: 1;               */
+  /* --title-glow-alpha: 40%;          */
 
-  /* Tiles */
-  --tile-bg: linear-gradient(145deg, #______, #______);
-  --tile-border: #______;
-  --tile-letter: #______;
-  --tile-selected-bg: linear-gradient(145deg, #______, #______);
-  --tile-selected-border: #______;
-  --tile-selected-letter: #______;
-  --tile-selected-glow: rgba(_,_,_,0.5);
-  --tile-found-bg: linear-gradient(145deg, #______, #______);
-  --tile-found-border: #______;
-  --tile-found-letter: #______;
+  /* ── Typography ─────────────────────────────────────────────────── */
+  --tile-font-family:          '<Font>', monospace;
+  --tile-font-weight:          <weight the font ships>;
+  --tile-font-scale:           var(--tile-scale-<font>);
+  --tile-radius:               <e.g. 14px | 0px>;
+  --wordmark-font-family:      '<Font>', monospace;
+  --wordmark-font-weight:      <weight>;
+  --wordmark-letter-spacing:   0.1em;
+  --display-font-scale:        var(--display-scale-<font>);
+  --glow-strength:             <0 .. ~1.7>;
 
-  /* Path / primary action / hints / skin-buttons */
-  --path-color: #______;
-  --primary-action-bg: #______;
-  --primary-action-text: #______;
-  --hint-empty-bg: rgba(_,_,_,0.19);
-  --hint-empty-border: #______;
-  --hint-solved-bg: #______;
-  --hint-solved-border: #______;
-  --hint-solved-letter: #______;    /* must contrast --hint-solved-bg */
-  --skin-button-bg: rgba(_,_,_,0.82);
-  --skin-button-border: #______;
-  --skin-button-text: #______;
-  --skin-button-active-bg: rgba(_,_,_,0.22);
-  --skin-button-active-border: #______;
-  --skin-button-active-text: #______;
-
-  /* Typography & shape */
-  --tile-font-family: '<Font>', monospace;
-  --tile-font-weight: <weight the font ships>;
-  --tile-font-scale: var(--tile-scale-<font>);
-  --tile-radius: <e.g. 14px | 0px>;
-  --wordmark-font-family: '<Font>', monospace;
-  --wordmark-font-weight: <weight>;
-  --wordmark-letter-spacing: 0.1em;
-  --display-font-scale: var(--display-scale-<font>);
-  --glow-strength: <0 .. ~1.7>;
-
-  /* Selection ribbon */
-  --path-grad-start: #______;       /* == end for a flat ribbon */
-  --path-grad-end: #______;
-  --path-width: 9px;
-  --path-cap: round;                /* butt for pixel skins */
-  --path-opacity: 0.95;
-  --path-glow: <0 .. ~14>;
-  --selected-letter-outline: #______;  /* contrasts the selected letter */
+  /* ── Selection ribbon ───────────────────────────────────────────── */
+  --path-grad-start: #______;   /* == --path-start derivation; set equal to end for flat */
+  --path-grad-end:   #______;   /* == --action derivation */
+  --path-width:      9px;
+  --path-cap:        round;     /* butt for pixel skins */
+  --path-opacity:    0.95;
+  --path-glow:       <0 .. ~14>;
 }
-
 ```
 
-If you added a new font, also add to `:root`:
+> **Shortcut:** export from the skin creator — it generates the token block
+> and any overrides you set, ready to paste.
+
+If you added a new font, also add to `:root` in `skins.css`:
 
 ```css
-  --tile-scale-<font>: <starting value>;
+  --tile-scale-<font>:    <starting value>;
   --display-scale-<font>: <starting value>;
-
 ```
 
 ### 7.2 `registry.ts` entry
@@ -515,6 +553,16 @@ used as text on light). See §12.
 (DooM, Diablo) are declared at the top of `skins.css` with
 `src: url('../fonts/…')` and bundled by Vite — no `main.ts` import, no
 `package.json` dep. Match the `@font-face` `font-weight` to the file.
+14. **Preview isolation is handled by `@scope` — no per-skin boilerplate needed.**
+`skins.css` has a single `@scope (.settings-skin-preview-scope)` rule that
+re-declares `--tile-bg`, `--tile-border`, `--tile-letter`, `--tile-selected-bg`,
+`--tile-selected-border`, `--tile-selected-letter`, and `--tile-selected-glow`
+as `var()` references *directly on* the preview card element. Direct application
+beats inheritance, so these resolve against the card's own skin class rather than
+the active skin on `<html>`. You only need to declare a tile var in your skin
+class if it deviates from the @scope default (e.g. `--tile-selected-letter` is
+not `#ffffff`, or `--tile-border` is not `--border`). The skin creator only emits
+deviating vars on export.
 
 ---
 
@@ -551,43 +599,48 @@ word), hint slots (empty + a revealed letter + a solved word), and the win scree
 
 ## 10. Worked reference: the current lineup
 
-18 skins ship today — **13 dark, 5 light**. Read `src/skins/skins.css` for exact
-values; they're the best examples to copy from. Skins that share a font reference
-the **same** `--*-scale-<font>` constants (the pattern to follow). Note the ribbon
-column: every ribbon is a *contrasting* color to its selected tile (§3.7).
+**33 skins ship today.** Read `src/skins/skins.css` for exact values; they're the
+best examples to copy from. All are refactored to the token model.
 
-**Dark skins**
+| Skin | id | Notes |
+| --- | --- | --- |
+| Void | `void` | default dark; Space Mono; cyan accent |
+| Lumen | `lumen` | default light (Void inverted); auto-paired with Void by OS theme |
+| Neon Horizon | `neon-horizon` | Orbitron; retrowave; achieve solve_10 |
+| Laser Vector | `laser-vector` | vector-arcade |
+| Maze Chase | `maze-chase` | Pac-Man inspired |
+| Swarm | `swarm` | Space Invaders |
+| Phantom Thieves | `phantom-thieves` | Persona 5 red/black |
+| Catalyst | `catalyst` | Portal-inspired |
+| Paleblood | `paleblood` | Bloodborne moon/violet |
+| Aero | `aero` | Windows Vista glass |
+| Star Hunter | `star-hunter` | Metroid / space |
+| Relic Gold | `relic-gold` | Diablo gold/dark |
+| Puff Star | `puff-star` | Kirby pastel |
+| Mushroom Kingdom | `mushroom-kingdom` | Mario; Press Start 2P + Squada One; achieve streak_30 |
+| 16-Bit Cape | `cape-16bit` | Batman / SNES-era |
+| Blue Blur | `blue-blur` | Sonic speed blue |
+| Dragon Heat | `dragon-heat` | Dragon's Lair fire |
+| Radio Tag | `radio-tag` | Jet Set Radio graffiti |
+| Cyber Shinobi | `cyber-shinobi` | Shinobi neon |
+| Dot Matrix | `gameboy` | Game Boy LCD; Press Start 2P + Silkscreen; achieve streak_30 |
+| Terminal | `terminal` | Amber CRT; VT323 |
+| Phosphor | `phosphor` | Green CRT; VT323 |
+| BIOS | `bios` | PC BIOS blue; VT323 |
+| Super 16-Bit Lilac | `super-16-bit-lilac` | SNES lavender; Silkscreen |
+| Toaster | `toaster` | NES grey/red; Press Start 2P + Silkscreen |
+| Lord of Terror | `lord-of-terror` | Diablo gold/fire; Cinzel + Diablo* |
+| Test Chamber | `test-chamber` | Portal blue/orange; Oswald |
+| Polygon | `polygon` | Sony PS1; light |
+| Ring of Light | `ring-of-light` | Xbox 360; light; Oswald |
+| Dream Spiral | `dream-spiral` | Sega Dreamcast; light |
+| Rip & Tear | `rip-tear` | Doom; DooM* + AmazDooMRight2* |
+| Blood & Darkness | `blood-darkness` | Hades gold/violet; Cinzel |
+| Crimson | `crimson` | Orbitron; molten red |
 
-| Skin | id | Tile font | Wordmark font | Radius | Glow | Ribbon | Availability |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Void | `void` (`:root`) | Space Mono | Space Mono | 14px | 1 | violet→cyan | default, free |
-| Mushroom Kingdom | `mushroom-kingdom` | Press Start 2P | Squada One | 0 | 0 | flat green (butt) | streak_30 / free |
-| Neon Horizon | `neon-horizon` | Orbitron | Orbitron | 18px | 1.7 | cyan→gold | solve_10 / IAP |
-| Dot Matrix | `gameboy` | Press Start 2P | Silkscreen | 0 | 0 | flat green (butt) | streak_30 / IAP |
-| Terminal | `terminal` | VT323 | VT323 | 2px | 1.2 | ember→amber | free |
-| Phosphor | `phosphor` | VT323 | VT323 | 2px | 1.4 | lime→green | free |
-| BIOS | `bios` | VT323 | VT323 | 3px | 1.2 | yellow→sky | free |
-| Pastel | `pastel` | Silkscreen | Silkscreen | 10px | 1.2 | mint→periwinkle | free |
-| Toaster | `toaster` | Press Start 2P | Silkscreen | 0 | 0.6 | console grey | free |
-| Inferno | `inferno` | Cinzel | Diablo* | 5px | 1.5 | gold | free |
-| Phobos | `phobos` | DooM* | AmazDooMRight2* | 0 | 0.7 | toxic green | free |
-| Crimson | `crimson` | Orbitron | Orbitron | 6px | 1.3 | gold-orange→red | free |
-| Underworld | `underworld` | Cinzel | Cinzel | 8px | 1.5 | crimson→amethyst | free |
+\* self-hosted font (`@font-face` in `skins.css`, file in `src/fonts/`).
 
-**Light skins** (`color-scheme: light` — see §12)
-
-| Skin | id | Tile font | Wordmark font | Radius | Glow | Accent | Ribbon | Availability |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Lumen | `lumen` | Space Mono | Space Mono | 14px | 1 | deep cyan | indigo→cyan | free |
-| Aperture | `aperture` | Oswald | Oswald | 10px | 0.8 | portal blue + orange | flat orange | free |
-| Polygon | `polygon` | Space Mono | Space Mono | 8px | 0.8 | PS blue | magenta→green | free |
-| Ring | `ring` | Oswald | Oswald | 12px | 0.9 | Xbox green | deep green | free |
-| Spirit | `spirit` | Space Mono | Space Mono | 14px | 1 | Dreamcast orange | swirl blue | free |
-
-* self-hosted font (`@font-face` in `skins.css`, file in `src/fonts/`).
-
-**Void ⟷ Lumen are a dark/light pair** (same cyan + Space Mono DNA, inverted),
-wired as the auto default by OS theme — see §13.
+**Void ⟷ Lumen are a dark/light pair**, wired as the auto default by OS theme — see §13.
 
 ---
 

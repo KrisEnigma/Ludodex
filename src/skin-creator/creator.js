@@ -1,42 +1,59 @@
 'use strict';
 
 // ── Skins ─────────────────────────────────────────────────────────────────────
+//
+// Discovered at runtime from the loaded stylesheet — no hardcoded list.
+// Each skin block in skins.css must define:
+//   --skin-name: "Display Name";   ← creator dropdown label
+//   --skin-desc: "Flavour text.";  ← creator description field
+//
+// Adding a new skin: add it to skins.css + registry.ts. Creator picks it up
+// automatically on next load (no creator.js edit required).
 
-const SKINS = [
-  { id: 'void',             name: 'Void',             desc: 'Cold, focused, minimal. The default Ludodex look.' },
-  { id: 'lumen',            name: 'Lumen',            desc: "Void's daytime counterpart. Same sharp identity, bright open surface." },
-  { id: 'neon-horizon',     name: 'Neon Horizon',     desc: 'A neon city at night. All bloom, all glow.' },
-  { id: 'laser-vector',     name: 'Laser Vector',     desc: 'Pure vector arcade. Like a coin-op cabinet from the future.' },
-  { id: 'maze-chase',       name: 'Maze Chase',       desc: 'Classic maze arcade. Every move feels deliberate.' },
-  { id: 'swarm',            name: 'Swarm',            desc: 'An alien hive-mind aesthetic. Creeping, organic, unsettling.' },
-  { id: 'phantom-thieves',  name: 'Phantom Thieves',  desc: 'Stylish and theatrical. Pure heist energy.' },
-  { id: 'catalyst',         name: 'Catalyst',         desc: 'Austere and high-velocity. Corporate dystopia.' },
-  { id: 'paleblood',        name: 'Paleblood',        desc: 'Victorian gothic nightmare. Cold, grim, beautiful.' },
-  { id: 'aero',             name: 'Aero',             desc: 'Peak 2000s. Gradients, gloss, and pure tech optimism.' },
-  { id: 'star-hunter',      name: 'Star Hunter',      desc: "You're deep underground in an alien cavern, suit lights blazing." },
-  { id: 'relic-gold',       name: 'Relic Gold',       desc: 'Dungeon crawler energy. Heavy stone, legendary reward.' },
-  { id: 'puff-star',        name: 'Puff Star',        desc: 'Dreamy and soft. Midnight indigo with bubblegum clouds.' },
-  { id: 'mushroom-kingdom', name: 'Mushroom Kingdom', desc: 'Flat overworld energy. NES-sharp, zero flourish.' },
-  { id: 'cape-16bit',       name: '16-Bit Cape',      desc: 'Warm island overworld vibes. Chocolate earth, bright open sky.' },
-  { id: 'blue-blur',        name: 'Blue Blur',        desc: 'Checkerboard loops and golden rings. You are going fast.' },
-  { id: 'dragon-heat',      name: 'Dragon Heat',      desc: 'Underground nightlife. Hot, dangerous, neon-lit.' },
-  { id: 'radio-tag',        name: 'Radio Tag',        desc: 'Counter-culture chaos. Spray cans and attitude.' },
-  { id: 'cyber-shinobi',    name: 'Cyber Shinobi',    desc: 'Midnight espionage. Ninjutsu meets cyberpunk.' },
-  { id: 'gameboy',          name: 'Dot Matrix',       desc: 'The original handheld. Four greens and nothing else.' },
-  { id: 'terminal',         name: 'Terminal',         desc: 'Old terminal, no colour, full focus.' },
-  { id: 'phosphor',         name: 'Phosphor',         desc: 'The glow of a monitor in a dark room. Nothing else exists.' },
-  { id: 'bios',             name: 'BIOS',             desc: 'Booting up. That old PC feeling before anything loads.' },
-  { id: 'super-16-bit-lilac', name: 'Super 16-Bit Lilac', desc: 'The calm confidence of a purple console.' },
-  { id: 'toaster',          name: 'Toaster',          desc: 'Charcoal grey and one bold accent. The original home console look.' },
-  { id: 'lord-of-terror',   name: 'Lord of Terror',   desc: 'Hell is other dungeon crawlers. Darker and heavier.' },
-  { id: 'test-chamber',     name: 'Test Chamber',     desc: 'You are being tested. Stark, clinical, and unexpectedly orange.' },
-  { id: 'polygon',          name: 'Polygon',          desc: 'Low-poly era. The PlayStation face buttons come alive.' },
-  { id: 'ring-of-light',    name: 'Ring of Light',    desc: 'The green ring glows. Mid-2000s living room energy.' },
-  { id: 'dream-spiral',     name: 'Dream Spiral',     desc: 'Swirl energy. The Dreamcast\'s optimistic, playful spirit.' },
-  { id: 'rip-tear',         name: 'Rip & Tear',       desc: 'Rip and tear until it is done.' },
-  { id: 'blood-darkness',   name: 'Blood & Darkness', desc: 'Underworld gold. Dark, mythic, relentless.' },
-  { id: 'crimson',          name: 'Crimson',          desc: 'All red, all intensity. Pure boss fight.' },
-];
+let SKINS = [];  // populated by discoverSkins() after DOM/styles are ready
+
+/**
+ * Enumerate all skins from the loaded stylesheets by scanning for top-level
+ * .skin-{id} rules, then probing each for --skin-name. Preserves skins.css
+ * source order, which defines the visual ordering in the creator dropdown.
+ */
+function discoverSkins() {
+  const seen = new Set();
+  const ids = [];
+
+  for (const sheet of document.styleSheets) {
+    try {
+      for (const rule of sheet.cssRules) {
+        if (!rule.selectorText) continue;
+        // Match only top-level .skin-{id} rules (not descendant selectors like .skin-foo .bar)
+        const m = rule.selectorText.match(/^\.skin-([\w-]+)$/);
+        if (!m) continue;
+        const id = m[1];
+        if (!seen.has(id)) { seen.add(id); ids.push(id); }
+      }
+    } catch (_) {
+      // Cross-origin sheet — skip
+    }
+  }
+
+  // Probe each id for --skin-name (set directly on .skin-{id} in CSS)
+  const container = document.createElement('div');
+  container.style.cssText = 'position:absolute;top:-9999px;left:-9999px;';
+  document.body.appendChild(container);
+
+  const skins = ids.map((id) => {
+    const probe = document.createElement('div');
+    probe.className = `skin-${id}`;
+    container.appendChild(probe);
+    const name = getComputedStyle(probe)
+      .getPropertyValue('--skin-name').trim().replace(/^["']|["']$/g, '');
+    container.removeChild(probe);
+    return name ? { id, name } : null;
+  }).filter(Boolean);
+
+  document.body.removeChild(container);
+  return skins;
+}
 
 // ── Inline SVG icons (mirroring src/components/icons.ts exactly) ─────────────
 
@@ -50,37 +67,78 @@ const ICON = {
 };
 
 // ── Confetti helper ───────────────────────────────────────────────────────────
-// Static confetti scattered across the win view, colored by current skin vars.
-// Pieces are absolutely positioned so they don't affect layout.
+// Animated confetti for the win preview — injected via JS (not innerHTML) so
+// the browser correctly triggers CSS animations. Same pattern as Confetti.ts.
 
-function buildConfettiMarkup() {
-  // 16 pieces: mix of circles and rectangles, scattered at varying depths
-  const pieces = [
-    { shape: 'circle', colorVar: '--title-glow',          top: '7%',  left: '12%', r: 6,  rot: 20  },
-    { shape: 'rect',   colorVar: '--path-grad-start',     top: '11%', left: '58%', w: 8,  h: 14, rot: -15 },
-    { shape: 'circle', colorVar: '--title-color',         top: '15%', left: '82%', r: 5,  rot: 0   },
-    { shape: 'rect',   colorVar: '--tile-selected-border',top: '22%', left: '28%', w: 10, h: 7,  rot: 34  },
-    { shape: 'circle', colorVar: '--path-grad-end',       top: '28%', left: '73%', r: 7,  rot: 0   },
-    { shape: 'rect',   colorVar: '--title-glow',          top: '32%', left: '6%',  w: 7,  h: 12, rot: -28 },
-    { shape: 'circle', colorVar: '--primary-action-bg',   top: '38%', left: '44%', r: 5,  rot: 0   },
-    { shape: 'rect',   colorVar: '--path-grad-start',     top: '44%', left: '88%', w: 9,  h: 6,  rot: 18  },
-    { shape: 'circle', colorVar: '--tile-selected-border',top: '50%', left: '20%', r: 6,  rot: 0   },
-    { shape: 'rect',   colorVar: '--title-color',         top: '56%', left: '65%', w: 8,  h: 13, rot: -8  },
-    { shape: 'circle', colorVar: '--path-grad-end',       top: '62%', left: '38%', r: 4,  rot: 0   },
-    { shape: 'rect',   colorVar: '--title-glow',          top: '67%', left: '5%',  w: 11, h: 7,  rot: 42  },
-    { shape: 'circle', colorVar: '--primary-action-bg',   top: '72%', left: '78%', r: 5,  rot: 0   },
-    { shape: 'rect',   colorVar: '--path-grad-start',     top: '77%', left: '52%', w: 7,  h: 10, rot: -22 },
-    { shape: 'circle', colorVar: '--tile-selected-border',top: '83%', left: '18%', r: 6,  rot: 0   },
-    { shape: 'rect',   colorVar: '--title-color',         top: '88%', left: '91%', w: 9,  h: 6,  rot: 14  },
+const CONFETTI_STYLE_ID = 'creator-confetti-styles';
+
+function ensureConfettiStyles() {
+  if (document.getElementById(CONFETTI_STYLE_ID)) return;
+  const style = document.createElement('style');
+  style.id = CONFETTI_STYLE_ID;
+  style.textContent = `
+@keyframes creator-confetti-fall {
+  0%   { transform: translate(0, -20px) rotate(0deg) scale(var(--scale,1)); opacity:0; }
+  6%   { opacity: var(--max-opacity, 0.85); }
+  88%  { opacity: var(--max-opacity, 0.85); }
+  100% { transform: translate(var(--drift,0px), 700px) rotate(var(--rotation,180deg)) scale(var(--scale,1)); opacity:0; }
+}`;
+  document.head.append(style);
+}
+
+function injectPreviewConfetti(container) {
+  ensureConfettiStyles();
+
+  const colorVars = [
+    '--title-glow', '--tile-selected-border', '--path-grad-start',
+    '--path-grad-end', '--title-color', '--primary-action-bg',
   ];
 
-  return pieces.map(({ shape, colorVar, top, left, r, w, h, rot }) => {
-    const isCircle = shape === 'circle';
-    const width  = isCircle ? r * 2 : w;
-    const height = isCircle ? r * 2 : h;
-    const radius = isCircle ? '50%' : '2px';
-    return `<div aria-hidden="true" style="position:absolute;top:${top};left:${left};width:${width}px;height:${height}px;border-radius:${radius};background:var(${colorVar});transform:rotate(${rot}deg);opacity:0.85;pointer-events:none;"></div>`;
-  }).join('');
+  const COUNT = 28;
+  let seed = 0xdeadbeef;
+  function rand() {
+    seed ^= seed << 13; seed ^= seed >> 17; seed ^= seed << 5;
+    return (seed >>> 0) / 0xffffffff;
+  }
+
+  for (let i = 0; i < COUNT; i++) {
+    const isCircle = rand() < 0.5;
+    const size     = Math.round(rand() * 6 + 6);
+    const height   = isCircle ? size : Math.round(rand() * 8 + 8);
+    const left     = (rand() * 92 + 4).toFixed(1);
+    const drift    = ((rand() - 0.5) * 200).toFixed(0);
+    const rotation = Math.round(rand() * 540);
+    const scale    = (0.7 + rand() * 0.6).toFixed(2);
+    const opacity  = (0.6 + rand() * 0.4).toFixed(2);
+    const duration = (2.4 + rand() * 2.2).toFixed(2);
+    const delay    = (rand() * -parseFloat(duration)).toFixed(2);
+    const colorVar = colorVars[i % colorVars.length];
+
+    const piece = document.createElement('div');
+    piece.setAttribute('aria-hidden', 'true');
+    piece.style.cssText = [
+      'position:absolute',
+      'top:0',
+      `left:${left}%`,
+      `width:${size}px`,
+      `height:${height}px`,
+      `border-radius:${isCircle ? '50%' : '2px'}`,
+      `background:var(${colorVar})`,
+      'pointer-events:none',
+      'will-change:transform,opacity',
+    ].join(';');
+    piece.style.setProperty('--drift',        `${drift}px`);
+    piece.style.setProperty('--rotation',     `${rotation}deg`);
+    piece.style.setProperty('--scale',        scale);
+    piece.style.setProperty('--max-opacity',  opacity);
+    piece.style.animationName           = 'creator-confetti-fall';
+    piece.style.animationDuration       = `${duration}s`;
+    piece.style.animationDelay          = `${delay}s`;
+    piece.style.animationTimingFunction = 'linear';
+    piece.style.animationIterationCount = 'infinite';
+    piece.style.animationFillMode       = 'both';
+    container.append(piece);
+  }
 }
 
 // ── Screen markups ────────────────────────────────────────────────────────────
@@ -188,9 +246,7 @@ function buildWinMarkup() {
           <button type="button" class="win-done-link button-tertiary">Done</button>
         </div>
       </div>
-      <div style="position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:8;" aria-hidden="true">
-        ${buildConfettiMarkup()}
-      </div>
+      <div id="creator-confetti-layer" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:8;" aria-hidden="true"></div>
     </div>
   </div>
 `;
@@ -441,7 +497,29 @@ const archiveMarkup = `
   </div>
 `;
 
-const settingsMarkup = `
+/**
+ * Build the settings screen markup dynamically so the skin cards reflect the
+ * actual SKINS list and the currently-loaded preset is marked as active.
+ * Called at preview render time (not at module parse time) so SKINS is ready.
+ */
+function buildSettingsMarkup() {
+  const activeId = state.presetId || (SKINS[0]?.id ?? 'void');
+  const skinCards = SKINS.map((skin) => {
+    const isActive = skin.id === activeId;
+    return `
+          <button type="button" class="settings-skin-card"${isActive ? ' data-active="true"' : ''}>
+            <div class="settings-skin-left">
+              <div class="settings-skin-preview-scope skin-${skin.id}">
+                <div class="settings-skin-tile settings-skin-tile--default"></div>
+                <div class="settings-skin-tile settings-skin-tile--selected"></div>
+              </div>
+              <span class="settings-skin-name">${skin.name}</span>
+            </div>
+            ${isActive ? '<span class="settings-skin-pill">Active</span>' : ''}
+          </button>`;
+  }).join('');
+
+  return `
   <div class="app-shell">
     <div class="view settings-view">
       <div class="view-topbar">
@@ -460,45 +538,7 @@ const settingsMarkup = `
       </div>
       <div class="settings-section">
         <h2 class="settings-section-heading">Skin</h2>
-        <div class="settings-skin-cards">
-          <button type="button" class="settings-skin-card" data-active="true">
-            <div class="settings-skin-left">
-              <div class="settings-skin-preview-scope skin-void">
-                <div class="settings-skin-tile settings-skin-tile--default"></div>
-                <div class="settings-skin-tile settings-skin-tile--selected"></div>
-              </div>
-              <span class="settings-skin-name">Void</span>
-            </div>
-            <span class="settings-skin-pill">Active</span>
-          </button>
-          <button type="button" class="settings-skin-card">
-            <div class="settings-skin-left">
-              <div class="settings-skin-preview-scope skin-neon-horizon">
-                <div class="settings-skin-tile settings-skin-tile--default"></div>
-                <div class="settings-skin-tile settings-skin-tile--selected"></div>
-              </div>
-              <span class="settings-skin-name">Neon Horizon</span>
-            </div>
-          </button>
-          <button type="button" class="settings-skin-card">
-            <div class="settings-skin-left">
-              <div class="settings-skin-preview-scope skin-lumen">
-                <div class="settings-skin-tile settings-skin-tile--default"></div>
-                <div class="settings-skin-tile settings-skin-tile--selected"></div>
-              </div>
-              <span class="settings-skin-name">Lumen</span>
-            </div>
-          </button>
-          <button type="button" class="settings-skin-card" data-locked="true">
-            <div class="settings-skin-left">
-              <div class="settings-skin-preview-scope skin-relic-gold">
-                <div class="settings-skin-tile settings-skin-tile--default"></div>
-                <div class="settings-skin-tile settings-skin-tile--selected"></div>
-              </div>
-              <span class="settings-skin-name">Relic Gold</span>
-            </div>
-            <span class="settings-skin-pill">Pro</span>
-          </button>
+        <div class="settings-skin-cards">${skinCards}
         </div>
       </div>
       <div class="settings-section">
@@ -510,6 +550,7 @@ const settingsMarkup = `
     </div>
   </div>
 `;
+}
 
 const modalMarkup = `
   <div class="app-shell" style="position:relative;">
@@ -573,7 +614,7 @@ const SCREENS = [
   { id: 'menu',         label: 'Menu',         markup: () => menuMarkup },
   { id: 'achievements', label: 'Achievements', markup: () => achievementsMarkup },
   { id: 'archive',      label: 'Archive',      markup: () => archiveMarkup },
-  { id: 'settings',     label: 'Settings',     markup: () => settingsMarkup },
+  { id: 'settings',     label: 'Settings',     markup: () => buildSettingsMarkup() },
   { id: 'modal',        label: 'Modal',        markup: () => modalMarkup },
 ];
 
@@ -673,19 +714,58 @@ const VAR_GROUPS = [
     id: 'background',
     label: 'Background',
     vars: [
-      { name: '--bg-center', label: 'Center', type: 'color', default: '#0d1118' },
-      { name: '--bg-edge',   label: 'Edge',   type: 'color', default: '#07090e' },
+      { name: '--bg-top',    label: 'Top',    type: 'color', default: '#0d1118' },
+      { name: '--bg-bottom', label: 'Bottom', type: 'color', default: '#07090e' },
     ],
   },
   {
-    id: 'chrome',
+    id: 'colors',
     label: 'Colors',
     vars: [
-      { name: '--chrome-text',      label: 'UI text',         type: 'color',  default: '#8590a7' },
-      { name: '--title-color',      label: 'Primary text',    type: 'color',  default: '#cfd6e1' },
-      { name: '--title-glow',       label: 'Accent color',    type: 'color',  default: '#00d4e8' },
+      { name: '--surface',          label: 'Surface',         type: 'color',    default: '#131824' },
+      { name: '--border',           label: 'Border',          type: 'color',    default: '#2a3148' },
+      { name: '--text',             label: 'Primary text',    type: 'color',    default: '#cfd6e1' },
+      { name: '--text-dim',         label: 'Secondary text',  type: 'color',    default: '#8590a7' },
+      { name: '--accent',           label: 'Accent',          type: 'color',    default: '#00d4e8' },
+      { name: '--action',               label: 'Action',              type: 'color', default: '#00d4e8' },
+      { name: '--primary-action-text',  label: 'Action button text',  type: 'color', default: '#0d1118' },
       { name: '--title-glow-alpha', label: 'Glow intensity',  type: 'range', min: 0, max: 100, step: 1,   unit: '%', default: '40%' },
-      { name: '--glow-strength',    label: 'Glow multiplier', type: 'range', min: 0, max: 5,   step: 0.1, unit: '',  default: '1' },
+      { name: '--glow-strength',    label: 'Glow multiplier', type: 'range', min: 0, max: 5,   step: 0.1, unit: '',   default: '1' },
+    ],
+  },
+  {
+    id: 'tiles',
+    label: 'Tiles',
+    vars: [
+      { name: '--tile',                  label: 'Background',       type: 'gradient', default: 'linear-gradient(145deg, #1e2236, #131824)' },
+      { name: '--tile-letter',           label: 'Letter color',     type: 'color',    default: '#cfd6e1' },
+      { name: '--tile-sel',              label: 'Selected bg',      type: 'gradient', default: 'linear-gradient(145deg, #0d3a42, #071e26)' },
+      { name: '--tile-selected-letter',  label: 'Selected letter',  type: 'color',    default: '#ffffff' },
+      { name: '--tile-radius',           label: 'Corner radius',    type: 'range', min: 0, max: 40, step: 1, unit: 'px', default: '14px' },
+    ],
+  },
+  {
+    id: 'hints',
+    label: 'Hints',
+    vars: [
+      { name: '--hint-solved-bg',     label: 'Found bg',       type: 'gradient', default: 'var(--action)' },
+      { name: '--hint-solved-border', label: 'Found border',   type: 'color',    default: '#00d4e8' },
+      { name: '--hint-solved-letter', label: 'Found letter',   type: 'color',    default: '#ffffff' },
+      { name: '--hint-empty-bg',      label: 'Empty bg',       type: 'color',    default: 'rgba(19,24,36,0.2)' },
+      { name: '--hint-empty-border',  label: 'Empty border',   type: 'color',    default: '#2a3148' },
+      { name: '--hint-radius',        label: 'Corner radius',  type: 'range', min: 0, max: 20, step: 1, unit: 'px', default: '6px' },
+    ],
+  },
+  {
+    id: 'path',
+    label: 'Selection Path',
+    vars: [
+      { name: '--path-start',    label: 'Trail start',    type: 'color',  default: '#8a7bff' },
+      { name: '--path-grad-end', label: 'Trail end',      type: 'color',  default: '#00d4e8' },
+      { name: '--path-width',    label: 'Width',          type: 'range',  min: 1, max: 24, step: 0.5, unit: 'px', default: '9px' },
+      { name: '--path-cap',      label: 'Cap style',      type: 'select', options: ['round', 'square', 'butt'], default: 'round' },
+      { name: '--path-opacity',  label: 'Opacity',        type: 'range',  min: 0, max: 1,  step: 0.05, unit: '',   default: '0.95' },
+      { name: '--path-glow',     label: 'Glow blur (px)', type: 'range',  min: 0, max: 30, step: 1,    unit: '',   default: '7' },
     ],
   },
   {
@@ -708,74 +788,56 @@ const VAR_GROUPS = [
       { name: '--tile-font-scale',  label: 'Scale',       type: 'range', min: 0.4, max: 2, step: 0.05, unit: '', default: '1' },
     ],
   },
-  {
-    id: 'tiles',
-    label: 'Tiles',
-    vars: [
-      { name: '--tile-radius', label: 'Corner radius', type: 'range',    min: 0, max: 40, step: 1, unit: 'px', default: '14px' },
-      { name: '--tile-bg',     label: 'Background',    type: 'gradient', default: 'linear-gradient(145deg, #1e2236, #131824)' },
-      { name: '--tile-border', label: 'Border',        type: 'color',    default: '#2a3148' },
-      { name: '--tile-letter', label: 'Letter',        type: 'color',    default: '#cfd6e1' },
-    ],
-  },
-  {
-    id: 'tile-selected',
-    label: 'Tiles — Selected',
-    vars: [
-      { name: '--tile-selected-bg',        label: 'Background',     type: 'gradient', default: 'linear-gradient(145deg, #0d3a42, #071e26)' },
-      { name: '--tile-selected-border',    label: 'Border',         type: 'color',    default: '#00d4e8' },
-      { name: '--tile-selected-letter',    label: 'Letter',         type: 'color',    default: '#9af0ff' },
-      { name: '--tile-selected-glow',      label: 'Glow',           type: 'color',    default: 'rgba(0, 212, 232, 0.4)' },
-      { name: '--selected-letter-outline', label: 'Letter outline', type: 'color',    default: '#04121a' },
-    ],
-  },
-  {
-    id: 'path',
-    label: 'Selection Path',
-    vars: [
-      { name: '--path-color',      label: 'Trail color',    type: 'color',  default: '#00d4e8' },
-      { name: '--path-grad-start', label: 'Gradient start', type: 'color',  default: '#8a7bff' },
-      { name: '--path-grad-end',   label: 'Gradient end',   type: 'color',  default: '#22e0f0' },
-      { name: '--path-width',      label: 'Width',          type: 'range',  min: 1, max: 24, step: 0.5, unit: 'px', default: '9px' },
-      { name: '--path-cap',        label: 'Cap style',      type: 'select', options: ['round', 'square', 'butt'], default: 'round' },
-      { name: '--path-opacity',    label: 'Opacity',        type: 'range',  min: 0, max: 1,  step: 0.05, unit: '',   default: '0.95' },
-      { name: '--path-glow',       label: 'Glow blur (px)', type: 'range',  min: 0, max: 30, step: 1,    unit: '',   default: '7' },
-    ],
-  },
-  {
-    id: 'buttons',
-    label: 'Buttons',
-    vars: [
-      { name: '--button-bg',     label: 'Background', type: 'gradient', default: '#131824' },
-      { name: '--button-border', label: 'Border',     type: 'color',    default: '#2a3148' },
-      { name: '--button-text',   label: 'Text',       type: 'color',    default: '#cfd6e1' },
-    ],
-  },
-  {
-    id: 'primary-action',
-    label: 'Primary Action',
-    vars: [
-      { name: '--primary-action-bg',   label: 'Background', type: 'color', default: '#00d4e8' },
-      { name: '--primary-action-text', label: 'Text',       type: 'color', default: '#07090e' },
-    ],
-  },
-  {
-    id: 'hints',
-    label: 'Hints',
-    vars: [
-      { name: '--hint-empty-bg',     label: 'Empty bg',     type: 'color', default: 'rgba(20, 24, 34, 0.19)' },
-      { name: '--hint-empty-border', label: 'Empty border', type: 'color', default: '#2a3148' },
-      { name: '--hint-solved-bg',    label: 'Solved bg',    type: 'color', default: '#0d3a42' },
-      { name: '--hint-solved-border',label: 'Solved border',type: 'color', default: '#00d4e8' },
-      { name: '--hint-solved-letter',label: 'Solved letter',type: 'color', default: '#9af0ff' },
-    ],
-  },
+];
+
+/**
+ * Derived CSS custom properties — vars defined in :root via var() chains or
+ * color-mix() expressions that are NOT user-editable (not in VAR_GROUPS).
+ *
+ * loadPreset() reads these from the skin's computed style and stores the raw
+ * strings in state.vars so updatePreview()'s loop sets them as inline styles.
+ * CSS then resolves any var() references at paint time using the other inline
+ * tokens, so the preview is always pixel-accurate without manual JS math.
+ */
+const DERIVED_VARS = [
+  // Background aliases
+  '--bg-center', '--bg-edge',
+  // Shell
+  '--shell-bg', '--shell-border', '--shell-shadow', '--shell-radius',
+  // Chrome & title
+  '--chrome-text', '--title-color', '--title-glow',
+  // Keyboard / action buttons
+  '--button-bg', '--button-border', '--button-text',
+  '--button-hover-bg', '--button-active-bg', '--button-active-border', '--button-active-text',
+  // Tiles — include tile-bg and tile-selected-bg so they are applied directly on
+  // previewEl (not merely inherited from :root). Without direct application the
+  // browser may resolve var(--tile) / var(--tile-sel) inside these vars at :root
+  // context (void skin colors) rather than in previewEl's context where the skin
+  // values live. Same mechanism as the @scope in skins.css that anchors these on
+  // the Settings skin-preview cards.
+  '--tile-bg', '--tile-selected-bg',
+  '--tile-border',
+  '--tile-selected-border', '--tile-selected-glow',
+  '--tile-found-bg', '--tile-found-border', '--tile-found-letter',
+  '--tile-deactivated-opacity',
+  // Path
+  '--path-color',
+  // Primary action button
+  '--primary-action-bg',
+  // Hint extras (not in VAR_GROUPS)
+  '--hint-empty-letter', '--hint-empty-letter-outline', '--hint-solved-letter-outline',
+  // Selected-letter outline
+  '--selected-letter-outline',
+  // Skin-selector buttons (Settings preview)
+  '--skin-button-bg', '--skin-button-border', '--skin-button-text',
+  '--skin-button-active-bg', '--skin-button-active-border', '--skin-button-active-text',
 ];
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
 const state = {
   screenId: 'game',
+  presetId: null,
   vars: {},
   customCSS: '',
   // Snapshot of vars at last preset-load (or defaults if no preset loaded).
@@ -831,26 +893,97 @@ function updatePreview() {
   const screen = SCREENS.find((s) => s.id === state.screenId) || SCREENS[0];
   previewEl.innerHTML = screen.markup();
 
-  // Use setProperty for reliable custom-property application
+  // Apply the skin class directly to previewEl — this anchors all CSS var()
+  // chains in skins.css exactly as they work in-game (where the class is on
+  // <html>). Without this, :root-level derived vars like
+  //   --tile-bg: var(--tile)
+  //   --bg-center: var(--bg-top)
+  // …would resolve their inner var() refs at :root context using void/default
+  // token values rather than the skin's values, making the preview look muted.
+  for (const cls of [...previewEl.classList]) {
+    if (cls.startsWith('skin-')) previewEl.classList.remove(cls);
+  }
+  if (state.presetId) {
+    previewEl.classList.add(`skin-${state.presetId}`);
+  }
+  // Set inline styles for VAR_GROUPS (user-editable) vars only — these override
+  // the skin class for any values the user has edited.
+  // IMPORTANT: do NOT set DERIVED_VARS inline. Chrome resolves var() references
+  // at getPropertyValue() time against :root context, so the values stored in
+  // state.vars for derived vars are resolved against void tokens, not the skin.
+  // Setting them inline would override the correct resolution the skin class
+  // provides via the :root chain (e.g. --tile-bg: var(--tile) would get void's
+  // --tile value if set inline, but resolves correctly when left to the cascade).
+  const derivedVarsSet = new Set(DERIVED_VARS);
   previewEl.removeAttribute('style');
   for (const [k, v] of Object.entries(state.vars)) {
+    if (derivedVarsSet.has(k)) continue;
     if (v !== '' && v !== null && v !== undefined) {
       previewEl.style.setProperty(k, v);
     }
   }
 
-  // `:root` defines derived vars via var(...) chains, but those resolve against
-  // :root — not against the inline-style scope on #creatorPreview. Mirror every
-  // value that has a non-obvious derived alias so the preview stays in sync.
+  // Chrome resolves var() references inside inherited custom properties at the
+  // ancestral context where they were defined (:root), not the consuming element.
+  // So "--bg-center: var(--bg-top)" in :root always resolves to :root's --bg-top
+  // (void value), ignoring the inline --bg-top on previewEl. Fix: explicitly
+  // compute the derived alias vars from state.vars and set them inline.
+  const V = (k) => state.vars[k] ?? '';
+  // Background aliases
+  previewEl.style.setProperty('--bg-center', V('--bg-top'));
+  previewEl.style.setProperty('--bg-edge',   V('--bg-bottom'));
+  // Text / chrome
+  previewEl.style.setProperty('--title-color', V('--text'));
+  previewEl.style.setProperty('--chrome-text', V('--text-dim'));
+  previewEl.style.setProperty('--title-glow',  V('--accent'));
+  // Tile aliases
+  previewEl.style.setProperty('--tile-bg',              V('--tile'));
+  previewEl.style.setProperty('--tile-selected-bg',     V('--tile-sel'));
+  previewEl.style.setProperty('--tile-border',          V('--border'));
+  previewEl.style.setProperty('--tile-selected-border', V('--accent'));
+  previewEl.style.setProperty('--tile-found-bg',        V('--tile'));
+  previewEl.style.setProperty('--tile-found-border',    V('--border'));
+  previewEl.style.setProperty('--tile-found-letter',    V('--text'));
+  // Button aliases
+  previewEl.style.setProperty('--button-bg',     V('--surface'));
+  previewEl.style.setProperty('--button-border', V('--border'));
+  previewEl.style.setProperty('--button-text',   V('--text'));
+  // Action aliases
+  previewEl.style.setProperty('--primary-action-bg', V('--action'));
+  previewEl.style.setProperty('--path-color',        V('--action'));
+  // Color baseline — overrides body { color: var(--creator-text) }
+  previewEl.style.setProperty('color', V('--text'));
+
+  // Debug: log resolved values for key vars after a paint frame
+  requestAnimationFrame(() => {
+    const cs = getComputedStyle(previewEl);
+    console.log('[preview] computed --bg-top:', cs.getPropertyValue('--bg-top').trim());
+    console.log('[preview] computed --bg-center:', cs.getPropertyValue('--bg-center').trim());
+    console.log('[preview] computed --tile:', cs.getPropertyValue('--tile').trim());
+    console.log('[preview] computed --tile-bg:', cs.getPropertyValue('--tile-bg').trim());
+    console.log('[preview] computed --text:', cs.getPropertyValue('--text').trim());
+    console.log('[preview] computed background (element):', cs.background?.slice(0, 80));
+    // Check a tile inside the preview
+    const tile = previewEl.querySelector('.tile');
+    if (tile) {
+      const tcs = getComputedStyle(tile);
+      console.log('[preview] tile background:', tcs.background?.slice(0, 80));
+      console.log('[preview] tile color:', tcs.color);
+    }
+  });
+
+  // Path mirror — --path-start feeds --path-grad-start; set explicitly so the
+  // trail updates immediately without relying on a var() chain in inline styles.
+  const ps = state.vars['--path-start'];
+  if (ps) previewEl.style.setProperty('--path-grad-start', ps);
+
+  // Typography mirrors — wordmark → title alias vars
   const wf  = state.vars['--wordmark-font-family'];
   if (wf)  previewEl.style.setProperty('--title-font-family', wf);
   const ww  = state.vars['--wordmark-font-weight'];
   if (ww)  previewEl.style.setProperty('--title-font-weight', ww);
   const wls = state.vars['--wordmark-letter-spacing'];
   if (wls) previewEl.style.setProperty('--title-letter-spacing', wls);
-  // --title-font-scale and its derived vars are defined on :root via var() chains,
-  // but :root vars don't resolve inside the inline-style scope on #creatorPreview.
-  // Mirror all five explicitly so font-size calc() expressions see the right value.
   const dfs = state.vars['--display-font-scale'];
   if (dfs) {
     previewEl.style.setProperty('--title-font-scale',    dfs);
@@ -869,6 +1002,14 @@ function updatePreview() {
   // Auto-scope custom CSS to the preview container using @scope
   const css = state.customCSS.trim();
   styleTag.textContent = css ? `@scope (.creator-preview) {\n${css}\n}` : '';
+
+  // Inject animated confetti pieces for the win screen. Must run after
+  // innerHTML is set (so the container exists) and after inline styles are
+  // applied (so var() colors resolve correctly).
+  const confettiLayer = document.getElementById('creator-confetti-layer');
+  if (confettiLayer) {
+    injectPreviewConfetti(confettiLayer);
+  }
 }
 
 // ── Accordion open-state persistence ─────────────────────────────────────────
@@ -902,7 +1043,46 @@ function renderEditor() {
   editorInner.innerHTML = '';
 
   const savedOpen = getSavedOpenGroups();
-  const defaultOpen = new Set(['background', 'chrome', 'tiles', 'tile-selected']);
+  const defaultOpen = new Set(['background', 'colors', 'tiles']);
+
+  // ── Identity block (Name + Description) ──────────────────────────────────
+  const identityDetails = document.createElement('details');
+  identityDetails.className = 'creator-group';
+  identityDetails.dataset.groupId = 'identity';
+  identityDetails.open = savedOpen ? savedOpen.has('identity') : true;
+  identityDetails.addEventListener('toggle', saveOpenGroups);
+
+  const identitySummary = document.createElement('summary');
+  identitySummary.className = 'creator-group-toggle';
+  identitySummary.innerHTML = `<span class="creator-group-label">Identity</span><span class="creator-group-chevron">▶</span>`;
+  identityDetails.appendChild(identitySummary);
+
+  const identityBody = document.createElement('div');
+  identityBody.className = 'creator-group-body';
+
+  function metaRow(labelText, inputId, placeholder) {
+    const row = document.createElement('div');
+    row.className = 'creator-meta-row';
+    const lbl = document.createElement('label');
+    lbl.className = 'creator-meta-label';
+    lbl.textContent = labelText;
+    lbl.htmlFor = inputId;
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.id = inputId;
+    inp.className = 'creator-input creator-meta-input';
+    inp.spellcheck = false;
+    inp.placeholder = placeholder;
+    row.append(lbl, inp);
+    return row;
+  }
+
+  identityBody.append(
+    metaRow('Name',        'creatorSkinName', 'My Skin'),
+    metaRow('Description', 'creatorSkinDesc', 'Short vibe — one sentence'),
+  );
+  identityDetails.appendChild(identityBody);
+  editorInner.appendChild(identityDetails);
 
   for (const group of VAR_GROUPS) {
     const details = document.createElement('details');
@@ -1773,16 +1953,58 @@ function loadPreset(skinId) {
     }
   }
 
+  // Read all derived vars from the skin's computed style. These are defined in
+  // :root (skins.css) as var() chains or color-mix() expressions. getPropertyValue
+  // returns the raw string (e.g. "var(--bg-top)" or "linear-gradient(...)").
+  // Storing them in state.vars means updatePreview()'s loop sets them inline,
+  // and CSS resolves any var() refs at paint time against the other inline tokens.
+  for (const name of DERIVED_VARS) {
+    const raw = computed.getPropertyValue(name).trim();
+    if (raw) state.vars[name] = raw;
+  }
+
+  state.presetId = skinId;
+
+  // CSS custom properties that default to var(...) references in :root return those
+  // literal strings from getPropertyValue(), not resolved colors. Resolve them here
+  // so the color pickers always get usable hex values.
+  //   --tile-letter         → defaults to var(--text)  in :root
+  //   --tile-selected-letter → defaults to #ffffff in the @scope rule
+  if (!state.vars['--tile-letter'] || state.vars['--tile-letter'].startsWith('var(')) {
+    state.vars['--tile-letter'] = state.vars['--text'] ?? '#cfd6e1';
+  }
+  if (!state.vars['--tile-selected-letter'] || state.vars['--tile-selected-letter'].startsWith('var(')) {
+    state.vars['--tile-selected-letter'] = '#ffffff';
+  }
+  // --hint-solved-bg defaults to var(--action) in :root; resolve to actual action color
+  if (!state.vars['--hint-solved-bg'] || state.vars['--hint-solved-bg'].startsWith('var(')) {
+    state.vars['--hint-solved-bg'] = state.vars['--action'] ?? '#00d4e8';
+  }
+  // --hint-empty-bg defaults to a color-mix expression; resolve to a usable fallback
+  if (!state.vars['--hint-empty-bg'] || state.vars['--hint-empty-bg'].includes('var(')) {
+    const surf = state.vars['--surface'] ?? '#131824';
+    state.vars['--hint-empty-bg'] = `color-mix(in srgb, ${surf} 20%, transparent)`;
+  }
+  // --hint-empty-border defaults to var(--border)
+  if (!state.vars['--hint-empty-border'] || state.vars['--hint-empty-border'].startsWith('var(')) {
+    state.vars['--hint-empty-border'] = state.vars['--border'] ?? '#2a3148';
+  }
+  // --path-grad-end defaults to var(--action); resolve to actual action color
+  if (!state.vars['--path-grad-end'] || state.vars['--path-grad-end'].startsWith('var(')) {
+    state.vars['--path-grad-end'] = state.vars['--action'] ?? '#00d4e8';
+  }
+  // Read --skin-name and --skin-desc from CSS (source of truth in skins.css)
+  const rawName = computed.getPropertyValue('--skin-name').trim().replace(/^["']|["']$/g, '');
+  const rawDesc = computed.getPropertyValue('--skin-desc').trim().replace(/^["']|["']$/g, '');
   document.body.removeChild(probe);
 
-  // Populate name + description from the SKINS registry
+  // Populate name + description
   const skinMeta = SKINS.find((s) => s.id === skinId);
-  if (skinMeta) {
-    const nameEl = document.getElementById('creatorSkinName');
-    const descEl = document.getElementById('creatorSkinDesc');
-    if (nameEl) nameEl.value = skinMeta.name;
-    if (descEl) descEl.value = skinMeta.desc ?? '';
-  }
+  const displayName = rawName || skinMeta?.name || skinId;
+  const nameEl = document.getElementById('creatorSkinName');
+  const descEl = document.getElementById('creatorSkinDesc');
+  if (nameEl) nameEl.value = displayName;
+  if (descEl) descEl.value = rawDesc;
 
   // Populate the Custom CSS textarea with any non-variable rules from the skin
   const customCSS = extractSkinCustomCSS(skinId);
@@ -1818,6 +2040,28 @@ function buildExportCSS() {
       lines.push(`  ${v.name}: ${state.vars[v.name]};`);
     }
   }
+
+  // --tile-bg / --tile-selected-bg are handled by the @scope rule in skins.css.
+  // --tile-letter / --tile-selected-letter are now in VAR_GROUPS and exported
+  // only when they differ from their defaults (see changed-vars filter above).
+  // --tile-border / --tile-selected-border have no UI controls and equal their
+  // semantic token defaults, so they are omitted by the loop.
+  // --tile-selected-glow is emitted explicitly as a convenience (equivalent to
+  // the :root color-mix derivation, but readable as a literal rgba value).
+  const accentVal = state.vars['--accent'] ?? '#00d4e8';
+  const accentHex = cssColorToHex(accentVal);
+  const r = parseInt(accentHex.slice(1, 3), 16);
+  const g = parseInt(accentHex.slice(3, 5), 16);
+  const b = parseInt(accentHex.slice(5, 7), 16);
+  const glowRgba = `rgba(${r}, ${g}, ${b}, 0.4)`;
+
+  lines.push(`\n  --tile-selected-glow: ${glowRgba};`);
+
+  // Emit identity vars so the block is self-describing and discoverable by the creator.
+  // --skin-name is required: discoverSkins() reads it via getPropertyValue to list the skin.
+  const identityLines = [`  --skin-name: "${name.replace(/"/g, '\\"')}";`];
+  if (desc) identityLines.push(`  --skin-desc: "${desc.replace(/"/g, '\\"')}";`);
+  lines.unshift(...identityLines);
 
   const header = desc
     ? `/* ── ${name} ── ${desc} */`
@@ -1900,22 +2144,16 @@ function buildFontSnippet() {
   return lines.join('\n');
 }
 
-function buildRegistrySnippet() {
-  const nameInput = document.getElementById('creatorSkinName');
-  const name = (nameInput?.value || 'My Skin').trim();
+function buildRegistryIdSnippet() {
+  const name = (document.getElementById('creatorSkinName')?.value || 'My Skin').trim();
   const slug = nameToSlug(name);
+  return `  | '${slug}'`;
+}
 
-  return `// 1. Add to the SkinId union in src/skins/registry.ts:
-  | '${slug}'
-
-// 2. Add to the SKINS array in src/skins/registry.ts:
-{
-  id: '${slug}',
-  name: '${name}',
-  productId: null,
-  // unlockedByAchievement: 'solve_10',  // e.g. 'streak_30', 'solve_100'
-  // unlockHint: '10 puzzles solved',
-},`;
+function buildRegistryArraySnippet() {
+  const name = (document.getElementById('creatorSkinName')?.value || 'My Skin').trim();
+  const slug = nameToSlug(name);
+  return `{ id: '${slug}', name: '${name}', productId: null },`;
 }
 
 // ── UI wiring ─────────────────────────────────────────────────────────────────
@@ -1970,10 +2208,14 @@ function wireTopBar() {
   });
 
   document.getElementById('creatorExport').addEventListener('click', () => {
-    document.getElementById('exportOutput').value   = buildExportCSS();
-    document.getElementById('exportRegistry').value = buildRegistrySnippet();
-    document.getElementById('exportFonts').value    = buildFontSnippet();
-    document.getElementById('exportModal').hidden   = false;
+    document.getElementById('exportOutput').value        = buildExportCSS();
+    document.getElementById('exportRegistryId').value    = buildRegistryIdSnippet();
+    document.getElementById('exportRegistryArray').value = buildRegistryArraySnippet();
+    const fontSnippet = buildFontSnippet();
+    document.getElementById('exportFonts').value         = fontSnippet;
+    const noFonts = fontSnippet.startsWith('/* No new fonts');
+    document.getElementById('exportSectionFonts').dataset.noFonts = noFonts ? 'true' : 'false';
+    document.getElementById('exportModal').hidden        = false;
   });
 
   document.getElementById('creatorCustomCSS').addEventListener('input', (e) => {
@@ -2011,8 +2253,12 @@ function wireExportModal() {
     copyWithFeedback('exportCopy', document.getElementById('exportOutput').value);
   });
 
-  document.getElementById('exportCopyRegistry').addEventListener('click', () => {
-    copyWithFeedback('exportCopyRegistry', document.getElementById('exportRegistry').value);
+  document.getElementById('exportCopyRegistryId').addEventListener('click', () => {
+    copyWithFeedback('exportCopyRegistryId', document.getElementById('exportRegistryId').value);
+  });
+
+  document.getElementById('exportCopyRegistryArray').addEventListener('click', () => {
+    copyWithFeedback('exportCopyRegistryArray', document.getElementById('exportRegistryArray').value);
   });
 
   document.getElementById('exportCopyFonts').addEventListener('click', () => {
@@ -2023,6 +2269,8 @@ function wireExportModal() {
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 function init() {
+  // Discover skins from CSS before building the preset dropdown
+  SKINS = discoverSkins();
   initVarsFromDefaults();
   buildPresetSelect();
   buildScreenTabs();

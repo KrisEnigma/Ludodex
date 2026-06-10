@@ -38,22 +38,45 @@ an archive.
   `--tile-scale-{orbitron,press-start,vt323}` and `--display-scale-{orbitron,silkscreen,vt323}`.
   Reused fonts (Orbitron in Neon Horizon + Crimson) share one tuned value.
 - **Selection ribbon** rewritten in `GameView.redrawPath` as one `<line>` per
-  segment (`.path-seg`), tinted along swipe order via `--seg-t` + `color-mix`
-  (a WordSalad-style progress gradient; equal endpoints = flat). Letters now
-  render **above** the ribbon — `isolation` was removed from `.tile` and the
-  selected-state `transform/z-index` dropped (they created a stacking context
-  that trapped the letter under the ribbon). The selection "pop" lives on the
-  letter now.
-- **5 skins**: `void` (default), `neon-horizon`, `gameboy`, `terminal` (amber CRT,
-  VT323), `crimson` (red, Orbitron). Terminal + Crimson are `productId: null` =
-  **free on every platform** (the old `webOnly`/`isWeb` concept was removed —
-  see decisions below).
+  segment (`.path-seg`), tinted along swipe order via `--seg-t` + `color-mix`.
+  Letters now render **above** the ribbon — `isolation` was removed from `.tile`
+  and the selected-state `transform/z-index` dropped.
 - **New fonts** via `@fontsource` (latin subsets, imported in `main.ts`):
-  orbitron, press-start-2p, silkscreen, vt323. → **Run `pnpm install`** in a
-  fresh checkout (4 new deps in `package.json`).
+  orbitron, press-start-2p, silkscreen, vt323.
 - **Authoritative skin guide: `docs/making-skins.md`** — how to add a skin end
   to end, the full variable reference, the per-font scale system, and the
   earn/purchase model. Read it before touching skins.
+
+**10-token semantic model + cascade shield (most recent refactor):**
+- `:root` now defines **11 semantic tokens** (`--bg-top`, `--bg-bottom`,
+  `--surface`, `--border`, `--text`, `--text-dim`, `--accent`, `--action`,
+  `--tile`, `--tile-sel`, `--path-start`). All old variable names are derived from
+  these tokens in `:root` — `index.css` is completely untouched.
+- **Every skin class** includes a **cascade shield**: hardcoded (no `var()` refs)
+  re-declarations of `--tile-bg`, `--tile-border`, `--tile-letter`,
+  `--tile-selected-*`, and all four tile typography vars. This prevents the active
+  skin from bleeding into `.settings-skin-preview-scope` elements (the skin
+  selector). Without it, Skin A's tile colors appear in Skin B's preview card when
+  Skin A is active. CSS custom properties inherit as unevaluated tokens; class
+  specificity beats `:root`, so the shield must use literal values.
+- **All 33 skins** refactored to the token model + shield.
+- **`--surface` must be a flat color** — it feeds `color-mix()` derivations.
+  Gradients silently fail in `color-mix()`.
+
+**Skin creator (`src/skin-creator/`):**
+- Visual editor with 6 accordion groups of token controls (background, colors,
+  tiles, path, wordmark typography, tile typography).
+- Live preview across 7 screens (Game, Win, Menu, Achievements, Archive, Settings,
+  Modal) via static HTML markup injected into `#creatorPreview`.
+- Preview mirrors all derived vars inline via JS so the active skin's cascade
+  shield doesn't block token changes from appearing.
+- Win screen has animated confetti (JS-injected, same colors as the real game).
+- Hover states work in preview (pointer-events enabled; no JS handlers attached).
+- **Export** generates a `.skin-<slug>` CSS block with tokens + auto-generated
+  cascade shield (values computed from current state at export time). Also
+  generates a font import snippet for any non-bundled fonts used.
+- `--surface` type fixed to `color` in VAR_GROUPS (was incorrectly `gradient`).
+- `buildExportCSS()` always emits a cascade shield block, even for default-value skins.
 
 **Win-screen cohesion:** the glitch chromatic-split uses the skin's ribbon
 gradient (not hardcoded pink/cyan); confetti draws 5 skin colors; `FLAWLESS`

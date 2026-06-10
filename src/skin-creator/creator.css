@@ -103,12 +103,27 @@ body {
   border-color: var(--creator-accent);
 }
 
-.creator-name-input {
-  width: 160px;
+/* ── Identity fields (Name + Description inside accordion) ──────────────── */
+
+.creator-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.creator-desc-input {
-  width: 240px;
+.creator-meta-label {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--creator-text-dim);
+  white-space: nowrap;
+  width: 72px;
+  flex: none;
+}
+
+.creator-meta-input {
+  flex: 1;
+  min-width: 0;
 }
 
 .creator-select {
@@ -831,10 +846,13 @@ body {
   flex: none;
 }
 
-/* The preview root — CSS vars are applied here as inline style */
+/* The preview root — CSS vars are applied here as inline style.
+   Use --bg-top/--bg-bottom (VAR_GROUPS tokens, always set inline) rather than
+   --bg-center/--bg-edge (derived vars that Chrome resolves via the :root
+   var() chain against :root context, ignoring the inline token values). */
 .creator-preview {
   width: 390px;
-  background: radial-gradient(circle at 50% 35%, var(--bg-center, #0d1118), var(--bg-edge, #07090e));
+  background: radial-gradient(circle at 50% 35%, var(--bg-top, #0d1118), var(--bg-bottom, #07090e));
   position: relative;
 }
 
@@ -867,10 +885,8 @@ body {
   inset: 0;
 }
 
-.creator-preview .game-view,
-.creator-preview .win-view {
-  pointer-events: none;
-}
+/* pointer-events intentionally allowed so CSS :hover states work in preview.
+   No JS handlers are attached to preview elements so clicks are harmless. */
 
 .creator-preview .hints {
   padding-bottom: 0;
@@ -888,6 +904,7 @@ body {
   opacity: 1;
   z-index: 8;
 }
+
 
 /* Modal screen: position backdrop inside preview bounds */
 .creator-preview .modal-backdrop {
@@ -925,6 +942,32 @@ body {
   overflow: hidden;
 }
 
+.creator-modal-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.creator-modal-section {
+  border-bottom: 1px solid var(--creator-border);
+}
+
+.creator-modal-footer {
+  padding: 12px 18px;
+  border-top: none;
+}
+
+/* Dim the font section when no custom fonts are needed */
+#exportSectionFonts[data-no-fonts="true"] {
+  opacity: 0.45;
+}
+#exportSectionFonts[data-no-fonts="true"] textarea {
+  display: none;
+}
+#exportSectionFonts[data-no-fonts="true"] .creator-modal-actions {
+  display: none;
+}
+
 .creator-modal-head {
   display: flex;
   align-items: center;
@@ -957,8 +1000,12 @@ body {
 }
 
 .creator-modal-hint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   margin: 0;
-  padding: 10px 18px;
+  padding: 8px 12px 8px 18px;
   font-size: 11px;
   color: var(--creator-text-dim);
   border-bottom: 1px solid var(--creator-border);
@@ -970,17 +1017,7 @@ body {
 }
 
 .creator-export-textarea {
-  flex: 1;
-  min-height: 0;
-  border: none;
-  border-radius: 0;
-  resize: none;
-  font-family: 'Space Mono', ui-monospace, monospace;
-  font-size: 11px;
-  line-height: 1.7;
-  overflow: auto;
-  color: #b8d8e8;
-  background: #060b16;
+  field-sizing: content;
 }
 
 .creator-modal-actions {

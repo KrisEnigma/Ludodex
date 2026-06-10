@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "npm run sync:puzzles && vite",
     "sync:puzzles": "tsx scripts/sync-puzzles.ts",
-    "build": "npm run sync:puzzles && tsc --noEmit && vite build",
+    "build": "npm run sync:puzzles && node scripts/check-creator-drift.mjs || true && tsc --noEmit && vite build",
     "deploy": "npm run build && wrangler deploy",
     "preview": "vite preview",
     "validate": "npm run validate:puzzles",

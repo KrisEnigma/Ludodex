@@ -70,7 +70,7 @@ export const SKINS: SkinMeta[] = [
   { id: 'paleblood', name: 'Paleblood', productId: null },
   { id: 'aero', name: 'Aero', productId: null },
   { id: 'star-hunter', name: 'Star Hunter', productId: null },
-  { id: 'relic-gold', name: 'Relic Gold', productId: null },
+  { id: 'relic-gold', name: 'Hyrule Vault', productId: null },
   { id: 'puff-star', name: 'Puff Star', productId: null },
   {
     id: 'mushroom-kingdom',
@@ -128,7 +128,5 @@ export function getCurrentSkinId(): SkinId {
 export function applySkin(skinId: SkinId): void {
   const root = document.documentElement;
   root.classList.remove(...SKIN_CLASS_NAMES);
-  if (skinId !== 'void') {
-    root.classList.add(`${SKIN_CLASS_PREFIX}${skinId}`);
-  }
+  root.classList.add(`${SKIN_CLASS_PREFIX}${skinId}`);
 }
