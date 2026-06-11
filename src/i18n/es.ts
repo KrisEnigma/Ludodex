@@ -48,6 +48,7 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'settings.skin_section': 'Skin',
   'settings.skin_active': 'Activo',
   'settings.skin_unlock': 'Desbloquear',
+  'settings.skin_use': 'Usar este skin',
   'settings.skin_earn_hint': 'Gana: {hint}',
   'settings.skin_promo_label': 'Skin rotativa gratuita',
     'settings.skin_preview_banner_title': 'Vista previa de {name} — aún no desbloqueado',
@@ -102,8 +103,9 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'hint_store.pack_badge_best_value': 'Mejor valor',
   'hint_store.pack_badge_save': 'Ahorra 60%',
   'hint_store.pack_hints': '{n} pistas',
+  'hint_store.pack_hints_label': 'pistas',
   'hint_store.pack_price': '{price}',
-  'hint_store.buy_button': 'Obtener {n} pistas — {price}',
+  'hint_store.buy_button': '{price}',
   'hint_store.close': 'Cerrar',
 
   // Win view
@@ -195,6 +197,9 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'dialog.reset_progress_title': '¿Restablecer todo el progreso?',
   'dialog.reset_progress_body': 'Esto borrará puzzles resueltos, tiempos y racha.',
   'dialog.reset_progress_confirm': 'Restablecer',
+  'dialog.quit_title': '¿Salir de Ludodex?',
+  'dialog.quit_body': '¿Seguro que quieres cerrar la aplicación?',
+  'dialog.quit_confirm': 'Salir',
 
   // Settings — web-only affordances
   'settings.store_app_store': 'App Store',

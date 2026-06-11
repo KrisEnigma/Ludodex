@@ -4,10 +4,12 @@ import './skins/skins.css';
 import './index.css';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
+import { StatusBar, Style as StatusBarStyle } from '@capacitor/status-bar';
 import { Preferences } from '@capacitor/preferences';
 import { loadPuzzles } from './game/PuzzleLoader';
 import { initI18n } from './i18n';
-import { applySkin, normalizeSkinId } from './skins/registry';
+import { applySkin, normalizeSkinId, onSkinChanged, SKINS } from './skins/registry';
+import type { SkinId } from './skins/registry';
 import { initIAP, isSkinAccessibleSync } from './services/IAPService';
 import { bootstrapProgress, getStoredSkinId, getSolvedTimes } from './services/ProgressService';
 import { retroactivelyUnlockEarnedAchievements } from './services/AchievementService';
@@ -59,6 +61,34 @@ void (async () => {
     // Returning player: honor any deep-link URL, otherwise menu.
     const initialDeepLink = await resolveInitialDeepLink();
     applyDeepLink(router, initialDeepLink);
+  }
+
+  // Capacitor native: configure status bar (edge-to-edge, icon style follows
+  // the active skin's light/dark polarity). Fire-and-forget — cosmetic
+  // failures must never block startup.
+  if (Capacitor.isNativePlatform()) {
+    const statusBarStyleForSkin = (skinId: SkinId): StatusBarStyle => {
+      const meta = SKINS.find((s) => s.id === skinId);
+      // Light skins need dark icons (Style.Light); dark skins need white icons (Style.Dark).
+      return meta?.isLight ? StatusBarStyle.Light : StatusBarStyle.Dark;
+    };
+
+    void (async () => {
+      try {
+        const skinId = resolveBootSkin(await getStoredSkinId());
+        const style = statusBarStyleForSkin(skinId);
+        await StatusBar.setOverlaysWebView({ overlay: true });
+        await StatusBar.setStyle({ style });
+      } catch (err) {
+        console.error('[StatusBar] init failed:', err);
+      }
+    })();
+
+    // Keep icon style in sync whenever the player switches skins.
+    onSkinChanged((skinId) => {
+      const style = statusBarStyleForSkin(skinId);
+      void StatusBar.setStyle({ style });
+    });
   }
 
   // Capacitor native: listen for deep links that arrive while the app is

@@ -4,16 +4,13 @@ import { t } from '../i18n';
 import { createIcon } from '../components/icons';
 import { Tile } from '../game/Tile';
 import { applySolvedPart, buildTileOwnership, type PartOwnershipEntry, type TileOwnershipState } from '../game/tileOwnership';
-import { showConfirmModal, showInfoModal } from '../components/Modal';
-import { recordSolveForInterstitial, showRewardedAdForHint, canShowAds } from '../services/AdService';
+import { showConfirmModal } from '../components/Modal';
+import { recordSolveForInterstitial } from '../services/AdService';
 import { invalidateMenuCache } from '../services/MenuDataCache';
 import { showHintStore } from '../components/HintStoreSheet';
 import {
   ensureDailyGrant,
   consumeHint,
-  grantHints,
-  getAdHintsRemainingToday,
-  consumeAdHintSlot,
   getPuzzleReveals,
   addPuzzleReveal,
   clearPuzzleReveals
@@ -61,6 +58,9 @@ export class GameView {
   private readonly pendingVisualDeactivationCoords = new Set<string>();
   private readonly selectedTiles = new Set<Tile>();
   private readonly hintSlotsByPartId = new Map<string, HTMLSpanElement[]>();
+  // Game content kept off the DOM so DevTools / DOM inspection can't spoil answers.
+  // Maps each slot element to its part ID, letter index, and the actual letter.
+  private readonly slotMeta = new Map<HTMLElement, { partId: string; letterIndex: number; letter: string }>();
   private readonly hintRowsByDisplay = new Map<string, HTMLDivElement>();
   private readonly partEntriesById = new Map<string, PartEntry>();
   private readonly partIdsByWord = new Map<string, string[]>();
@@ -91,8 +91,10 @@ export class GameView {
   private wordsFound = 0;
   private hintsUsed: number = 0;
   private hintsRemaining: number = 0;
+  private prevHintsRemaining: number = 0;
   private hintCounterEl!: HTMLElement;
   private hintCounterCount!: HTMLElement;
+  private chargeBarWrapEl!: HTMLDivElement;
   private previousChainLength = 0;
   private solved = false;
 
@@ -138,16 +140,15 @@ export class GameView {
     this.hintCounterCount.textContent = '5';
     this.hintCounterEl.append(hintIcon, this.hintCounterCount);
 
-    // Tapping the counter at zero opens the Hint Store (loss-recovery context).
+    // Tapping the counter always opens the Hint Store — whether empty (get more)
+    // or not (top up proactively).
     this.hintCounterEl.addEventListener('click', () => {
-      if (this.hintsRemaining <= 0) {
-        void showHintStore('loss_recovery', (granted) => {
-          if (granted > 0) {
-            this.hintsRemaining += granted;
-            this.updateHintCounter();
-          }
-        });
-      }
+      void showHintStore('loss_recovery', (granted) => {
+        if (granted > 0) {
+          this.hintsRemaining += granted;
+          this.updateHintCounter();
+        }
+      });
     });
 
     // Puzzle number is intentionally NOT shown in the game chrome —
@@ -218,7 +219,21 @@ export class GameView {
     this.pathSegments.setAttribute('class', 'path-segments');
 
     this.overlay.append(this.pathSegments);
-    this.gridWrap.append(gridEl, this.overlay);
+
+    const chargeBarWrap = document.createElement('div');
+    chargeBarWrap.className = 'hint-charge-bar-wrap';
+    const chargeBarLabel = document.createElement('span');
+    chargeBarLabel.className = 'hint-charge-label';
+    chargeBarLabel.textContent = 'Using hint…';
+    const chargeBarTrack = document.createElement('div');
+    chargeBarTrack.className = 'hint-charge-bar-track';
+    const chargeBarFill = document.createElement('div');
+    chargeBarFill.className = 'hint-charge-bar-fill';
+    chargeBarTrack.append(chargeBarFill);
+    chargeBarWrap.append(chargeBarLabel, chargeBarTrack);
+    this.chargeBarWrapEl = chargeBarWrap;
+
+    this.gridWrap.append(gridEl, this.overlay, chargeBarWrap);
 
     const hints = document.createElement('div');
     hints.className = 'hints';
@@ -347,6 +362,8 @@ export class GameView {
       }
       if (this.solved) return;
       if (this.gridWrap.contains(event.target as Node)) return;
+      // Interactive game controls, modals, and bottom sheets must not clear the active chain.
+      if ((event.target as Element).closest?.('.hints, .game-hint-counter, .header-menu-button, .modal-backdrop, .modal, .sheet-backdrop, .skin-detail-backdrop')) return;
       if (this.inputManager.getChain().length === 0) return;
       this.inputManager.clearChain();
     };
@@ -356,6 +373,9 @@ export class GameView {
     void (async () => {
       const state = await ensureDailyGrant();
       this.hintsRemaining = state.hintsRemaining;
+      // Sync prev before the first render so the grant animation doesn't
+      // fire on load (it only fires when the count increases mid-session).
+      this.prevHintsRemaining = state.hintsRemaining;
       this.updateHintCounter();
       await this.restoreHintReveals();
     })();
@@ -391,14 +411,16 @@ export class GameView {
   private buildLetterSlot(partId: string, letterIndex: number, letter: string): HTMLElement {
     const slot = document.createElement('span');
     slot.className = 'hint-slot';
-    slot.dataset.partId = partId;
-    slot.dataset.letterIndex = String(letterIndex);
     slot.dataset.revealed = 'false';
     slot.dataset.filled = 'false';
-    slot.dataset.letter = letter;
+    // Game content (partId, letterIndex, letter) is deliberately kept off the
+    // DOM. Storing it in data-* attributes would hand the full solution to
+    // anyone with DevTools open. Look up via this.slotMeta instead.
+    this.slotMeta.set(slot, { partId, letterIndex, letter });
     const letterSpan = document.createElement('span');
     letterSpan.className = 'hint-slot-letter';
-    letterSpan.textContent = letter;
+    // textContent starts empty — letter is stamped in only when the slot is
+    // filled or revealed (see revealSlot / restoreHintReveals / onWordFound).
     slot.append(letterSpan);
 
     slot.addEventListener('pointerdown', (e) => this.onHintSlotPointerDown(e, slot));
@@ -416,13 +438,31 @@ export class GameView {
 
     if (this.hintsRemaining <= 0) {
       event.preventDefault();
-      await this.showOutOfHintsModal();
+      // Error feedback: flash the tapped slot + shake the counter.
+      slot.removeAttribute('data-error');
+      void slot.offsetWidth; // forced reflow restarts the animation
+      slot.dataset.error = 'true';
+      window.setTimeout(() => slot.removeAttribute('data-error'), 400);
+
+      this.hintCounterEl.removeAttribute('data-error-shake');
+      void this.hintCounterEl.offsetWidth;
+      this.hintCounterEl.dataset.errorShake = 'true';
+      window.setTimeout(() => this.hintCounterEl.removeAttribute('data-error-shake'), 400);
+
+      await showHintStore('loss_recovery', (granted) => {
+        if (granted > 0) {
+          this.hintsRemaining += granted;
+          this.updateHintCounter();
+        }
+      });
       return;
     }
 
     event.preventDefault();
     slot.dataset.revealing = 'true';
     this.hintCounterEl.dataset.charging = 'true';
+    this.chargeBarWrapEl.classList.add('is-charging');
+    HapticService.impactLight();
   }
 
   private onHintSlotPointerEnd(slot: HTMLElement): void {
@@ -430,19 +470,23 @@ export class GameView {
       delete slot.dataset.revealing;
     }
     delete this.hintCounterEl.dataset.charging;
+    this.chargeBarWrapEl.classList.remove('is-charging');
   }
 
   private async onHintSlotAnimationEnd(event: AnimationEvent, slot: HTMLElement): Promise<void> {
     if (event.animationName !== 'hint-reveal-rise') {
       delete this.hintCounterEl.dataset.charging;
+      this.chargeBarWrapEl.classList.remove('is-charging');
       return;
     }
     if (slot.dataset.revealed === 'true') {
       delete this.hintCounterEl.dataset.charging;
+      this.chargeBarWrapEl.classList.remove('is-charging');
       return;
     }
     if (slot.dataset.revealing !== 'true') {
       delete this.hintCounterEl.dataset.charging;
+      this.chargeBarWrapEl.classList.remove('is-charging');
       return;
     }
     delete slot.dataset.revealing;
@@ -450,13 +494,27 @@ export class GameView {
   }
 
   private async revealSlot(slot: HTMLElement): Promise<void> {
-    const partId = slot.dataset.partId;
-    const letterIndex = Number(slot.dataset.letterIndex);
-    if (!partId || !Number.isFinite(letterIndex)) return;
+    const meta = this.slotMeta.get(slot);
+    if (!meta) return;
+    const { partId, letterIndex, letter } = meta;
 
+    // Stamp the letter into the DOM now that the slot is being revealed.
+    const revealLetterEl = slot.querySelector<HTMLElement>('.hint-slot-letter');
+    if (revealLetterEl && !revealLetterEl.textContent) {
+      revealLetterEl.textContent = letter;
+    }
     slot.dataset.revealed = 'true';
     slot.dataset.filled = 'true';
     delete this.hintCounterEl.dataset.charging;
+    this.chargeBarWrapEl.classList.remove('is-charging');
+
+    // Reveal pop animation on the slot.
+    slot.removeAttribute('data-just-revealed');
+    void slot.offsetWidth; // forced reflow restarts the animation
+    slot.dataset.justRevealed = 'true';
+    window.setTimeout(() => slot.removeAttribute('data-just-revealed'), 400);
+
+    HapticService.impactMedium();
     this.hintsUsed += 1;
 
     const state = await consumeHint();
@@ -473,53 +531,28 @@ export class GameView {
   }
 
   private updateHintCounter(): void {
-    this.hintCounterCount.textContent = String(this.hintsRemaining);
-    if (this.hintsRemaining <= 0) {
+    const prev = this.prevHintsRemaining;
+    const curr = this.hintsRemaining;
+    this.hintCounterCount.textContent = String(curr);
+    if (curr <= 0) {
       this.hintCounterEl.dataset.state = 'empty';
     } else {
       delete this.hintCounterEl.dataset.state;
     }
-  }
-
-  private async showOutOfHintsModal(): Promise<void> {
-    // On native with ads enabled, offer a rewarded ad for a bonus hint.
-    if (canShowAds()) {
-      const adHintsLeft = await getAdHintsRemainingToday();
-      if (adHintsLeft > 0) {
-        const confirmed = await showConfirmModal({
-          title: t('hint.watch_ad_title'),
-          body: t('hint.watch_ad_body'),
-          confirmLabel: t('hint.watch_ad_confirm'),
-          cancelLabel: t('common.cancel')
-        });
-        if (confirmed) {
-          const result = await showRewardedAdForHint();
-          if (result === 'rewarded') {
-            const slotConsumed = await consumeAdHintSlot();
-            if (slotConsumed) {
-              const state = await grantHints(1);
-              this.hintsRemaining = state.hintsRemaining;
-              this.updateHintCounter();
-            }
-          }
-          // 'skipped' or 'unavailable': close silently, player can try again.
-        }
-        return;
-      }
-      // Ad hint daily limit reached — show a tailored message.
-      await showInfoModal({
-        title: t('hint.ad_limit_title'),
-        body: t('hint.ad_limit_body'),
-        closeLabel: t('hint.out_close')
-      });
-      return;
+    if (curr < prev) {
+      // Decrement pop: number shrinks then overshoots back.
+      this.hintCounterCount.classList.remove('hint-count-decrement--active');
+      void this.hintCounterCount.offsetWidth; // forced reflow
+      this.hintCounterCount.classList.add('hint-count-decrement--active');
+      window.setTimeout(() => this.hintCounterCount.classList.remove('hint-count-decrement--active'), 350);
+    } else if (curr > prev) {
+      // Grant glow: counter pulses to signal hints were added.
+      this.hintCounterEl.removeAttribute('data-hint-granted');
+      void this.hintCounterEl.offsetWidth;
+      this.hintCounterEl.dataset.hintGranted = 'true';
+      window.setTimeout(() => this.hintCounterEl.removeAttribute('data-hint-granted'), 700);
     }
-    // Web / remove-ads owner: plain "come back tomorrow" message.
-    await showInfoModal({
-      title: t('hint.out_title'),
-      body: t('hint.out_body'),
-      closeLabel: t('hint.out_close')
-    });
+    this.prevHintsRemaining = curr;
   }
 
   private async restoreHintReveals(): Promise<void> {
@@ -537,10 +570,18 @@ export class GameView {
     const reveals = await getPuzzleReveals(this.puzzleId);
     this.hintsUsed = reveals.length;
     for (const reveal of reveals) {
-      const slot = this.element.querySelector<HTMLElement>(
-        `.hint-slot[data-part-id="${CSS.escape(reveal.partId)}"][data-letter-index="${reveal.letterIndex}"]`
-      );
+      // Look up via the JS-side map — no DOM query on data-part-id, which was
+      // removed to keep answer text off the DOM.
+      const partSlots = this.hintSlotsByPartId.get(reveal.partId) ?? [];
+      const slot = partSlots[reveal.letterIndex] ?? null;
       if (slot) {
+        const meta = this.slotMeta.get(slot);
+        // Stamp the letter in before marking as filled so the letter is present
+        // in the DOM when the filled color rules take effect.
+        const restoredLetterEl = slot.querySelector<HTMLElement>('.hint-slot-letter');
+        if (restoredLetterEl && !restoredLetterEl.textContent && meta) {
+          restoredLetterEl.textContent = meta.letter;
+        }
         slot.dataset.revealed = 'true';
         slot.dataset.filled = 'true';
       }
@@ -604,6 +645,11 @@ export class GameView {
   private handleFocus = (): void => {
     this.resumeTimer();
   };
+
+  /** Public so Router can invoke it from the Android hardware back button. */
+  async exit(): Promise<void> {
+    return this.handleExit();
+  }
 
   private async handleExit(): Promise<void> {
     if (this.solved) {
@@ -689,7 +735,10 @@ export class GameView {
 
     if (prevLen === 0 && newLen >= 1) {
       this.chainsStarted += 1;
-      HapticService.selection();
+      // impactLight matches subsequent-letter feedback and is reliable on Android.
+      // selectionChanged() (CLOCK_TICK on Android) is often imperceptible or
+      // disabled by the system, leaving the first tap feeling dead.
+      HapticService.impactLight();
       if (!this.isChainOnLetterPrefix(chain)) this.wrongLetterAdds += 1;
     } else if (newLen > prevLen) {
       HapticService.impactLight();
@@ -872,6 +921,14 @@ export class GameView {
         if (slot.dataset.filled === 'true') return;
         window.setTimeout(() => {
           if (!this.element.isConnected) return;
+          // Stamp the letter in the same frame we mark it filled so the CSS
+          // color rule (.hint-slot[data-filled="true"] .hint-slot-letter) and
+          // the text content are always in sync.
+          const solvedLetterEl = slot.querySelector<HTMLElement>('.hint-slot-letter');
+          const solvedMeta = this.slotMeta.get(slot);
+          if (solvedLetterEl && !solvedLetterEl.textContent && solvedMeta) {
+            solvedLetterEl.textContent = solvedMeta.letter;
+          }
           slot.dataset.filled = 'true';
         }, index * 60);
       });

@@ -47,6 +47,7 @@ export const strings = {
   'settings.skin_section': 'Skin',
   'settings.skin_active': 'Active',
   'settings.skin_unlock': 'Unlock',
+  'settings.skin_use': 'Use this skin',
   'settings.skin_earn_hint': 'Earn: {hint}',
   'settings.skin_promo_label': 'Free rotating skin',
     'settings.skin_preview_banner_title': 'Previewing {name} — not yet unlocked',
@@ -136,8 +137,9 @@ export const strings = {
   'hint_store.pack_badge_best_value': 'Best Value',
   'hint_store.pack_badge_save': 'Save 60%',
   'hint_store.pack_hints': '{n} Hints',
+  'hint_store.pack_hints_label': 'hints',
   'hint_store.pack_price': '{price}',
-  'hint_store.buy_button': 'Get {n} Hints — {price}',
+  'hint_store.buy_button': '{price}',
   'hint_store.close': 'Close',
 
   // Win view
@@ -231,6 +233,9 @@ export const strings = {
   'dialog.reset_progress_title': 'Reset all progress?',
   'dialog.reset_progress_body': 'This will clear solved puzzles, times, and streak data.',
   'dialog.reset_progress_confirm': 'Reset',
+  'dialog.quit_title': 'Quit Ludodex?',
+  'dialog.quit_body': 'Are you sure you want to close the app?',
+  'dialog.quit_confirm': 'Quit',
 
   // Settings — web-only affordances
   'settings.store_app_store': 'App Store',

@@ -2,10 +2,10 @@
  * HintStoreSheet — bottom sheet for purchasing hint packs and watching
  * rewarded ads for hints.
  *
- * Opened from two contexts:
- *  1. In-game, when the player taps the empty hint counter (loss_recovery).
- *     hints_10 pack is highlighted; framing is "Get back into the puzzle."
- *  2. Main menu via "Get Hints" footer action (menu).
+ * Opened from three entry points:
+ *  1. In-game slot tap at 0 hints (loss_recovery context).
+ *  2. In-game hint counter tap at any balance (loss_recovery context).
+ *  3. Main menu "Get Hints" action (menu context).
  *
  * The sheet is UI only — all purchase logic is handled by IAPService,
  * and rewarded ad logic by AdService. The `onHintsGranted` callback lets
@@ -29,6 +29,7 @@ import {
   grantHints
 } from '../services/HintService';
 import { showRewardedAdForHint, canShowAds } from '../services/AdService';
+import { addDragToDismiss } from './sheetDrag';
 
 export type HintStoreContext = 'menu' | 'loss_recovery';
 
@@ -87,13 +88,25 @@ export async function showHintStore(
     sheet.setAttribute('aria-label', t('hint_store.title'));
 
     const close = (): void => {
-      backdrop.remove();
+      backdrop.classList.remove('sheet-backdrop--visible');
+      sheet.classList.remove('hint-store-sheet--visible');
+      window.setTimeout(() => backdrop.remove(), 280);
       resolve();
     };
 
+    backdrop.addEventListener('pointerdown', (e) => {
+      // Stop propagation so document-level pointerdown handlers in the game
+      // (tile deselection etc.) don't fire when the user taps the backdrop.
+      e.stopPropagation();
+    });
     backdrop.addEventListener('click', (e) => {
       if (e.target === backdrop) close();
     });
+
+    // Drag handle
+    const handle = document.createElement('div');
+    handle.className = 'sheet-handle';
+    addDragToDismiss(handle, sheet, backdrop, () => { backdrop.remove(); resolve(); });
 
     // Header
     const header = document.createElement('div');
@@ -106,7 +119,7 @@ export async function showHintStore(
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
     closeBtn.className = 'hint-store-close';
-    closeBtn.textContent = t('hint_store.close');
+    closeBtn.textContent = '✕';
     closeBtn.setAttribute('aria-label', t('hint_store.close'));
     closeBtn.addEventListener('click', close);
 
@@ -137,7 +150,9 @@ export async function showHintStore(
 
       let remainingSlots = adHintsLeft;
 
-      adRow.addEventListener('click', () => {
+      adRow.addEventListener('click', (e) => {
+        const btn = e.currentTarget as HTMLButtonElement;
+        btn.disabled = true;
         void (async () => {
           const result = await showRewardedAdForHint();
           if (result === 'rewarded') {
@@ -150,8 +165,14 @@ export async function showHintStore(
               onHintsGranted?.(1);
               if (remainingSlots <= 0 && adRow) {
                 adRow.remove();
+              } else {
+                btn.disabled = false;
               }
+            } else {
+              btn.disabled = false;
             }
+          } else {
+            btn.disabled = false;
           }
         })();
       });
@@ -177,8 +198,11 @@ export async function showHintStore(
 
       const countEl = document.createElement('span');
       countEl.className = 'hint-store-pack-count';
-      countEl.textContent = t('hint_store.pack_hints', { n: pack.hints });
-      left.append(countEl);
+      countEl.textContent = String(pack.hints);
+      const countLabel = document.createElement('span');
+      countLabel.className = 'hint-store-pack-count-label';
+      countLabel.textContent = t('hint_store.pack_hints_label');
+      left.append(countEl, countLabel);
 
       if (pack.badge) {
         const badge = document.createElement('span');
@@ -218,6 +242,7 @@ export async function showHintStore(
     }
 
     const children: Array<HTMLElement | null> = [
+      handle,
       header,
       balanceRow,
       adRow,
@@ -227,10 +252,14 @@ export async function showHintStore(
     backdrop.append(sheet);
     document.body.append(backdrop);
 
-    // Animate in
+    // Animate in — double rAF ensures the initial translateY(100%) state is
+    // painted before the transition class fires (single rAF batches both
+    // into the same frame on some Android versions, skipping the animation).
     requestAnimationFrame(() => {
-      backdrop.classList.add('sheet-backdrop--visible');
-      sheet.classList.add('hint-store-sheet--visible');
+      requestAnimationFrame(() => {
+        backdrop.classList.add('sheet-backdrop--visible');
+        sheet.classList.add('hint-store-sheet--visible');
+      });
     });
   });
 }

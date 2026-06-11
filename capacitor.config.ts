@@ -12,7 +12,7 @@ const config: CapacitorConfig = {
   },
   // LIVE RELOAD — remove this server block before committing
   server: {
-    url: 'http://192.168.0.100:5173',
+    url: 'http://192.168.0.85:5173',
     cleartext: true
   },
   plugins: {

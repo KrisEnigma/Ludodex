@@ -199,6 +199,34 @@
   }
 }
 
+/* ── Detail sheet preview: same cascade-shield pattern, extended ───────────
+   Re-anchors tile, path, and title-typography derived vars so the detail
+   sheet tile preview + trail swatch show the skin's own colors even when a
+   different skin is active on <html>. */
+@scope (.skin-detail-preview-scope) {
+  :scope {
+    /* Tile colors */
+    --tile-bg:              var(--tile);
+    --tile-border:          var(--border);
+    --tile-letter:          var(--text);
+    --tile-selected-bg:     var(--tile-sel);
+    --tile-selected-border: var(--accent);
+    --tile-selected-letter: #ffffff;
+    --tile-selected-glow:   color-mix(in srgb, var(--accent) 40%, transparent);
+    /* Chrome */
+    --button-border:        var(--border);
+    /* Title typography */
+    --title-color:          var(--text);
+    --title-glow:           var(--accent);
+    --title-font-family:    var(--wordmark-font-family);
+    --title-font-weight:    var(--wordmark-font-weight);
+    --title-letter-spacing: var(--wordmark-letter-spacing);
+    /* Path / trail */
+    --path-color:           var(--action);
+    --path-grad-start:      var(--path-start);
+  }
+}
+
 /* Void — the :root default palette made explicit so preview-card var()
    references resolve to Void's own tokens regardless of the active skin. */
 .skin-void {

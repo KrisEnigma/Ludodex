@@ -2,6 +2,7 @@ import { Share } from '@capacitor/share';
 import { createIcon } from '../components/icons';
 import { getPuzzleById } from '../game/PuzzleLoader';
 import { showConfetti } from '../components/Confetti';
+import { HapticService } from '../services/HapticService';
 import { t, tn } from '../i18n';
 import { clearPuzzleReveals } from '../services/HintService';
 import type { Router } from './Router';
@@ -10,6 +11,7 @@ import type { WinPayload } from './types';
 import { getMonetizationContext } from '../services/MonetizationContext';
 import { track } from '../services/AnalyticsService';
 import { buildInstallCta } from '../components/InstallCta';
+import { addDragToDismiss } from '../components/sheetDrag';
 import { showConfirmModal } from '../components/Modal';
 import {
   shouldOfferDailyReminderPrompt,
@@ -35,6 +37,9 @@ export class WinView {
 
     if (payload.starRating === 3) {
       window.setTimeout(() => {
+        // Sustained buzz lands on the same frame as the first confetti pieces
+        // so the physical and visual celebration feel like one event.
+        HapticService.celebrate();
         showConfetti({
           count: 60,
           duration: 7000,
@@ -556,6 +561,10 @@ function showSharePreviewSheet(opts: {
   sheet.setAttribute('role', 'dialog');
   sheet.setAttribute('aria-modal', 'true');
 
+  const handle = document.createElement('div');
+  handle.className = 'sheet-handle';
+  addDragToDismiss(handle, sheet, backdrop, () => backdrop.remove());
+
   const header = document.createElement('div');
   header.className = 'share-preview-header';
 
@@ -583,7 +592,7 @@ function showSharePreviewSheet(opts: {
   const dismiss = (): void => {
     backdrop.classList.remove('sheet-backdrop--visible');
     sheet.classList.remove('share-preview-sheet--visible');
-    window.setTimeout(() => backdrop.remove(), 220);
+    window.setTimeout(() => backdrop.remove(), 280);
   };
 
   let hasFiredOnCopied = false;
@@ -594,6 +603,7 @@ function showSharePreviewSheet(opts: {
   };
 
   closeBtn.addEventListener('click', dismiss);
+  backdrop.addEventListener('pointerdown', (e) => { e.stopPropagation(); });
   backdrop.addEventListener('click', (e) => { if (e.target === backdrop) dismiss(); });
 
   copyBtn.addEventListener('click', async () => {
@@ -606,18 +616,20 @@ function showSharePreviewSheet(opts: {
     // ⌘C / Ctrl+C themselves. No further UI action.
   });
 
-  sheet.append(header, preview, copyBtn);
+  sheet.append(handle, header, preview, copyBtn);
   backdrop.append(sheet);
   document.body.append(backdrop);
 
   requestAnimationFrame(() => {
-    backdrop.classList.add('sheet-backdrop--visible');
-    sheet.classList.add('share-preview-sheet--visible');
+    requestAnimationFrame(() => {
+      backdrop.classList.add('sheet-backdrop--visible');
+      sheet.classList.add('share-preview-sheet--visible');
 
-    if (opts.initiallyCopied) {
-      flashButton(copyBtn, t('win.share_copied'));
-      fireOnCopiedOnce();
-    }
+      if (opts.initiallyCopied) {
+        flashButton(copyBtn, t('win.share_copied'));
+        fireOnCopiedOnce();
+      }
+    });
   });
 }
 

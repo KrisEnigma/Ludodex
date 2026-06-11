@@ -49,11 +49,16 @@ export type SkinMeta = {
    * e.g. "10 puzzles solved" or "30-day streak".
    */
   unlockHint?: string;
+  /**
+   * True for skins that declare `color-scheme: light` in skins.css.
+   * Used to set the native status-bar icon style on Android/iOS.
+   */
+  isLight?: true;
 };
 
 export const SKINS: SkinMeta[] = [
   { id: 'void', name: 'Void', productId: null },
-  { id: 'lumen', name: 'Lumen', productId: null },
+  { id: 'lumen', name: 'Lumen', productId: null, isLight: true },
   {
     id: 'neon-horizon',
     name: 'Neon Horizon',
@@ -66,9 +71,9 @@ export const SKINS: SkinMeta[] = [
   { id: 'maze-chase', name: 'Maze Chase', productId: null },
   { id: 'swarm', name: 'Swarm', productId: null },
   { id: 'phantom-thieves', name: 'Phantom Thieves', productId: null },
-  { id: 'catalyst', name: 'Catalyst', productId: null },
+  { id: 'catalyst', name: 'Catalyst', productId: null, isLight: true },
   { id: 'paleblood', name: 'Paleblood', productId: null },
-  { id: 'aero', name: 'Aero', productId: null },
+  { id: 'aero', name: 'Aero', productId: null, isLight: true },
   { id: 'star-hunter', name: 'Star Hunter', productId: null },
   { id: 'relic-gold', name: 'Hyrule Vault', productId: null },
   { id: 'puff-star', name: 'Puff Star', productId: null },
@@ -99,10 +104,10 @@ export const SKINS: SkinMeta[] = [
   { id: 'super-16-bit-lilac', name: 'Super 16-Bit Lilac', productId: null },
   { id: 'toaster', name: 'Toaster', productId: null },
   { id: 'lord-of-terror', name: 'Lord of Terror', productId: null },
-  { id: 'test-chamber', name: 'Test Chamber', productId: null },
-  { id: 'polygon', name: 'Polygon', productId: null },
-  { id: 'ring-of-light', name: 'Ring of Light', productId: null },
-  { id: 'dream-spiral', name: 'Dream Spiral', productId: null },
+  { id: 'test-chamber', name: 'Test Chamber', productId: null, isLight: true },
+  { id: 'polygon', name: 'Polygon', productId: null, isLight: true },
+  { id: 'ring-of-light', name: 'Ring of Light', productId: null, isLight: true },
+  { id: 'dream-spiral', name: 'Dream Spiral', productId: null, isLight: true },
   { id: 'rip-tear', name: 'Rip & Tear', productId: null },
   { id: 'blood-darkness', name: 'Blood & Darkness', productId: null },
   { id: 'crimson', name: 'Crimson', productId: null }
@@ -125,8 +130,17 @@ export function getCurrentSkinId(): SkinId {
   return 'void';
 }
 
+type SkinChangedCallback = (skinId: SkinId) => void;
+let skinChangedCallback: SkinChangedCallback | null = null;
+
+/** Register a single listener that fires after every applySkin call. */
+export function onSkinChanged(cb: SkinChangedCallback): void {
+  skinChangedCallback = cb;
+}
+
 export function applySkin(skinId: SkinId): void {
   const root = document.documentElement;
   root.classList.remove(...SKIN_CLASS_NAMES);
   root.classList.add(`${SKIN_CLASS_PREFIX}${skinId}`);
+  skinChangedCallback?.(skinId);
 }

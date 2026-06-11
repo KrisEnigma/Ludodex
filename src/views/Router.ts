@@ -1,9 +1,13 @@
 // (moved inside Router class below)
+import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 import type { Puzzle } from '../types/puzzle';
 import { track } from '../services/AnalyticsService';
 import { trackRoute } from '../services/SentryService';
 import { fireInterstitialIfPending } from '../services/AdService';
 import { pathForRoute, parseCurrentUrl } from '../services/DeepLinking';
+import { showConfirmModal } from '../components/Modal';
+import { t } from '../i18n';
 
 import { ArchiveView } from './ArchiveView';
 import { GameView } from './GameView';
@@ -48,6 +52,10 @@ export class Router {
 
   private readonly shell: HTMLDivElement;
   private stack: AnyRouteEntry[] = [];
+  // Custom back action for the current view. Set in renderCurrent(); cleared
+  // before each render so routes that don't override it fall through to the
+  // default pop / minimizeApp behaviour.
+  private currentBackAction: (() => void) | null = null;
 
   constructor(app: HTMLDivElement) {
     this.shell = document.createElement('div');
@@ -60,6 +68,14 @@ export class Router {
     // URL and pop-or-replace internal state to match. See onPopState.
     if (typeof window !== 'undefined') {
       window.addEventListener('popstate', this.onPopState);
+    }
+
+    // Android hardware back button / gesture. On native the system fires this
+    // event; we route it through currentBackAction so views like GameView can
+    // intercept it for their own confirmation flow. At the stack root we
+    // minimise (don't exit — matches Android UX convention).
+    if (Capacitor.isNativePlatform()) {
+      void CapacitorApp.addListener('backButton', this.onHardwareBack);
     }
   }
 
@@ -169,6 +185,27 @@ export class Router {
    * app to the referring page. The handler here is a safety net for cases
    * where the URL was changed externally (rare).
    */
+  private onHardwareBack = (): void => {
+    if (this.currentBackAction) {
+      this.currentBackAction();
+      return;
+    }
+    if (this.stack.length <= 1) {
+      // At the menu root — ask before closing.
+      void showConfirmModal({
+        title: t('dialog.quit_title'),
+        body: t('dialog.quit_body'),
+        confirmLabel: t('dialog.quit_confirm'),
+        cancelLabel: t('common.cancel'),
+        destructive: true
+      }).then((confirmed) => {
+        if (confirmed) void CapacitorApp.exitApp();
+      });
+      return;
+    }
+    this.pop();
+  };
+
   private onPopState = (): void => {
     const parsed = parseCurrentUrl();
     if (parsed.kind === 'puzzle') {
@@ -188,6 +225,9 @@ export class Router {
   private renderCurrent(): void {
     const current = this.stack[this.stack.length - 1];
     if (!current) return;
+
+    // Clear any view-specific back-button override before building the new view.
+    this.currentBackAction = null;
 
     // When replacing a win route with a new route (Play Again → new game),
     // fire the pending interstitial on the transition.
@@ -219,6 +259,9 @@ export class Router {
           onWin: (payload) => this.replace('win', payload),
           onMenu: () => this.pop()
         });
+        // GameView's exit flow shows a confirmation dialog when there's progress,
+        // so route the hardware back button through it rather than popping directly.
+        this.currentBackAction = () => void view.exit();
         this.mount(view.element);
         return;
       }

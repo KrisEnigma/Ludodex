@@ -20,6 +20,8 @@ import {
 } from '../services/NotificationService';
 import { LEGAL_URLS, STORE_URLS } from '../config/legalUrls';
 import { showConfirmModal } from '../components/Modal';
+import { addDragToDismiss } from '../components/sheetDrag';
+import { createIcon } from '../components/icons';
 
 const context = getMonetizationContext();
 
@@ -38,7 +40,7 @@ export class SettingsView {
   // --- Skin preview state machine ---
   private previewingSkinId: SkinId | null = null;
   private skinIdBeforePreview: SkinId | null = null;
-  private previewBanner: HTMLElement | null = null;
+  private skinDetailSheet: HTMLElement | null = null;
 
   private async enterPreview(skinId: SkinId): Promise<void> {
     if (this.previewingSkinId === skinId) return;
@@ -51,7 +53,6 @@ export class SettingsView {
     this.previewingSkinId = skinId;
     applySkin(skinId);
     track('skin_preview_entered', { skin_id: skinId });
-    this.renderPreviewBanner();
   }
 
   private async exitPreview(): Promise<void> {
@@ -62,92 +63,239 @@ export class SettingsView {
     this.previewingSkinId = null;
     this.skinIdBeforePreview = null;
     applySkin(revertTo);
-
-    if (this.previewBanner) {
-      this.previewBanner.remove();
-      this.previewBanner = null;
-    }
-
+    this.closeSkinDetailSheet();
     track('skin_preview_cancelled', { skin_id: cancelledSkin });
   }
 
   private async commitPreview(): Promise<void> {
     if (this.previewingSkinId === null) return;
 
-    const purchased = this.previewingSkinId;
+    const committed = this.previewingSkinId;
     this.previewingSkinId = null;
     this.skinIdBeforePreview = null;
 
     // The applySkin call already happened during enterPreview; just persist it as active.
-    this.activeSkinId = purchased;
-    await setActiveSkinId(purchased);
-
-    if (this.previewBanner) {
-      this.previewBanner.remove();
-      this.previewBanner = null;
-    }
-
+    this.activeSkinId = committed;
+    await setActiveSkinId(committed);
+    this.closeSkinDetailSheet();
     this.refreshSkinCards();
   }
 
-  private renderPreviewBanner(): void {
-    if (this.previewBanner) {
-      this.previewBanner.remove();
-      this.previewBanner = null;
+  // ── Skin detail sheet ────────────────────────────────────────────────────
+
+  private showSkinDetailSheet(skin: SkinMeta, opts: { isOwned: boolean; isActive: boolean }): void {
+    this.closeSkinDetailSheet();
+
+    const backdrop = document.createElement('div');
+    backdrop.className = 'skin-detail-backdrop';
+
+    const sheet = document.createElement('div');
+    sheet.className = 'skin-detail-sheet';
+    sheet.setAttribute('role', 'dialog');
+    sheet.setAttribute('aria-modal', 'true');
+
+    // Header: name + close button
+    const header = document.createElement('div');
+    header.className = 'skin-detail-header';
+
+    const nameEl = document.createElement('span');
+    nameEl.className = 'skin-detail-name';
+    nameEl.textContent = this.getSkinName(skin.id);
+
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'skin-detail-close';
+    closeBtn.setAttribute('aria-label', t('common.cancel'));
+    closeBtn.textContent = '✕';
+    closeBtn.addEventListener('click', () => this.closeSkinDetailSheet());
+    header.append(nameEl, closeBtn);
+
+    // Mini game preview — scoped skin class re-anchors all derived CSS vars
+    // locally via @scope in skins.css (no root mutation).
+    const previewScope = document.createElement('div');
+    previewScope.className = `skin-detail-preview-scope skin-${skin.id}`;
+
+    // Skin name in the wordmark font
+    const previewTitle = document.createElement('div');
+    previewTitle.className = 'skin-detail-preview-title';
+    previewTitle.textContent = this.getSkinName(skin.id).toUpperCase();
+
+    // 4×4 mini game grid with SVG trail overlay.
+    // Path spells W→O→R→D→S across the grid so selected tiles + trail
+    // both render in the skin's colors.
+    const TILE_SIZE = 42;
+    const GAP = 6;
+    const STRIDE = TILE_SIZE + GAP;   // 48
+    const GRID_PX = 4 * TILE_SIZE + 3 * GAP; // 186
+
+    // Path includes diagonals: W→O→R→D diagonal run, then S→A turn
+    const pathCells: [number, number][] = [[0, 0], [1, 1], [2, 2], [3, 3], [3, 2], [2, 1]];
+    const selectedSet = new Set(pathCells.map(([r, c]) => `${r},${c}`));
+    const letters = ['W', 'G', 'T', 'L', 'P', 'O', 'E', 'B', 'M', 'A', 'R', 'F', 'C', 'N', 'S', 'D'];
+
+    const gridWrap = document.createElement('div');
+    gridWrap.className = 'skin-detail-preview-grid-wrap';
+
+    const grid = document.createElement('div');
+    grid.className = 'skin-detail-preview-grid';
+    for (let r = 0; r < 4; r++) {
+      for (let c = 0; c < 4; c++) {
+        const tile = document.createElement('span');
+        const sel = selectedSet.has(`${r},${c}`);
+        tile.className = `settings-skin-tile ${sel ? 'settings-skin-tile--selected' : 'settings-skin-tile--default'}`;
+        // Letter in a child span — mirrors the game's .tile / .tile-letter pattern
+        // so the trail SVG (z-index 10) renders above tile backgrounds while the
+        // letter (z-index 20) stays above the trail. The tile itself must NOT have
+        // z-index or it would form a stacking context and trap the letter inside it.
+        const letter = document.createElement('span');
+        letter.className = 'skin-detail-preview-letter';
+        letter.textContent = letters[r * 4 + c];
+        tile.append(letter);
+        grid.append(tile);
+      }
     }
-    if (this.previewingSkinId === null) return;
 
-    const skin = SKINS.find((s) => s.id === this.previewingSkinId);
-    if (!skin) return;
+    // SVG trail: one <line> per segment, --seg-t drives the gradient tint.
+    // Uses skin-detail-preview-path (not path-overlay) to avoid the z-index:10
+    // that would cover tile letters.
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'skin-detail-preview-path');
+    svg.setAttribute('viewBox', `0 0 ${GRID_PX} ${GRID_PX}`);
+    svg.setAttribute('aria-hidden', 'true');
+    const segGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    segGroup.setAttribute('class', 'path-segments');
+    const numSeg = pathCells.length - 1;
+    for (let i = 0; i < numSeg; i++) {
+      const [r1, c1] = pathCells[i];
+      const [r2, c2] = pathCells[i + 1];
+      const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      ln.setAttribute('class', 'path-seg');
+      ln.setAttribute('x1', String(c1 * STRIDE + TILE_SIZE / 2));
+      ln.setAttribute('y1', String(r1 * STRIDE + TILE_SIZE / 2));
+      ln.setAttribute('x2', String(c2 * STRIDE + TILE_SIZE / 2));
+      ln.setAttribute('y2', String(r2 * STRIDE + TILE_SIZE / 2));
+      ln.style.setProperty('--seg-t', String(numSeg > 1 ? i / (numSeg - 1) : 0));
+      segGroup.append(ln);
+    }
+    svg.append(segGroup);
+    gridWrap.append(grid, svg);
+    previewScope.append(previewTitle, gridWrap);
 
-    const banner = document.createElement('div');
-    banner.className = 'skin-preview-banner';
-    banner.setAttribute('role', 'dialog');
-    banner.setAttribute('aria-live', 'polite');
+    // Description
+    const descKey = `skin.${skin.id}.desc` as Parameters<typeof t>[0];
+    const rawDesc = t(descKey);
+    const desc = document.createElement('p');
+    desc.className = 'skin-detail-desc';
+    desc.textContent = rawDesc !== descKey ? rawDesc : '';
+    desc.hidden = !desc.textContent;
 
-    const text = document.createElement('div');
-    text.className = 'skin-preview-banner-text';
-    text.textContent = t('settings.skin_preview_banner_title', { name: this.getSkinName(skin.id) });
-
+    // Actions section
     const actions = document.createElement('div');
-    actions.className = 'skin-preview-banner-actions';
+    actions.className = 'skin-detail-actions';
 
-    const cancelBtn = document.createElement('button');
-    cancelBtn.type = 'button';
-    cancelBtn.className = 'skin-preview-banner-cancel button-secondary';
-    cancelBtn.textContent = t('common.cancel');
-    cancelBtn.addEventListener('click', () => {
-      void this.exitPreview();
-    });
-
-    if (this.isNative && skin.productId) {
-      const buyBtn = document.createElement('button');
-      buyBtn.type = 'button';
-      buyBtn.className = 'skin-preview-banner-buy button-primary';
-      buyBtn.textContent = `${t('settings.skin_unlock')} ${this.getPriceLabel(skin.id)}`;
-      buyBtn.addEventListener('click', () => {
-        void this.attemptPurchaseFromPreview(skin);
-      });
-      actions.append(buyBtn, cancelBtn);
+    if (opts.isActive) {
+      const activePill = document.createElement('span');
+      activePill.className = 'skin-detail-active-pill';
+      activePill.textContent = `✓ ${t('settings.skin_active')}`;
+      actions.append(activePill);
+    } else if (opts.isOwned) {
+      const useBtn = document.createElement('button');
+      useBtn.type = 'button';
+      useBtn.className = 'button-primary';
+      useBtn.textContent = t('settings.skin_use');
+      useBtn.addEventListener('click', () => {
+          void this.setSkin(skin.id).then(() => this.closeSkinDetailSheet());
+        });
+      actions.append(useBtn);
     } else {
+      // Locked — show how to unlock
+      if (skin.unlockHint) {
+        const earnRow = document.createElement('div');
+        earnRow.className = 'skin-detail-earn-row';
+        earnRow.textContent = t('settings.skin_earn_hint', { hint: skin.unlockHint });
+        actions.append(earnRow);
+      }
+      if (this.isNative && skin.productId && !skin.unlockHint) {
+        const buyBtn = document.createElement('button');
+        buyBtn.type = 'button';
+        buyBtn.className = 'button-primary';
+        buyBtn.textContent = `${t('settings.skin_unlock')} ${this.getPriceLabel(skin.id)}`;
+        buyBtn.addEventListener('click', () => {
+          // Close the sheet before entering the IAP flow so it doesn't
+          // sit on screen behind the OS purchase dialog.
+          this.closeSkinDetailSheet();
+          void this.attemptPurchase(skin);
+        });
+        actions.append(buyBtn);
+      }
+    }
+
+    if (!opts.isActive) {
+      const cancelBtn = document.createElement('button');
+      cancelBtn.type = 'button';
+      cancelBtn.className = 'button-secondary';
+      cancelBtn.textContent = t('common.cancel');
+      cancelBtn.addEventListener('click', () => this.closeSkinDetailSheet());
       actions.append(cancelBtn);
     }
 
-    banner.append(text, actions);
-    document.body.append(banner);
-    this.previewBanner = banner;
+    const handle = document.createElement('div');
+    handle.className = 'sheet-handle';
+    // Drag-to-dismiss: nullify skinDetailSheet first so closeSkinDetailSheet
+    // (called inside exitPreview) becomes a no-op and doesn't double-animate.
+    addDragToDismiss(handle, sheet, backdrop, () => {
+      this.skinDetailSheet = null;
+      backdrop.remove();
+      void this.exitPreview();
+    });
+    sheet.append(handle, header, previewScope, desc, actions);
+    backdrop.append(sheet);
+    document.body.append(backdrop);
+
+    backdrop.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      if (e.target === backdrop) this.closeSkinDetailSheet();
+    });
+
+    this.skinDetailSheet = backdrop;
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        backdrop.classList.add('skin-detail-backdrop--visible');
+        sheet.classList.add('skin-detail-sheet--visible');
+      });
+    });
   }
 
-  private async attemptPurchaseFromPreview(skin: SkinMeta): Promise<void> {
+  private closeSkinDetailSheet(): void {
+    const el = this.skinDetailSheet;
+    if (!el) return;
+    this.skinDetailSheet = null;
+    el.classList.remove('skin-detail-backdrop--visible');
+    el.querySelector('.skin-detail-sheet')?.classList.remove('skin-detail-sheet--visible');
+    window.setTimeout(() => el.remove(), 280);
+  }
+
+  private async closeSkinDetailSheetAndRevert(): Promise<void> {
+    this.closeSkinDetailSheet();
+    if (this.previewingSkinId !== null) {
+      await this.exitPreview();
+    }
+  }
+
+  private async commitPreviewAndClose(): Promise<void> {
+    // Sheet closes as part of commitPreview().
+    await this.commitPreview();
+  }
+
+  private async attemptPurchase(skin: SkinMeta): Promise<void> {
     if (!skin.productId) return;
 
     track('skin_preview_buy_tapped', { skin_id: skin.id, product_id: skin.productId });
     this.status.textContent = t('settings.purchase_in_progress', { name: this.getSkinName(skin.id) });
 
     try {
-      const result = await purchase(skin.productId, 'skin_preview');
-
-      // Refresh entitlements regardless — isSkinOwned will check IAP + achievement + bundle.
+      await purchase(skin.productId, 'skin_preview');
       await this.refreshEntitlements();
 
       if (this.unlockedBySkin.get(skin.id)) {
@@ -224,12 +372,8 @@ export class SettingsView {
     back.className = 'view-topbar-back';
     back.textContent = t('settings.back');
     back.addEventListener('click', () => {
-      void (async () => {
-        if (this.previewingSkinId !== null) {
-          await this.exitPreview();
-        }
-        this.onBack();
-      })();
+      this.closeSkinDetailSheet();
+      this.onBack();
     });
 
     const title = document.createElement('h2');
@@ -417,20 +561,10 @@ export class SettingsView {
     return row;
   }
 
-  private async onSkinCardClick(skin: SkinMeta): Promise<void> {
-    const unlocked = this.unlockedBySkin.get(skin.id) === true;
-      if (unlocked) {
-        // Owned or free skin: apply immediately, no preview.
-        if (this.previewingSkinId !== null) {
-          // If we were previewing and the user tapped an owned skin, exit preview cleanly first.
-          await this.exitPreview();
-        }
-        await this.setSkin(skin.id);
-        return;
-      }
-
-      // Locked skin: enter preview. On native, the banner lets the user Buy. On web, the banner just lets them Cancel (preview is browsing only).
-      await this.enterPreview(skin.id);
+  private onSkinCardClick(skin: SkinMeta): void {
+    const isActive = this.activeSkinId === skin.id;
+    const isOwned = this.unlockedBySkin.get(skin.id) === true;
+    this.showSkinDetailSheet(skin, { isOwned, isActive });
   }
 
   private buildSkinCard(skin: SkinMeta, isPromo: boolean): HTMLButtonElement {
@@ -440,9 +574,7 @@ export class SettingsView {
     card.dataset.skin = skin.id;
     if (isPromo) card.dataset.promo = 'true';
 
-    const left = document.createElement('span');
-    left.className = 'settings-skin-left';
-
+    // Mini tile preview — scoped to this skin's CSS variables
     const skinScope = document.createElement('div');
     skinScope.className = `settings-skin-preview-scope skin-${skin.id}`;
 
@@ -455,36 +587,22 @@ export class SettingsView {
     tileSelected.textContent = 'A';
 
     skinScope.append(tileDefault, tileSelected);
-    left.append(skinScope);
-
-    const info = document.createElement('span');
-    info.className = 'settings-skin-info';
+    card.append(skinScope);
 
     const name = document.createElement('span');
     name.className = 'settings-skin-name';
     name.textContent = this.getSkinName(skin.id);
-    info.append(name);
+    card.append(name);
 
-    const descKey = `skin.${skin.id}.desc` as Parameters<typeof t>[0];
-    const descText = t(descKey);
-    if (descText && descText !== descKey) {
-      const desc = document.createElement('span');
-      desc.className = 'settings-skin-desc';
-      desc.textContent = descText;
-      info.append(desc);
-    }
-
-    left.append(info);
-    card.append(left);
-
-    const pill = document.createElement('span');
-    pill.className = 'settings-skin-pill';
-    card.append(pill);
+    // Badge indicator — content and type set in refreshSkinCards()
+    const badge = document.createElement('span');
+    badge.className = 'settings-skin-badge';
+    card.append(badge);
 
     card.addEventListener('click', () => { void this.onSkinCardClick(skin); });
 
     this.skinButtons.set(skin.id, card);
-    this.skinPills.set(skin.id, pill);
+    this.skinPills.set(skin.id, badge);
     return card;
   }
 
@@ -609,8 +727,8 @@ export class SettingsView {
   private refreshSkinCards(): void {
     for (const skin of SKINS) {
       const button = this.skinButtons.get(skin.id);
-      const pill = this.skinPills.get(skin.id);
-      if (!button || !pill) continue;
+      const badge = this.skinPills.get(skin.id);
+      if (!button || !badge) continue;
 
       const isActive = this.activeSkinId === skin.id;
       const isUnlocked = this.unlockedBySkin.get(skin.id) === true;
@@ -618,15 +736,19 @@ export class SettingsView {
       button.dataset.locked = String(!isUnlocked);
 
       if (isActive) {
-        pill.textContent = '';
-      } else if (!isUnlocked && skin.unlockHint) {
-        // Achievement-gated skin — show the earn condition on all platforms.
-        pill.textContent = t('settings.skin_earn_hint', { hint: skin.unlockHint });
-      } else if (this.isNative && !isUnlocked) {
-        // IAP-only skin on native — show the price.
-        pill.textContent = `${t('settings.skin_unlock')} ${this.getPriceLabel(skin.id)}`;
+        badge.replaceChildren();
+        badge.dataset.type = '';
+      } else if (!isUnlocked && skin.unlockedByAchievement) {
+        // Achievement-gated: trophy icon badge
+        badge.replaceChildren(createIcon('trophy'));
+        badge.dataset.type = 'achievement';
+      } else if (!isUnlocked && this.isNative && skin.productId) {
+        // IAP-only on native: lock icon badge
+        badge.replaceChildren(createIcon('lock'));
+        badge.dataset.type = 'iap';
       } else {
-        pill.textContent = '';
+        badge.replaceChildren();
+        badge.dataset.type = '';
       }
     }
   }
