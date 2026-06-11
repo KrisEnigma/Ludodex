@@ -660,7 +660,13 @@ concept. The web is simply always free.
 
 ### Web
 
-All skins are free. Nothing to configure beyond the registry entry.
+The web has **permanently free** skins and a **weekly rotating promo** skin.
+
+- **Permanently free** (`WEB_SKIN_IDS` in `src/skins/webConfig.ts`): currently `void`, `lumen`, `crimson`. These are always available on web.
+- **Rotating promo**: every other skin (everything not in `WEB_SKIN_IDS`) automatically enters the weekly rotation. One skin is the free promo skin each week; the rest are not visible on web that week. The promo rotates every **Monday midnight UTC**, advances through all non-permanent skins in a shuffled order with no repeats within a cycle, then reshuffles and cycles again.
+- Adding a skin to `registry.ts` with `productId: null` (or any productId) automatically enters it into the promo rotation — no changes to `webConfig.ts` needed.
+- `PROMO_SKIN_ID` in `webConfig.ts` is computed at import time (no API, pure week-number math with a seeded deterministic shuffle). `isWebAvailable(skinId)` returns true for permanently-free skins and the current promo skin.
+- If the player had a promo skin selected and it rotated out, `resolveBootSkin()` in `main.ts` falls back to `void` at boot, and `SettingsView.bootstrap()` persists the corrected choice.
 
 ### Achievement unlock — ✅ works today
 

@@ -8,7 +8,12 @@ const config: CapacitorConfig = {
     contentInset: 'always'
   },
   android: {
-    allowMixedContent: false
+    allowMixedContent: true // live-reload only — revert before committing
+  },
+  // LIVE RELOAD — remove this server block before committing
+  server: {
+    url: 'http://192.168.0.100:5173',
+    cleartext: true
   },
   plugins: {
     LocalNotifications: {

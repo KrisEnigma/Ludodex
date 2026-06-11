@@ -26,7 +26,7 @@ an archive.
   filler. Use the AskUserQuestion tool for choices. Flag on-device/dashboard
   actions explicitly.
 
-## What this session built (don't redo)
+## What the PREVIOUS session built (already done — don't redo)
 
 **Skin system, expanded to font + shape + motion (was colors-only):**
 - New per-skin CSS variables in `src/skins/skins.css`: `--tile-font-family/-weight`,
@@ -127,6 +127,44 @@ native-only, opt-in):
   one-time via `ludodex.reminder_prompted`). Nothing is scheduled until the user
   opts in.
 
+## What THIS session built (also done — don't redo)
+
+**Web skin visibility + promo rotation system:**
+- `getVisibleSkins()` in `IAPService.ts` — returns all SKINS on native/dev-full-access, filters to `isWebAvailable(s.id)` on web.
+- `isSkinAccessibleSync(skinId)` in `IAPService.ts` — synchronous boot-time check: web→`isWebAvailable`, native→optimistic true.
+- `src/skins/webConfig.ts` completely rewritten: permanently free skins are `WEB_SKIN_IDS = ['void', 'lumen', 'crimson']`. All other skins auto-join `PROMO_ROTATION` (derived from the SKINS registry). A deterministic seeded Fisher-Yates shuffle per cycle ensures different order each full cycle. Rotation is weekly, Monday midnight UTC (3-day offset from Thursday epoch). `PROMO_SKIN_ID` is computed at import time — no API, no database, pure math.
+- Adding a new skin to `registry.ts` automatically enters it into the web promo rotation — no other changes needed.
+- i18n key `settings.skin_promo_label` added to both `en.ts` and `es.ts`.
+
+**Promo skin UI in SettingsView:**
+- `renderSkinSection()` splits visible skins into regular vs. promo, calls `renderPromoSkinBlock(skin)` for the promo entry.
+- `renderPromoSkinBlock()` renders a horizontal-rule divider (flex `::before`/`::after` lines + centered label "ROTATING FREE SKIN") followed by a visually distinct card.
+- Promo card gets `data-promo="true"` and styled with accent border: `color-mix(in srgb, var(--accent) 45%, var(--button-border))` + a faint accent box-shadow.
+- `.settings-skin-promo-divider` style in `index.css` using Space Mono, uppercase, 0.45 opacity.
+- The "ACTIVE" pill text was removed (`pill.textContent = ''` for active state); the active card color is already a clear signal.
+- Active card's `.settings-skin-desc` gets `color: var(--primary-action-text); opacity: 0.7` for contrast.
+
+**Skin revert when promo rotates:**
+- `resolveBootSkin()` in `main.ts` now calls `isSkinAccessibleSync(normalized)` — if the stored skin is no longer available (promo changed), it falls back to `'void'` immediately at boot (no flash).
+- `SettingsView.bootstrap()` has a post-entitlement check: if the active skin resolves as unowned after async checks, it calls `setSkin('void')` and persists the correction.
+
+**Scroll fix:**
+- `overflow-y: auto` and `overscroll-behavior: contain` on `.view` moved from the base rule into a mobile-only `@media (hover: none) and (pointer: coarse) and (max-width: 600px)` block. Desktop always uses window scroll; mobile uses in-container scroll. Fixes scroll capture when hovering skin list / achievement list / win screen on desktop.
+
+**Dev-mode enhancements:**
+- Eruda mobile console removed from `index.html` (was added in commit `410328e`).
+- Archive shows all puzzles in dev full-access mode (`lastArchiveDay = puzzleCount`, `webFreeThreshold = 0` when `isDevFullAccess`).
+- Dev full-access = `import.meta.env.DEV && sessionStorage.getItem('dev_sim_platform') !== 'web'`. Toggle via the floating DevOverlay.
+
+**Android live-reload testing:**
+```
+pnpm cap sync android
+npx cap run android --livereload --external
+```
+Requires phone on same network as dev machine. Vite serves, Capacitor loads from it.
+
+---
+
 ## Decisions to preserve (don't re-litigate)
 
 - **Daily is a global calendar (Wordle model), not per-install.** Late joiners
@@ -167,10 +205,18 @@ native-only, opt-in):
    `pnpm cap add ios`, add `public/.well-known/apple-app-site-association`, and the
    Associated Domains entitlement. Until done, links/preview links open the web
    game everywhere (the code side is ready).
-5. **Smoke-test the native build on a device**: notification permission prompt +
-   09:00 fire; achievement-unlock of skins; IAP stubs (purchase returns
-   not-implemented — that's expected); `/p/<token>` preview + `/N` daily deep
-   links open the app; all 5 skins render.
+5. **Smoke-test the native build on a device** — use Android live-reload:
+   ```
+   pnpm cap sync android
+   npx cap run android --livereload --external
+   ```
+   Test specifically:
+   - **Daily notifications**: `enableDailyNotification()` prompts permission, schedules 09:00 repeating. Verify it fires. Test `disableDailyNotification()` cancels it. First-solve win-screen soft prompt only shows once.
+   - **Day simulation**: dev-only `?day=N` param or `localStorage['ludodex.devday'] = 'N'` lets you jump to any puzzle day. Use this to verify the archive unlocking, streak logic across day boundaries, and that day 1 gives the tutorial prompt.
+   - Achievement-unlock of skins (solve_10 → Neon Horizon; streak_30 → Game Boy/Dot Matrix).
+   - IAP stubs: purchase returns `not-implemented` — expected.
+   - Deep links: `/p/<token>` preview + `/N` daily links open the app.
+   - All skins render correctly on device (including promo skin logic).
 6. Confirm enough launch runway: 50 bundled puzzles → the daily exhausts around
    launch + 42 days; keep the pipeline ahead of the calendar.
 7. First-session / store-listing polish — the highest-leverage pre-launch work
@@ -216,7 +262,8 @@ native-only, opt-in):
 - `src/views/GameView.ts` — grid, ribbon, solve/persistence (incl. `isPreview`).
 - `src/views/WinView.ts` — win screen + first-solve reminder prompt.
 - `src/services/NotificationService.ts` — opt-in daily reminders.
-- `src/services/IAPService.ts` / `AchievementService.ts` — skin entitlements.
+- `src/services/IAPService.ts` / `AchievementService.ts` — skin entitlements; `getVisibleSkins()` + `isSkinAccessibleSync()` live here.
+- `src/skins/webConfig.ts` — web-available skin IDs + automated weekly promo rotation (pure math, no API).
 - `public/editor/` — standalone puzzle editor (Copy link / Test buttons).
 - `docs/making-skins.md`, `docs/deep-linking.md` — subsystem references.
 
