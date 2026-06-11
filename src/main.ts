@@ -8,7 +8,7 @@ import { Preferences } from '@capacitor/preferences';
 import { loadPuzzles } from './game/PuzzleLoader';
 import { initI18n } from './i18n';
 import { applySkin, normalizeSkinId } from './skins/registry';
-import { initIAP } from './services/IAPService';
+import { initIAP, isSkinAccessibleSync } from './services/IAPService';
 import { bootstrapProgress, getStoredSkinId, getSolvedTimes } from './services/ProgressService';
 import { retroactivelyUnlockEarnedAchievements } from './services/AchievementService';
 import { initAnalytics, track, updateLocale } from './services/AnalyticsService';
@@ -114,7 +114,11 @@ void (async () => {
  */
 function resolveBootSkin(storedSkinId: string | null): ReturnType<typeof normalizeSkinId> {
   if (storedSkinId) {
-    return normalizeSkinId(storedSkinId);
+    const normalized = normalizeSkinId(storedSkinId);
+    // If the stored skin is no longer accessible (e.g. web promo rotated), fall back to void.
+    // Storage is corrected async by SettingsView.bootstrap() on the next settings open.
+    if (!isSkinAccessibleSync(normalized)) return 'void';
+    return normalized;
   }
   return prefersLightScheme() ? 'lumen' : 'void';
 }

@@ -54,8 +54,11 @@ export class ArchiveView {
     const today = getDayNumberSinceLaunch();
     // Cap to puzzle catalog size — days beyond the catalog have no content.
     const puzzleCount = ensureBundledPuzzlesLoaded().length;
-    const lastArchiveDay = Math.min(today - 1, puzzleCount);
     const ctx = getMonetizationContext();
+
+    // Dev full-access: show the entire catalog regardless of today's day number.
+    const isDevFullAccess = import.meta.env.DEV && sessionStorage.getItem('dev_sim_platform') !== 'web';
+    const lastArchiveDay = isDevFullAccess ? puzzleCount : Math.min(today - 1, puzzleCount);
 
     if (lastArchiveDay < 1) {
       const empty = document.createElement('p');
@@ -76,7 +79,8 @@ export class ArchiveView {
     // On web, only the most recent WEB_FREE_DAYS entries are unlocked.
     // Older entries are shown as locked rows — visible but unplayable —
     // with an install CTA to prompt app download.
-    const webFreeThreshold = ctx.isNative ? 0 : lastArchiveDay - WEB_FREE_DAYS + 1;
+    // Dev full-access bypasses this gate entirely.
+    const webFreeThreshold = (ctx.isNative || isDevFullAccess) ? 0 : lastArchiveDay - WEB_FREE_DAYS + 1;
 
     let lockedRowInserted = false;
 

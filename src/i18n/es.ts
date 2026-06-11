@@ -49,6 +49,7 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'settings.skin_active': 'Activo',
   'settings.skin_unlock': 'Desbloquear',
   'settings.skin_earn_hint': 'Gana: {hint}',
+  'settings.skin_promo_label': 'Skin rotativa gratuita',
     'settings.skin_preview_banner_title': 'Vista previa de {name} — aún no desbloqueado',
   'settings.restore_purchases': 'Restaurar compras',
   'settings.badge_free': 'Gratis',

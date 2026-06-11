@@ -532,6 +532,11 @@ body {
     height: 100dvh;
     min-height: 100dvh;
   }
+  /* Mobile: app-shell is capped at 100dvh, so the view must scroll internally. */
+  .view {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
 }
 
 .view {
@@ -541,8 +546,8 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 16px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  /* overflow-y intentionally omitted: desktop uses window scroll (see .app-shell comment above).
+     Mobile gets overflow-y: auto via the touch media query. */
 }
 
 /* Hide internal scrollbars across the app — scrolling still works (wheel,
@@ -2267,8 +2272,10 @@ body {
 }
 
 .settings-skin-card[data-active='true'] .settings-skin-pill,
-.settings-skin-card[data-active='true'] .settings-skin-name {
+.settings-skin-card[data-active='true'] .settings-skin-name,
+.settings-skin-card[data-active='true'] .settings-skin-desc {
   color: var(--primary-action-text);
+  opacity: 0.7;
 }
 
 .settings-skin-card[data-locked='true'] {
@@ -2335,6 +2342,38 @@ body {
   color: var(--chrome-text);
   text-align: right;
   white-space: nowrap;
+}
+
+.settings-skin-promo-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.settings-skin-promo-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  font-family: 'Space Mono', ui-monospace, monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--chrome-text);
+  opacity: 0.45;
+}
+
+.settings-skin-promo-divider::before,
+.settings-skin-promo-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: currentColor;
+}
+
+.settings-skin-card[data-promo='true'] {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--button-border));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent);
 }
 
 .settings-restore {

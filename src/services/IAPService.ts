@@ -3,9 +3,21 @@ import { track } from './AnalyticsService';
 import { getMonetizationContext } from './MonetizationContext';
 import { grantHints } from './HintService';
 import { isEarned } from './AchievementService';
-import { SKINS, type SkinId } from '../skins/registry';
+import { SKINS, type SkinId, type SkinMeta } from '../skins/registry';
+import { isWebAvailable, WEB_SKIN_IDS, PROMO_SKIN_ID } from '../skins/webConfig';
 
 const FALLBACK_RC_KEY = 'RC_KEY';
+
+// ── Dev mode ──────────────────────────────────────────────────────────────────
+// Only active on the Vite dev server (import.meta.env.DEV = true).
+// Completely tree-shaken from production builds — zero runtime cost.
+
+const DEV_SIM_KEY = 'dev_sim_platform';
+
+if (import.meta.env.DEV) {
+  // Mount the floating dev overlay (tap to toggle between dev/web-player mode)
+  import('../dev/DevOverlay').then(m => m.initDevOverlay());
+}
 
 export type PurchaseStatus = 'success' | 'cancelled' | 'failed' | 'unavailable';
 
@@ -80,6 +92,31 @@ const FALLBACK_CATALOG: Record<string, ProductInfo> = {
   [PRODUCT_IDS.SKIN_BUNDLE]:    { id: PRODUCT_IDS.SKIN_BUNDLE,    priceLabel: '$2.99', fallbackPriceLabel: '$2.99' },
 };
 
+/**
+ * Synchronous skin accessibility check for boot-time resolution.
+ * Web (incl. dev web-sim): uses isWebAvailable — fully synchronous.
+ * Native / dev full-access: returns true (async RevenueCat check deferred to refreshEntitlements).
+ */
+export function isSkinAccessibleSync(skinId: SkinId): boolean {
+  if (import.meta.env.DEV && sessionStorage.getItem(DEV_SIM_KEY) !== 'web') return true;
+  const ctx = getMonetizationContext();
+  if (!ctx.isNative) return isWebAvailable(skinId);
+  return true; // native: optimistic — entitlement check is async
+}
+
+/**
+ * Skins that should be shown in the skin gallery for the current context.
+ * Dev full-access: all skins.
+ * Web (or web-player simulation): only isWebAvailable skins.
+ * Native: all skins.
+ */
+export function getVisibleSkins(): SkinMeta[] {
+  if (import.meta.env.DEV && sessionStorage.getItem(DEV_SIM_KEY) !== 'web') return SKINS;
+  const ctx = getMonetizationContext();
+  if (!ctx.isNative) return SKINS.filter((s) => isWebAvailable(s.id));
+  return SKINS;
+}
+
 export async function initIAP(): Promise<void> {
   const ctx = getMonetizationContext();
   if (!ctx.isNative) return;
@@ -102,11 +139,12 @@ export async function isOwned(productId: string): Promise<boolean> {
 
 /**
  * Single source of truth for whether the player owns a given skin.
- * Checks entitlement sources in priority order:
- *   1. Always-free (productId === null) → owned
- *   2. Web — all skins free (no IAP surface on web; skins are a native monetization path)
- *   3. Achievement unlock → native only
- *   4. IAP (RevenueCat) or bundle → native only
+ * Resolution order:
+ *   1. Dev server (localhost): full access unless simulating web player
+ *   2. Web build: only skins listed in webConfig.ts (all free, no IAP)
+ *   3. Native — always-free skins (productId: null)
+ *   4. Native — achievement unlock
+ *   5. Native — IAP / bundle (RevenueCat)
  *
  * This is the only function callers should use to gate skin access.
  */
@@ -114,24 +152,22 @@ export async function isSkinOwned(skinId: SkinId): Promise<boolean> {
   const skin = SKINS.find((s) => s.id === skinId);
   if (!skin) return false;
 
-  // Always-free skin (free on every platform).
+  // Dev: full unlock unless explicitly simulating the web player experience.
+  if (import.meta.env.DEV && sessionStorage.getItem(DEV_SIM_KEY) !== 'web') return true;
+
+  // Web: only skins in webConfig are available (all free on web, no IAP surface).
+  const ctx = getMonetizationContext();
+  if (!ctx.isNative) return isWebAvailable(skinId);
+
+  // Native: always-free skins.
   if (skin.productId === null) return true;
 
-  // On web, all skins are free — there's no IAP surface and skins are
-  // a native-only monetization path.
-  const ctx = getMonetizationContext();
-  if (!ctx.isNative) return true;
+  // Native: achievement-based unlock.
+  if (skin.unlockedByAchievement && await isEarned(skin.unlockedByAchievement)) return true;
 
-  // Achievement-based unlock.
-  if (skin.unlockedByAchievement) {
-    if (await isEarned(skin.unlockedByAchievement)) return true;
-  }
-
-  // IAP-based unlock.
-  if (skin.productId) {
-    if (await isOwned(skin.productId)) return true;
-    if (skin.bundleProductId && await isOwned(skin.bundleProductId)) return true;
-  }
+  // Native: IAP / bundle unlock.
+  if (await isOwned(skin.productId)) return true;
+  if (skin.bundleProductId && await isOwned(skin.bundleProductId)) return true;
 
   return false;
 }

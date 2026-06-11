@@ -1027,6 +1027,36 @@ body {
   border-top: 1px solid var(--creator-border);
 }
 
+/* ── Export: unlock type config ──────────────────────────────────────────── */
+
+.creator-unlock-section .creator-modal-hint {
+  border-bottom: none;
+}
+
+.creator-unlock-body {
+  padding: 6px 18px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.creator-unlock-check-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--creator-text);
+  user-select: none;
+}
+
+.creator-unlock-typehint {
+  font-size: 10px;
+  color: var(--creator-text-dim);
+  font-family: 'Space Mono', ui-monospace, monospace;
+  margin-left: 2px;
+}
+
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 
 @media (max-width: 900px) {

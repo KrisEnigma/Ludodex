@@ -790,48 +790,54 @@ const VAR_GROUPS = [
   },
 ];
 
-/**
- * Derived CSS custom properties — vars defined in :root via var() chains or
- * color-mix() expressions that are NOT user-editable (not in VAR_GROUPS).
- *
- * loadPreset() reads these from the skin's computed style and stores the raw
- * strings in state.vars so updatePreview()'s loop sets them as inline styles.
- * CSS then resolves any var() references at paint time using the other inline
- * tokens, so the preview is always pixel-accurate without manual JS math.
- */
-const DERIVED_VARS = [
-  // Background aliases
-  '--bg-center', '--bg-edge',
-  // Shell
-  '--shell-bg', '--shell-border', '--shell-shadow', '--shell-radius',
-  // Chrome & title
-  '--chrome-text', '--title-color', '--title-glow',
-  // Keyboard / action buttons
-  '--button-bg', '--button-border', '--button-text',
-  '--button-hover-bg', '--button-active-bg', '--button-active-border', '--button-active-text',
-  // Tiles — include tile-bg and tile-selected-bg so they are applied directly on
-  // previewEl (not merely inherited from :root). Without direct application the
-  // browser may resolve var(--tile) / var(--tile-sel) inside these vars at :root
-  // context (void skin colors) rather than in previewEl's context where the skin
-  // values live. Same mechanism as the @scope in skins.css that anchors these on
-  // the Settings skin-preview cards.
-  '--tile-bg', '--tile-selected-bg',
-  '--tile-border',
-  '--tile-selected-border', '--tile-selected-glow',
-  '--tile-found-bg', '--tile-found-border', '--tile-found-letter',
-  '--tile-deactivated-opacity',
-  // Path
-  '--path-color',
-  // Primary action button
-  '--primary-action-bg',
-  // Hint extras (not in VAR_GROUPS)
-  '--hint-empty-letter', '--hint-empty-letter-outline', '--hint-solved-letter-outline',
-  // Selected-letter outline
-  '--selected-letter-outline',
-  // Skin-selector buttons (Settings preview)
-  '--skin-button-bg', '--skin-button-border', '--skin-button-text',
-  '--skin-button-active-bg', '--skin-button-active-border', '--skin-button-active-text',
-];
+// ── Derived-var application ───────────────────────────────────────────────────
+//
+// skins.css defines a set of derived custom properties in :root via var() chains
+// (e.g. --tile-bg: var(--tile), --bg-center: var(--bg-top)). In the game these
+// resolve correctly because the skin class is on <html>, so :root's var() refs
+// pick up the skin tokens. In the preview, the skin class is on a <div>, not
+// <html>. Chrome resolves inherited custom property var() chains at the ancestral
+// context where the property was DEFINED (:root), ignoring inline overrides on
+// descendant elements — so :root's --bg-top (void value) wins instead of the
+// inline --bg-top set on previewEl.
+//
+// Fix: skip the :root chain entirely for these aliases and compute them
+// explicitly from state.vars in JS. applyDerivedVars() is the single source of
+// truth; if you add a new alias to :root in skins.css, add it here too.
+//
+// Complex derived vars the skin class defines explicitly (--shell-bg,
+// --tile-selected-glow, etc.) are handled by the skin class on previewEl and
+// need no JS computation.
+
+function applyDerivedVars(el, vars) {
+  const V = (k) => vars[k] ?? '';
+  const set = (k, v) => { if (v) el.style.setProperty(k, v); };
+
+  // Background
+  set('--bg-center', V('--bg-top'));
+  set('--bg-edge',   V('--bg-bottom'));
+  // Text / chrome
+  set('--title-color', V('--text'));
+  set('--chrome-text', V('--text-dim'));
+  set('--title-glow',  V('--accent'));
+  // Tile aliases
+  set('--tile-bg',              V('--tile'));
+  set('--tile-selected-bg',     V('--tile-sel'));
+  set('--tile-border',          V('--border'));
+  set('--tile-selected-border', V('--accent'));
+  set('--tile-found-bg',        V('--tile'));
+  set('--tile-found-border',    V('--border'));
+  set('--tile-found-letter',    V('--text'));
+  // Button aliases
+  set('--button-bg',     V('--surface'));
+  set('--button-border', V('--border'));
+  set('--button-text',   V('--text'));
+  // Action aliases
+  set('--primary-action-bg', V('--action'));
+  set('--path-color',        V('--action'));
+  // Inherit color from skin, not the static creator-text on <body>
+  el.style.setProperty('color', V('--text'));
+}
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
@@ -893,87 +899,26 @@ function updatePreview() {
   const screen = SCREENS.find((s) => s.id === state.screenId) || SCREENS[0];
   previewEl.innerHTML = screen.markup();
 
-  // Apply the skin class directly to previewEl — this anchors all CSS var()
-  // chains in skins.css exactly as they work in-game (where the class is on
-  // <html>). Without this, :root-level derived vars like
-  //   --tile-bg: var(--tile)
-  //   --bg-center: var(--bg-top)
-  // …would resolve their inner var() refs at :root context using void/default
-  // token values rather than the skin's values, making the preview look muted.
+  // Apply skin class — anchors complex derived vars the skin defines explicitly
+  // (--shell-bg, --tile-selected-glow, etc.) without touching the creator UI.
   for (const cls of [...previewEl.classList]) {
     if (cls.startsWith('skin-')) previewEl.classList.remove(cls);
   }
-  if (state.presetId) {
-    previewEl.classList.add(`skin-${state.presetId}`);
-  }
-  // Set inline styles for VAR_GROUPS (user-editable) vars only — these override
-  // the skin class for any values the user has edited.
-  // IMPORTANT: do NOT set DERIVED_VARS inline. Chrome resolves var() references
-  // at getPropertyValue() time against :root context, so the values stored in
-  // state.vars for derived vars are resolved against void tokens, not the skin.
-  // Setting them inline would override the correct resolution the skin class
-  // provides via the :root chain (e.g. --tile-bg: var(--tile) would get void's
-  // --tile value if set inline, but resolves correctly when left to the cascade).
-  const derivedVarsSet = new Set(DERIVED_VARS);
+  if (state.presetId) previewEl.classList.add(`skin-${state.presetId}`);
+
+  // Set all token vars from state (user-editable values; inline beats skin class).
   previewEl.removeAttribute('style');
   for (const [k, v] of Object.entries(state.vars)) {
-    if (derivedVarsSet.has(k)) continue;
     if (v !== '' && v !== null && v !== undefined) {
       previewEl.style.setProperty(k, v);
     }
   }
 
-  // Chrome resolves var() references inside inherited custom properties at the
-  // ancestral context where they were defined (:root), not the consuming element.
-  // So "--bg-center: var(--bg-top)" in :root always resolves to :root's --bg-top
-  // (void value), ignoring the inline --bg-top on previewEl. Fix: explicitly
-  // compute the derived alias vars from state.vars and set them inline.
-  const V = (k) => state.vars[k] ?? '';
-  // Background aliases
-  previewEl.style.setProperty('--bg-center', V('--bg-top'));
-  previewEl.style.setProperty('--bg-edge',   V('--bg-bottom'));
-  // Text / chrome
-  previewEl.style.setProperty('--title-color', V('--text'));
-  previewEl.style.setProperty('--chrome-text', V('--text-dim'));
-  previewEl.style.setProperty('--title-glow',  V('--accent'));
-  // Tile aliases
-  previewEl.style.setProperty('--tile-bg',              V('--tile'));
-  previewEl.style.setProperty('--tile-selected-bg',     V('--tile-sel'));
-  previewEl.style.setProperty('--tile-border',          V('--border'));
-  previewEl.style.setProperty('--tile-selected-border', V('--accent'));
-  previewEl.style.setProperty('--tile-found-bg',        V('--tile'));
-  previewEl.style.setProperty('--tile-found-border',    V('--border'));
-  previewEl.style.setProperty('--tile-found-letter',    V('--text'));
-  // Button aliases
-  previewEl.style.setProperty('--button-bg',     V('--surface'));
-  previewEl.style.setProperty('--button-border', V('--border'));
-  previewEl.style.setProperty('--button-text',   V('--text'));
-  // Action aliases
-  previewEl.style.setProperty('--primary-action-bg', V('--action'));
-  previewEl.style.setProperty('--path-color',        V('--action'));
-  // Color baseline — overrides body { color: var(--creator-text) }
-  previewEl.style.setProperty('color', V('--text'));
+  // Compute and apply derived alias vars from the token values (see applyDerivedVars).
+  applyDerivedVars(previewEl, state.vars);
 
-  // Debug: log resolved values for key vars after a paint frame
-  requestAnimationFrame(() => {
-    const cs = getComputedStyle(previewEl);
-    console.log('[preview] computed --bg-top:', cs.getPropertyValue('--bg-top').trim());
-    console.log('[preview] computed --bg-center:', cs.getPropertyValue('--bg-center').trim());
-    console.log('[preview] computed --tile:', cs.getPropertyValue('--tile').trim());
-    console.log('[preview] computed --tile-bg:', cs.getPropertyValue('--tile-bg').trim());
-    console.log('[preview] computed --text:', cs.getPropertyValue('--text').trim());
-    console.log('[preview] computed background (element):', cs.background?.slice(0, 80));
-    // Check a tile inside the preview
-    const tile = previewEl.querySelector('.tile');
-    if (tile) {
-      const tcs = getComputedStyle(tile);
-      console.log('[preview] tile background:', tcs.background?.slice(0, 80));
-      console.log('[preview] tile color:', tcs.color);
-    }
-  });
-
-  // Path mirror — --path-start feeds --path-grad-start; set explicitly so the
-  // trail updates immediately without relying on a var() chain in inline styles.
+  // Path mirror: --path-start → --path-grad-start (var() chain unreliable in
+  // the preview context; see applyDerivedVars comment for why).
   const ps = state.vars['--path-start'];
   if (ps) previewEl.style.setProperty('--path-grad-start', ps);
 
@@ -1953,16 +1898,6 @@ function loadPreset(skinId) {
     }
   }
 
-  // Read all derived vars from the skin's computed style. These are defined in
-  // :root (skins.css) as var() chains or color-mix() expressions. getPropertyValue
-  // returns the raw string (e.g. "var(--bg-top)" or "linear-gradient(...)").
-  // Storing them in state.vars means updatePreview()'s loop sets them inline,
-  // and CSS resolves any var() refs at paint time against the other inline tokens.
-  for (const name of DERIVED_VARS) {
-    const raw = computed.getPropertyValue(name).trim();
-    if (raw) state.vars[name] = raw;
-  }
-
   state.presetId = skinId;
 
   // CSS custom properties that default to var(...) references in :root return those
@@ -2151,9 +2086,21 @@ function buildRegistryIdSnippet() {
 }
 
 function buildRegistryArraySnippet() {
-  const name = (document.getElementById('creatorSkinName')?.value || 'My Skin').trim();
-  const slug = nameToSlug(name);
-  return `{ id: '${slug}', name: '${name}', productId: null },`;
+  const name           = (document.getElementById('creatorSkinName')?.value || 'My Skin').trim();
+  const slug           = nameToSlug(name);
+  const isPaid         = document.getElementById('exportIsPaid')?.checked;
+  const hasBundle      = document.getElementById('exportHasBundle')?.checked;
+  const hasAchievement = document.getElementById('exportHasAchievement')?.checked;
+
+  const entries = [`id: '${slug}'`, `name: '${name}'`];
+
+  entries.push(isPaid ? `productId: 'skin_${slug.replace(/-/g, '_')}'` : `productId: null`);
+  if (hasBundle)      entries.push(`bundleProductId: 'skin_bundle'`);
+  if (hasAchievement) entries.push(`unlockedByAchievement: 'TODO_achievement_id'`, `unlockHint: 'TODO unlock hint'`);
+
+  return entries.length <= 3
+    ? `{ ${entries.join(', ')} },`
+    : `{\n  ${entries.join(',\n  ')}\n},`;
 }
 
 // ── UI wiring ─────────────────────────────────────────────────────────────────
@@ -2208,6 +2155,12 @@ function wireTopBar() {
   });
 
   document.getElementById('creatorExport').addEventListener('click', () => {
+    // Reset all unlock checkboxes to unchecked
+    for (const id of ['exportIsPaid', 'exportHasBundle', 'exportHasAchievement']) {
+      const el = document.getElementById(id);
+      if (el) el.checked = false;
+    }
+
     document.getElementById('exportOutput').value        = buildExportCSS();
     document.getElementById('exportRegistryId').value    = buildRegistryIdSnippet();
     document.getElementById('exportRegistryArray').value = buildRegistryArraySnippet();
@@ -2222,6 +2175,16 @@ function wireTopBar() {
     state.customCSS = e.target.value;
     updatePreview();
   });
+}
+
+function wireUnlockConfig() {
+  function refreshRegistryArray() {
+    const el = document.getElementById('exportRegistryArray');
+    if (el) el.value = buildRegistryArraySnippet();
+  }
+  for (const id of ['exportIsPaid', 'exportHasBundle', 'exportHasAchievement']) {
+    document.getElementById(id)?.addEventListener('change', refreshRegistryArray);
+  }
 }
 
 function wireExportModal() {
@@ -2276,6 +2239,7 @@ function init() {
   buildScreenTabs();
   renderEditor();   // builds all groups + custom-css section via JS
   wireTopBar();
+  wireUnlockConfig();
   wireExportModal();
   updatePreview();
 }

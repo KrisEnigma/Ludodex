@@ -48,6 +48,7 @@ export const strings = {
   'settings.skin_active': 'Active',
   'settings.skin_unlock': 'Unlock',
   'settings.skin_earn_hint': 'Earn: {hint}',
+  'settings.skin_promo_label': 'Free rotating skin',
     'settings.skin_preview_banner_title': 'Previewing {name} — not yet unlocked',
   'settings.restore_purchases': 'Restore purchases',
   'settings.badge_free': 'Free',

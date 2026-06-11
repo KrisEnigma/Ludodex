@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="/src/skins/skins.css?v=2026-06-09" />
     <link rel="stylesheet" href="/src/index.css?v=2026-06-10" />
     <link rel="stylesheet" href="/src/skin-tester/tester.css?v=2026-06-09" />
-    <link rel="stylesheet" href="/src/skin-creator/creator.css?v=2026-06-10b" />
+    <link rel="stylesheet" href="/src/skin-creator/creator.css?v=2026-06-10f" />
   </head>
   <body>
     <div class="creator-layout">
@@ -80,6 +80,29 @@
             <textarea id="exportRegistryId" class="creator-textarea creator-export-textarea" readonly></textarea>
           </div>
 
+          <div class="creator-modal-section creator-unlock-section" id="exportUnlockSection">
+            <div class="creator-modal-hint">
+              <span><strong>Unlock type</strong> — controls the registry entry below</span>
+            </div>
+            <div class="creator-unlock-body">
+              <label class="creator-unlock-check-label">
+                <input type="checkbox" id="exportIsPaid">
+                <span>Paid IAP</span>
+                <span class="creator-unlock-typehint">productId: 'skin_{slug}'</span>
+              </label>
+              <label class="creator-unlock-check-label">
+                <input type="checkbox" id="exportHasBundle">
+                <span>Bundle</span>
+                <span class="creator-unlock-typehint">bundleProductId: 'skin_bundle'</span>
+              </label>
+              <label class="creator-unlock-check-label">
+                <input type="checkbox" id="exportHasAchievement">
+                <span>Achievement unlock</span>
+                <span class="creator-unlock-typehint">unlockedByAchievement + unlockHint (TODO placeholders)</span>
+              </label>
+            </div>
+          </div>
+
           <div class="creator-modal-section">
             <div class="creator-modal-hint">
               <span><strong>3 — SKINS array entry</strong> &nbsp;<code>src/skins/registry.ts</code></span>
@@ -104,6 +127,6 @@
       </div>
     </div>
 
-    <script src="/src/skin-creator/creator.js?v=2026-06-10b"></script>
+    <script src="/src/skin-creator/creator.js?v=2026-06-10f"></script>
   </body>
 </html>

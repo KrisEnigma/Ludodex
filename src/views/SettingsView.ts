@@ -8,10 +8,11 @@ import {
   type SkinId,
   type SkinMeta
 } from '../skins/registry';
-import { isSkinOwned, purchase, restorePurchases } from '../services/IAPService';
+import { isSkinOwned, purchase, restorePurchases, getVisibleSkins } from '../services/IAPService';
 import { track, updateLocale, setPaidStatus } from '../services/AnalyticsService';
 import { getActiveSkinId, resetAllProgress, setActiveSkinId } from '../services/ProgressService';
 import { getMonetizationContext } from '../services/MonetizationContext';
+import { isWebAvailable, PROMO_SKIN_ID } from '../skins/webConfig';
 import {
   isDailyNotificationEnabled,
   enableDailyNotification,
@@ -177,9 +178,9 @@ export class SettingsView {
     this.element.className = 'view settings-view';
 
     for (const skin of SKINS) {
-      // Optimistic initial state: free on web (all skins), or free if no productId.
-      // refreshEntitlements() (called in bootstrap()) will correct native state via isSkinOwned().
-      this.unlockedBySkin.set(skin.id, skin.productId === null || !context.isNative);
+      // Optimistic initial state — refreshEntitlements() corrects this async.
+      // Native: free skins only. Web (incl. dev sim): web-available skins only.
+      this.unlockedBySkin.set(skin.id, context.isNative ? skin.productId === null : isWebAvailable(skin.id));
     }
 
     this.status = document.createElement('p');
@@ -206,6 +207,10 @@ export class SettingsView {
     this.activeSkinId = this.normalizeSkinId(await getActiveSkinId());
     this.refreshSkinCards();
     await this.refreshEntitlements();
+    // If the stored skin is no longer accessible (e.g. promo rotated out), revert and persist.
+    if (!this.unlockedBySkin.get(this.activeSkinId)) {
+      await this.setSkin('void');
+    }
     this.refreshLanguageButtons();
     this.refreshSkinCards();
   }
@@ -357,68 +362,19 @@ export class SettingsView {
     const cards = document.createElement('div');
     cards.className = 'settings-skin-cards';
 
-    for (const skin of SKINS) {
-      const card = document.createElement('button');
-      card.type = 'button';
-      card.className = 'settings-skin-card';
-      card.dataset.skin = skin.id;
+    const visible = getVisibleSkins();
+    const regularSkins = !this.isNative ? visible.filter(s => s.id !== PROMO_SKIN_ID) : visible;
+    const promoSkin = !this.isNative ? visible.find(s => s.id === PROMO_SKIN_ID) : undefined;
 
-      const left = document.createElement('span');
-      left.className = 'settings-skin-left';
-
-      // Two-tile preview scoped inside a div carrying the skin's CSS class.
-      // CSS custom properties cascade normally into children, so all --tile-
-      // and --tile-selected-* values resolve from the skin stylesheet.
-      // Left tile = unselected state, right tile = selected state.
-      const skinScope = document.createElement('div');
-      skinScope.className = `settings-skin-preview-scope skin-${skin.id}`;
-
-      const tileDefault = document.createElement('span');
-      tileDefault.className = 'settings-skin-tile settings-skin-tile--default';
-      tileDefault.textContent = 'A';
-
-      const tileSelected = document.createElement('span');
-      tileSelected.className = 'settings-skin-tile settings-skin-tile--selected';
-      tileSelected.textContent = 'A';
-
-      skinScope.append(tileDefault, tileSelected);
-      left.append(skinScope);
-
-      const info = document.createElement('span');
-      info.className = 'settings-skin-info';
-
-      const name = document.createElement('span');
-      name.className = 'settings-skin-name';
-      name.textContent = this.getSkinName(skin.id);
-      info.append(name);
-
-      const descKey = `skin.${skin.id}.desc` as Parameters<typeof t>[0];
-      const descText = t(descKey);
-      if (descText && descText !== descKey) {
-        const desc = document.createElement('span');
-        desc.className = 'settings-skin-desc';
-        desc.textContent = descText;
-        info.append(desc);
-      }
-
-      left.append(info);
-
-      card.append(left);
-
-      const pill = document.createElement('span');
-      pill.className = 'settings-skin-pill';
-      card.append(pill);
-
-      card.addEventListener('click', () => {
-        void this.onSkinCardClick(skin);
-      });
-
-      this.skinButtons.set(skin.id, card);
-      this.skinPills.set(skin.id, pill);
-      cards.append(card);
+    for (const skin of regularSkins) {
+      cards.append(this.buildSkinCard(skin, false));
     }
 
     section.append(heading, cards);
+
+    if (promoSkin) {
+      section.append(this.renderPromoSkinBlock(promoSkin));
+    }
 
     if (!this.isNative) {
       section.append(this.renderSkinSectionWebCta());
@@ -475,6 +431,75 @@ export class SettingsView {
 
       // Locked skin: enter preview. On native, the banner lets the user Buy. On web, the banner just lets them Cancel (preview is browsing only).
       await this.enterPreview(skin.id);
+  }
+
+  private buildSkinCard(skin: SkinMeta, isPromo: boolean): HTMLButtonElement {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'settings-skin-card';
+    card.dataset.skin = skin.id;
+    if (isPromo) card.dataset.promo = 'true';
+
+    const left = document.createElement('span');
+    left.className = 'settings-skin-left';
+
+    const skinScope = document.createElement('div');
+    skinScope.className = `settings-skin-preview-scope skin-${skin.id}`;
+
+    const tileDefault = document.createElement('span');
+    tileDefault.className = 'settings-skin-tile settings-skin-tile--default';
+    tileDefault.textContent = 'A';
+
+    const tileSelected = document.createElement('span');
+    tileSelected.className = 'settings-skin-tile settings-skin-tile--selected';
+    tileSelected.textContent = 'A';
+
+    skinScope.append(tileDefault, tileSelected);
+    left.append(skinScope);
+
+    const info = document.createElement('span');
+    info.className = 'settings-skin-info';
+
+    const name = document.createElement('span');
+    name.className = 'settings-skin-name';
+    name.textContent = this.getSkinName(skin.id);
+    info.append(name);
+
+    const descKey = `skin.${skin.id}.desc` as Parameters<typeof t>[0];
+    const descText = t(descKey);
+    if (descText && descText !== descKey) {
+      const desc = document.createElement('span');
+      desc.className = 'settings-skin-desc';
+      desc.textContent = descText;
+      info.append(desc);
+    }
+
+    left.append(info);
+    card.append(left);
+
+    const pill = document.createElement('span');
+    pill.className = 'settings-skin-pill';
+    card.append(pill);
+
+    card.addEventListener('click', () => { void this.onSkinCardClick(skin); });
+
+    this.skinButtons.set(skin.id, card);
+    this.skinPills.set(skin.id, pill);
+    return card;
+  }
+
+  private renderPromoSkinBlock(skin: SkinMeta): HTMLElement {
+    const wrap = document.createElement('div');
+    wrap.className = 'settings-skin-promo-block';
+
+    const divider = document.createElement('div');
+    divider.className = 'settings-skin-promo-divider';
+    divider.textContent = t('settings.skin_promo_label');
+
+    const card = this.buildSkinCard(skin, true);
+
+    wrap.append(divider, card);
+    return wrap;
   }
 
   private async setSkin(skinId: SkinId): Promise<void> {
@@ -593,7 +618,7 @@ export class SettingsView {
       button.dataset.locked = String(!isUnlocked);
 
       if (isActive) {
-        pill.textContent = t('settings.skin_active');
+        pill.textContent = '';
       } else if (!isUnlocked && skin.unlockHint) {
         // Achievement-gated skin — show the earn condition on all platforms.
         pill.textContent = t('settings.skin_earn_hint', { hint: skin.unlockHint });
