@@ -40,7 +40,10 @@ function classesFromTs(ts) {
   // className = '…'
   for (const m of ts.matchAll(/\.className\s*=\s*['"`]([^'"`]+)['"`]/g)) {
     for (const cls of m[1].trim().split(/\s+/)) {
-      if (cls) classes.add(cls);
+      const cleanCls = cls.replace(/^['"`]|['"`]$/g, '').trim();
+      if (cleanCls && !cleanCls.includes('${') && !cleanCls.includes('?') && !cleanCls.includes(':')) {
+        classes.add(cleanCls);
+      }
     }
   }
   // classList.add('…', '…')
@@ -138,6 +141,23 @@ const VIEW_ONLY = new Set([
   'store-link', 'store-link-divider',
   // ArchiveView: empty-state class
   'archive-empty',
+  // App alternate icon picker classes
+  'settings-icon-picker', 'settings-icon-option', 'settings-icon-option-img',
+  'settings-icon-option-label', 'settings-icon-option-check',
+  // Skin detail sheet & preview classes
+  'skin-detail-backdrop', 'skin-detail-backdrop--visible', 'skin-detail-sheet', 'skin-detail-sheet--visible',
+  'skin-detail-header', 'skin-detail-name', 'skin-detail-close', 'skin-detail-preview-scope',
+  'skin-detail-preview-title', 'skin-detail-preview-grid-wrap', 'skin-detail-preview-grid',
+  'skin-detail-preview-letter', 'skin-detail-preview-path', 'path-seg', 'path-segments',
+  'skin-detail-desc', 'skin-detail-actions', 'skin-detail-active-pill', 'skin-detail-earn-row',
+  'sheet-handle',
+  // GameView hint charge classes
+  'hint-charge-bar-fill', 'hint-charge-bar-track', 'hint-charge-bar-wrap',
+  'hint-charge-label', 'hint-count-decrement--active', 'is-charging',
+  // WinView skin unlock classes
+  'win-skin-unlock-nudge',
+  // SettingsView skin badge and promo classes
+  'settings-skin-badge', 'settings-skin-promo-block', 'settings-skin-promo-divider',
 ]);
 
 const SCREENS = [

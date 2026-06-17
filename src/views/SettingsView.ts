@@ -19,6 +19,7 @@ import {
   disableDailyNotification
 } from '../services/NotificationService';
 import { LEGAL_URLS, STORE_URLS } from '../config/legalUrls';
+import { APP_ICONS, getActiveIcon, setActiveIcon, type AppIconId } from '../services/AlternateIconService';
 import { showConfirmModal } from '../components/Modal';
 import { addDragToDismiss } from '../components/sheetDrag';
 import { createIcon } from '../components/icons';
@@ -36,6 +37,8 @@ export class SettingsView {
   private readonly unlockedBySkin = new Map<SkinId, boolean>();
   private activeSkinId: SkinId = getCurrentSkinId(); // DOM read — correct since main.ts applies skin before routing
   private readonly isNative = Capacitor.isNativePlatform();
+  private activeIconId: AppIconId = 'void';
+  private readonly iconButtons = new Map<AppIconId, HTMLButtonElement>();
 
   // --- Skin preview state machine ---
   private previewingSkinId: SkinId | null = null;
@@ -340,6 +343,8 @@ export class SettingsView {
       this.renderLanguageSection(),
       // Daily reminder is native-only (no web push surface).
       ...(this.isNative ? [this.renderNotificationSection()] : []),
+      // App icon picker is native-only (launcher icons don't apply on web).
+      ...(this.isNative ? [this.renderAppIconSection()] : []),
       this.renderSkinSection(),
       this.renderRestoreButton(),
       this.status,
@@ -354,6 +359,10 @@ export class SettingsView {
     // (IAP calls can be slow and would leave the wrong skin highlighted in the interim).
     this.activeSkinId = this.normalizeSkinId(await getActiveSkinId());
     this.refreshSkinCards();
+    if (this.isNative) {
+      this.activeIconId = await getActiveIcon();
+      this.refreshIconButtons();
+    }
     await this.refreshEntitlements();
     // If the stored skin is no longer accessible (e.g. promo rotated out), revert and persist.
     if (!this.unlockedBySkin.get(this.activeSkinId)) {
@@ -493,6 +502,75 @@ export class SettingsView {
     }
 
     await this.refreshReminderButtons();
+  }
+
+  // ── App icon picker (native only) ────────────────────────────────────────
+
+  private renderAppIconSection(): HTMLElement {
+    const section = document.createElement('section');
+    section.className = 'settings-section';
+
+    const heading = document.createElement('h3');
+    heading.className = 'settings-section-heading';
+    heading.textContent = t('settings.section_app_icon');
+
+    const grid = document.createElement('div');
+    grid.className = 'settings-icon-picker';
+
+    for (const appIcon of APP_ICONS) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'settings-icon-option';
+      btn.dataset.iconId = appIcon.id;
+
+      const img = document.createElement('img');
+      img.src = appIcon.src;
+      img.alt = appIcon.name;
+      img.className = 'settings-icon-option-img';
+      img.draggable = false;
+
+      const label = document.createElement('span');
+      label.className = 'settings-icon-option-label';
+      label.textContent = appIcon.name;
+
+      const check = document.createElement('span');
+      check.className = 'settings-icon-option-check';
+      check.setAttribute('aria-hidden', 'true');
+      check.textContent = '✓';
+
+      btn.append(img, label, check);
+      btn.addEventListener('click', () => { void this.onIconOptionClick(appIcon.id); });
+
+      this.iconButtons.set(appIcon.id, btn);
+      grid.append(btn);
+    }
+
+    section.append(heading, grid);
+    return section;
+  }
+
+  private async onIconOptionClick(iconId: AppIconId): Promise<void> {
+    if (this.activeIconId === iconId) return;
+
+    const confirmed = await showConfirmModal({
+      title: t('dialog.change_icon_title'),
+      body: t('dialog.change_icon_body'),
+      confirmLabel: t('dialog.change_icon_confirm'),
+      cancelLabel: t('common.cancel'),
+      destructive: false
+    });
+
+    if (!confirmed) return;
+
+    await setActiveIcon(iconId);
+    this.activeIconId = iconId;
+    this.refreshIconButtons();
+  }
+
+  private refreshIconButtons(): void {
+    for (const [iconId, btn] of this.iconButtons) {
+      btn.dataset.active = String(iconId === this.activeIconId);
+    }
   }
 
   private renderSkinSection(): HTMLElement {

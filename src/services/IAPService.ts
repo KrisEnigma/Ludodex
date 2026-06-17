@@ -1,4 +1,5 @@
 import { Capacitor } from '@capacitor/core';
+import { Purchases } from '@revenuecat/purchases-capacitor';
 import { track } from './AnalyticsService';
 import { getMonetizationContext } from './MonetizationContext';
 import { grantHints } from './HintService';
@@ -62,8 +63,10 @@ export const PRODUCT_IDS = {
   HINTS_50:     'hints_50',
   HINTS_200:    'hints_200',
   STARTER_PACK: 'starter_pack',
-  SKIN_NEON_HORIZON: 'skin_neon_horizon',
-  SKIN_GAMEBOY:   'skin_gameboy',
+  SKIN_NEON_HORIZON:  'skin_neon_horizon',
+  SKIN_GAMEBOY:       'skin_gameboy',
+  SKIN_RING_OF_LIGHT: 'skin_ring_of_light',
+  SKIN_LORD_OF_TERROR:'skin_lord_of_terror',
   // Multi-skin bundle (referenced by skins' bundleProductId). Owning it unlocks
   // every skin whose bundleProductId points here.
   SKIN_BUNDLE:    'skin_bundle',
@@ -87,9 +90,11 @@ const FALLBACK_CATALOG: Record<string, ProductInfo> = {
   [PRODUCT_IDS.HINTS_50]:     { id: PRODUCT_IDS.HINTS_50,     priceLabel: '$2.99', fallbackPriceLabel: '$2.99' },
   [PRODUCT_IDS.HINTS_200]:    { id: PRODUCT_IDS.HINTS_200,    priceLabel: '$7.99', fallbackPriceLabel: '$7.99' },
   [PRODUCT_IDS.STARTER_PACK]: { id: PRODUCT_IDS.STARTER_PACK, priceLabel: '$2.99', fallbackPriceLabel: '$2.99' },
-  [PRODUCT_IDS.SKIN_NEON_HORIZON]: { id: PRODUCT_IDS.SKIN_NEON_HORIZON, priceLabel: '$1.99', fallbackPriceLabel: '$1.99' },
-  [PRODUCT_IDS.SKIN_GAMEBOY]:   { id: PRODUCT_IDS.SKIN_GAMEBOY,   priceLabel: '$1.99', fallbackPriceLabel: '$1.99' },
-  [PRODUCT_IDS.SKIN_BUNDLE]:    { id: PRODUCT_IDS.SKIN_BUNDLE,    priceLabel: '$2.99', fallbackPriceLabel: '$2.99' },
+  [PRODUCT_IDS.SKIN_NEON_HORIZON]:  { id: PRODUCT_IDS.SKIN_NEON_HORIZON,  priceLabel: '$1.99', fallbackPriceLabel: '$1.99' },
+  [PRODUCT_IDS.SKIN_GAMEBOY]:       { id: PRODUCT_IDS.SKIN_GAMEBOY,       priceLabel: '$1.99', fallbackPriceLabel: '$1.99' },
+  [PRODUCT_IDS.SKIN_RING_OF_LIGHT]: { id: PRODUCT_IDS.SKIN_RING_OF_LIGHT, priceLabel: '$1.99', fallbackPriceLabel: '$1.99' },
+  [PRODUCT_IDS.SKIN_LORD_OF_TERROR]:{ id: PRODUCT_IDS.SKIN_LORD_OF_TERROR,priceLabel: '$1.99', fallbackPriceLabel: '$1.99' },
+  [PRODUCT_IDS.SKIN_BUNDLE]:        { id: PRODUCT_IDS.SKIN_BUNDLE,        priceLabel: '$2.99', fallbackPriceLabel: '$2.99' },
 };
 
 /**
@@ -120,21 +125,23 @@ export function getVisibleSkins(): SkinMeta[] {
 export async function initIAP(): Promise<void> {
   const ctx = getMonetizationContext();
   if (!ctx.isNative) return;
-  // TODO(native): Initialize RevenueCat SDK.
-  //   import { Purchases } from '@revenuecat/purchases-capacitor';
-  //   const apiKey = ctx.platform === 'ios'
-  //     ? import.meta.env.VITE_RC_IOS_KEY
-  //     : import.meta.env.VITE_RC_ANDROID_KEY;
-  //   await Purchases.configure({ apiKey });
+  const apiKey: string =
+    ctx.platform === 'ios'
+      ? (import.meta.env.VITE_RC_IOS_KEY as string | undefined) ?? FALLBACK_RC_KEY
+      : (import.meta.env.VITE_RC_ANDROID_KEY as string | undefined) ?? FALLBACK_RC_KEY;
+  await Purchases.configure({ apiKey });
 }
 
 export async function isOwned(productId: string): Promise<boolean> {
   const ctx = getMonetizationContext();
   if (!ctx.isNative) return false;
-  // TODO(native): Query entitlements from RevenueCat.
-  //   const info = await Purchases.getCustomerInfo();
-  //   return info.customerInfo.entitlements.active[productId] !== undefined;
-  return false;
+  try {
+    const { customerInfo } = await Purchases.getCustomerInfo();
+    return customerInfo.entitlements.active[productId] !== undefined;
+  } catch (err) {
+    console.warn('[IAPService] isOwned query failed', err);
+    return false;
+  }
 }
 
 /**
@@ -175,10 +182,22 @@ export async function isSkinOwned(skinId: SkinId): Promise<boolean> {
 export async function listProducts(): Promise<ProductInfo[]> {
   const ctx = getMonetizationContext();
   if (!ctx.isNative) return [];
-  // TODO(native): Fetch real product info from the store via RevenueCat.
-  //   const offerings = await Purchases.getOfferings();
-  //   ...map to ProductInfo with real localized prices...
-  return Object.values(FALLBACK_CATALOG);
+  try {
+    const offeringsResult = await Purchases.getOfferings();
+    const packages = offeringsResult.current?.availablePackages ?? [];
+    if (packages.length === 0) return Object.values(FALLBACK_CATALOG);
+    return packages.map((pkg) => {
+      const id = pkg.product.identifier;
+      return {
+        id,
+        priceLabel: pkg.product.priceString,
+        fallbackPriceLabel: FALLBACK_CATALOG[id]?.fallbackPriceLabel ?? pkg.product.priceString,
+      };
+    });
+  } catch (err) {
+    console.warn('[IAPService] listProducts failed, using fallback catalog', err);
+    return Object.values(FALLBACK_CATALOG);
+  }
 }
 
 export async function getProductInfo(productId: string): Promise<ProductInfo | null> {
@@ -205,15 +224,27 @@ export async function purchase(
     return result;
   }
 
-  // TODO(native): Trigger RevenueCat purchase flow.
-  //   try {
-  //     const result = await Purchases.purchaseProduct({ productIdentifier: productId });
-  //     return { status: 'success', productId };
-  //   } catch (err) { ...map to PurchaseStatus... }
-
-  const result = { status: 'failed', productId, reason: 'not-implemented' } as const;
-  track('iap_purchase_failed', { product_id: productId, reason: result.reason ?? result.status, source });
-  return result;
+  try {
+    const offeringsResult = await Purchases.getOfferings();
+    const packages = offeringsResult.current?.availablePackages ?? [];
+    const pkg = packages.find((p) => p.product.identifier === productId);
+    if (!pkg) {
+      const result = { status: 'failed' as const, productId, reason: 'product-not-found' };
+      track('iap_purchase_failed', { product_id: productId, reason: result.reason, source });
+      return result;
+    }
+    await Purchases.purchasePackage({ aPackage: pkg });
+    track('iap_purchased', { product_id: productId, source });
+    return { status: 'success', productId };
+  } catch (err: unknown) {
+    const code: string = (err as { code?: string })?.code ?? '';
+    if (code === 'PURCHASE_CANCELLED') {
+      return { status: 'cancelled', productId };
+    }
+    const result = { status: 'failed' as const, productId, reason: code || 'unknown' };
+    track('iap_purchase_failed', { product_id: productId, reason: result.reason, source });
+    return result;
+  }
 }
 
 /**
@@ -242,16 +273,27 @@ export async function purchaseHintPack(
 export async function restorePurchases(): Promise<PurchaseResult[]> {
   const ctx = getMonetizationContext();
   if (!ctx.isNative) return [];
-  // TODO(native): Restore via RevenueCat.
-  //   const info = await Purchases.restorePurchases();
-  //   ...map entitlements to PurchaseResult[]...
-  return [];
+  try {
+    const { customerInfo } = await Purchases.restorePurchases();
+    return Object.keys(customerInfo.entitlements.active).map((id) => ({
+      status: 'success' as const,
+      productId: id,
+    }));
+  } catch (err) {
+    console.warn('[IAPService] restorePurchases failed', err);
+    return [];
+  }
 }
 
 /** @deprecated Use `isOwned(productId)` per call instead. Kept for SettingsView's current shape. */
 export async function listOwnedProductIds(): Promise<string[]> {
   const ctx = getMonetizationContext();
   if (!ctx.isNative) return [];
-  // TODO(native): Map active entitlements to product IDs.
-  return [];
+  try {
+    const { customerInfo } = await Purchases.getCustomerInfo();
+    return Object.keys(customerInfo.entitlements.active);
+  } catch (err) {
+    console.warn('[IAPService] listOwnedProductIds failed', err);
+    return [];
+  }
 }

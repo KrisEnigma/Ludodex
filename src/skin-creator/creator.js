@@ -810,33 +810,85 @@ const VAR_GROUPS = [
 // need no JS computation.
 
 function applyDerivedVars(el, vars) {
-  const V = (k) => vars[k] ?? '';
+  const V   = (k) => vars[k] ?? '';
   const set = (k, v) => { if (v) el.style.setProperty(k, v); };
 
+  // ro(varName, fallback): prefer a concrete cascade value (from the skin class
+  // already applied to el) over our computed fallback. Falls through to fallback
+  // when the cascade holds a var() expression, because Chrome resolves those
+  // at :root context (Void defaults) rather than honouring inline token overrides
+  // on descendant divs — same bug applyDerivedVars exists to work around.
+  const cs = getComputedStyle(el);
+  const ro = (k, fallback) => {
+    const v = cs.getPropertyValue(k).trim();
+    return (v && !v.includes('var(')) ? v : (fallback || '');
+  };
+
+  const surface  = V('--surface');
+  const border   = V('--border');
+  const text     = V('--text');
+  const textDim  = V('--text-dim');
+  const accent   = V('--accent');
+  const action   = V('--action');
+  const tile     = V('--tile');
+  const tileSel  = V('--tile-sel');
+  const bgTop    = V('--bg-top');
+  const bgBottom = V('--bg-bottom');
+
   // Background
-  set('--bg-center', V('--bg-top'));
-  set('--bg-edge',   V('--bg-bottom'));
+  set('--bg-center', bgTop);
+  set('--bg-edge',   bgBottom);
+
+  // Shell background — skin may explicitly define a custom gradient; use it.
+  // Falls back to the token-derived color-mix when not explicitly set.
+  set('--shell-bg', ro('--shell-bg', surface
+    ? `linear-gradient(180deg, color-mix(in srgb, ${surface} 88%, transparent), color-mix(in srgb, ${surface} 94%, transparent))`
+    : ''));
+
   // Text / chrome
-  set('--title-color', V('--text'));
-  set('--chrome-text', V('--text-dim'));
-  set('--title-glow',  V('--accent'));
+  set('--title-color', text);
+  set('--chrome-text', textDim);
+  set('--title-glow',  accent);
+
   // Tile aliases
-  set('--tile-bg',              V('--tile'));
-  set('--tile-selected-bg',     V('--tile-sel'));
-  set('--tile-border',          V('--border'));
+  set('--tile-bg',              tile);
+  set('--tile-selected-bg',     tileSel);
+  set('--tile-border',          border);
   set('--tile-selected-border', V('--accent'));
-  set('--tile-found-bg',        V('--tile'));
-  set('--tile-found-border',    V('--border'));
-  set('--tile-found-letter',    V('--text'));
+  set('--tile-found-bg',        tile);
+  set('--tile-found-border',    border);
+  set('--tile-found-letter',    text);
+
   // Button aliases
-  set('--button-bg',     V('--surface'));
-  set('--button-border', V('--border'));
-  set('--button-text',   V('--text'));
+  set('--button-bg',            surface);
+  set('--button-border',        border);
+  set('--button-text',          text);
+  set('--button-hover-bg',      accent ? `color-mix(in srgb, ${accent} 18%, transparent)` : '');
+  set('--button-active-bg',     (action && bgTop) ? `color-mix(in srgb, ${action} 20%, ${bgTop})` : '');
+  set('--button-active-border', accent);
+
   // Action aliases
-  set('--primary-action-bg', V('--action'));
-  set('--path-color',        V('--action'));
+  set('--primary-action-bg',       action);
+  set('--primary-action-text',     ro('--primary-action-text',     bgBottom));
+  set('--selected-letter-outline', ro('--selected-letter-outline', bgBottom));
+  set('--path-color',              action);
+
+  // Hints — these were missing and fell through to :root's var() chain (Void values).
+  set('--hint-solved-bg',     ro('--hint-solved-bg',     action));
+  set('--hint-solved-border', ro('--hint-solved-border', accent));
+  set('--hint-solved-letter', ro('--hint-solved-letter', '#ffffff'));
+  set('--hint-empty-bg',      ro('--hint-empty-bg',      surface ? `color-mix(in srgb, ${surface} 20%, transparent)` : ''));
+  set('--hint-empty-border',  ro('--hint-empty-border',  border));
+
+  // Skin-selector buttons (Settings preview)
+  set('--skin-button-bg',            ro('--skin-button-bg',           surface ? `color-mix(in srgb, ${surface} 82%, transparent)` : ''));
+  set('--skin-button-border',        ro('--skin-button-border',        border));
+  set('--skin-button-text',          ro('--skin-button-text',          text));
+  set('--skin-button-active-bg',     ro('--skin-button-active-bg',    (action && bgTop) ? `color-mix(in srgb, ${action} 20%, ${bgTop})` : ''));
+  set('--skin-button-active-border', ro('--skin-button-active-border', accent));
+
   // Inherit color from skin, not the static creator-text on <body>
-  el.style.setProperty('color', V('--text'));
+  el.style.setProperty('color', text);
 }
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -922,13 +974,13 @@ function updatePreview() {
   const ps = state.vars['--path-start'];
   if (ps) previewEl.style.setProperty('--path-grad-start', ps);
 
-  // Typography mirrors — wordmark → title alias vars
-  const wf  = state.vars['--wordmark-font-family'];
-  if (wf)  previewEl.style.setProperty('--title-font-family', wf);
-  const ww  = state.vars['--wordmark-font-weight'];
-  if (ww)  previewEl.style.setProperty('--title-font-weight', ww);
-  const wls = state.vars['--wordmark-letter-spacing'];
-  if (wls) previewEl.style.setProperty('--title-letter-spacing', wls);
+  // Typography mirrors — wordmark → title alias vars.
+  // --title-letter-spacing is resolved in loadPreset (skin override wins over wordmark),
+  // so it arrives in state.vars correctly and is already set by the state.vars loop above.
+  const wf = state.vars['--wordmark-font-family'];
+  if (wf) previewEl.style.setProperty('--title-font-family', wf);
+  const ww = state.vars['--wordmark-font-weight'];
+  if (ww) previewEl.style.setProperty('--title-font-weight', ww);
   const dfs = state.vars['--display-font-scale'];
   if (dfs) {
     previewEl.style.setProperty('--title-font-scale',    dfs);
@@ -1900,34 +1952,58 @@ function loadPreset(skinId) {
 
   state.presetId = skinId;
 
-  // CSS custom properties that default to var(...) references in :root return those
-  // literal strings from getPropertyValue(), not resolved colors. Resolve them here
-  // so the color pickers always get usable hex values.
-  //   --tile-letter         → defaults to var(--text)  in :root
-  //   --tile-selected-letter → defaults to #ffffff in the @scope rule
-  if (!state.vars['--tile-letter'] || state.vars['--tile-letter'].startsWith('var(')) {
-    state.vars['--tile-letter'] = state.vars['--text'] ?? '#cfd6e1';
+  // Chrome resolves var() chains in custom properties at the context where the
+  // property was DEFINED (:root), not the probe element's context. So
+  // getPropertyValue('--hint-solved-bg') returns '#00d4e8' (Void's --action),
+  // not 'var(--action)' — making startsWith('var(') checks useless.
+  //
+  // Fix: two-probe comparison. A base probe (no skin class) captures :root's
+  // resolved values. If the skin probe returns the same value, the skin didn't
+  // override the property → recompute from the skin's token values. If they
+  // differ, the skin explicitly set the property → keep it.
+  const baseProbe = document.createElement('div');
+  baseProbe.style.cssText = 'position:absolute;top:-9999px;left:-9999px;width:1px;height:1px;';
+  document.body.appendChild(baseProbe);
+  const baseCs = getComputedStyle(baseProbe);
+
+  /**
+   * TOKEN_DERIVED: vars whose :root value derives from other tokens via var().
+   * Value is a function returning what the var SHOULD be given the skin's tokens.
+   * If the skin probe value matches the base probe (unoverridden), we use this.
+   */
+  const TOKEN_DERIVED = {
+    '--tile-letter':             () => state.vars['--text'],
+    '--hint-solved-bg':          () => state.vars['--action'],
+    '--hint-solved-border':      () => state.vars['--accent'],
+    '--hint-empty-bg':           () => { const s = state.vars['--surface']; return s ? `color-mix(in srgb, ${s} 20%, transparent)` : undefined; },
+    '--hint-empty-border':       () => state.vars['--border'],
+    '--primary-action-text':     () => state.vars['--bg-top'],
+    '--selected-letter-outline': () => state.vars['--bg-bottom'],
+    '--path-grad-end':           () => state.vars['--action'],
+  };
+
+  for (const [varName, compute] of Object.entries(TOKEN_DERIVED)) {
+    const baseVal = baseCs.getPropertyValue(varName).trim();
+    const skinVal = state.vars[varName] ?? '';
+    // Same as base → skin didn't override → recompute from tokens
+    if (!skinVal || skinVal === baseVal) {
+      const v = compute();
+      if (v) state.vars[varName] = v;
+    }
   }
-  if (!state.vars['--tile-selected-letter'] || state.vars['--tile-selected-letter'].startsWith('var(')) {
-    state.vars['--tile-selected-letter'] = '#ffffff';
+
+  // --title-letter-spacing: not in VAR_GROUPS (it's a title-specific override some
+  // skins set independently from --wordmark-letter-spacing). Read directly from probes.
+  // e.g. Test Chamber: --wordmark-letter-spacing: 0.16em but --title-letter-spacing: 0
+  {
+    const skinTls = computed.getPropertyValue('--title-letter-spacing').trim();
+    const baseTls = baseCs.getPropertyValue('--title-letter-spacing').trim();
+    state.vars['--title-letter-spacing'] = (skinTls && skinTls !== baseTls)
+      ? skinTls
+      : (state.vars['--wordmark-letter-spacing'] ?? baseTls);
   }
-  // --hint-solved-bg defaults to var(--action) in :root; resolve to actual action color
-  if (!state.vars['--hint-solved-bg'] || state.vars['--hint-solved-bg'].startsWith('var(')) {
-    state.vars['--hint-solved-bg'] = state.vars['--action'] ?? '#00d4e8';
-  }
-  // --hint-empty-bg defaults to a color-mix expression; resolve to a usable fallback
-  if (!state.vars['--hint-empty-bg'] || state.vars['--hint-empty-bg'].includes('var(')) {
-    const surf = state.vars['--surface'] ?? '#131824';
-    state.vars['--hint-empty-bg'] = `color-mix(in srgb, ${surf} 20%, transparent)`;
-  }
-  // --hint-empty-border defaults to var(--border)
-  if (!state.vars['--hint-empty-border'] || state.vars['--hint-empty-border'].startsWith('var(')) {
-    state.vars['--hint-empty-border'] = state.vars['--border'] ?? '#2a3148';
-  }
-  // --path-grad-end defaults to var(--action); resolve to actual action color
-  if (!state.vars['--path-grad-end'] || state.vars['--path-grad-end'].startsWith('var(')) {
-    state.vars['--path-grad-end'] = state.vars['--action'] ?? '#00d4e8';
-  }
+
+  document.body.removeChild(baseProbe);
   // Read --skin-name and --skin-desc from CSS (source of truth in skins.css)
   const rawName = computed.getPropertyValue('--skin-name').trim().replace(/^["']|["']$/g, '');
   const rawDesc = computed.getPropertyValue('--skin-desc').trim().replace(/^["']|["']$/g, '');

@@ -7,6 +7,7 @@ import { t, tn } from '../i18n';
 import { clearPuzzleReveals } from '../services/HintService';
 import type { Router } from './Router';
 import { ACHIEVEMENTS } from '../data/achievements';
+import { SKINS } from '../skins/registry';
 import type { WinPayload } from './types';
 import { getMonetizationContext } from '../services/MonetizationContext';
 import { track } from '../services/AnalyticsService';
@@ -272,6 +273,23 @@ export class WinView {
       const card = this.renderAchievementCard(def, i);
       achievementsSection.append(card);
     });
+
+    // If any newly unlocked achievement also unlocks a skin, surface a nudge
+    // so the player knows to go check it out in Settings.
+    const unlocksASkin = unlockedAchievementIds.some((achievementId) =>
+      SKINS.some((skin) => skin.unlockedByAchievement === achievementId)
+    );
+
+    if (unlocksASkin) {
+      const nudge = document.createElement('button');
+      nudge.type = 'button';
+      nudge.className = 'win-skin-unlock-nudge button-tertiary';
+      nudge.textContent = t('win.skin_unlocked_nudge');
+      nudge.addEventListener('click', () => {
+        this.router.replace('settings', undefined);
+      });
+      achievementsSection.append(nudge);
+    }
 
     return achievementsSection;
   }

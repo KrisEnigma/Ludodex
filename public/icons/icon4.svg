@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="lumen-bg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#eef2f6" />
+      <stop offset="100%" stop-color="#d4dae2" />
+    </linearGradient>
+  </defs>
+
+  <!-- Gradient Background -->
+  <rect width="1024" height="1024" fill="url(#lumen-bg)" />
+  
+  <!-- Subtle Core Backglow -->
+  <circle cx="512" cy="512" r="380" fill="#0094ab" opacity="0.08" filter="blur(50px)" />
+
+  <!-- D-PAD SKELETON CONNECTIONS -->
+  <g stroke="#d4dae2" stroke-width="56" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="512" y1="212" x2="512" y2="812" />
+    <line x1="212" y1="512" x2="812" y2="512" />
+  </g>
+
+  <!-- THE D-PAD NODES -->
+  <g fill="#ffffff" stroke="#cdd5e0" stroke-width="14" stroke-linejoin="round">
+    <rect x="422" y="422" width="180" height="180" rx="36" />
+    <rect x="422" y="122" width="180" height="180" rx="36" />
+    <rect x="722" y="422" width="180" height="180" rx="36" />
+    <rect x="422" y="722" width="180" height="180" rx="36" />
+    <rect x="122" y="422" width="180" height="180" rx="36" />
+  </g>
+
+  <!-- THE ACTIVE SWIPE PATH (Heavyweight 56px Stroke) -->
+  <path d="M 212 512 L 512 512 L 512 212" 
+        fill="none" stroke="#0094ab" stroke-width="56" stroke-linecap="round" stroke-linejoin="round" 
+        filter="drop-shadow(0px 4px 12px rgba(0, 148, 171, 0.3))" />
+        
+  <!-- Glowing Endpoints -->
+  <circle cx="212" cy="512" r="36" fill="#4fddef" filter="drop-shadow(0px 2px 6px rgba(0, 148, 171, 0.4))" />
+  <circle cx="512" cy="512" r="24" fill="#0094ab" />
+  <circle cx="512" cy="212" r="36" fill="#4fddef" filter="drop-shadow(0px 2px 6px rgba(0, 148, 171, 0.4))" />
+</svg>

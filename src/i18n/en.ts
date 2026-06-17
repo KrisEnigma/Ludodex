@@ -66,6 +66,7 @@ export const strings = {
   'settings.section_skin': 'Skin',
     'settings.more_skins_in_app': 'More skins in the app',
   'settings.section_reminders': 'Daily reminder',
+  'settings.section_app_icon': 'App Icon',
   'settings.reminder_on': 'On',
   'settings.reminder_off': 'Off',
   'settings.reminder_hint': "A gentle nudge each day so you don't break your streak.",
@@ -145,6 +146,7 @@ export const strings = {
   // Win view
   'win.achievement_unlocked':  'Achievement unlocked',
   'win.achievements_unlocked': 'Achievements unlocked',
+  'win.skin_unlocked_nudge':   '🎨 New skin unlocked — view in Settings →',
   'win.pristine_label': 'Flawless',
   'win.solved_subtitle': 'Puzzle solved',
   'win.new_best': 'New best',
@@ -189,7 +191,7 @@ export const strings = {
   'how_to_play.step1_title': 'Swipe to spell',
   'how_to_play.step1_body': 'Drag across adjacent letters to form a word. Release when it\'s complete.',
   'how_to_play.step2_title': 'Every puzzle has a theme',
-  'how_to_play.step2_body': 'Characters, items, studios, hardware — every answer shares a topic.',
+  'how_to_play.step2_body': 'Characters, items, studios, hardware — every answer shares a topic. Answers are always in English, even if you play in Spanish.',
   'how_to_play.step3_title': 'Stuck? Use a hint',
   'how_to_play.step3_body': 'Press and hold an empty slot below the grid to reveal that letter. Hints refill every day.',
   'how_to_play.step4_title': 'Come back every day',
@@ -236,6 +238,9 @@ export const strings = {
   'dialog.quit_title': 'Quit Ludodex?',
   'dialog.quit_body': 'Are you sure you want to close the app?',
   'dialog.quit_confirm': 'Quit',
+  'dialog.change_icon_title': 'Change App Icon?',
+  'dialog.change_icon_body': 'The app will close to apply the new launcher icon. Open it again to see the change.',
+  'dialog.change_icon_confirm': 'Change',
 
   // Settings — web-only affordances
   'settings.store_app_store': 'App Store',

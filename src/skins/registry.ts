@@ -98,15 +98,42 @@ export const SKINS: SkinMeta[] = [
     unlockedByAchievement: 'streak_30',
     unlockHint: '30-day streak'
   },
-  { id: 'terminal', name: 'Terminal', productId: null },
-  { id: 'phosphor', name: 'Phosphor', productId: null },
+  {
+    id: 'terminal',
+    name: 'Terminal',
+    productId: null,
+    unlockedByAchievement: 'solve_50',
+    unlockHint: '50 puzzles solved'
+  },
+  {
+    id: 'phosphor',
+    name: 'Phosphor',
+    productId: null,
+    unlockedByAchievement: 'pristine_10',
+    unlockHint: '10 pristine solves'
+  },
   { id: 'bios', name: 'BIOS', productId: null },
   { id: 'super-16-bit-lilac', name: 'Super 16-Bit Lilac', productId: null },
   { id: 'toaster', name: 'Toaster', productId: null },
-  { id: 'lord-of-terror', name: 'Lord of Terror', productId: null },
+  {
+    id: 'lord-of-terror',
+    name: 'Lord of Terror',
+    productId: 'skin_lord_of_terror',
+    bundleProductId: 'skin_bundle',
+    unlockedByAchievement: 'streak_7',
+    unlockHint: '7-day streak'
+  },
   { id: 'test-chamber', name: 'Test Chamber', productId: null, isLight: true },
   { id: 'polygon', name: 'Polygon', productId: null, isLight: true },
-  { id: 'ring-of-light', name: 'Ring of Light', productId: null, isLight: true },
+  {
+    id: 'ring-of-light',
+    name: 'Ring of Light',
+    productId: 'skin_ring_of_light',
+    bundleProductId: 'skin_bundle',
+    unlockedByAchievement: 'solve_25',
+    unlockHint: '25 puzzles solved',
+    isLight: true
+  },
   { id: 'dream-spiral', name: 'Dream Spiral', productId: null, isLight: true },
   { id: 'rip-tear', name: 'Rip & Tear', productId: null },
   { id: 'blood-darkness', name: 'Blood & Darkness', productId: null },

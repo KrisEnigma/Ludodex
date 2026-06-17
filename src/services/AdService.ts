@@ -32,7 +32,7 @@
  */
 
 import { Preferences } from '@capacitor/preferences';
-import { AdMob } from '@capacitor-community/admob';
+import { AdMob, AdmobConsentStatus, RewardAdPluginEvents } from '@capacitor-community/admob';
 import { isOwned, PRODUCT_IDS } from './IAPService';
 import { getMonetizationContext } from './MonetizationContext';
 import { track } from './AnalyticsService';
@@ -54,6 +54,8 @@ const PENDING_INTERSTITIAL_KEY           = 'ludodex.ad.pending_interstitial';
 
 const TEST_INTERSTITIAL_ANDROID = 'ca-app-pub-3940256099942544/1033173712';
 const TEST_INTERSTITIAL_IOS     = 'ca-app-pub-3940256099942544/4411468910';
+const TEST_REWARDED_ANDROID     = 'ca-app-pub-3940256099942544/5224354917';
+const TEST_REWARDED_IOS         = 'ca-app-pub-3940256099942544/1712485313';
 
 // ── Session state (resets on cold start) ──────────────────────────────────────
 
@@ -68,6 +70,20 @@ function shouldUseTestAds(): boolean {
   const value = import.meta.env.VITE_ADMOB_USE_TEST_IDS;
   if (!value) return true;
   return value !== 'false';
+}
+
+function getRewardedAdId(): string {
+  const platform = getMonetizationContext().platform;
+  const androidEnv = (import.meta.env.VITE_ADMOB_REWARDED_ANDROID as string | undefined)?.trim();
+  const iosEnv     = (import.meta.env.VITE_ADMOB_REWARDED_IOS     as string | undefined)?.trim();
+
+  if (platform === 'android') {
+    return shouldUseTestAds() ? TEST_REWARDED_ANDROID : (androidEnv || TEST_REWARDED_ANDROID);
+  }
+  if (platform === 'ios') {
+    return shouldUseTestAds() ? TEST_REWARDED_IOS : (iosEnv || TEST_REWARDED_IOS);
+  }
+  return TEST_REWARDED_ANDROID;
 }
 
 function getInterstitialAdId(): string {
@@ -129,11 +145,43 @@ async function writePendingInterstitial(pending: boolean): Promise<void> {
 export async function initAds(): Promise<void> {
   const ctx = getMonetizationContext();
   if (!ctx.isNative) return;
-  // TODO(native): Initialize AdMob + UMP consent flow.
-  //   await AdMob.initialize({ initializeForTesting: shouldUseTestAds() });
-  //   Run EU/UK GDPR UMP consent and iOS ATT prompt here.
-  initialized = true;
-  void prepareInterstitialIfNeeded();
+
+  try {
+    // Initialize AdMob.
+    await AdMob.initialize({
+      initializeForTesting: shouldUseTestAds(),
+    });
+
+    // iOS ATT (App Tracking Transparency) — separate call from initialize.
+    // No-op on Android; safe to call unconditionally.
+    try {
+      await AdMob.requestTrackingAuthorization();
+    } catch {
+      // Non-fatal: device may not support ATT (Android, older iOS).
+    }
+
+    // EU/UK GDPR UMP consent flow. Check whether consent is required;
+    // if so, show the form and wait for the user to respond before marking
+    // ads as initialized. This ensures we never serve ads without consent.
+    try {
+      const consentInfo = await AdMob.requestConsentInfo({
+        tagForUnderAgeOfConsent: false,
+      });
+      if (consentInfo.status === AdmobConsentStatus.REQUIRED) {
+        await AdMob.showConsentForm();
+      }
+    } catch (consentErr) {
+      // Consent errors are non-fatal — some regions/devices don't support UMP.
+      // We still proceed with initialization so ads work outside of GDPR regions.
+      console.warn('[AdService] UMP consent flow failed (non-fatal)', consentErr);
+    }
+
+    initialized = true;
+    void prepareInterstitialIfNeeded();
+  } catch (err) {
+    console.warn('[AdService] AdMob.initialize failed', err);
+    // Don't set initialized = true — ads stay disabled for this session.
+  }
 }
 
 /**
@@ -206,13 +254,16 @@ export async function fireInterstitialIfPending(): Promise<boolean> {
   sessionAdCount += 1;
   track('interstitial_shown', { placement: 'win_exit', session_ad_count: sessionAdCount });
 
-  // TODO(native): Show the interstitial.
-  //   await prepareInterstitialIfNeeded();
-  //   if (interstitialReady) {
-  //     interstitialReady = false;
-  //     await AdMob.showInterstitial();
-  //     void prepareInterstitialIfNeeded(); // pre-load next
-  //   }
+  await prepareInterstitialIfNeeded();
+  if (interstitialReady) {
+    interstitialReady = false;
+    try {
+      await AdMob.showInterstitial();
+    } catch (err) {
+      console.warn('[AdService] showInterstitial failed', err);
+    }
+    void prepareInterstitialIfNeeded(); // pre-load next
+  }
 
   return true;
 }
@@ -233,20 +284,19 @@ export async function showRewardedAdForHint(): Promise<'rewarded' | 'skipped' | 
   if (!ctx.canShowRewardedAds) return 'unavailable';
   if (!initialized) return 'unavailable';
 
-  // TODO(native): Show a real rewarded ad via AdMob.
-  //   try {
-  //     await AdMob.prepareRewardVideoAd({ adId: getRewardedAdId(), isTesting: shouldUseTestAds() });
-  //     const result = await AdMob.showRewardVideoAd();
-  //     const rewarded = result.type === RewardAdPluginEvents.Rewarded;
-  //     track('rewarded_ad_completed', { placement: 'hint', rewarded });
-  //     return rewarded ? 'rewarded' : 'skipped';
-  //   } catch {
-  //     return 'unavailable';
-  //   }
-
-  // Stub: always reward on native until the real AdMob call lands.
-  track('rewarded_ad_completed', { placement: 'hint' });
-  return 'rewarded';
+  try {
+    await AdMob.prepareRewardVideoAd({
+      adId: getRewardedAdId(),
+      isTesting: shouldUseTestAds(),
+    });
+    const result = await AdMob.showRewardVideoAd();
+    const rewarded = result.type === RewardAdPluginEvents.Rewarded;
+    track('rewarded_ad_completed', { placement: 'hint', rewarded });
+    return rewarded ? 'rewarded' : 'skipped';
+  } catch (err) {
+    console.warn('[AdService] showRewardVideoAd failed', err);
+    return 'unavailable';
+  }
 }
 
 /** Whether the current context supports native ads at all. */

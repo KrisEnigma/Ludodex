@@ -289,8 +289,11 @@ export class HowToPlayView {
       <g transform="translate(76 18)">
         <rect width="48" height="22" rx="11"
               fill="var(--button-bg)" stroke="var(--button-border)" />
-        <g transform="translate(7 5) scale(0.55)" fill="var(--title-glow)">
-          <path d="M10 0 C 5 0 1 4 1 9 C 1 12 3 14 4 16 L 4 19 L 16 19 L 16 16 C 17 14 19 12 19 9 C 19 4 15 0 10 0 Z M 7 21 L 13 21 L 13 23 L 7 23 Z" />
+        <!-- bulb icon — matches icons.ts 'bulb', stroked, 24×24 scaled to fit pill -->
+        <g transform="translate(6 4) scale(0.58)" fill="none" stroke="var(--title-glow)"
+           stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 16 C 9 12 6 11 6 8 C 6 4.7 8.7 2 12 2 C 15.3 2 18 4.7 18 8 C 18 11 15 12 15 16 Z" />
+          <path d="M9 19 L 15 19" />
         </g>
         <text x="32" y="16" fill="var(--title-glow)"
               font-size="12" font-family="Space Mono, monospace" font-weight="700">3</text>
@@ -332,9 +335,10 @@ export class HowToPlayView {
     const startX = (200 - rowWidth) / 2;
 
     return `<svg viewBox="0 0 200 160" fill="none" aria-hidden="true">
-      <!-- Flame icon (matches src/components/icons/flame) -->
-      <g transform="translate(86 22)" fill="var(--title-glow)">
-        <path d="M14 0 C 12 4 9 7 9 11 C 9 14 11 16 11 18 C 8 18 5 16 5 12 C 2 16 0 21 0 26 C 0 33 6 38 14 38 C 22 38 28 33 28 26 C 28 18 22 14 22 8 C 22 4 18 0 14 0 Z" />
+      <!-- Flame icon — matches icons.ts 'flame': filled with evenodd inner cutout -->
+      <g transform="translate(77 16) scale(1.67)" fill="var(--title-glow)" stroke="none">
+        <path fill-rule="evenodd"
+              d="M 21 16 C 20 20.5 16.5 22 13 22 C 9.5 22 6 20.5 5.5 16 C 4 10.5 13.5 8.5 10 1.5 C 10 1.5 15 3.5 17 9 C 17.5 9.5 18.5 7.5 17.5 6 C 21 9.5 22 14 21 16 Z M 11 20 C 10 18.5 10.5 16 12 15 C 11.5 14.5 11.5 13.5 12.5 13.5 C 14 14.5 15.5 17 15 20 C 14.5 21.5 12 21.5 11 20 Z" />
       </g>
       <!-- Day row: filled = solved, empty = upcoming -->
       ${days
