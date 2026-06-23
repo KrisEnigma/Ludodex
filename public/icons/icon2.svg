@@ -1,18 +1,65 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
-  <!-- bg-edge -->
-  <rect width="1024" height="1024" fill="#0a0414" />
-  
-  <!-- Intense Cyberpunk Glow -->
-  <circle cx="512" cy="512" r="380" fill="#ff2bd6" opacity="0.14" filter="blur(50px)" />
+  <defs>
+    <!-- Deep violet gradient matching Neon Horizon's UI tiles -->
+    <linearGradient id="neonTile" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2a0d3c" />
+      <stop offset="100%" stop-color="#150620" />
+    </linearGradient>
+    
+    <!-- Swipe path gradient matching Neon Horizon's path (neon cyan to neon yellow) -->
+    <linearGradient id="neonPath" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#2bd6ff" />
+      <stop offset="100%" stop-color="#ffe24a" />
+    </linearGradient>
 
-  <!-- D-PAD SKELETON CONNECTIONS -->
-  <g stroke="#150620" stroke-width="56" stroke-linecap="round" stroke-linejoin="round">
+    <radialGradient id="neonGlow" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+      <stop offset="0%" stop-color="#ff2bd6" stop-opacity="0.65" />
+      <stop offset="100%" stop-color="#ff2bd6" stop-opacity="0" />
+    </radialGradient>
+    
+    <filter id="pathShadow" filterUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
+      <feGaussianBlur stdDeviation="12" in="SourceAlpha" result="blur" />
+      <feOffset dx="0" dy="8" in="blur" result="offset" />
+      <feColorMatrix type="matrix" values="0 0 0 0 1.0 0 0 0 0 0.17 0 0 0 0 0.84 0 0 0 0.45 0" in="offset" result="shadow" />
+      <feMerge>
+        <feMergeNode in="shadow" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    
+    <filter id="endpointCyanGlow" filterUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
+      <feGaussianBlur stdDeviation="10" in="SourceAlpha" result="blur" />
+      <feColorMatrix type="matrix" values="0 0 0 0 0.17 0 0 0 0 0.84 0 0 0 0 1.0 0 0 0 0.9 0" in="blur" result="glow" />
+      <feMerge>
+        <feMergeNode in="glow" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    
+    <filter id="endpointYellowGlow" filterUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
+      <feGaussianBlur stdDeviation="10" in="SourceAlpha" result="blur" />
+      <feColorMatrix type="matrix" values="0 0 0 0 1.0 0 0 0 0 0.89 0 0 0 0 0.29 0 0 0 0.9 0" in="blur" result="glow" />
+      <feMerge>
+        <feMergeNode in="glow" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Pure Black Background -->
+  <rect width="1024" height="1024" fill="#000000" />
+  
+  <!-- Radial Ambient Glow (Mathematically perfect curve, zero boundary clipping) -->
+  <circle cx="512" cy="512" r="500" fill="url(#neonGlow)" />
+
+  <!-- D-PAD SKELETON CONNECTIONS (Deep violet synthwave tracks) -->
+  <g stroke="#2c0b47" stroke-width="76" stroke-linecap="round" stroke-linejoin="round">
     <line x1="512" y1="212" x2="512" y2="812" />
     <line x1="212" y1="512" x2="812" y2="512" />
   </g>
 
-  <!-- THE D-PAD NODES -->
-  <g fill="#150620" stroke="#4a1f6a" stroke-width="14" stroke-linejoin="round">
+  <!-- THE D-PAD NODES (Neon Horizon tile gradients with neon magenta borders) -->
+  <g fill="url(#neonTile)" stroke="#ff2bd6" stroke-width="12" stroke-linejoin="round" opacity="0.95">
     <rect x="422" y="422" width="180" height="180" rx="36" />
     <rect x="422" y="122" width="180" height="180" rx="36" />
     <rect x="722" y="422" width="180" height="180" rx="36" />
@@ -20,13 +67,12 @@
     <rect x="122" y="422" width="180" height="180" rx="36" />
   </g>
 
-  <!-- THE ACTIVE SWIPE PATH -->
-  <path d="M 212 512 L 512 512 L 512 212" 
-        fill="none" stroke="#ff2bd6" stroke-width="56" stroke-linecap="round" stroke-linejoin="round" 
-        filter="drop-shadow(0px 0px 24px rgba(255, 43, 214, 0.9))" />
+  <!-- THE ACTIVE SWIPE PATH (Vibrant gradient from cyan to yellow) -->
+  <path d="M 512 212 L 512 512 L 812 512" 
+        fill="none" stroke="url(#neonPath)" stroke-width="76" stroke-linecap="round" stroke-linejoin="round" 
+        filter="url(#pathShadow)" />
         
-  <!-- Oversized Neon Endpoints -->
-  <circle cx="212" cy="512" r="36" fill="#ffffff" filter="drop-shadow(0px 0px 12px #ff7af0)" />
-  <circle cx="512" cy="512" r="24" fill="#ff2bd6" />
-  <circle cx="512" cy="212" r="36" fill="#ffffff" filter="drop-shadow(0px 0px 12px #ff7af0)" />
+  <!-- Glowing Endpoints (Color-matched to gradient nodes via standard filters) -->
+  <circle cx="812" cy="512" r="44" fill="#ffffff" filter="url(#endpointYellowGlow)" />
+  <circle cx="512" cy="212" r="44" fill="#ffffff" filter="url(#endpointCyanGlow)" />
 </svg>

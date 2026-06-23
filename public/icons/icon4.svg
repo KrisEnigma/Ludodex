@@ -1,25 +1,65 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
   <defs>
-    <linearGradient id="lumen-bg" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#eef2f6" />
-      <stop offset="100%" stop-color="#d4dae2" />
+    <!-- Light tile gradient matching Lumen's UI tiles -->
+    <linearGradient id="lumenTile" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#e8eef3" />
     </linearGradient>
+    
+    <!-- Swipe path gradient matching Lumen's path (royal blue to action cyan) -->
+    <linearGradient id="lumenPath" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#3f5fd0" />
+      <stop offset="100%" stop-color="#00c4dc" />
+    </linearGradient>
+
+    <radialGradient id="lumenGlow" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+      <stop offset="0%" stop-color="#00c4dc" stop-opacity="0.45" />
+      <stop offset="100%" stop-color="#00c4dc" stop-opacity="0" />
+    </radialGradient>
+    
+    <filter id="pathShadow" filterUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
+      <feGaussianBlur stdDeviation="12" in="SourceAlpha" result="blur" />
+      <feOffset dx="0" dy="8" in="blur" result="offset" />
+      <feColorMatrix type="matrix" values="0 0 0 0 0.25 0 0 0 0 0.37 0 0 0 0 0.82 0 0 0 0.45 0" in="offset" result="shadow" />
+      <feMerge>
+        <feMergeNode in="shadow" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    
+    <filter id="endpointCyanGlow" filterUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
+      <feGaussianBlur stdDeviation="10" in="SourceAlpha" result="blur" />
+      <feColorMatrix type="matrix" values="0 0 0 0 0.0 0 0 0 0 0.77 0 0 0 0 0.86 0 0 0 0.9 0" in="blur" result="glow" />
+      <feMerge>
+        <feMergeNode in="glow" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    
+    <filter id="endpointBlueGlow" filterUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
+      <feGaussianBlur stdDeviation="10" in="SourceAlpha" result="blur" />
+      <feColorMatrix type="matrix" values="0 0 0 0 0.25 0 0 0 0 0.37 0 0 0 0 0.82 0 0 0 0.9 0" in="blur" result="glow" />
+      <feMerge>
+        <feMergeNode in="glow" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
   </defs>
 
-  <!-- Gradient Background -->
-  <rect width="1024" height="1024" fill="url(#lumen-bg)" />
+  <!-- Pure White Background -->
+  <rect width="1024" height="1024" fill="#ffffff" />
   
-  <!-- Subtle Core Backglow -->
-  <circle cx="512" cy="512" r="380" fill="#0094ab" opacity="0.08" filter="blur(50px)" />
+  <!-- Radial Ambient Glow (Mathematically perfect curve, zero boundary clipping) -->
+  <circle cx="512" cy="512" r="500" fill="url(#lumenGlow)" />
 
-  <!-- D-PAD SKELETON CONNECTIONS -->
-  <g stroke="#d4dae2" stroke-width="56" stroke-linecap="round" stroke-linejoin="round">
+  <!-- D-PAD SKELETON CONNECTIONS (Soft blue-grey for refined contrast on white) -->
+  <g stroke="#cbd5e1" stroke-width="76" stroke-linecap="round" stroke-linejoin="round">
     <line x1="512" y1="212" x2="512" y2="812" />
     <line x1="212" y1="512" x2="812" y2="512" />
   </g>
 
-  <!-- THE D-PAD NODES -->
-  <g fill="#ffffff" stroke="#cdd5e0" stroke-width="14" stroke-linejoin="round">
+  <!-- THE D-PAD NODES (Lumen tile gradients with vibrant action borders) -->
+  <g fill="url(#lumenTile)" stroke="#00c4dc" stroke-width="12" stroke-linejoin="round">
     <rect x="422" y="422" width="180" height="180" rx="36" />
     <rect x="422" y="122" width="180" height="180" rx="36" />
     <rect x="722" y="422" width="180" height="180" rx="36" />
@@ -27,13 +67,12 @@
     <rect x="122" y="422" width="180" height="180" rx="36" />
   </g>
 
-  <!-- THE ACTIVE SWIPE PATH (Heavyweight 56px Stroke) -->
-  <path d="M 212 512 L 512 512 L 512 212" 
-        fill="none" stroke="#0094ab" stroke-width="56" stroke-linecap="round" stroke-linejoin="round" 
-        filter="drop-shadow(0px 4px 12px rgba(0, 148, 171, 0.3))" />
+  <!-- THE ACTIVE SWIPE PATH (Vibrant gradient from royal blue to action cyan) -->
+  <path d="M 512 212 L 512 512 L 812 512" 
+        fill="none" stroke="url(#lumenPath)" stroke-width="76" stroke-linecap="round" stroke-linejoin="round" 
+        filter="url(#pathShadow)" />
         
-  <!-- Glowing Endpoints -->
-  <circle cx="212" cy="512" r="36" fill="#4fddef" filter="drop-shadow(0px 2px 6px rgba(0, 148, 171, 0.4))" />
-  <circle cx="512" cy="512" r="24" fill="#0094ab" />
-  <circle cx="512" cy="212" r="36" fill="#4fddef" filter="drop-shadow(0px 2px 6px rgba(0, 148, 171, 0.4))" />
+  <!-- Glowing Endpoints (Color-matched to gradient nodes via standard filters) -->
+  <circle cx="812" cy="512" r="44" fill="#ffffff" filter="url(#endpointCyanGlow)" />
+  <circle cx="512" cy="212" r="44" fill="#ffffff" filter="url(#endpointBlueGlow)" />
 </svg>
