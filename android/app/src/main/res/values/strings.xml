@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Ludodex</string>
+    <string name="title_activity_main">Ludodex</string>
+    <string name="package_name">app.ludodex.game</string>
+    <string name="custom_url_scheme">app.ludodex.game</string>
+</resources>

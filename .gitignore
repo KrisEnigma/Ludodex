@@ -2,12 +2,14 @@ node_modules
 dist
 .DS_Store
 *.log
-pnpm-lock.yaml
-ios
-android
+screenshots/
 .playwright-mcp/
 .wrangler/
 .wrangler-temp/
+
+# IDE / editor metadata
+.idea/
+*.iml
 
 # Local env files — never commit secrets. .env.example is the template.
 .env

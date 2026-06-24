@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3940256099942544~3347511713"/>
+
+        <!--
+            Suppress AdMob's auto-init ContentProvider until AdMob is fully
+            configured (real app ID, UMP consent flow, AdMob.initialize() call).
+            Remove this block when wiring up ads for real.
+        -->
+        <provider
+            android:name="com.google.android.gms.ads.MobileAdsInitProvider"
+            tools:node="remove" />
+
+        <activity
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
+            android:name=".MainActivity"
+            android:label="@string/title_activity_main"
+            android:theme="@style/AppTheme.NoActionBarLaunch"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- Android App Links — handle https://ludodex.krisenigma.com/* URLs
+                 directly in the app instead of opening the browser. Requires the
+                 assetlinks.json file to be hosted at
+                 https://ludodex.krisenigma.com/.well-known/assetlinks.json
+                 with the app's release signing certificate SHA-256 fingerprint.
+
+                 autoVerify="true" makes Android verify the assetlinks file at
+                 install time; if it can't find it, the app won't be set as the
+                 default handler (the browser will open instead). Until the file
+                 is live, this is harmless — tap behavior just falls back to web. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https"
+                      android:host="ludodex.krisenigma.com" />
+            </intent-filter>
+
+        </activity>
+
+        <!--
+            Alternate launcher icons — enabled/disabled at runtime by AlternateIconPlugin
+            via PackageManager.setComponentEnabledSetting(). Only one alias (or the
+            main activity) should be enabled at a time. The default Void icon is served
+            by the main activity itself; these aliases handle Neon Horizon and Dot Matrix.
+        -->
+        <activity-alias
+            android:name=".MainActivityNeonHorizon"
+            android:targetActivity=".MainActivity"
+            android:label="@string/title_activity_main"
+            android:icon="@mipmap/ic_launcher_neon_horizon"
+            android:roundIcon="@mipmap/ic_launcher_neon_horizon_round"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityDotMatrix"
+            android:targetActivity=".MainActivity"
+            android:label="@string/title_activity_main"
+            android:icon="@mipmap/ic_launcher_dot_matrix"
+            android:roundIcon="@mipmap/ic_launcher_dot_matrix_round"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityLumen"
+            android:targetActivity=".MainActivity"
+            android:label="@string/title_activity_main"
+            android:icon="@mipmap/ic_launcher_lumen"
+            android:roundIcon="@mipmap/ic_launcher_lumen_round"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths"></meta-data>
+        </provider>
+    </application>
+
+    <!-- Permissions -->
+
+    <uses-permission android:name="android.permission.INTERNET" />
+</manifest>

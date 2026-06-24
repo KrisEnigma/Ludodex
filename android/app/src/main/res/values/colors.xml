@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="splash_bg">#07090e</color>
+    <color name="colorPrimary">#00D4E8</color>
+    <color name="colorPrimaryDark">#003547</color>
+    <color name="colorAccent">#00D4E8</color>
+    
+    <!-- Adaptive Icon Backgrounds -->
+    <color name="ic_background_void">#0b121f</color>
+    <color name="ic_background_neon_horizon">#0a0414</color>
+    <color name="ic_background_dot_matrix">#9bbc0f</color>
+    <color name="ic_background_lumen">#ffffff</color>
+</resources>
