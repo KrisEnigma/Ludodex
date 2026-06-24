@@ -550,21 +550,44 @@ export class SettingsView {
   }
 
   private async onIconOptionClick(iconId: AppIconId): Promise<void> {
-    if (this.activeIconId === iconId) return;
+    console.log('[IconClick] clicked:', iconId, 'activeIconId:', this.activeIconId);
+    if (this.activeIconId === iconId) {
+      console.log('[IconClick] same icon, skipping');
+      return;
+    }
 
-    const confirmed = await showConfirmModal({
-      title: t('dialog.change_icon_title'),
-      body: t('dialog.change_icon_body'),
-      confirmLabel: t('dialog.change_icon_confirm'),
-      cancelLabel: t('common.cancel'),
-      destructive: false
-    });
-
-    if (!confirmed) return;
-
-    await setActiveIcon(iconId);
+    const previousIconId = this.activeIconId;
     this.activeIconId = iconId;
     this.refreshIconButtons();
+    console.log('[IconClick] set UI state optimistically before native dialog');
+
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+    this.status.textContent = 'Changing icon...';
+    try {
+      await setActiveIcon(iconId);
+      this.status.textContent = '';
+      console.log('[IconClick] done');
+    } catch (e: any) {
+      console.error('[IconClick] setActiveIcon threw:', e);
+      // Probe native state before rolling back — sometimes native succeeds despite a JS rejection.
+      try {
+        const native = await getActiveIcon();
+        console.log('[IconClick] getActiveIcon after failure returned:', native);
+        if (native === iconId) {
+          console.log('[IconClick] native equals requested icon despite error — keeping UI state');
+          this.status.textContent = '';
+          return;
+        }
+      } catch (probeErr) {
+        console.error('[IconClick] getActiveIcon probe failed:', probeErr);
+      }
+
+      this.activeIconId = previousIconId;
+      this.refreshIconButtons();
+      this.status.textContent = `Failed to change icon: ${e?.message || e}`;
+      console.error('[IconClick] failed:', e);
+    }
   }
 
   private refreshIconButtons(): void {

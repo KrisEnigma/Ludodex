@@ -1,20 +1,33 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
-const config: CapacitorConfig = {
+interface ExtendedCapacitorConfig extends CapacitorConfig {
+  // Allow passing explicit plugin package class names for iOS
+  packageClassList?: string[];
+}
+
+const config: ExtendedCapacitorConfig = {
   appId: 'app.ludodex.game',
   appName: 'Ludodex',
   webDir: 'dist',
   ios: {
     contentInset: 'always'
   },
-  android: {
-    allowMixedContent: true // live-reload only — revert before committing
-  },
-  // LIVE RELOAD — remove this server block before committing
-  server: {
-    url: 'http://192.168.0.85:5173',
-    cleartext: true
-  },
+  android: {},
+
+  packageClassList: [
+    'AdMobPlugin',
+    'AppPlugin',
+    'HapticsPlugin',
+    'LocalNotificationsPlugin',
+    'PreferencesPlugin',
+    'SharePlugin',
+    'SplashScreenPlugin',
+    'StatusBarPlugin',
+    'PurchasesPlugin',
+    'SentryCapacitor',
+    'AlternateIconPlugin'
+  ],
+
   plugins: {
     LocalNotifications: {
       smallIcon: 'ic_stat_icon',
