@@ -2108,8 +2108,9 @@ body {
 /* ── App icon picker ─────────────────────────────────────────────────────── */
 
 .settings-icon-picker {
-  display: flex;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
 }
 
 .settings-icon-option {

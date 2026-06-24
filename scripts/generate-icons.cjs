@@ -178,6 +178,60 @@ async function main() {
     );
     console.log(`Copied fallback splash_icon.png -> ${defaultSplashDir}`);
     
+    // iOS Assets (AppIcon and Splash Screen)
+    if (fs.existsSync('ios')) {
+      const iosAppIconDir = 'ios/App/App/Assets.xcassets/AppIcon.appiconset';
+      const iosSplashDir = 'ios/App/App/Assets.xcassets/Splash.imageset';
+      const iosAltIconsDir = 'ios/App/App/AlternateIcons';
+
+      if (!fs.existsSync(iosAppIconDir)) fs.mkdirSync(iosAppIconDir, { recursive: true });
+      if (!fs.existsSync(iosSplashDir)) fs.mkdirSync(iosSplashDir, { recursive: true });
+      if (!fs.existsSync(iosAltIconsDir)) fs.mkdirSync(iosAltIconsDir, { recursive: true });
+
+      // Generate iOS AppIcon (1024x1024)
+      await renderSvg('public/icons/icon1.svg', path.join(iosAppIconDir, 'AppIcon-512@2x.png'), 1024);
+      console.log("Generated iOS Main AppIcon!");
+
+      // Generate iOS Splash Screens (2732x2732) - Center transparent icon on black background
+      const splashSize = 2732;
+      const splashIconSize = Math.round(splashSize * 0.45); // Centered icon size
+      const svgContent = fs.readFileSync('public/icons/icon1.svg', 'utf8');
+      const transparentSvg = svgContent.replace(/<rect width="1024" height="1024" fill="#000000" \/>/, '');
+      const innerSplashBuffer = await sharp(Buffer.from(transparentSvg))
+        .resize(splashIconSize, splashIconSize)
+        .png()
+        .toBuffer();
+
+      const splashFiles = ['splash-2732x2732.png', 'splash-2732x2732-1.png', 'splash-2732x2732-2.png'];
+      for (const splashFile of splashFiles) {
+        await sharp({
+          create: {
+            width: splashSize,
+            height: splashSize,
+            channels: 4,
+            background: { r: 0, g: 0, b: 0, alpha: 1 } // Solid black background
+          }
+        })
+        .composite([{ input: innerSplashBuffer, gravity: 'center' }])
+        .png()
+        .toFile(path.join(iosSplashDir, splashFile));
+      }
+      console.log("Generated iOS Splash Screens!");
+
+      // iOS Alternate Icons
+      const iosIcons = {
+        'neon-horizon': 'public/icons/icon2.svg',
+        'dot-matrix': 'public/icons/icon3.svg',
+        'lumen': 'public/icons/icon4.svg'
+      };
+
+      for (const [name, svgPath] of Object.entries(iosIcons)) {
+        await renderSvg(svgPath, path.join(iosAltIconsDir, `icon-${name}@2x.png`), 120);
+        await renderSvg(svgPath, path.join(iosAltIconsDir, `icon-${name}@3x.png`), 180);
+      }
+      console.log("Generated iOS Alternate Icons!");
+    }
+    
     console.log("All icons successfully compiled with sharp!");
   } catch (err) {
     console.error("Error generating icons:", err);

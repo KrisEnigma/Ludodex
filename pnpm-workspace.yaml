@@ -1,5 +1,4 @@
 patchedDependencies:
-  '@capacitor-community/admob@7.2.0': patches/@capacitor-community__admob@7.2.0.patch
   '@revenuecat/purchases-capacitor@9.2.2': patches/@revenuecat__purchases-capacitor@9.2.2.patch
   '@sentry/capacitor@1.5.0': patches/@sentry__capacitor@1.5.0.patch
 

@@ -14,13 +14,14 @@
     "cap:sync": "cap sync"
   },
   "dependencies": {
-    "@capacitor-community/admob": "^7.2.0",
+    "@capacitor-community/admob": "^8.0.0",
     "@capacitor/app": "^8.1.0",
     "@capacitor/core": "^8.4.0",
     "@capacitor/haptics": "^8.0.2",
     "@capacitor/local-notifications": "^8.2.0",
     "@capacitor/preferences": "^8.0.1",
     "@capacitor/share": "^8.0.1",
+    "@capacitor/splash-screen": "^8.0.1",
     "@capacitor/status-bar": "^8.0.2",
     "@fontsource/almendra": "^5.2.8",
     "@fontsource/anton": "^5.2.7",
@@ -68,6 +69,7 @@
     "@capacitor/ios": "^8.4.0",
     "@fullhuman/postcss-purgecss": "^8.0.0",
     "@types/node": "^22.19.19",
+    "sharp": "^0.35.2",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",
     "vite": "^6.4.3"
