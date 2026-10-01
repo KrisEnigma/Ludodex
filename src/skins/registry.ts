@@ -88,7 +88,7 @@ export const SKINS: SkinMeta[] = [
   { id: 'cape-16bit', name: '16-Bit Cape', productId: null },
   { id: 'blue-blur', name: 'Blue Blur', productId: null },
   { id: 'dragon-heat', name: 'Dragon Heat', productId: null },
-  { id: 'radio-tag', name: 'Radio Tag', productId: null },
+  { id: 'radio-tag', name: 'Radio Tag', productId: null, isLight: true },
   { id: 'cyber-shinobi', name: 'Cyber Shinobi', productId: null },
   {
     id: 'gameboy',

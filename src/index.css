@@ -629,15 +629,26 @@ body {
 body {
   font-family: 'Space Mono', ui-monospace, monospace;
   color: var(--title-color);
-  /* Skin backdrop: optional pattern layer(s) (--bg-pattern, one
-     --bg-pattern-size entry per layer) over the skin's radial gradient. */
+  background-color: var(--bg-edge);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Skin backdrop, pinned to the VIEWPORT (not the body, whose height follows
+   the content): optional pattern layer(s) (--bg-pattern, one size/position/
+   repeat entry per layer) over the skin's radial gradient. Fixed, behind all
+   content (z -1 in the root stacking context), never interactive. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
   background-color: var(--bg-edge);
   background-image: var(--bg-pattern, none), radial-gradient(circle at 50% 35%, var(--bg-center), var(--bg-edge));
   background-size: var(--bg-pattern-size, auto), auto;
   background-position: var(--bg-pattern-position, 0 0), 0 0;
   background-repeat: var(--bg-pattern-repeat, repeat), repeat;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
 }
 
 #app {

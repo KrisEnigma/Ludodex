@@ -283,6 +283,19 @@
   --path-opacity: 0.95;
   --path-glow: 14;
   --selected-letter-outline: #3a0830;
+
+  /* Layers: sunset-to-horizon gradient, retro offset neon wordmark */
+  --bg-pattern: linear-gradient(180deg, #0e0322 0%, #1f0740 42%, #4a0e5e 66%, #8a1c74 84%, #c2306e 100%);
+  --bg-pattern-size: 100% 100%;
+  --bg-pattern-repeat: no-repeat;
+  --wordmark-color: #ff4fd8;
+  --wordmark-shadow: 0 0 2px #ffd6f6, 3px 3px 0 #2bd6ff, 0 0 22px rgba(255, 43, 214, 0.7);
+  --title-color: #ffffff;
+  --title-shadow: 0 0 8px rgba(255, 43, 214, 0.8), 2px 2px 0 rgba(43, 214, 255, 0.6);
+  --tile-border: #7a2a9a;
+  --tile-shadow: inset 0 0 10px rgba(255, 43, 214, 0.12);
+  --hint-empty-bg: rgba(14, 3, 34, 0.6);
+  --card-shadow: 0 0 10px rgba(255, 43, 214, 0.18);
 }
 
 /* ── Laser Vector ── Retro-futuristic arcade vector graphics theme with glowing neon beams. */
@@ -428,7 +441,7 @@
   --tile-font-family: 'Orbitron', sans-serif;
   --tile-font-weight: 700;
   --tile-font-scale:  0.84;
-  --tile-radius:      12px;
+  --tile-radius: 16px 9px 18px 7px;
 
   /* Explicit overrides */
   --shell-bg: linear-gradient(180deg, rgba(22, 5, 38, 0.92), rgba(10, 2, 18, 0.97));
@@ -450,27 +463,36 @@
   --path-opacity: 0.95;
   --path-glow: 10;
   --selected-letter-outline: #3a0a2c;
+
+  /* Layers: uneven chitin plates with a wet highlight, creep glow from below */
+  --tile-shadow: inset 2px 3px 6px rgba(255, 180, 255, 0.12), inset -3px -4px 8px rgba(0, 0, 0, 0.5);
+  --tile-selected-shadow: inset 2px 3px 6px rgba(255, 200, 240, 0.3), inset -3px -4px 8px rgba(60, 0, 40, 0.5);
+  --ui-radius: 14px 8px 14px 8px;
+  --bg-pattern: radial-gradient(ellipse 130% 55% at 50% 112%, rgba(150, 40, 170, 0.5), transparent 70%), radial-gradient(ellipse 60% 30% at 50% 108%, rgba(57, 232, 50, 0.12), transparent 70%);
+  --bg-pattern-size: 100% 100%, 100% 100%;
+  --bg-pattern-repeat: no-repeat, no-repeat;
+  --wordmark-shadow: 0 0 14px rgba(255, 102, 212, 0.55), 0 2px 0 #3a0a2c;
 }
 
 /* ── Phantom Thieves ── Picaresque style featuring raw crimson red, stark solid blacks, and cutout whites. */
 .skin-phantom-thieves {
   --skin-desc: "Change of heart imminent. It's showtime.";
   --skin-name: "Phantom Thieves";
-  --bg-top:    #220005;
-  --bg-bottom: #000000;
+  --bg-top: #c4001c;
+  --bg-bottom: #5a000c;
   --surface:   #000000;
   --border:    #ff1038;
   --text:      #ffffff;
-  --text-dim:  #d8c7cb;
+  --text-dim: #ffd6dc;
   --accent:    #ff1038;
   --action:    #ff1038;
   --tile:      linear-gradient(145deg, #151515, #000000);
-  --tile-sel:  linear-gradient(145deg, #ff2149, #a0001e);
-  --path-start: #ffffff;
+  --tile-sel: #ffffff;
+  --path-start: #ff1038;
 
-  --tile-border:          #520815;
-  --tile-selected-border: #ffffff;
-  --tile-selected-glow:   rgba(255, 16, 56, 0.75);
+  --tile-border: #000000;
+  --tile-selected-border: #000000;
+  --tile-selected-glow: rgba(0, 0, 0, 0.45);
   --tile-font-family: 'Anton', sans-serif;
   --tile-font-weight: 400;
   --tile-font-scale:  0.9;
@@ -480,11 +502,11 @@
   --shell-bg: linear-gradient(165deg, rgba(32, 0, 6, 0.98) 0%, rgba(0, 0, 0, 1) 70%);
   --shell-border: #ff1038;
   --primary-action-text: #ffffff;
-  --hint-empty-border: #2d2d2d;
-  --hint-solved-border: #ffffff;
-  --path-color: #ffffff;
-  --path-grad-end: #ffffff;
-  --selected-letter-outline: #000000;
+  --hint-empty-border: #000000;
+  --hint-solved-border: #000000;
+  --path-color: #ff1038;
+  --path-grad-end: #ff1038;
+  --selected-letter-outline: #ffffff;
 
 /* Typography */
   --wordmark-font-family: 'Anton', sans-serif;
@@ -505,8 +527,32 @@
   --path-cap: butt;
   --path-opacity: 1;
   --path-glow: 9;
+
+  /* Layers: red calling-card ground, hard black offsets, white cut-out selection */
+  --tile-selected-letter: #000000;
+  --hint-solved-bg: #ffffff;
+  --hint-solved-letter: #000000;
+  --hint-empty-bg: rgba(0, 0, 0, 0.55);
+  --wordmark-color: #ffffff;
+  --wordmark-shadow: 4px 4px 0 #000;
+  --title-shadow: 3px 3px 0 #000;
+  --tile-shadow: 3px 3px 0 #000;
+  --tile-selected-shadow: 3px 3px 0 #000;
+  --card-shadow: 3px 3px 0 #000;
+  --primary-action-shadow: 4px 4px 0 #000;
+  --ui-radius: 0px;
+  --hint-radius: 0px;
 }
 
+
+/* Ransom-note glyphs: letters tilt at varied angles, like letters clipped
+   from a magazine (one typeface for legibility). Letters only (never .tile —
+   stacking-context rule); the white cut-out stays reserved for selection. */
+.skin-phantom-thieves .tile:nth-child(4n+1) .tile-letter { transform: rotate(-5deg); }
+.skin-phantom-thieves .tile:nth-child(4n+2) .tile-letter { transform: rotate(4deg); }
+.skin-phantom-thieves .tile:nth-child(4n+3) .tile-letter { transform: rotate(-2deg); }
+.skin-phantom-thieves .tile:nth-child(4n)   .tile-letter { transform: rotate(6deg); }
+.skin-phantom-thieves .tile[data-state="selected"] .tile-letter { transform: rotate(0deg) scale(1.08); }
 
 /* ── Catalyst ── Dystopian minimalist clean layout with sterile whites, slate typography, and high-velocity orange routes. */
 .skin-catalyst {
@@ -696,12 +742,12 @@
   --accent:    #39e832;
   --action:    #39e832;
   --tile:      linear-gradient(145deg, #191226, #090510);
-  --tile-sel:  linear-gradient(145deg, #e65c00, #993d00);
+  --tile-sel: linear-gradient(180deg, #f2a65a, #d9782e 50%, #9a4e1a);
   --path-start: #39e832;
 
   --tile-letter:          #b3a2cf;
-  --tile-selected-border: #ff944d;
-  --tile-selected-glow:   rgba(230, 92, 0, 0.6);
+  --tile-selected-border: #ffd09a;
+  --tile-selected-glow: rgba(217, 120, 46, 0.5);
   --tile-font-family: 'Share Tech Mono', monospace;
   --tile-font-weight: 400;
   --tile-font-scale:  1.02;
@@ -731,7 +777,18 @@
    --path-cap: round;
    --path-opacity: 0.95;
    --path-glow: 11;
-   --selected-letter-outline: #1f0800;
+   --selected-letter-outline: #4a2208;
+
+  /* Layers: suit-armour bevels, visor-green HUD frames, cavern glow */
+  --tile-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.06), inset 0 -3px 0 rgba(0, 0, 0, 0.5);
+  --tile-selected-shadow: inset 0 2px 0 rgba(255, 230, 190, 0.55), inset 0 -3px 0 rgba(90, 40, 10, 0.55);
+  --bg-pattern: radial-gradient(ellipse 110% 40% at 50% 108%, rgba(57, 232, 50, 0.14), transparent 70%);
+  --bg-pattern-size: 100% 100%;
+  --bg-pattern-repeat: no-repeat;
+  --wordmark-color: #e8924a;
+  --wordmark-shadow: 0 2px 0 #6a3410, 0 0 14px rgba(217, 120, 46, 0.4);
+  --button-border: rgba(57, 232, 50, 0.35);
+  --card-shadow: inset 0 0 8px rgba(57, 232, 50, 0.1);
 }
 
 /* ── Hyrule Vault ── Legend of Zelda. Ancient stone, triforce amber tiles, Kokiri-green trail lighting the way. */
@@ -1164,7 +1221,7 @@
   --accent:    #ffcc00;
   --action:    #d6001c;
   --tile:      linear-gradient(145deg, #1c0508, #0a0002);
-  --tile-sel:  linear-gradient(145deg, #d6001c, #4a0005);
+  --tile-sel: linear-gradient(180deg, #ff5a1a, #d6001c 55%, #6a0008);
   --path-start: #ffcc00;
 
   --tile-letter:          #e6c5c8;
@@ -1202,48 +1259,64 @@
    --path-opacity: 0.95;
    --path-glow: 12;
    --selected-letter-outline: #4a0005;
+
+  /* Layers: neon-sign glows over wet asphalt, gold neon-tube lettering, heat-action selection */
+  --bg-pattern: radial-gradient(ellipse 45% 22% at 12% 6%, rgba(255, 40, 90, 0.28), transparent 70%), radial-gradient(ellipse 40% 20% at 88% 14%, rgba(255, 190, 0, 0.22), transparent 70%), radial-gradient(ellipse 50% 18% at 70% 2%, rgba(0, 200, 255, 0.16), transparent 70%), radial-gradient(ellipse 90% 30% at 50% 104%, rgba(214, 0, 28, 0.22), transparent 70%);
+  --bg-pattern-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+  --bg-pattern-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
+  --tile-border: #3a0810;
+  --tile-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 -2px 0 rgba(0, 0, 0, 0.6);
+  --wordmark-color: #fff4c8;
+  --wordmark-shadow: 0 0 2px #fff, 0 0 8px #ffcc00, 0 0 18px #ff8a00, 0 0 36px rgba(255, 106, 0, 0.5);
+  --title-color: #fff4c8;
+  --title-shadow: 0 0 6px rgba(255, 204, 0, 0.75), 0 0 16px rgba(255, 120, 0, 0.4);
+  --card-shadow: inset 0 0 0 1px rgba(255, 204, 0, 0.12);
 }
 
-/* ── Radio Tag ── Jet Set Radio. Dark urban Tokyo, bold orange cel-tiles, hot-pink tags, electric-yellow graffiti trail. */
+/* ── Radio Tag ── Jet Set Radio, read as cel-shading and stickers: a loud
+   yellow-to-orange street-poster ground, white sticker tiles with THICK black
+   outlines and a hard offset shadow, hot-pink tags for the selection, lime
+   for finished pieces, a magenta→cyan spray trail. A LIGHT skin (was dark). */
 .skin-radio-tag {
   --skin-desc: "Grind the rails. Tag every wall. Stay off the GGs' radar.";
   --skin-name: "Radio Tag";
+  color-scheme: light;
 
-  --bg-top:    #161210;
-  --bg-bottom: #0c0a08;
-  --surface:   #221e1a;
-  --border:    #000000;
-  --text:      #ffffff;
-  --text-dim:  #c0b090;
-  --accent:    #ffcc00;
-  --action:    #ff6600;
-  --tile:      linear-gradient(145deg, #ff6600, #e04400);
-  --tile-sel:  linear-gradient(145deg, #ff0099, #cc007a);
-  --path-start: #ffee00;
+  --bg-top: #ffd60a;
+  --bg-bottom: #ff9f1c;
+  --surface: #ffffff;
+  --border: #000000;
+  --text: #111111;
+  --text-dim: #3a2a00;
+  --accent: #ff2d95;
+  --action: #ff2d95;
+  --tile: #ffffff;
+  --tile-sel: #ff2d95;
+  --path-start: #ff2d95;
 
-  --tile-border:          #000000;
-  --tile-letter:          #ffffff;
-  --tile-selected-border: #ffffff;
+  --tile-border: #000000;
+  --tile-letter: #111111;
+  --tile-selected-border: #000000;
   --tile-selected-letter: #ffffff;
-  --tile-selected-glow:   rgba(255, 0, 153, 0.45);
+  --tile-selected-glow: transparent;
   --tile-font-family: 'Permanent Marker', cursive;
   --tile-font-weight: 400;
   --tile-font-scale:  0.9;
-  --tile-radius:      0px;
+  --tile-radius: 6px;
 
   /* Explicit overrides */
-  --shell-bg: linear-gradient(180deg, rgba(26, 22, 18, 0.93), rgba(12, 10, 8, 0.97));
+  --shell-bg: #ffffff;
   --shell-border: #000000;
-  --shell-shadow: rgba(0, 0, 0, 0.5);
+  --shell-shadow: rgba(0, 0, 0, 0.35);
   --primary-action-text: #ffffff;
-  --hint-empty-border: #ff6600;
-  --hint-solved-bg: #ff6600;
+  --hint-empty-border: #000000;
+  --hint-solved-bg: #8ce000;
   --hint-solved-border: #000000;
-  --hint-solved-letter: #ffffff;
-  --tile-deactivated-opacity: 0.35;
-  --path-color: #ffee00;
-  --path-grad-end: #ffcc00;
-  --selected-letter-outline: #cc007a;
+  --hint-solved-letter: #111111;
+  --tile-deactivated-opacity: 0.45;
+  --path-color: #ff2d95;
+  --path-grad-end: #00c8ff;
+  --selected-letter-outline: #7a0040;
 
    /* Typography & shape */
    --wordmark-font-family: 'Luckiest Guy', cursive;
@@ -1253,13 +1326,27 @@
    --title-text-transform: uppercase;
    --title-letter-spacing: 0.02em;
    --title-glow-alpha: 30%;
-   --glow-strength: 1.0;
+   --glow-strength: 0;
 
    /* Selection ribbon */
    --path-width: 12px;
    --path-cap: round;
    --path-opacity: 0.95;
-   --path-glow: 8;
+   --path-glow: 0;
+
+  --hint-empty-bg: rgba(255, 255, 255, 0.55);
+  --tile-border-width: 3px;
+  --tile-shadow: 4px 4px 0 #000;
+  --tile-selected-shadow: 4px 4px 0 #000;
+  --card-shadow: 3px 3px 0 #000;
+  --primary-action-shadow: 0 0 0 3px #000, 5px 5px 0 3px #000;
+  --title-color: #111111;
+  --title-glow: #ff2d95;
+  --title-shadow: -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff, 0 -2px 0 #fff, 0 2px 0 #fff, -2px 0 0 #fff, 2px 0 0 #fff, 4px 4px 0 #000;
+  --wordmark-color: #ffffff;
+  --wordmark-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 -2px 0 #000, 0 2px 0 #000, -2px 0 0 #000, 2px 0 0 #000, 5px 5px 0 #ff2d95, 7px 7px 0 #000;
+  --ui-radius: 6px;
+  --hint-radius: 4px;
 }
 
 /* ── Cyber Shinobi ── Shinobi III. Deep shadow-purple night, crimson-strike selections, ninjutsu-red trail. Angular precision. */
@@ -1315,6 +1402,19 @@
    --path-cap: square;
    --path-opacity: 0.9;
    --path-glow: 8;
+
+  /* Layers: night-to-blood horizon, katana-slash underline, square UI */
+  --bg-pattern: linear-gradient(180deg, #06001a 0%, #12003a 50%, #3a0030 82%, #6a0018 100%);
+  --bg-pattern-size: 100% 100%;
+  --bg-pattern-repeat: no-repeat;
+  --tile-shadow: inset 0 -2px 0 #cc0033;
+  --tile-selected-shadow: inset 0 -2px 0 #ffffff;
+  --wordmark-color: #ffffff;
+  --wordmark-shadow: 3px 0 0 #cc0033, 0 0 16px rgba(204, 0, 51, 0.55);
+  --title-shadow: 2px 0 0 #cc0033;
+  --ui-radius: 0px;
+  --hint-radius: 0px;
+  --hint-empty-bg: rgba(6, 0, 26, 0.6);
 }
 
 .skin-gameboy {
