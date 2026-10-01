@@ -34,7 +34,78 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
   </head>
   <body>
-    <div id="app"></div>
+    <!-- Boot splash: visible from the first paint until Router mounts (its
+         constructor replaces #app's children). Covers the wait for i18n +
+         remote catalog (≤1.8 s). Inline + self-contained because no app CSS or
+         fonts exist yet; colours mirror the Void / Lumen skin tokens in
+         src/skins/skins.css (the one sanctioned hex exception outside it). -->
+    <style>
+      .boot-splash {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        background: radial-gradient(circle at 50% 35%, #0d1118, #07090e);
+      }
+      .boot-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 28px);
+        gap: 8px;
+      }
+      .boot-grid span {
+        width: 28px;
+        height: 28px;
+        border-radius: 7px;
+        border: 2px solid #00d4e8;
+        box-shadow: 0 0 12px rgba(0, 212, 232, 0.35);
+        opacity: 0.25;
+        animation: boot-pulse 1.2s ease-in-out infinite;
+      }
+      .boot-grid span:nth-child(2) { animation-delay: 0.15s; }
+      .boot-grid span:nth-child(4) { animation-delay: 0.3s; }
+      .boot-grid span:nth-child(3) { animation-delay: 0.45s; }
+      @keyframes boot-pulse {
+        0%, 100% { opacity: 0.25; }
+        40%      { opacity: 1; }
+      }
+      /* Boot-error screen (main.ts renderBootError) — shown only if startup fails. */
+      .boot-error-box {
+        max-width: 300px;
+        padding: 0 24px;
+        text-align: center;
+        font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+        color: #e6edf5;
+      }
+      .boot-error-title { margin: 0 0 8px; font-size: 16px; font-weight: 700; }
+      .boot-error-body { margin: 0 0 20px; font-size: 13px; line-height: 1.5; opacity: 0.7; }
+      .boot-error-retry {
+        font: inherit;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 12px 28px;
+        border: none;
+        border-radius: 10px;
+        background: #00d4e8;
+        color: #07090e;
+        cursor: pointer;
+      }
+      @media (prefers-color-scheme: light) {
+        .boot-splash { background: radial-gradient(circle at 50% 35%, #eef2f6, #d4dae2); }
+        .boot-grid span { border-color: #0094ab; box-shadow: 0 0 12px rgba(0, 148, 171, 0.25); }
+        .boot-error-box { color: #1a2230; }
+        .boot-error-retry { background: #0094ab; color: #ffffff; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .boot-grid span { animation: none; opacity: 0.8; }
+      }
+    </style>
+    <div id="app">
+      <div class="boot-splash" aria-hidden="true">
+        <div class="boot-grid"><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

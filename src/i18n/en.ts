@@ -49,6 +49,8 @@ export const strings = {
   'settings.skin_unlock': 'Unlock',
   'settings.skin_use': 'Use this skin',
   'settings.skin_earn_hint': 'Earn: {hint}',
+  'settings.icon_changing': 'Changing icon…',
+  'settings.icon_change_failed': "Couldn't change the icon. Please try again.",
   'settings.skin_promo_label': 'Free rotating skin',
     'settings.skin_preview_banner_title': 'Previewing {name} — not yet unlocked',
   'settings.restore_purchases': 'Restore purchases',
@@ -119,6 +121,8 @@ export const strings = {
   'game.back': '← Menu',
   'game.words_progress': '{found}/{total}',
   'game.instructions': 'Swipe adjacent letters to find all words.',
+  'game.hint_charging': 'Using hint…',
+  'game.sr_found': 'Found {word}. {found} of {total} words.',
   'hint.out_title': 'No hints left',
   'hint.out_body': 'You have used all hints for today. Come back tomorrow for more.',
   'hint.out_close': 'OK',
@@ -142,6 +146,8 @@ export const strings = {
   'hint_store.pack_price': '{price}',
   'hint_store.buy_button': '{price}',
   'hint_store.close': 'Close',
+  'hint_store.web_cta_title': 'Need more hints?',
+  'hint_store.web_cta_sub': 'Hints refill every day. Hint packs are available in the app.',
 
   // Win view
   'win.achievement_unlocked':  'Achievement unlocked',
@@ -181,6 +187,7 @@ export const strings = {
   'archive.empty': 'Come back tomorrow for the first archive entry.',
   'archive.day_row': '#{n} — {title}',
   'archive.unsolved': '—',
+  'archive.time_first_best': '{first} · best {best}',
 
   // How to play
   'how_to_play.title': 'How to play',

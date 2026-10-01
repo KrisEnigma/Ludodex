@@ -4,10 +4,18 @@
  * Only imported in dev builds (import.meta.env.DEV gate in IAPService.ts).
  * Zero bytes in production bundles.
  *
- *   🔓 DEV  — all skins + levels unlocked (default dev state)
- *   🌐 WEB  — simulates the web player experience (limited skin set)
+ *   🔓 DEV     — all skins + levels unlocked (default dev state)
+ *   🌐 WEB     — simulates the web player experience (limited skin set)
+ *   📱 NATIVE  — simulates a native (Android) player: real entitlement
+ *                rules (achievement / IAP gating), native Settings UI.
+ *                Plugins stay inert: purchases fail with
+ *                'dev-sim-no-billing', nothing counts as purchased.
  *
- * Tap the badge to toggle sim mode. Page reloads to apply the change.
+ * Tap the badge to cycle DEV → WEB → NATIVE. Page reloads to apply.
+ *
+ * 🏆 button
+ *   Opens a panel to grant / revoke individual achievements (writes the real
+ *   `ludodex.achievements_earned` store). Reload to apply everywhere.
  *
  * +1D button
  *   Increments localStorage['ludodex.devday'] by 1 (seeding from the real
@@ -27,6 +35,10 @@
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { t } from '../i18n';
+import { ACHIEVEMENTS } from '../data/achievements';
+import { devSetEarned, getEarnedAchievements } from '../services/AchievementService';
+import { resetAllProgress } from '../services/ProgressService';
+import { showConfirmModal } from '../components/Modal';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -47,9 +59,14 @@ const DEV_LAUNCH_DATE = (() => {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function isSimulating(): boolean {
-  return sessionStorage.getItem(SIM_KEY) === 'web';
+type SimMode = 'full' | 'web' | 'native';
+
+function getSimMode(): SimMode {
+  const v = sessionStorage.getItem(SIM_KEY);
+  return v === 'web' || v === 'native' ? v : 'full';
 }
+
+const NEXT_SIM: Record<SimMode, SimMode> = { full: 'web', web: 'native', native: 'full' };
 
 /** Compute the real day number using the same formula as PuzzleLoader. */
 function getRealDayNumber(): number {
@@ -57,7 +74,7 @@ function getRealDayNumber(): number {
   today.setHours(0, 0, 0, 0);
   const launch = new Date(DEV_LAUNCH_DATE);
   launch.setHours(0, 0, 0, 0);
-  const days = Math.floor((today.getTime() - launch.getTime()) / 86400000);
+  const days = Math.round((today.getTime() - launch.getTime()) / 86400000); // round: DST-safe, mirrors PuzzleLoader
   return Math.max(1, days + 1);
 }
 
@@ -109,14 +126,47 @@ const CSS = `
     cursor: pointer;
     user-select: none;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
     transition: transform 0.1s, opacity 0.15s;
     -webkit-tap-highlight-color: transparent;
   }
   #dev-overlay:active { transform: scale(0.94); }
-  #dev-overlay[data-sim="false"] { background: rgba(220, 80, 20, 0.88); }
-  #dev-overlay[data-sim="true"]  { background: rgba(30, 100, 230, 0.88); }
+  /* Opaque, no backdrop-filter: blur over a constantly repainting page
+     (timer, ribbon, view fades) caused intermittent flicker in Chromium. */
+  #dev-overlay[data-sim="full"]   { background: rgb(205, 78, 24); }
+  #dev-overlay[data-sim="web"]    { background: rgb(32, 96, 214); }
+  #dev-overlay[data-sim="native"] { background: rgb(22, 140, 76); }
+
+  /* ── Achievements panel ── */
+  #dev-ach-panel {
+    position: fixed;
+    right: 14px;
+    bottom: 110px;
+    z-index: 99999;
+    width: min(320px, calc(100vw - 28px));
+    max-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    border-radius: 12px;
+    border: 1.5px solid rgba(255, 255, 255, 0.18);
+    background: rgba(10, 10, 10, 0.92);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+    font-family: ui-monospace, 'Space Mono', monospace;
+    font-size: 11px;
+    color: #fff;
+  }
+  #dev-ach-panel[hidden] { display: none; }
+  .dev-ach-head {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    padding: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  }
+  .dev-ach-head span { flex: 1; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+  .dev-ach-list { overflow-y: auto; padding: 4px 8px 8px; }
+  .dev-ach-row { display: flex; gap: 8px; align-items: center; padding: 4px 0; cursor: pointer; }
+  .dev-ach-row input { margin: 0; }
+  .dev-ach-id { opacity: 0.55; margin-left: auto; font-size: 10px; }
 
   #dev-overlay-dot {
     width: 7px;
@@ -124,25 +174,21 @@ const CSS = `
     border-radius: 50%;
     flex-shrink: 0;
     background: rgba(255, 255, 255, 0.7);
-    animation: dev-pulse 2s infinite;
-  }
-  @keyframes dev-pulse {
-    0%, 100% { opacity: 1; }
-    50%       { opacity: 0.35; }
   }
 
   /* ── Dev-tools pill (day stepper + notification tester) ── */
   #dev-overlay-tools {
     display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
     align-items: center;
     gap: 4px;
+    max-width: calc(100vw - 28px);
     padding: 5px 8px;
-    border-radius: 999px;
+    border-radius: 16px;
     border: 1.5px solid rgba(255, 255, 255, 0.18);
-    background: rgba(10, 10, 10, 0.72);
+    background: rgba(10, 10, 10, 0.94);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
   }
 
   .dev-tool-btn {
@@ -226,9 +272,80 @@ function mount(): void {
   notifBtn.setAttribute('aria-label', 'Test daily notification');
   notifBtn.addEventListener('click', () => void fireTestNotification());
 
+  const sep2 = document.createElement('div');
+  sep2.className = 'dev-tool-sep';
+  sep2.setAttribute('aria-hidden', 'true');
+
+  // 🏆 button — toggle the grant/revoke achievements panel
+  const achPanel = buildAchievementsPanel();
+  const achBtn = document.createElement('button');
+  achBtn.type = 'button';
+  achBtn.className = 'dev-tool-btn';
+  achBtn.textContent = '🏆';
+  achBtn.title = 'Grant / revoke achievements';
+  achBtn.setAttribute('aria-label', 'Grant or revoke achievements');
+  achBtn.addEventListener('click', () => {
+    achPanel.hidden = !achPanel.hidden;
+    if (!achPanel.hidden) void refreshAchievementsPanel(achPanel);
+  });
+
   toolsPill.appendChild(dayBtn);
   toolsPill.appendChild(sep);
   toolsPill.appendChild(notifBtn);
+  toolsPill.appendChild(sep2);
+  toolsPill.appendChild(achBtn);
+
+  const sep3 = document.createElement('div');
+  sep3.className = 'dev-tool-sep';
+  sep3.setAttribute('aria-hidden', 'true');
+
+  // ◀ Back — simulate the Android hardware back button (same Router handler).
+  const backBtn = document.createElement('button');
+  backBtn.type = 'button';
+  backBtn.className = 'dev-tool-btn';
+  backBtn.textContent = '◀ Back';
+  backBtn.title = 'Simulate the Android hardware back button';
+  backBtn.setAttribute('aria-label', 'Simulate Android back button');
+  backBtn.addEventListener('click', (e) => {
+    // Don't let this click count as an outside-grid tap in the game.
+    e.stopPropagation();
+    window.dispatchEvent(new Event('ludodex:dev-hardware-back'));
+  });
+
+  toolsPill.appendChild(sep3);
+  toolsPill.appendChild(backBtn);
+
+  const sep4 = document.createElement('div');
+  sep4.className = 'dev-tool-sep';
+  sep4.setAttribute('aria-hidden', 'true');
+
+  // ⟲ Reset — same wipe as the hidden Settings gesture (resetAllProgress),
+  // then reload. Keeps language, skin, tutorial-seen and dev settings.
+  const resetBtn = document.createElement('button');
+  resetBtn.type = 'button';
+  resetBtn.className = 'dev-tool-btn';
+  resetBtn.textContent = '⟲ Reset';
+  resetBtn.title = 'Reset all progress (solves, times, streaks, achievements, hints, first-play data)';
+  resetBtn.setAttribute('aria-label', 'Reset all progress');
+  resetBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    // App modal, not window.confirm(): some embedded browsers (e.g. the
+    // Claude app's browser pane) auto-cancel native dialogs.
+    void showConfirmModal({
+      title: 'Reset all progress? (dev)',
+      body: 'Clears solves, times, streaks, achievements, hints and first-play data, then reloads.',
+      confirmLabel: 'Reset',
+      cancelLabel: 'Cancel',
+      destructive: true
+    }).then(async (confirmed) => {
+      if (!confirmed) return;
+      await resetAllProgress();
+      location.reload();
+    });
+  });
+
+  toolsPill.appendChild(sep4);
+  toolsPill.appendChild(resetBtn);
 
   // ── Sim-mode toggle badge (existing) ─────────────────────────────────────
   const badge = document.createElement('button');
@@ -244,21 +361,23 @@ function mount(): void {
   badge.appendChild(dot);
   badge.appendChild(label);
 
+  const SIM_LABELS: Record<SimMode, { label: string; title: string }> = {
+    full: { label: '🔓 Dev', title: 'Full dev access — tap to simulate web player' },
+    web: { label: '🌐 Web player', title: 'Simulating web player — tap to simulate native player' },
+    native: { label: '📱 Native player', title: 'Simulating native player — tap to restore full dev access' }
+  };
+
   function updateBadge(): void {
-    const sim = isSimulating();
-    label.textContent = sim ? '🌐 Web player' : '🔓 Dev';
-    badge.title = sim
-      ? 'Simulating web player — tap to restore full dev access'
-      : 'Full dev access — tap to simulate web player';
-    badge.dataset.sim = sim ? 'true' : 'false';
+    const sim = getSimMode();
+    label.textContent = SIM_LABELS[sim].label;
+    badge.title = SIM_LABELS[sim].title;
+    badge.dataset.sim = sim;
   }
 
   badge.addEventListener('click', () => {
-    if (isSimulating()) {
-      sessionStorage.removeItem(SIM_KEY);
-    } else {
-      sessionStorage.setItem(SIM_KEY, 'web');
-    }
+    const next = NEXT_SIM[getSimMode()];
+    if (next === 'full') sessionStorage.removeItem(SIM_KEY);
+    else sessionStorage.setItem(SIM_KEY, next);
     location.reload();
   });
 
@@ -266,8 +385,77 @@ function mount(): void {
   wrap.appendChild(toolsPill);
   wrap.appendChild(badge);
   document.body.appendChild(wrap);
+  document.body.appendChild(achPanel);
 
   updateBadge();
+}
+
+// ─── Achievements panel ──────────────────────────────────────────────────────
+
+function buildAchievementsPanel(): HTMLDivElement {
+  const panel = document.createElement('div');
+  panel.id = 'dev-ach-panel';
+  panel.hidden = true;
+
+  const head = document.createElement('div');
+  head.className = 'dev-ach-head';
+  const title = document.createElement('span');
+  title.textContent = 'Achievements';
+
+  const mkBtn = (text: string, onClick: () => void): HTMLButtonElement => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'dev-tool-btn';
+    b.textContent = text;
+    b.addEventListener('click', onClick);
+    return b;
+  };
+
+  const setAll = async (earned: boolean): Promise<void> => {
+    for (const def of ACHIEVEMENTS) await devSetEarned(def.id, earned);
+    await refreshAchievementsPanel(panel);
+  };
+
+  head.append(
+    title,
+    mkBtn('All', () => void setAll(true)),
+    mkBtn('None', () => void setAll(false)),
+    mkBtn('Reload', () => location.reload()),
+    mkBtn('✕', () => { panel.hidden = true; })
+  );
+
+  const list = document.createElement('div');
+  list.className = 'dev-ach-list';
+
+  panel.append(head, list);
+  return panel;
+}
+
+async function refreshAchievementsPanel(panel: HTMLDivElement): Promise<void> {
+  const list = panel.querySelector<HTMLDivElement>('.dev-ach-list');
+  if (!list) return;
+  const earned = new Set((await getEarnedAchievements()).map((r) => r.id));
+  list.replaceChildren();
+
+  for (const def of ACHIEVEMENTS) {
+    const row = document.createElement('label');
+    row.className = 'dev-ach-row';
+
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    box.checked = earned.has(def.id);
+    box.addEventListener('change', () => void devSetEarned(def.id, box.checked));
+
+    const name = document.createElement('span');
+    name.textContent = t(def.nameKey as Parameters<typeof t>[0]);
+
+    const id = document.createElement('span');
+    id.className = 'dev-ach-id';
+    id.textContent = def.id;
+
+    row.append(box, name, id);
+    list.append(row);
+  }
 }
 
 // ─── Notification test ───────────────────────────────────────────────────────

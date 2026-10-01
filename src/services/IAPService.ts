@@ -7,7 +7,6 @@ import { isEarned } from './AchievementService';
 import { SKINS, type SkinId, type SkinMeta } from '../skins/registry';
 import { isWebAvailable, WEB_SKIN_IDS, PROMO_SKIN_ID } from '../skins/webConfig';
 
-const FALLBACK_RC_KEY = 'RC_KEY';
 
 // ── Dev mode ──────────────────────────────────────────────────────────────────
 // Only active on the Vite dev server (import.meta.env.DEV = true).
@@ -67,6 +66,7 @@ export const PRODUCT_IDS = {
   SKIN_GAMEBOY:       'skin_gameboy',
   SKIN_RING_OF_LIGHT: 'skin_ring_of_light',
   SKIN_LORD_OF_TERROR:'skin_lord_of_terror',
+  SKIN_MUSHROOM_KINGDOM: 'skin_mushroom_kingdom',
   // Multi-skin bundle (referenced by skins' bundleProductId). Owning it unlocks
   // every skin whose bundleProductId points here.
   SKIN_BUNDLE:    'skin_bundle',
@@ -94,6 +94,7 @@ const FALLBACK_CATALOG: Record<string, ProductInfo> = {
   [PRODUCT_IDS.SKIN_GAMEBOY]:       { id: PRODUCT_IDS.SKIN_GAMEBOY,       priceLabel: '$1.99', fallbackPriceLabel: '$1.99' },
   [PRODUCT_IDS.SKIN_RING_OF_LIGHT]: { id: PRODUCT_IDS.SKIN_RING_OF_LIGHT, priceLabel: '$1.99', fallbackPriceLabel: '$1.99' },
   [PRODUCT_IDS.SKIN_LORD_OF_TERROR]:{ id: PRODUCT_IDS.SKIN_LORD_OF_TERROR,priceLabel: '$1.99', fallbackPriceLabel: '$1.99' },
+  [PRODUCT_IDS.SKIN_MUSHROOM_KINGDOM]: { id: PRODUCT_IDS.SKIN_MUSHROOM_KINGDOM, priceLabel: '$1.99', fallbackPriceLabel: '$1.99' },
   [PRODUCT_IDS.SKIN_BUNDLE]:        { id: PRODUCT_IDS.SKIN_BUNDLE,        priceLabel: '$2.99', fallbackPriceLabel: '$2.99' },
 };
 
@@ -103,7 +104,7 @@ const FALLBACK_CATALOG: Record<string, ProductInfo> = {
  * Native / dev full-access: returns true (async RevenueCat check deferred to refreshEntitlements).
  */
 export function isSkinAccessibleSync(skinId: SkinId): boolean {
-  if (import.meta.env.DEV && sessionStorage.getItem(DEV_SIM_KEY) !== 'web') return true;
+  if (import.meta.env.DEV && sessionStorage.getItem(DEV_SIM_KEY) === null) return true;
   const ctx = getMonetizationContext();
   if (!ctx.isNative) return isWebAvailable(skinId);
   return true; // native: optimistic — entitlement check is async
@@ -116,7 +117,7 @@ export function isSkinAccessibleSync(skinId: SkinId): boolean {
  * Native: all skins.
  */
 export function getVisibleSkins(): SkinMeta[] {
-  if (import.meta.env.DEV && sessionStorage.getItem(DEV_SIM_KEY) !== 'web') return SKINS;
+  if (import.meta.env.DEV && sessionStorage.getItem(DEV_SIM_KEY) === null) return SKINS;
   const ctx = getMonetizationContext();
   if (!ctx.isNative) return SKINS.filter((s) => isWebAvailable(s.id));
   return SKINS;
@@ -125,16 +126,26 @@ export function getVisibleSkins(): SkinMeta[] {
 export async function initIAP(): Promise<void> {
   const ctx = getMonetizationContext();
   if (!ctx.isNative) return;
-  const apiKey: string =
+  if (import.meta.env.DEV && !Capacitor.isNativePlatform()) return; // dev native-sim: skip RevenueCat
+  // RevenueCat issues one public SDK key per platform (iOS appl_…, Android goog_…).
+  const apiKey = (
     ctx.platform === 'ios'
-      ? (import.meta.env.VITE_RC_IOS_KEY as string | undefined) ?? FALLBACK_RC_KEY
-      : (import.meta.env.VITE_RC_ANDROID_KEY as string | undefined) ?? FALLBACK_RC_KEY;
+      ? (import.meta.env.VITE_RC_IOS_KEY as string | undefined)
+      : (import.meta.env.VITE_RC_ANDROID_KEY as string | undefined)
+  )?.trim();
+  if (!apiKey) {
+    // Fail loudly instead of configuring with a placeholder key: purchases
+    // stay unavailable (calls fail and are handled) until the key is set.
+    console.error(`[IAPService] Missing RevenueCat key (VITE_RC_${ctx.platform === 'ios' ? 'IOS' : 'ANDROID'}_KEY) — purchases disabled.`);
+    return;
+  }
   await Purchases.configure({ apiKey });
 }
 
 export async function isOwned(productId: string): Promise<boolean> {
   const ctx = getMonetizationContext();
   if (!ctx.isNative) return false;
+  if (import.meta.env.DEV && !Capacitor.isNativePlatform()) return false; // dev native-sim: nothing purchased
   try {
     const { customerInfo } = await Purchases.getCustomerInfo();
     return customerInfo.entitlements.active[productId] !== undefined;
@@ -149,8 +160,8 @@ export async function isOwned(productId: string): Promise<boolean> {
  * Resolution order:
  *   1. Dev server (localhost): full access unless simulating web player
  *   2. Web build: only skins listed in webConfig.ts (all free, no IAP)
- *   3. Native — always-free skins (productId: null)
- *   4. Native — achievement unlock
+ *   3. Native — achievement unlock (achievement-only if productId is null)
+ *   4. Native — always-free skins (productId: null, no achievement gate)
  *   5. Native — IAP / bundle (RevenueCat)
  *
  * This is the only function callers should use to gate skin access.
@@ -160,20 +171,25 @@ export async function isSkinOwned(skinId: SkinId): Promise<boolean> {
   if (!skin) return false;
 
   // Dev: full unlock unless explicitly simulating the web player experience.
-  if (import.meta.env.DEV && sessionStorage.getItem(DEV_SIM_KEY) !== 'web') return true;
+  if (import.meta.env.DEV && sessionStorage.getItem(DEV_SIM_KEY) === null) return true;
 
   // Web: only skins in webConfig are available (all free on web, no IAP surface).
   const ctx = getMonetizationContext();
   if (!ctx.isNative) return isWebAvailable(skinId);
 
-  // Native: always-free skins.
-  if (skin.productId === null) return true;
-
-  // Native: achievement-based unlock.
-  if (skin.unlockedByAchievement && await isEarned(skin.unlockedByAchievement)) return true;
+  // Native: achievement-based unlock. Checked BEFORE the free-skin shortcut:
+  // a skin with `productId: null` + `unlockedByAchievement` (Terminal,
+  // Phosphor) is achievement-only, not free.
+  if (skin.unlockedByAchievement) {
+    if (await isEarned(skin.unlockedByAchievement)) return true;
+    if (skin.productId === null) return false; // no purchase alternative
+  } else if (skin.productId === null) {
+    // Native: always-free skins (no achievement gate, no product).
+    return true;
+  }
 
   // Native: IAP / bundle unlock.
-  if (await isOwned(skin.productId)) return true;
+  if (skin.productId && await isOwned(skin.productId)) return true;
   if (skin.bundleProductId && await isOwned(skin.bundleProductId)) return true;
 
   return false;
@@ -182,6 +198,7 @@ export async function isSkinOwned(skinId: SkinId): Promise<boolean> {
 export async function listProducts(): Promise<ProductInfo[]> {
   const ctx = getMonetizationContext();
   if (!ctx.isNative) return [];
+  if (import.meta.env.DEV && !Capacitor.isNativePlatform()) return Object.values(FALLBACK_CATALOG); // dev native-sim
   try {
     const offeringsResult = await Purchases.getOfferings();
     const packages = offeringsResult.current?.availablePackages ?? [];
@@ -223,6 +240,10 @@ export async function purchase(
     track('iap_purchase_failed', { product_id: productId, reason: result.reason, source });
     return result;
   }
+  if (import.meta.env.DEV && !Capacitor.isNativePlatform()) {
+    // Dev native-sim: the UI behaves as native, but there's no billing in a browser.
+    return { status: 'failed', productId, reason: 'dev-sim-no-billing' };
+  }
 
   try {
     const offeringsResult = await Purchases.getOfferings();
@@ -261,7 +282,7 @@ export async function purchaseHintPack(
     if (count > 0) {
       await grantHints(count);
     }
-    track('iap_purchased', { product_id: productId, source });
+    // iap_purchased is already tracked inside purchase(); don't double-count.
   } else if (result.status === 'cancelled') {
     track('iap_declined', { product_id: productId, source });
   } else {
@@ -273,6 +294,7 @@ export async function purchaseHintPack(
 export async function restorePurchases(): Promise<PurchaseResult[]> {
   const ctx = getMonetizationContext();
   if (!ctx.isNative) return [];
+  if (import.meta.env.DEV && !Capacitor.isNativePlatform()) return []; // dev native-sim: no RevenueCat on web
   try {
     const { customerInfo } = await Purchases.restorePurchases();
     return Object.keys(customerInfo.entitlements.active).map((id) => ({
@@ -289,6 +311,7 @@ export async function restorePurchases(): Promise<PurchaseResult[]> {
 export async function listOwnedProductIds(): Promise<string[]> {
   const ctx = getMonetizationContext();
   if (!ctx.isNative) return [];
+  if (import.meta.env.DEV && !Capacitor.isNativePlatform()) return []; // dev native-sim: no RevenueCat on web
   try {
     const { customerInfo } = await Purchases.getCustomerInfo();
     return Object.keys(customerInfo.entitlements.active);

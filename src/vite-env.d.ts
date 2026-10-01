@@ -6,7 +6,8 @@ interface ImportMetaEnv {
   readonly VITE_ADMOB_USE_TEST_IDS?: string;
   readonly VITE_POSTHOG_HOST?: string;
   readonly VITE_POSTHOG_KEY?: string;
-  readonly VITE_REVENUECAT_API_KEY?: string;
+  readonly VITE_RC_IOS_KEY?: string;
+  readonly VITE_RC_ANDROID_KEY?: string;
   readonly VITE_SENTRY_DSN?: string;
   readonly VITE_SHARE_BASE_URL?: string;
   /** Override for the remote puzzle catalog URL. Defaults to

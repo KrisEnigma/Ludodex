@@ -108,6 +108,18 @@ export async function resetEarnedAchievements(): Promise<void> {
 }
 
 /**
+ * DEV-only: grant or revoke a single achievement from the Dev overlay.
+ * Only imported by src/dev/DevOverlay.ts (itself dev-gated), so it's
+ * tree-shaken from production. Does not fire analytics or native unlocks.
+ */
+export async function devSetEarned(id: string, earned: boolean): Promise<void> {
+  if (!import.meta.env.DEV) return;
+  const records = (await readEarned()).filter((r) => r.id !== id);
+  if (earned) records.push({ id, earnedAt: new Date().toISOString() });
+  await writeEarned(records);
+}
+
+/**
  * Stub for native unlock. Fires alongside local storage so that when the operational
  * pass wires Game Center / Play Games, the call site is already in place.
  *

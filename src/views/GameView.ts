@@ -1,4 +1,4 @@
-import { InputManager } from '../game/InputManager';
+import { InputManager, type PendingAction } from '../game/InputManager';
 import { HapticService } from '../services/HapticService';
 import { t } from '../i18n';
 import { createIcon } from '../components/icons';
@@ -16,9 +16,12 @@ import {
   clearPuzzleReveals
 } from '../services/HintService';
 import {
+  beginFirstPlayAttempt,
+  forfeitFirstPlay,
+  getFirstSolveTimes,
   getSolvedIds,
   getSolvedRatings,
-  getSolvedTimes,
+  isFirstPlayAvailable,
   recordPuzzleCompletion
 } from '../services/ProgressService';
 import type { Puzzle } from '../types/puzzle';
@@ -30,6 +33,7 @@ import { getDayNumberSinceLaunch } from '../game/PuzzleLoader';
 import { track } from '../services/AnalyticsService';
 import type { RoutePayloads } from './Router';
 import type { WinPayload } from './types';
+import { formatDuration } from '../utils/format';
 
 type PartEntry = {
   id: string;
@@ -47,6 +51,11 @@ export class GameView {
   private static readonly TILE_REVEAL_STAGGER_MS = 50;
   private static readonly TILE_REVEAL_DURATION_MS = 360;
   private static readonly RIBBON_OUTRO_MS = 180;
+  // Long-press duration to reveal a hint letter. The reveal is driven by this
+  // JS timer (not by `animationend`) so it still works when reduced-motion
+  // disables the CSS animations. Keep in sync with the visual-only durations
+  // of `hint-reveal-rise` (1s) and `hint-charge-fill` (1000ms) in index.css.
+  private static readonly HINT_HOLD_MS = 1000;
   private static readonly GLITCH_CHARS =
     'ÀÁÂÃÄÅÆĆČĐÈÉÊËĞĐÌÍÎÏÑÒÓÔÕÖØŒÙÚÛÜÝŠŽß#@%&*<>?!~∆ΩΣΨ█▓▒░╳';
   readonly element: HTMLDivElement;
@@ -82,9 +91,9 @@ export class GameView {
   private readonly puzzleId: string;
   private readonly puzzleTitle: string;
   private readonly timerLabel: HTMLSpanElement;
-  private timerStartedAt = 0;
-  private timerPausedAt: number | null = null;
-  private timerTotalPausedMs = 0;
+  private timerStartedAt = 0; // 0 = not started (board not shown yet)
+  private timerStoppedAt: number | null = null;
+  private lastElapsedMs = 0;
   private timerInterval: number | null = null;
   private chainsStarted = 0;
   private wrongLetterAdds = 0;
@@ -95,6 +104,18 @@ export class GameView {
   private hintCounterEl!: HTMLElement;
   private hintCounterCount!: HTMLElement;
   private chargeBarWrapEl!: HTMLDivElement;
+  private hintHoldTimer: number | null = null;
+  private hintHoldSlot: HTMLElement | null = null;
+  private outsidePointerDownHandler: ((event: PointerEvent) => void) | null = null;
+  private pressedTileEl: HTMLElement | null = null;
+  private readonly liveRegion: HTMLParagraphElement;
+  // First-play tracking (docs/audit §6.2): true once this view has written the
+  // attempt marker; leaving without solving then forfeits the first play.
+  private attemptActive = false;
+  private disposed = false;
+  private readonly handleResize = (): void => {
+    this.redrawPath(this.inputManager.getChain());
+  };
   private previousChainLength = 0;
   private solved = false;
 
@@ -116,6 +137,14 @@ export class GameView {
 
     this.element = document.createElement('div');
     this.element.className = 'view game-view';
+
+    // Screen-reader announcements — found words only (rewards-only design:
+    // wrong attempts stay silent here too).
+    this.liveRegion = document.createElement('p');
+    this.liveRegion.className = 'sr-only';
+    this.liveRegion.setAttribute('role', 'status');
+    this.liveRegion.setAttribute('aria-live', 'polite');
+    this.element.append(this.liveRegion);
 
 
     const header = document.createElement('div');
@@ -224,7 +253,7 @@ export class GameView {
     chargeBarWrap.className = 'hint-charge-bar-wrap';
     const chargeBarLabel = document.createElement('span');
     chargeBarLabel.className = 'hint-charge-label';
-    chargeBarLabel.textContent = 'Using hint…';
+    chargeBarLabel.textContent = t('game.hint_charging');
     const chargeBarTrack = document.createElement('div');
     chargeBarTrack.className = 'hint-charge-bar-track';
     const chargeBarFill = document.createElement('div');
@@ -333,6 +362,7 @@ export class GameView {
       findMatch: (word) => this.findPartMatch(word),
       events: {
         onChainChanged: (chain) => this.onChainChanged(chain),
+        onPendingActionChanged: (pending) => this.updatePressedTile(pending),
         onInvalidWord: () => {
           // Intentionally silent. Wrong-letter additions are tracked by the
           // path-prefix check in onChainChanged and surface at win time via the
@@ -368,6 +398,7 @@ export class GameView {
       this.inputManager.clearChain();
     };
     document.addEventListener('pointerdown', handleOutsidePointerDown, true);
+    this.outsidePointerDownHandler = handleOutsidePointerDown;
 
     // Hints: ensure daily grant, restore reveals, update counter
     void (async () => {
@@ -380,11 +411,9 @@ export class GameView {
       await this.restoreHintReveals();
     })();
 
-    this.startTimer();
+    // Timer starts in onShown() (called by the Router once the board is visible).
 
-    window.addEventListener('resize', () => {
-      this.redrawPath(this.inputManager.getChain());
-    });
+    window.addEventListener('resize', this.handleResize);
 
     const tutorialLabel = document.createElement('p');
     tutorialLabel.className = 'game-instructions';
@@ -435,6 +464,12 @@ export class GameView {
   private async onHintSlotPointerDown(event: PointerEvent, slot: HTMLElement): Promise<void> {
     if (slot.dataset.revealed === 'true') return;
     if (this.solved) return;
+    // Slots belonging to an already-found word are not hintable. Checks both
+    // the DOM flag and the solved set, because the solve-fill is staggered
+    // (60ms per slot) and `filled` lags behind `solvedPartIds`.
+    if (slot.dataset.filled === 'true') return;
+    const meta = this.slotMeta.get(slot);
+    if (meta && this.solvedPartIds.has(meta.partId)) return;
 
     if (this.hintsRemaining <= 0) {
       event.preventDefault();
@@ -463,9 +498,11 @@ export class GameView {
     this.hintCounterEl.dataset.charging = 'true';
     this.chargeBarWrapEl.classList.add('is-charging');
     HapticService.impactLight();
+    this.startHintHold(slot);
   }
 
   private onHintSlotPointerEnd(slot: HTMLElement): void {
+    if (this.hintHoldSlot === slot) this.cancelHintHold();
     if (slot.dataset.revealed !== 'true') {
       delete slot.dataset.revealing;
     }
@@ -473,24 +510,33 @@ export class GameView {
     this.chargeBarWrapEl.classList.remove('is-charging');
   }
 
-  private async onHintSlotAnimationEnd(event: AnimationEvent, slot: HTMLElement): Promise<void> {
-    if (event.animationName !== 'hint-reveal-rise') {
-      delete this.hintCounterEl.dataset.charging;
-      this.chargeBarWrapEl.classList.remove('is-charging');
-      return;
-    }
-    if (slot.dataset.revealed === 'true') {
-      delete this.hintCounterEl.dataset.charging;
-      this.chargeBarWrapEl.classList.remove('is-charging');
-      return;
-    }
-    if (slot.dataset.revealing !== 'true') {
-      delete this.hintCounterEl.dataset.charging;
-      this.chargeBarWrapEl.classList.remove('is-charging');
-      return;
-    }
-    delete slot.dataset.revealing;
-    await this.revealSlot(slot);
+  private startHintHold(slot: HTMLElement): void {
+    this.cancelHintHold();
+    this.hintHoldSlot = slot;
+    this.hintHoldTimer = window.setTimeout(() => {
+      this.hintHoldTimer = null;
+      this.hintHoldSlot = null;
+      // Guards: view left mid-hold, puzzle finished, hold released, or
+      // slot already revealed — any of these means no hint is spent.
+      if (!slot.isConnected || this.solved) return;
+      if (slot.dataset.revealing !== 'true' || slot.dataset.revealed === 'true') return;
+      delete slot.dataset.revealing;
+      void this.revealSlot(slot);
+    }, GameView.HINT_HOLD_MS);
+  }
+
+  private cancelHintHold(): void {
+    if (this.hintHoldTimer !== null) window.clearTimeout(this.hintHoldTimer);
+    this.hintHoldTimer = null;
+    this.hintHoldSlot = null;
+  }
+
+  private onHintSlotAnimationEnd(event: AnimationEvent, _slot: HTMLElement): void {
+    // The reveal itself is owned by the hold timer (startHintHold). The
+    // rise animation is purely visual, so its end is ignored here.
+    if (event.animationName === 'hint-reveal-rise') return;
+    delete this.hintCounterEl.dataset.charging;
+    this.chargeBarWrapEl.classList.remove('is-charging');
   }
 
   private async revealSlot(slot: HTMLElement): Promise<void> {
@@ -588,14 +634,23 @@ export class GameView {
     }
   }
 
+  /**
+   * Timer rules (see docs/audit §6.2):
+   *  - starts when the board is shown (Router → onShown), not at construction;
+   *  - never pauses — backgrounding, blur, overlays all count, so studying a
+   *    screenshot elsewhere costs time;
+   *  - wall-clock based, but can't run backwards if the device clock is set
+   *    back mid-puzzle (clamped to the last value shown).
+   */
   private startTimer(): void {
+    if (this.timerStartedAt !== 0) return; // already running / ran
     this.timerStartedAt = Date.now();
-    this.timerPausedAt = null;
-    this.timerTotalPausedMs = 0;
+    this.timerStoppedAt = null;
+    this.lastElapsedMs = 0;
+    this.tickTimer();
+    // Display refresh only; the time itself comes from Date.now() deltas, so
+    // throttled/suspended intervals (background) catch up automatically.
     this.timerInterval = window.setInterval(() => this.tickTimer(), 100);
-    document.addEventListener('visibilitychange', this.handleVisibilityChange);
-    window.addEventListener('blur', this.handleBlur);
-    window.addEventListener('focus', this.handleFocus);
   }
 
   private stopTimer(): void {
@@ -603,48 +658,70 @@ export class GameView {
       window.clearInterval(this.timerInterval);
       this.timerInterval = null;
     }
-    document.removeEventListener('visibilitychange', this.handleVisibilityChange);
-    window.removeEventListener('blur', this.handleBlur);
-    window.removeEventListener('focus', this.handleFocus);
+    // Freeze the value so later reads (win payload, analytics) match.
+    if (this.timerStartedAt !== 0 && this.timerStoppedAt === null) {
+      this.timerStoppedAt = Date.now();
+    }
   }
 
-  private pauseTimer(): void {
-    if (this.timerPausedAt !== null || this.timerInterval === null) return;
-    this.timerPausedAt = Date.now();
-  }
-
-  private resumeTimer(): void {
-    if (this.timerPausedAt === null) return;
-    this.timerTotalPausedMs += Date.now() - this.timerPausedAt;
-    this.timerPausedAt = null;
-    this.tickTimer();
+  private getElapsedMs(): number {
+    if (this.timerStartedAt === 0) return 0; // board not shown yet
+    const now = this.timerStoppedAt ?? Date.now();
+    const raw = now - this.timerStartedAt;
+    // Clock set back mid-puzzle → never shrink below what was already shown.
+    this.lastElapsedMs = Math.max(this.lastElapsedMs, raw);
+    return this.lastElapsedMs;
   }
 
   private getElapsedSeconds(): number {
-    const referenceNow = this.timerPausedAt ?? Date.now();
-    const rawElapsedMs = referenceNow - this.timerStartedAt - this.timerTotalPausedMs;
-    return Math.max(0, Math.floor(rawElapsedMs / 1000));
+    return Math.floor(this.getElapsedMs() / 1000);
   }
 
   private tickTimer(): void {
-    this.timerLabel.textContent = this.formatElapsed(this.getElapsedSeconds());
+    this.timerLabel.textContent = formatDuration(this.getElapsedSeconds());
   }
 
-  private handleVisibilityChange = (): void => {
-    if (document.hidden) {
-      this.pauseTimer();
-      return;
+  /** Router hook: the view is on screen (fade-in has started). */
+  onShown(): void {
+    if (this.solved) return;
+    this.startTimer();
+    if (!this.isTutorial && !this.isPreview) void this.beginAttempt();
+  }
+
+  /** The board is visible: if this can still be a first play, mark the attempt. */
+  private async beginAttempt(): Promise<void> {
+    if (!(await isFirstPlayAvailable(this.puzzleId))) return;
+    await beginFirstPlayAttempt(this.puzzleId);
+    this.attemptActive = true;
+    // Left during the async gap above → forfeit now.
+    if (this.disposed && !this.solved) {
+      this.attemptActive = false;
+      void forfeitFirstPlay(this.puzzleId);
     }
-    this.resumeTimer();
-  };
+  }
 
-  private handleBlur = (): void => {
-    this.pauseTimer();
-  };
-
-  private handleFocus = (): void => {
-    this.resumeTimer();
-  };
+  /**
+   * Called by the Router whenever this view is replaced or popped (Leave,
+   * win, browser Back, warm deep link). Releases everything that lives on
+   * window/document or in timers. Idempotent.
+   */
+  dispose(): void {
+    this.disposed = true;
+    // Leaving without solving — menu, browser/hardware Back, restart, deep
+    // link — forfeits the first play. (Closing the app is caught at the next
+    // cold start via the attempt marker.)
+    if (this.attemptActive && !this.solved) {
+      this.attemptActive = false;
+      void forfeitFirstPlay(this.puzzleId);
+    }
+    this.stopTimer();
+    this.cancelHintHold();
+    window.removeEventListener('resize', this.handleResize);
+    if (this.outsidePointerDownHandler) {
+      document.removeEventListener('pointerdown', this.outsidePointerDownHandler, true);
+      this.outsidePointerDownHandler = null;
+    }
+  }
 
   /** Public so Router can invoke it from the Android hardware back button. */
   async exit(): Promise<void> {
@@ -691,12 +768,6 @@ export class GameView {
     this.onMenu();
   }
 
-  private formatElapsed(totalSeconds: number): string {
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  }
-
   private bindPointerEvents(): void {
     this.gridWrap.addEventListener('pointerdown', (event) => {
       if (!event.isPrimary) return;
@@ -721,12 +792,48 @@ export class GameView {
 
     this.gridWrap.addEventListener('pointercancel', (event) => {
       if (!event.isPrimary) return;
-      this.inputManager.clearChain();
-      this.inputManager.onPointerUp(0);
+      this.inputManager.onPointerCancel(0);
       if (this.gridWrap.hasPointerCapture(event.pointerId)) {
         this.gridWrap.releasePointerCapture(event.pointerId);
       }
     });
+  }
+
+  /** Screen readers: "Found MARIO. 2 of 3 words." (answers, not parts). */
+  private announceFound(partIds: string[]): void {
+    const word = partIds
+      .map((id) => this.partEntriesById.get(id)?.word ?? '')
+      .filter(Boolean)
+      .join(' ');
+    const solvedByAnswer = new Map<string, boolean>();
+    for (const entry of this.partEntriesById.values()) {
+      const soFar = solvedByAnswer.get(entry.answerDisplay) ?? true;
+      solvedByAnswer.set(entry.answerDisplay, soFar && this.solvedPartIds.has(entry.id));
+    }
+    const total = solvedByAnswer.size;
+    const found = [...solvedByAnswer.values()].filter(Boolean).length;
+    this.liveRegion.textContent = t('game.sr_found', { word, found, total });
+  }
+
+  /**
+   * Pressed ring for the ambiguous touches that still wait for the tap/swipe
+   * threshold: pressing the chain's last tile (tap = remove it, swipe =
+   * continue) or an earlier chain tile (tap = backtrack). Everything else is
+   * applied instantly on pointerdown (InputManager).
+   */
+  private updatePressedTile(pending: PendingAction | null): void {
+    this.pressedTileEl?.removeAttribute('data-pressed');
+    this.pressedTileEl = null;
+    if (!pending || !this.inputManager) return;
+    const chain = this.inputManager.getChain();
+    const tile =
+      pending.type === 'remove_last' ? chain[chain.length - 1]
+      : pending.type === 'backtrack' ? chain[pending.backtrackTo]
+      : undefined;
+    const el = tile ? this.tileElements.get(tile) : undefined;
+    if (!el) return;
+    el.dataset.pressed = 'true';
+    this.pressedTileEl = el;
   }
 
   private onChainChanged(chain: Tile[]): void {
@@ -933,6 +1040,8 @@ export class GameView {
         }, index * 60);
       });
     }
+
+    this.announceFound(partIds);
 
     // Single coherent flash wave across the player's swipe, in the order they swiped.
     // For multi-part answers (e.g. LARA CROFT) this replaces two overlapping per-part
@@ -1170,7 +1279,7 @@ export class GameView {
     this.stopTimer();
 
     const elapsedSeconds = this.getElapsedSeconds();
-    this.timerLabel.textContent = this.formatElapsed(elapsedSeconds);
+    this.timerLabel.textContent = formatDuration(elapsedSeconds);
     const starRating = this.getStarRating();
     const mistakes = this.getMistakeCount();
     const holdForAnimations = new Promise<void>((resolve) =>
@@ -1197,10 +1306,11 @@ export class GameView {
         // previousBest !== null before declaring an improvement.
         const wasNewRating = previousRating > 0 && starRating > previousRating;
 
-        const previousTimes = await getSolvedTimes();
-        const previousValues = Object.values(previousTimes).filter((v): v is number => Number.isFinite(v));
-        const previousBest = previousValues.length === 0 ? null : Math.min(...previousValues);
-        const wasNewBest = previousBest !== null && elapsedSeconds < previousBest;
+        // BEST / NEW BEST compare first plays only (replays are memory, not
+        // skill — docs/audit §6.2). Read before this solve is recorded.
+        const previousFirstTimes = await getFirstSolveTimes();
+        const previousFirstValues = Object.values(previousFirstTimes).filter((v): v is number => Number.isFinite(v));
+        const previousBest = previousFirstValues.length === 0 ? null : Math.min(...previousFirstValues);
 
         // Preview plays (editor "test in game" / tester links) must not touch
         // any saved state. recordPuzzleCompletion already no-ops + returns the
@@ -1213,6 +1323,7 @@ export class GameView {
           starRating,
           isTutorial: skipPersistence
         });
+        const wasNewBest = snapshot.wasFirstPlay && previousBest !== null && elapsedSeconds < previousBest;
 
         if (!this.isPreview) {
           // Invalidate the menu data cache so the next menu visit reflects the
@@ -1232,6 +1343,7 @@ export class GameView {
             archiveSolvesCount: snapshot.archiveSolvesCount,
             bestTimeSec: snapshot.bestTimeSec,
             elapsedSeconds,
+            isFirstPlay: snapshot.wasFirstPlay,
             starRating,
             isTodaysDaily: this.isTodaysDaily,
             wasNewRating,
@@ -1252,6 +1364,7 @@ export class GameView {
           is_tutorial: this.isTutorial,
           is_preview: this.isPreview,
           was_new_best: wasNewBest,
+          is_first_play: snapshot.wasFirstPlay,
           was_new_rating: wasNewRating
         });
 

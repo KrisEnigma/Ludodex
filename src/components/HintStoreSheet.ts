@@ -12,7 +12,7 @@
  * GameView update its in-memory counter immediately after a grant.
  */
 
-import { t } from '../i18n';
+import { t, type StringKey } from '../i18n';
 import { track } from '../services/AnalyticsService';
 import { getMonetizationContext } from '../services/MonetizationContext';
 import {
@@ -30,20 +30,23 @@ import {
 } from '../services/HintService';
 import { showRewardedAdForHint, canShowAds } from '../services/AdService';
 import { addDragToDismiss } from './sheetDrag';
+import { trackOverlay } from './overlayStack';
+import { buildInstallCta } from './InstallCta';
 
 export type HintStoreContext = 'menu' | 'loss_recovery';
 
 type HintPack = {
   productId: typeof PRODUCT_IDS.HINTS_10 | typeof PRODUCT_IDS.HINTS_50 | typeof PRODUCT_IDS.HINTS_200;
   hints: number;
-  badge?: string;
+  /** i18n key, resolved at render time (module load runs before initI18n). */
+  badgeKey?: StringKey;
   highlighted?: boolean;
 };
 
 const PACKS: HintPack[] = [
   { productId: PRODUCT_IDS.HINTS_10,  hints: 10 },
-  { productId: PRODUCT_IDS.HINTS_50,  hints: 50,  badge: t('hint_store.pack_badge_best_value') },
-  { productId: PRODUCT_IDS.HINTS_200, hints: 200, badge: t('hint_store.pack_badge_save') },
+  { productId: PRODUCT_IDS.HINTS_50,  hints: 50,  badgeKey: 'hint_store.pack_badge_best_value' },
+  { productId: PRODUCT_IDS.HINTS_200, hints: 200, badgeKey: 'hint_store.pack_badge_save' },
 ];
 
 /**
@@ -67,13 +70,19 @@ export async function showHintStore(
     ctx.canShowRewardedAds ? getAdHintsRemainingToday() : Promise.resolve(0),
   ]);
 
-  // Load product prices concurrently.
-  const packInfos = await Promise.all(
-    PACKS.map(async (pack) => {
-      const info = await getProductInfo(pack.productId);
-      return { ...pack, priceLabel: info?.priceLabel ?? pack.productId };
-    })
-  );
+  // Purchases only exist in the native app. On the web the pack list is
+  // replaced by a "get the app" card (buying there was a silent dead end).
+  const canBuy = ctx.canPurchase;
+
+  // Load product prices concurrently (native only).
+  const packInfos = canBuy
+    ? await Promise.all(
+        PACKS.map(async (pack) => {
+          const info = await getProductInfo(pack.productId);
+          return { ...pack, priceLabel: info?.priceLabel ?? pack.productId };
+        })
+      )
+    : [];
 
   return new Promise<void>((resolve) => {
     // Backdrop
@@ -204,10 +213,10 @@ export async function showHintStore(
       countLabel.textContent = t('hint_store.pack_hints_label');
       left.append(countEl, countLabel);
 
-      if (pack.badge) {
+      if (pack.badgeKey) {
         const badge = document.createElement('span');
         badge.className = 'hint-store-pack-badge';
-        badge.textContent = pack.badge;
+        badge.textContent = t(pack.badgeKey);
         left.append(badge);
       }
 
@@ -241,16 +250,25 @@ export async function showHintStore(
       packsList.append(card);
     }
 
+    const purchaseArea: HTMLElement = canBuy
+      ? packsList
+      : buildInstallCta({
+          className: 'hint-store-install-cta',
+          headlineKey: 'hint_store.web_cta_title',
+          subheadKey: 'hint_store.web_cta_sub',
+        });
+
     const children: Array<HTMLElement | null> = [
       handle,
       header,
       balanceRow,
       adRow,
-      packsList,
+      purchaseArea,
     ];
     sheet.append(...children.filter((el): el is HTMLElement => el !== null));
     backdrop.append(sheet);
     document.body.append(backdrop);
+    trackOverlay(backdrop, close);
 
     // Animate in — double rAF ensures the initial translateY(100%) state is
     // painted before the transition class fires (single rAF batches both

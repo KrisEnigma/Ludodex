@@ -1,5 +1,5 @@
-import { Capacitor } from '@capacitor/core';
-import { getLang, setLang, t, type Language } from '../i18n';
+import { getLang, setLang, t, type Language, type StringKey } from '../i18n';
+import { ACHIEVEMENTS } from '../data/achievements';
 import {
   applySkin,
   getCurrentSkinId,
@@ -23,6 +23,10 @@ import { APP_ICONS, getActiveIcon, setActiveIcon, type AppIconId } from '../serv
 import { showConfirmModal } from '../components/Modal';
 import { addDragToDismiss } from '../components/sheetDrag';
 import { createIcon } from '../components/icons';
+import { trackOverlay } from '../components/overlayStack';
+
+// Icon-flow trace logs: dev builds only (silent in production).
+const debugLog: (...args: unknown[]) => void = import.meta.env.DEV ? console.log.bind(console) : () => {};
 
 const context = getMonetizationContext();
 
@@ -36,7 +40,9 @@ export class SettingsView {
   private readonly skinPills = new Map<SkinId, HTMLSpanElement>();
   private readonly unlockedBySkin = new Map<SkinId, boolean>();
   private activeSkinId: SkinId = getCurrentSkinId(); // DOM read — correct since main.ts applies skin before routing
-  private readonly isNative = Capacitor.isNativePlatform();
+  // From the monetization context (not Capacitor directly) so the Dev
+  // overlay's "Native player" mode shows the native Settings UI.
+  private readonly isNative = context.isNative;
   private activeIconId: AppIconId = 'void';
   private readonly iconButtons = new Map<AppIconId, HTMLButtonElement>();
 
@@ -215,7 +221,11 @@ export class SettingsView {
       if (skin.unlockHint) {
         const earnRow = document.createElement('div');
         earnRow.className = 'skin-detail-earn-row';
-        earnRow.textContent = t('settings.skin_earn_hint', { hint: skin.unlockHint });
+        // Localized via the achievement's own description (e.g. "30-day daily
+        // streak."); the registry's English `unlockHint` is only a fallback.
+        const unlockDef = ACHIEVEMENTS.find((a) => a.id === skin.unlockedByAchievement);
+        const hintText = unlockDef ? t(unlockDef.descriptionKey as StringKey) : skin.unlockHint;
+        earnRow.textContent = t('settings.skin_earn_hint', { hint: hintText });
         actions.append(earnRow);
       }
       if (this.isNative && skin.productId && !skin.unlockHint) {
@@ -254,6 +264,7 @@ export class SettingsView {
     sheet.append(handle, header, previewScope, desc, actions);
     backdrop.append(sheet);
     document.body.append(backdrop);
+    trackOverlay(backdrop, () => this.closeSkinDetailSheet());
 
     backdrop.addEventListener('pointerdown', (e) => {
       e.stopPropagation();
@@ -331,7 +342,12 @@ export class SettingsView {
     for (const skin of SKINS) {
       // Optimistic initial state — refreshEntitlements() corrects this async.
       // Native: free skins only. Web (incl. dev sim): web-available skins only.
-      this.unlockedBySkin.set(skin.id, context.isNative ? skin.productId === null : isWebAvailable(skin.id));
+      // Optimistic first paint; the async isSkinOwned pass corrects it. Must
+      // match isSkinOwned's rule: achievement-gated skins start locked.
+      this.unlockedBySkin.set(
+        skin.id,
+        context.isNative ? skin.productId === null && !skin.unlockedByAchievement : isWebAvailable(skin.id)
+      );
     }
 
     this.status = document.createElement('p');
@@ -550,32 +566,32 @@ export class SettingsView {
   }
 
   private async onIconOptionClick(iconId: AppIconId): Promise<void> {
-    console.log('[IconClick] clicked:', iconId, 'activeIconId:', this.activeIconId);
+    debugLog('[IconClick] clicked:', iconId, 'activeIconId:', this.activeIconId);
     if (this.activeIconId === iconId) {
-      console.log('[IconClick] same icon, skipping');
+      debugLog('[IconClick] same icon, skipping');
       return;
     }
 
     const previousIconId = this.activeIconId;
     this.activeIconId = iconId;
     this.refreshIconButtons();
-    console.log('[IconClick] set UI state optimistically before native dialog');
+    debugLog('[IconClick] set UI state optimistically before native dialog');
 
     await new Promise<void>((resolve) => setTimeout(resolve, 0));
 
-    this.status.textContent = 'Changing icon...';
+    this.status.textContent = t('settings.icon_changing');
     try {
       await setActiveIcon(iconId);
       this.status.textContent = '';
-      console.log('[IconClick] done');
+      debugLog('[IconClick] done');
     } catch (e: any) {
       console.error('[IconClick] setActiveIcon threw:', e);
       // Probe native state before rolling back — sometimes native succeeds despite a JS rejection.
       try {
         const native = await getActiveIcon();
-        console.log('[IconClick] getActiveIcon after failure returned:', native);
+        debugLog('[IconClick] getActiveIcon after failure returned:', native);
         if (native === iconId) {
-          console.log('[IconClick] native equals requested icon despite error — keeping UI state');
+          debugLog('[IconClick] native equals requested icon despite error — keeping UI state');
           this.status.textContent = '';
           return;
         }
@@ -585,7 +601,8 @@ export class SettingsView {
 
       this.activeIconId = previousIconId;
       this.refreshIconButtons();
-      this.status.textContent = `Failed to change icon: ${e?.message || e}`;
+      // Technical detail stays in the console (logged below), not in the UI.
+      this.status.textContent = t('settings.icon_change_failed');
       console.error('[IconClick] failed:', e);
     }
   }

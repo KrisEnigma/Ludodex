@@ -1,5 +1,8 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
 
+// Icon-flow trace logs: dev builds only (silent in production).
+const debugLog: (...args: unknown[]) => void = import.meta.env.DEV ? console.log.bind(console) : () => {};
+
 interface AlternateIconPlugin {
   setIcon(options: { icon: string }): Promise<{ icon: string }>;
   getIcon(): Promise<{ icon: string }>;
@@ -43,14 +46,14 @@ export async function getActiveIcon(): Promise<AppIconId> {
  * Sets the launcher icon directly by icon ID. No-op on web.
  */
 export async function setActiveIcon(iconId: AppIconId): Promise<void> {
-  console.log('[AlternateIcon] setActiveIcon called with:', iconId, 'isNative:', Capacitor.isNativePlatform());
+  debugLog('[AlternateIcon] setActiveIcon called with:', iconId, 'isNative:', Capacitor.isNativePlatform());
   if (!Capacitor.isNativePlatform()) return;
 
   const startTs = Date.now();
-  console.log('[AlternateIcon] calling plugin setIcon...', { iconId, ts: startTs });
+  debugLog('[AlternateIcon] calling plugin setIcon...', { iconId, ts: startTs });
   try {
     const result = await AlternateIconPlugin.setIcon({ icon: iconId });
-    console.log('[AlternateIcon] setIcon resolved:', result, { durationMs: Date.now() - startTs });
+    debugLog('[AlternateIcon] setIcon resolved:', result, { durationMs: Date.now() - startTs });
     return;
   } catch (e: any) {
     // Log full error details to help debug the intermittent empty-error object
@@ -64,9 +67,9 @@ export async function setActiveIcon(iconId: AppIconId): Promise<void> {
     // Probe actual native state — sometimes the native call completes despite an earlier JS error.
     try {
       const current = await getActiveIcon();
-      console.log('[AlternateIcon] getActiveIcon after failure returned:', current);
+      debugLog('[AlternateIcon] getActiveIcon after failure returned:', current);
       if (current === iconId) {
-        console.log('[AlternateIcon] native icon equals requested icon despite JS error — treating as success');
+        debugLog('[AlternateIcon] native icon equals requested icon despite JS error — treating as success');
         return;
       }
     } catch (probeErr) {

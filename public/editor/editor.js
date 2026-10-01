@@ -28,7 +28,11 @@ function authHeaders() {
 async function readApiJson(res) {
   const text = await res.text();
   let body; try { body = JSON.parse(text); } catch (e) { body = { error: text.slice(0, 120) }; }
-  if (!res.ok) throw new Error(body?.error || `HTTP ${res.status}`);
+  if (!res.ok) {
+    // Server-side validation returns { error, problems: [...] } — show the first one.
+    const detail = Array.isArray(body?.problems) && body.problems.length ? `: ${body.problems[0]}` : '';
+    throw new Error((body?.error || `HTTP ${res.status}`) + detail);
+  }
   return body;
 }
 async function apiList() {

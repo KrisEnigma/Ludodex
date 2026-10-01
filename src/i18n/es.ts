@@ -50,6 +50,8 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'settings.skin_unlock': 'Desbloquear',
   'settings.skin_use': 'Usar este skin',
   'settings.skin_earn_hint': 'Gana: {hint}',
+  'settings.icon_changing': 'Cambiando icono…',
+  'settings.icon_change_failed': 'No se pudo cambiar el icono. Inténtalo de nuevo.',
   'settings.skin_promo_label': 'Skin rotativa gratuita',
     'settings.skin_preview_banner_title': 'Vista previa de {name} — aún no desbloqueado',
   'settings.restore_purchases': 'Restaurar compras',
@@ -120,6 +122,8 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'game.back': '← Menú',
   'game.words_progress': '{found}/{total}',
   'game.instructions': 'Desliza letras adyacentes para encontrar todas las palabras.',
+  'game.hint_charging': 'Usando pista…',
+  'game.sr_found': 'Palabra encontrada: {word}. {found} de {total}.',
   'hint.out_title': 'Sin pistas',
   'hint.out_body': 'Ya usaste todas las pistas de hoy. Vuelve mañana para más.',
   'hint.out_close': 'Aceptar',
@@ -142,6 +146,8 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'hint_store.pack_hints_label': 'pistas',
   'hint_store.pack_price': '{price}',
   'hint_store.buy_button': '{price}',
+  'hint_store.web_cta_title': '¿Necesitas más pistas?',
+  'hint_store.web_cta_sub': 'Las pistas se recargan cada día. Los paquetes de pistas están en la app.',
   'hint_store.close': 'Cerrar',
 
   // Win view
@@ -182,6 +188,7 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'archive.empty': 'Vuelve mañana para tu primera entrada del archivo.',
   'archive.day_row': '#{n} — {title}',
   'archive.unsolved': '—',
+  'archive.time_first_best': '{first} · mejor {best}',
   'archive.web_locked_label': 'Desbloquea el archivo completo',
   'archive.web_locked_cta': 'La app tiene todos los puzzles desde el lanzamiento.',
 

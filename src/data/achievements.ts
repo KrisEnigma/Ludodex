@@ -9,6 +9,8 @@ export type SolveContext = {
   archiveSolvesCount: number;
   bestTimeSec: number | null;
   elapsedSeconds: number;
+  /** First attempt at this puzzle, played cold (docs/audit §6.2). Speed achievements require it. */
+  isFirstPlay: boolean;
   starRating: 1 | 2 | 3;
   isTodaysDaily: boolean;
   wasNewRating: boolean;
@@ -74,14 +76,14 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
   { id: 'pristine_50',         category: 'mastery', nameKey: 'achievement.pristine_50.name',         descriptionKey: 'achievement.pristine_50.description',         gameCenterId: null, playGamesId: null, checkOnSolve: (c) => c.pristineCount >= 50,   checkRetroactive: (s) => s.pristineCount >= 50 },
   { id: 'pristine_100',        category: 'mastery', nameKey: 'achievement.pristine_100.name',        descriptionKey: 'achievement.pristine_100.description',        gameCenterId: null, playGamesId: null, checkOnSolve: (c) => c.pristineCount >= 100,  checkRetroactive: (s) => s.pristineCount >= 100 },
   { id: 'pristine_250',        category: 'mastery', nameKey: 'achievement.pristine_250.name',        descriptionKey: 'achievement.pristine_250.description',        gameCenterId: null, playGamesId: null, checkOnSolve: (c) => c.pristineCount >= 250,  checkRetroactive: (s) => s.pristineCount >= 250 },
-  { id: 'pristine_lightning',  category: 'mastery', nameKey: 'achievement.pristine_lightning.name',  descriptionKey: 'achievement.pristine_lightning.description',  gameCenterId: null, playGamesId: null, checkOnSolve: (c) => c.elapsedSeconds < 10 && c.starRating === 3, checkRetroactive: null },
+  { id: 'pristine_lightning',  category: 'mastery', nameKey: 'achievement.pristine_lightning.name',  descriptionKey: 'achievement.pristine_lightning.description',  gameCenterId: null, playGamesId: null, checkOnSolve: (c) => c.isFirstPlay && c.elapsedSeconds < 10 && c.starRating === 3, checkRetroactive: null },
 
   // ── Speed ────────────────────────────────────────────
-  { id: 'speed_60', category: 'speed', nameKey: 'achievement.speed_60.name', descriptionKey: 'achievement.speed_60.description', gameCenterId: null, playGamesId: null, checkOnSolve: (c) => c.elapsedSeconds < 60, checkRetroactive: (s) => s.bestTimeSec !== null && s.bestTimeSec < 60 },
-  { id: 'speed_30', category: 'speed', nameKey: 'achievement.speed_30.name', descriptionKey: 'achievement.speed_30.description', gameCenterId: null, playGamesId: null, checkOnSolve: (c) => c.elapsedSeconds < 30, checkRetroactive: (s) => s.bestTimeSec !== null && s.bestTimeSec < 30 },
-  { id: 'speed_20', category: 'speed', nameKey: 'achievement.speed_20.name', descriptionKey: 'achievement.speed_20.description', gameCenterId: null, playGamesId: null, checkOnSolve: (c) => c.elapsedSeconds < 20, checkRetroactive: (s) => s.bestTimeSec !== null && s.bestTimeSec < 20 },
-  { id: 'speed_15', category: 'speed', nameKey: 'achievement.speed_15.name', descriptionKey: 'achievement.speed_15.description', gameCenterId: null, playGamesId: null, checkOnSolve: (c) => c.elapsedSeconds < 15, checkRetroactive: (s) => s.bestTimeSec !== null && s.bestTimeSec < 15 },
-  { id: 'speed_10', category: 'speed', nameKey: 'achievement.speed_10.name', descriptionKey: 'achievement.speed_10.description', gameCenterId: null, playGamesId: null, checkOnSolve: (c) => c.elapsedSeconds < 10, checkRetroactive: (s) => s.bestTimeSec !== null && s.bestTimeSec < 10 },
+  { id: 'speed_60', category: 'speed', nameKey: 'achievement.speed_60.name', descriptionKey: 'achievement.speed_60.description', gameCenterId: null, playGamesId: null, checkOnSolve: (c) => c.isFirstPlay && c.elapsedSeconds < 60, checkRetroactive: (s) => s.bestTimeSec !== null && s.bestTimeSec < 60 },
+  { id: 'speed_30', category: 'speed', nameKey: 'achievement.speed_30.name', descriptionKey: 'achievement.speed_30.description', gameCenterId: null, playGamesId: null, checkOnSolve: (c) => c.isFirstPlay && c.elapsedSeconds < 30, checkRetroactive: (s) => s.bestTimeSec !== null && s.bestTimeSec < 30 },
+  { id: 'speed_20', category: 'speed', nameKey: 'achievement.speed_20.name', descriptionKey: 'achievement.speed_20.description', gameCenterId: null, playGamesId: null, checkOnSolve: (c) => c.isFirstPlay && c.elapsedSeconds < 20, checkRetroactive: (s) => s.bestTimeSec !== null && s.bestTimeSec < 20 },
+  { id: 'speed_15', category: 'speed', nameKey: 'achievement.speed_15.name', descriptionKey: 'achievement.speed_15.description', gameCenterId: null, playGamesId: null, checkOnSolve: (c) => c.isFirstPlay && c.elapsedSeconds < 15, checkRetroactive: (s) => s.bestTimeSec !== null && s.bestTimeSec < 15 },
+  { id: 'speed_10', category: 'speed', nameKey: 'achievement.speed_10.name', descriptionKey: 'achievement.speed_10.description', gameCenterId: null, playGamesId: null, checkOnSolve: (c) => c.isFirstPlay && c.elapsedSeconds < 10, checkRetroactive: (s) => s.bestTimeSec !== null && s.bestTimeSec < 10 },
 
   // ── Consistency ──────────────────────────────────────
   { id: 'pristine_streak_3',  category: 'consistency', nameKey: 'achievement.pristine_streak_3.name',  descriptionKey: 'achievement.pristine_streak_3.description',  gameCenterId: null, playGamesId: null, checkOnSolve: (c) => c.consecutivePristineCount >= 3,  checkRetroactive: null },

@@ -78,19 +78,36 @@ let puzzleSource: 'remote' | 'cache' | 'bundled' = 'bundled';
 export async function loadPuzzles(): Promise<Puzzle[]> {
   const bundledRaw = rawPuzzles as unknown as RawPuzzle[];
 
+  // Fast path (stale-while-revalidate): if the cached catalog already has
+  // today's puzzle, start from it immediately and refresh in the background;
+  // the refreshed catalog applies from the next launch. If the cache can't
+  // serve today (e.g. a new daily was published since), fall through to the
+  // blocking fetch below so a fresh daily is never missed.
+  const cachedRaw = await getCachedRemoteRawPuzzles();
+  if (cachedRaw) {
+    try {
+      const fromCache = parseRawPuzzles(cachedRaw);
+      if (getDailyPuzzle(fromCache) !== null) {
+        parsedPuzzles = fromCache;
+        puzzleSource = 'cache';
+        void refreshCatalogInBackground();
+        return parsedPuzzles;
+      }
+    } catch {
+      // Unparseable cache → blocking path, which may replace it.
+    }
+  }
+
+  // Blocking path: remote (bounded ≤1.8 s) → cache → bundled.
   let selectedRaw: RawPuzzle[] | null = null;
 
   const remoteResult = await fetchRemoteRawPuzzles();
   if (remoteResult.kind === 'ok') {
     selectedRaw = remoteResult.raw;
     puzzleSource = 'remote';
-    await cacheRemoteRawPuzzles(remoteResult.raw, remoteResult.etag);
-  } else {
-    const cachedRaw = await getCachedRemoteRawPuzzles();
-    if (cachedRaw) {
-      selectedRaw = cachedRaw;
-      puzzleSource = 'cache';
-    }
+  } else if (cachedRaw) {
+    selectedRaw = cachedRaw;
+    puzzleSource = 'cache';
   }
 
   if (!selectedRaw) {
@@ -100,6 +117,11 @@ export async function loadPuzzles(): Promise<Puzzle[]> {
 
   try {
     parsedPuzzles = parseRawPuzzles(selectedRaw);
+    // Only cache a remote catalog that actually parses, so a bad publish
+    // can't poison the cache for future launches.
+    if (remoteResult.kind === 'ok') {
+      await cacheRemoteRawPuzzles(remoteResult.raw, remoteResult.etag);
+    }
   } catch (error) {
     console.warn('Failed to parse selected puzzle source, falling back to bundled puzzles', error);
     puzzleSource = 'bundled';
@@ -107,6 +129,18 @@ export async function loadPuzzles(): Promise<Puzzle[]> {
   }
 
   return parsedPuzzles;
+}
+
+/** Background half of the fast path: update the cache for the next launch. */
+async function refreshCatalogInBackground(): Promise<void> {
+  try {
+    const result = await fetchRemoteRawPuzzles();
+    if (result.kind !== 'ok') return; // not-modified / offline: cache is current
+    parseRawPuzzles(result.raw); // throws on a bad catalog → keep the old cache
+    await cacheRemoteRawPuzzles(result.raw, result.etag);
+  } catch (error) {
+    console.warn('Background puzzle refresh skipped', error);
+  }
 }
 
 export function ensureBundledPuzzlesLoaded(): Puzzle[] {
@@ -321,7 +355,9 @@ export function getDayNumberSinceLaunch(now: Date = new Date()): number {
   today.setHours(0, 0, 0, 0);
   const launch = new Date(LAUNCH_DATE);
   launch.setHours(0, 0, 0, 0);
-  const days = Math.floor((today.getTime() - launch.getTime()) / 86400000);
+  // Round, not floor: consecutive local midnights are 23h or 25h apart across
+  // DST changes, so floor would repeat or skip a day number.
+  const days = Math.round((today.getTime() - launch.getTime()) / 86400000);
   return Math.max(1, days + 1);
 }
 

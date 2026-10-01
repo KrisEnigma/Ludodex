@@ -1,12 +1,31 @@
 import type { RawPuzzle, Puzzle, Answer, PuzzlePart } from '../types/puzzle';
 
+const COORD_RE = /^[a-d][1-4]$/;
+
 export function parsePuzzle(raw: RawPuzzle): Puzzle {
   const grid: Record<string, string> = {};
   const answers: Answer[] = [];
 
   for (const [display, pathStr] of Object.entries(raw.data)) {
+    if (typeof pathStr !== 'string' || pathStr.length % 2 !== 0) {
+      // Odd length would otherwise be silently truncated by the 2-char split.
+      throw new Error(`Invalid path string for \"${display}\": \"${String(pathStr)}\"`);
+    }
     const coords = pathStr.match(/.{2}/g);
     if (!coords) throw new Error(`Invalid path string for \"${display}\"`);
+
+    const badCoord = coords.find((c) => !COORD_RE.test(c));
+    if (badCoord) {
+      throw new Error(`Invalid tile \"${badCoord}\" in \"${display}\" (expected a1–d4)`);
+    }
+
+    // One answer's own path can't visit the same tile twice: stepping onto a
+    // tile already in the chain backtracks instead of adding it, so the word
+    // could never be entered. (Tiles shared BETWEEN answers are fine.)
+    const repeated = coords.find((c, i) => coords.indexOf(c) !== i);
+    if (repeated) {
+      throw new Error(`Path for \"${display}\" visits ${repeated} twice (unsolvable)`);
+    }
 
     const wordParts = display.split(' ');
     const wordLengths = wordParts.map((w) => w.length);

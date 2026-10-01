@@ -25,10 +25,26 @@ export type MonetizationContext = {
   canShowBannerAds: boolean;
 };
 
+/**
+ * DEV-only: the Dev overlay's "Native player" mode makes the browser report
+ * a native (Android) context so native entitlement / UI gating can be tested
+ * without a device build. Actual native plugins (RevenueCat, AdMob,
+ * notifications, haptics) still check `Capacitor.isNativePlatform()` and stay
+ * inert. Compiled out of production (`import.meta.env.DEV`).
+ */
+function isDevSimNative(): boolean {
+  if (!import.meta.env.DEV) return false;
+  try {
+    return sessionStorage.getItem('dev_sim_platform') === 'native';
+  } catch {
+    return false;
+  }
+}
+
 export function getMonetizationContext(): MonetizationContext {
-  const raw = Capacitor.getPlatform();
+  const raw = isDevSimNative() ? 'android' : Capacitor.getPlatform();
   const platform: Platform = raw === 'ios' ? 'ios' : raw === 'android' ? 'android' : 'web';
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = isDevSimNative() || Capacitor.isNativePlatform();
   return {
     platform,
     isNative,

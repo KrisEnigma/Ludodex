@@ -47,6 +47,11 @@ export class InputManager<TMatch = WordMatch> {
   private pendingAction: PendingAction | null = null;
   private downOrigin: { x: number; y: number } | null = null;
   private chain: Tile[] = [];
+  // Instant feedback (docs/audit §6.3): unambiguous pending actions are applied
+  // on pointerdown. `deferredTapSubmit` remembers that a tap-length submit
+  // check still has to run if the gesture resolves as a tap.
+  private optimisticApplied = false;
+  private deferredTapSubmit = false;
 
   constructor(options: InputManagerOptions<TMatch>) {
     this.tiles = options.tiles;
@@ -73,34 +78,38 @@ export class InputManager<TMatch = WordMatch> {
     const tile = this.tileAtPoint(x, y);
     this.downOrigin = { x, y };
     this.state = 'PENDING';
+    this.optimisticApplied = false;
+    this.deferredTapSubmit = false;
 
-    if (!tile || tile.deactivated) {
-      this.setPendingAction({ type: 'clear' });
-      return;
-    }
+    const pending = this.resolvePendingAction(tile);
+    this.setPendingAction(pending);
 
-    if (this.chain.length === 0) {
-      this.setPendingAction({ type: 'add', tile });
-      return;
+    // Instant feedback: these actions produce the same chain whether the
+    // gesture turns out to be a tap or a swipe, so apply them now instead of
+    // waiting for release / the swipe threshold. Only the tap-length submit
+    // check differs, and it's deferred to release. `remove_last`, `backtrack`
+    // and adding to an existing chain stay pending (tap and swipe differ, or
+    // pointercancel bookkeeping would change) — see onPointerCancel.
+    const applyNow =
+      pending.type === 'clear' ||
+      pending.type === 'new_chain' ||
+      (pending.type === 'add' && this.chain.length === 0);
+    if (applyNow) {
+      this.deferredTapSubmit = pending.type !== 'clear';
+      this.applyPendingAction('swipe'); // 'swipe' source = no tap-submit yet
+      this.optimisticApplied = true;
     }
+  }
+
+  private resolvePendingAction(tile: Tile | null): PendingAction {
+    if (!tile || tile.deactivated) return { type: 'clear' };
+    if (this.chain.length === 0) return { type: 'add', tile };
 
     const idx = this.chain.indexOf(tile);
-    if (idx === this.chain.length - 1) {
-      this.setPendingAction({ type: 'remove_last' });
-      return;
-    }
-
-    if (idx >= 0) {
-      this.setPendingAction({ type: 'backtrack', backtrackTo: idx });
-      return;
-    }
-
-    if (this.isAdjacent(this.chain[this.chain.length - 1], tile)) {
-      this.setPendingAction({ type: 'add', tile });
-      return;
-    }
-
-    this.setPendingAction({ type: 'new_chain', tile });
+    if (idx === this.chain.length - 1) return { type: 'remove_last' };
+    if (idx >= 0) return { type: 'backtrack', backtrackTo: idx };
+    if (this.isAdjacent(this.chain[this.chain.length - 1], tile)) return { type: 'add', tile };
+    return { type: 'new_chain', tile };
   }
 
   onPointerMove(pointerId: number, x: number, y: number, isDown: boolean): void {
@@ -114,8 +123,10 @@ export class InputManager<TMatch = WordMatch> {
         return;
       }
 
-      this.applyPendingAction('swipe');
+      this.applyPendingAction('swipe'); // no-op if already applied on down
       this.state = 'SWIPING';
+      this.optimisticApplied = false;
+      this.deferredTapSubmit = false;
     }
 
     if (this.state !== 'SWIPING') return;
@@ -149,9 +160,16 @@ export class InputManager<TMatch = WordMatch> {
     if (pointerId !== 0) return;
 
     if (this.state === 'PENDING') {
-      this.applyPendingAction('tap');
+      if (this.optimisticApplied) {
+        // Already applied on down; only the tap-length submit check remains.
+        if (this.deferredTapSubmit) this.attemptSubmitIfTapLengthMatches();
+      } else {
+        this.applyPendingAction('tap');
+      }
       this.state = 'IDLE';
       this.downOrigin = null;
+      this.optimisticApplied = false;
+      this.deferredTapSubmit = false;
       return;
     }
 
@@ -165,6 +183,23 @@ export class InputManager<TMatch = WordMatch> {
 
     this.downOrigin = null;
     this.setPendingAction(null);
+  }
+
+  /**
+   * The OS took the gesture (scroll, system back gesture, …). Historically
+   * this was "clear the chain, then resolve like a release". For actions
+   * applied on pointerdown, that sequence produces exactly the state already
+   * reached (same chain, same events), so only the release step runs —
+   * keeping the chain result and the mistake bookkeeping unchanged.
+   */
+  onPointerCancel(pointerId: number): void {
+    if (pointerId !== 0) return;
+    if (this.state === 'PENDING' && this.optimisticApplied) {
+      this.onPointerUp(pointerId);
+      return;
+    }
+    this.clearChain();
+    this.onPointerUp(pointerId);
   }
 
   clearChain(): void {

@@ -1,9 +1,21 @@
-const PUZZLES_KEY = 'puzzles.json';
+import { parsePuzzle } from './game/PuzzleParser';
+import type { RawPuzzle } from './types/puzzle';
 
-const CORS_HEADERS = {
+const PUZZLES_KEY = 'puzzles.json';
+// Every write first copies the current catalog here, so a bad save can be
+// rolled back from the R2 dashboard.
+const HISTORY_PREFIX = 'history/puzzles-';
+// Current catalog is a few KB; 2 MB leaves room for ~thousands of puzzles.
+const MAX_BODY_BYTES = 2_000_000;
+
+// CORS is for READS only: the native app (capacitor://localhost etc.) fetches
+// the catalog cross-origin. Writes come from the editor on this same origin
+// (or via the Vite dev proxy), so PUT/DELETE deliberately send no CORS
+// headers — other websites can't write even with a leaked token in a browser.
+const READ_CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, If-None-Match',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, If-None-Match',
   'Access-Control-Expose-Headers': 'ETag',
 } as const;
 
@@ -18,6 +30,7 @@ type Env = {
       httpEtag?: string;
       customMetadata?: Record<string, string>;
       json<T = unknown>(): Promise<T>;
+      text(): Promise<string>;
     } | null>;
     put(key: string, value: string, options?: {
       httpMetadata?: { contentType?: string };
@@ -30,10 +43,70 @@ type Env = {
 function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: {
-      'Content-Type': 'application/json',
-      ...CORS_HEADERS,
-    },
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+/** Constant-time bearer check (Workers' crypto.subtle.timingSafeEqual). */
+function tokenMatches(authHeader: string, secret: string | undefined): boolean {
+  if (!secret || !authHeader.startsWith('Bearer ')) return false;
+  const enc = new TextEncoder();
+  const provided = enc.encode(authHeader.slice(7));
+  const expected = enc.encode(secret);
+  const subtle = crypto.subtle as unknown as {
+    timingSafeEqual(a: ArrayBufferView, b: ArrayBufferView): boolean;
+  };
+  if (provided.byteLength !== expected.byteLength) {
+    subtle.timingSafeEqual(expected, expected); // keep timing independent of length
+    return false;
+  }
+  return subtle.timingSafeEqual(provided, expected);
+}
+
+/**
+ * Structural validation only — the same parser the game uses. Editorial
+ * checks (name, category, Spanish) live in scripts/validate-puzzles.ts,
+ * because the editor saves in-progress levels (empty name/category/data).
+ */
+function validateCatalog(parsed: unknown): string[] {
+  if (!Array.isArray(parsed) || parsed.length === 0) {
+    return ['Payload must be a non-empty JSON array'];
+  }
+  const errors: string[] = [];
+  const seen = new Set<string>();
+  parsed.forEach((item, i) => {
+    const tag = `#${i}`;
+    if (typeof item !== 'object' || item === null || Array.isArray(item)) {
+      errors.push(`${tag}: not an object`);
+      return;
+    }
+    const p = item as Partial<RawPuzzle>;
+    if (typeof p.id !== 'string' || p.id.trim() === '') {
+      errors.push(`${tag}: missing id`);
+      return;
+    }
+    if (seen.has(p.id)) errors.push(`${tag} (${p.id}): duplicate id`);
+    seen.add(p.id);
+    if (typeof p.data !== 'object' || p.data === null || Array.isArray(p.data)) {
+      errors.push(`${tag} (${p.id}): "data" must be an object`);
+      return;
+    }
+    try {
+      parsePuzzle(p as RawPuzzle);
+    } catch (e) {
+      errors.push(`${tag} (${p.id}): ${e instanceof Error ? e.message : String(e)}`);
+    }
+  });
+  return errors;
+}
+
+async function snapshotCurrent(env: Env): Promise<void> {
+  const current = await env.PUZZLE_BUCKET.get(PUZZLES_KEY);
+  if (!current) return;
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const suffix = crypto.randomUUID().slice(0, 8); // never overwrite a same-ms snapshot
+  await env.PUZZLE_BUCKET.put(`${HISTORY_PREFIX}${stamp}-${suffix}.json`, await current.text(), {
+    httpMetadata: { contentType: 'application/json' },
   });
 }
 
@@ -79,7 +152,7 @@ async function readPuzzles(request: Request, env: Env): Promise<Response> {
         headers: {
           ETag: emptyEtag,
           'Cache-Control': 'no-cache',
-          ...CORS_HEADERS,
+          ...READ_CORS_HEADERS,
         },
       });
     }
@@ -88,7 +161,7 @@ async function readPuzzles(request: Request, env: Env): Promise<Response> {
         'Content-Type': 'application/json',
         ETag: emptyEtag,
         'Cache-Control': 'no-cache',
-        ...CORS_HEADERS,
+        ...READ_CORS_HEADERS,
       },
     });
   }
@@ -100,7 +173,7 @@ async function readPuzzles(request: Request, env: Env): Promise<Response> {
       headers: {
         ETag: etag,
         'Cache-Control': 'no-cache',
-        ...CORS_HEADERS,
+        ...READ_CORS_HEADERS,
       },
     });
   }
@@ -110,7 +183,7 @@ async function readPuzzles(request: Request, env: Env): Promise<Response> {
       'Content-Type': 'application/json',
       ETag: etag,
       'Cache-Control': 'no-cache',
-      ...CORS_HEADERS,
+      ...READ_CORS_HEADERS,
     },
   });
 }
@@ -133,7 +206,8 @@ export default {
     }
 
     if (request.method === 'OPTIONS') {
-      return new Response(null, { status: 204, headers: CORS_HEADERS });
+      // Preflight advertises GET only, so cross-origin PUT/DELETE are refused.
+      return new Response(null, { status: 204, headers: READ_CORS_HEADERS });
     }
 
     if (request.method === 'GET') {
@@ -141,29 +215,37 @@ export default {
     }
 
     const auth = request.headers.get('Authorization') ?? '';
-    if (!auth.startsWith('Bearer ') || auth.slice(7) !== env.API_SECRET) {
+    if (!tokenMatches(auth, env.API_SECRET)) {
       return err('Unauthorized: API token does not match the worker secret `API_SECRET`.', 401, 'invalid_api_secret');
     }
 
     if (request.method === 'PUT') {
+      const declared = Number(request.headers.get('Content-Length') ?? '0');
+      if (declared > MAX_BODY_BYTES) return err('Payload too large', 413);
       const body = await request.text();
+      if (new TextEncoder().encode(body).byteLength > MAX_BODY_BYTES) {
+        return err('Payload too large', 413);
+      }
       let parsed: unknown;
       try {
         parsed = JSON.parse(body);
       } catch {
         return err('Invalid JSON', 400);
       }
-      if (!Array.isArray(parsed) || parsed.length === 0) {
-        return err('Payload must be a non-empty JSON array', 400);
+      const problems = validateCatalog(parsed);
+      if (problems.length > 0) {
+        return json({ error: 'Invalid puzzle catalog', code: 'invalid_catalog', problems: problems.slice(0, 20) }, 400);
       }
+      const puzzleCount = (parsed as unknown[]).length;
+      await snapshotCurrent(env);
       await env.PUZZLE_BUCKET.put(PUZZLES_KEY, body, {
         httpMetadata: { contentType: 'application/json' },
         customMetadata: {
           updatedAt: new Date().toISOString(),
-          count: String(parsed.length),
+          count: String(puzzleCount),
         },
       });
-      return json({ ok: true, count: parsed.length });
+      return json({ ok: true, count: puzzleCount });
     }
 
     if (request.method === 'DELETE') {
@@ -177,6 +259,7 @@ export default {
       });
       if (next.length === puzzles.length) return err(`Puzzle "${id}" not found`, 404);
       if (next.length === 0) return err('Cannot delete last puzzle', 400);
+      await snapshotCurrent(env);
       await env.PUZZLE_BUCKET.put(PUZZLES_KEY, JSON.stringify(next, null, 2), {
         httpMetadata: { contentType: 'application/json' },
       });

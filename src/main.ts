@@ -7,14 +7,14 @@ import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style as StatusBarStyle } from '@capacitor/status-bar';
 import { Preferences } from '@capacitor/preferences';
 import { loadPuzzles } from './game/PuzzleLoader';
-import { initI18n } from './i18n';
+import { getLang, initI18n } from './i18n';
 import { applySkin, normalizeSkinId, onSkinChanged, SKINS } from './skins/registry';
 import type { SkinId } from './skins/registry';
 import { initIAP, isSkinAccessibleSync } from './services/IAPService';
-import { bootstrapProgress, getStoredSkinId, getSolvedTimes } from './services/ProgressService';
+import { bootstrapProgress, getStoredSkinId, reconcileAbandonedAttempt } from './services/ProgressService';
 import { retroactivelyUnlockEarnedAchievements } from './services/AchievementService';
 import { initAnalytics, track, updateLocale } from './services/AnalyticsService';
-import { initSentry } from './services/SentryService';
+import { captureException, initSentry } from './services/SentryService';
 import { initDailyNotification } from './services/NotificationService';
 import { Router } from './views/Router';
 import { parseCurrentUrl, parseDeepLinkUrl, type ParsedDeepLink } from './services/DeepLinking';
@@ -24,20 +24,37 @@ if (!app) {
   throw new Error('Missing #app root element');
 }
 
-void (async () => {
+// Set once initI18n succeeds, so the boot-error screen knows whether the
+// player's chosen language is available.
+let i18nReady = false;
+
+async function boot(root: HTMLDivElement): Promise<void> {
   // ── Sync / non-async init ──────────────────────────────────────────────────
   initSentry();
   initAnalytics();
 
   // ── Critical path: everything needed before first render ──────────────────
   await initI18n();
+  i18nReady = true;
   updateLocale();
+  // DEV-only: `?bootfail` simulates a startup failure to preview the error screen.
+  if (import.meta.env.DEV && new URLSearchParams(window.location.search).has('bootfail')) {
+    throw new Error('Simulated boot failure (?bootfail)');
+  }
   // Load the live catalog from the remote store (editor → Worker/R2) before the
   // first render so the daily + archive reflect published puzzles. loadPuzzles
   // is bounded (≤1.8s fetch timeout) and falls back to cache then the bundled
   // set on any failure, so startup never hangs or breaks if the network/store
   // is unavailable.
   await loadPuzzles();
+  // A first-play attempt still marked from the last session means the app was
+  // closed mid-puzzle → that first play is forfeited. Must run before any
+  // route (incl. deep links) can open a game. One storage read; cheap.
+  try {
+    await reconcileAbandonedAttempt();
+  } catch {
+    // Never block startup on this.
+  }
   // Skin on boot: honor the player's explicit choice if they've made one. If
   // they never have, follow the OS theme — light-mode devices land on Lumen
   // (Void's light twin), dark-mode on Void. resolveBootSkin keeps the
@@ -48,7 +65,7 @@ void (async () => {
   watchSystemThemeForDefaultSkin(getStoredSkinId);
 
   // Route immediately — the user sees UI as soon as skin + i18n are ready.
-  const router = new Router(app);
+  const router = new Router(root);
   const tutorial = await Preferences.get({ key: 'tutorial_seen' });
 
   // First-time players always see the tutorial, even if they arrived via a
@@ -119,21 +136,66 @@ void (async () => {
     const snapshot = await bootstrapProgress();
     track('app_opened', { is_first_open: snapshot.solvedCount === 0 });
 
-    const solvedTimes = await getSolvedTimes();
-    const bestTimeSec = (() => {
-      const values = Object.values(solvedTimes).filter((v): v is number => Number.isFinite(v));
-      return values.length === 0 ? null : Math.min(...values);
-    })();
-
     await retroactivelyUnlockEarnedAchievements({
       bestStreak: snapshot.bestStreak,
       solvedCount: snapshot.solvedCount,
       pristineCount: snapshot.pristineCount,
       archiveSolvesCount: snapshot.archiveSolvesCount,
-      bestTimeSec
+      // First-play best only (replays excluded), matching the live speed checks.
+      bestTimeSec: snapshot.bestTimeSec
     });
   })();
-})();
+}
+
+void boot(app).catch((error: unknown) => {
+  // Anything on the critical path failed (i18n, catalog, skin, router, first
+  // route). Without this the boot splash would spin forever.
+  console.error('[boot] startup failed', error);
+  try {
+    captureException(error, { phase: 'boot' });
+  } catch {
+    // Sentry itself may be what failed.
+  }
+  renderBootError(app);
+});
+
+/**
+ * Minimal, dependency-free error screen (reuses the inline .boot-splash styles
+ * from index.html). Copy is inline EN/ES rather than i18n keys on purpose:
+ * the i18n layer may be what failed.
+ */
+function renderBootError(root: HTMLElement): void {
+  const lang = i18nReady ? getLang() : (navigator.language || '').toLowerCase().startsWith('es') ? 'es' : 'en';
+  const copy = lang === 'es'
+    ? { title: 'No se pudo iniciar Ludodex', body: 'Comprueba tu conexión e inténtalo de nuevo.', retry: 'Reintentar' }
+    : { title: "Ludodex couldn't start", body: 'Check your connection and try again.', retry: 'Retry' };
+
+  const wrap = document.createElement('div');
+  wrap.className = 'boot-splash boot-error';
+  wrap.setAttribute('role', 'alert');
+
+  const box = document.createElement('div');
+  box.className = 'boot-error-box';
+
+  const title = document.createElement('p');
+  title.className = 'boot-error-title';
+  title.textContent = copy.title;
+
+  const body = document.createElement('p');
+  body.className = 'boot-error-body';
+  body.textContent = copy.body;
+
+  const retry = document.createElement('button');
+  retry.type = 'button';
+  retry.className = 'boot-error-retry';
+  retry.textContent = copy.retry;
+  retry.addEventListener('click', () => window.location.reload());
+
+  box.append(title, body, retry);
+  wrap.append(box);
+  root.replaceChildren(wrap);
+  retry.focus();
+}
 
 /**
  * Decide which skin to show on boot.

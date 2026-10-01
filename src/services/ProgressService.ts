@@ -119,7 +119,10 @@ export type ProgressSnapshot = {
   solvedCount: number;
   /** Total solve attempts including replays (puzzles_solved_count). Used by ad cadence only. */
   totalSolveAttempts: number;
+  /** Fastest FIRST-PLAY solve (replays excluded). Menu BEST + speed records. */
   bestTimeSec: number | null;
+  /** True if the solve that produced this snapshot was the puzzle's first play. */
+  wasFirstPlay: boolean;
   currentStreak: number;
   bestStreak: number;
   lastPlayedDate: string | null;
@@ -232,7 +235,8 @@ export async function getDaysSinceInstall(now: Date = new Date()): Promise<numbe
   const install = new Date(`${installDate}T00:00:00`);
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const diffMs = today.getTime() - install.getTime();
-  return Math.max(0, Math.floor(diffMs / 86_400_000));
+  // Round, not floor: local midnights are 23h/25h apart across DST changes.
+  return Math.max(0, Math.round(diffMs / 86_400_000));
 }
 
 function toDayStamp(isoLike: string): string {
@@ -260,11 +264,92 @@ function getBestTimeSec(solvedTimes: SolvedTimesMap): number | null {
   return Math.min(...values);
 }
 
+// ── First-play tracking (docs/audit §6.2) ──────────────────────────────────
+//
+// Records (menu BEST, NEW BEST, speed achievements) count only a puzzle's
+// first attempt, played cold. An attempt stops being a first play if the
+// player goes back to the menu, closes the app, or restarts; backgrounding,
+// calls, notifications and overlays keep it.
+//
+//   ATTEMPT_KEY          — marker written when an eligible board is shown.
+//                          Still present at the next cold start → the app
+//                          was closed mid-attempt → first play lost.
+//   FIRST_PLAY_LOST_KEY  — puzzle ids whose first play was forfeited.
+//   FIRST_SOLVE_TIMES_KEY — time of the first-play solve, per puzzle.
+//                          (SOLVED_TIMES_KEY keeps the best time incl. replays.)
+
+const FIRST_SOLVE_TIMES_KEY = 'ludodex.first_solve_times';
+const FIRST_PLAY_LOST_KEY = 'ludodex.first_play_lost';
+const ATTEMPT_KEY = 'ludodex.attempt';
+
+type AttemptMarker = { puzzleId: string; startedAt: string };
+
+export async function getFirstSolveTimes(): Promise<SolvedTimesMap> {
+  const { value } = await Preferences.get({ key: FIRST_SOLVE_TIMES_KEY });
+  return safeParse<SolvedTimesMap>(value, {});
+}
+
+async function getFirstPlayLost(): Promise<string[]> {
+  const { value } = await Preferences.get({ key: FIRST_PLAY_LOST_KEY });
+  const parsed = safeParse<unknown>(value, []);
+  return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [];
+}
+
+async function readAttempt(): Promise<AttemptMarker | null> {
+  const { value } = await Preferences.get({ key: ATTEMPT_KEY });
+  const parsed = safeParse<Partial<AttemptMarker> | null>(value, null);
+  return parsed && typeof parsed.puzzleId === 'string'
+    ? { puzzleId: parsed.puzzleId, startedAt: String(parsed.startedAt ?? '') }
+    : null;
+}
+
+async function clearAttemptFor(puzzleId: string): Promise<void> {
+  const attempt = await readAttempt();
+  if (attempt?.puzzleId === puzzleId) await Preferences.remove({ key: ATTEMPT_KEY });
+}
+
+/** True if solving this puzzle now would count as its first play. */
+export async function isFirstPlayAvailable(puzzleId: string): Promise<boolean> {
+  const [solvedIds, lost] = await Promise.all([getSolvedIds(), getFirstPlayLost()]);
+  return !solvedIds.includes(puzzleId) && !lost.includes(puzzleId);
+}
+
+/** The board of an eligible first play is on screen. */
+export async function beginFirstPlayAttempt(puzzleId: string): Promise<void> {
+  const marker: AttemptMarker = { puzzleId, startedAt: new Date().toISOString() };
+  await Preferences.set({ key: ATTEMPT_KEY, value: JSON.stringify(marker) });
+}
+
+/** Player left the puzzle (menu / back / restart) before solving it. */
+export async function forfeitFirstPlay(puzzleId: string): Promise<void> {
+  const lost = await getFirstPlayLost();
+  if (!lost.includes(puzzleId)) {
+    lost.push(puzzleId);
+    await Preferences.set({ key: FIRST_PLAY_LOST_KEY, value: JSON.stringify(lost) });
+  }
+  await clearAttemptFor(puzzleId);
+}
+
+/**
+ * Cold start: a leftover attempt marker means the app was closed (or killed
+ * by the OS — indistinguishable) mid-attempt. Call before any game can open.
+ */
+export async function reconcileAbandonedAttempt(): Promise<void> {
+  const attempt = await readAttempt();
+  if (!attempt) return;
+  const solvedIds = await getSolvedIds();
+  if (solvedIds.includes(attempt.puzzleId)) {
+    await Preferences.remove({ key: ATTEMPT_KEY });
+    return;
+  }
+  await forfeitFirstPlay(attempt.puzzleId);
+}
+
 export async function getProgressSnapshot(): Promise<ProgressSnapshot> {
   const [
     solvedIds,
     totalSolveAttempts,
-    solvedTimes,
+    firstSolveTimes,
     currentStreak,
     bestStreak,
     lastPlayedDate,
@@ -275,7 +360,7 @@ export async function getProgressSnapshot(): Promise<ProgressSnapshot> {
   ] = await Promise.all([
     getSolvedIds(),
     getPuzzlesSolvedCount(),
-    getSolvedTimes(),
+    getFirstSolveTimes(),
     getCurrentStreak(),
     getBestStreak(),
     getLastPlayedDate(),
@@ -288,7 +373,8 @@ export async function getProgressSnapshot(): Promise<ProgressSnapshot> {
   return {
     solvedCount: solvedIds.length,
     totalSolveAttempts,
-    bestTimeSec: getBestTimeSec(solvedTimes),
+    bestTimeSec: getBestTimeSec(firstSolveTimes),
+    wasFirstPlay: false,
     currentStreak,
     bestStreak,
     lastPlayedDate: lastPlayedDate ? toDayStamp(lastPlayedDate) : null,
@@ -307,7 +393,9 @@ export async function getStreakStatus(now: Date = new Date()): Promise<StreakSta
   }
 
   const today = formatDateKey(now);
-  const yesterday = formatDateKey(new Date(now.getTime() - 86_400_000));
+  // Calendar arithmetic, not "now − 24h": after a 23h DST day, 24h back from
+  // just past midnight lands two calendar days earlier.
+  const yesterday = formatDateKey(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1));
 
   if (snapshot.lastPlayedDate === today || snapshot.lastPlayedDate === yesterday) {
     return { effective: snapshot.currentStreak, brokenAt: null };
@@ -341,6 +429,11 @@ export async function recordPuzzleCompletion(
   const solvedSet = new Set(await getSolvedIds());
   const wasNewlySolved = !solvedSet.has(puzzleId);
   solvedSet.add(puzzleId);
+
+  // First play = never solved before AND first play not forfeited.
+  const [firstPlayLost, firstSolveTimes] = await Promise.all([getFirstPlayLost(), getFirstSolveTimes()]);
+  const wasFirstPlay = wasNewlySolved && !firstPlayLost.includes(puzzleId);
+  if (wasFirstPlay) firstSolveTimes[puzzleId] = elapsedSeconds;
 
   const [
     solvedTimes,
@@ -402,7 +495,11 @@ export async function recordPuzzleCompletion(
         // Missed exactly one day and the player has a freeze token.
         // Cover the gap: extend streak as if they hadn't missed.
         // Win progress is NOT advanced — freeze was needed, not earned.
-        const missedStamp = toDayStamp(new Date(new Date(`${lastStamp}T00:00:00`).getTime() + 86_400_000).toISOString());
+        // Calendar arithmetic, not "+24h": after a 25h DST day, midnight + 24h
+        // is still the same calendar date.
+        const missedDate = new Date(`${lastStamp}T00:00:00`);
+        missedDate.setDate(missedDate.getDate() + 1);
+        const missedStamp = formatDateKey(missedDate);
         const consumed = await consumeFreeze(missedStamp);
         if (consumed) {
           currentStreak = Math.max(1, previousStreak + 1);
@@ -443,9 +540,11 @@ export async function recordPuzzleCompletion(
   // Archive solves count: increment on every non-daily solve (does not require uniqueness — a replay of an archive puzzle still represents archive engagement).
   const archiveSolvesCount = previousArchiveSolvesCount + (options.isTodaysDaily ? 0 : 1);
 
-  const bestTimeSec = getBestTimeSec(solvedTimes);
+  const bestTimeSec = getBestTimeSec(firstSolveTimes);
 
   const writes: Array<Promise<void>> = [
+    Preferences.set({ key: FIRST_SOLVE_TIMES_KEY, value: JSON.stringify(firstSolveTimes) }),
+    clearAttemptFor(puzzleId),
     Preferences.set({ key: SOLVED_IDS_KEY, value: JSON.stringify(Array.from(solvedSet)) }),
     Preferences.set({ key: SOLVED_TIMES_KEY, value: JSON.stringify(solvedTimes) }),
     Preferences.set({ key: PUZZLES_SOLVED_COUNT_KEY, value: String(totalSolveAttempts) }),
@@ -469,6 +568,7 @@ export async function recordPuzzleCompletion(
     solvedCount: solvedSet.size,
     totalSolveAttempts,
     bestTimeSec,
+    wasFirstPlay,
     currentStreak,
     bestStreak,
     lastPlayedDate: options.isTodaysDaily && !streakSuspect ? toDayStamp(nowIso) : (lastPlayedDate ? toDayStamp(lastPlayedDate) : null),
@@ -487,6 +587,9 @@ export async function resetAllProgress(): Promise<void> {
   await Preferences.remove({ key: CONSECUTIVE_PRISTINE_COUNT_KEY });
   await Preferences.remove({ key: ARCHIVE_SOLVES_COUNT_KEY });
   await Preferences.remove({ key: LAST_SEEN_DAY_STAMP_KEY });
+  await Preferences.remove({ key: FIRST_SOLVE_TIMES_KEY });
+  await Preferences.remove({ key: FIRST_PLAY_LOST_KEY });
+  await Preferences.remove({ key: ATTEMPT_KEY });
   // Note: install date is intentionally NOT reset — it reflects when the
   // app was first installed and should survive a progress wipe.
   await resetHintData();

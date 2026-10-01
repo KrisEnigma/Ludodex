@@ -19,6 +19,8 @@ import {
   markDailyReminderPrompted,
   enableDailyNotification
 } from '../services/NotificationService';
+import { trackOverlay } from '../components/overlayStack';
+import { formatDuration, formatTimeUntilMidnight } from '../utils/format';
 
 export class WinView {
   readonly element: HTMLDivElement;
@@ -38,6 +40,8 @@ export class WinView {
 
     if (payload.starRating === 3) {
       window.setTimeout(() => {
+        // Player already left the win screen during the 600ms delay.
+        if (!this.element.isConnected) return;
         // Sustained buzz lands on the same frame as the first confetti pieces
         // so the physical and visual celebration feel like one event.
         HapticService.celebrate();
@@ -91,7 +95,7 @@ export class WinView {
 
     const time = document.createElement('div');
     time.className = 'win-time';
-    time.textContent = formatTime(payload.elapsedSeconds);
+    time.textContent = formatDuration(payload.elapsedSeconds);
 
     const nextCountdown = document.createElement('p');
     nextCountdown.className = 'win-next-countdown';
@@ -369,7 +373,7 @@ function statsLine(payload: WinPayload): string {
  */
 function buildShareBody(payload: WinPayload): string {
   const stars = renderStars(payload.starRating);
-  const time  = formatTime(payload.elapsedSeconds);
+  const time  = formatDuration(payload.elapsedSeconds);
   const label = payload.starRating === 3
     ? t('share.label_flawless')
     : t('share.label_solved');
@@ -426,23 +430,6 @@ function buildPuzzleDeepLink(dayNumber: number): string {
   if (!base) return '';
   // Strip any trailing slash so we don't end up with `https://...//123`.
   return `${base.replace(/\/+$/, '')}/${dayNumber}`;
-}
-
-function formatTime(totalSeconds: number): string {
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-}
-
-function formatTimeUntilMidnight(): string {
-  const now = new Date();
-  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-  const diffMs = Math.max(0, tomorrow.getTime() - now.getTime());
-  const totalSeconds = Math.floor(diffMs / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
 /**
@@ -637,6 +624,7 @@ function showSharePreviewSheet(opts: {
   sheet.append(handle, header, preview, copyBtn);
   backdrop.append(sheet);
   document.body.append(backdrop);
+  trackOverlay(backdrop, dismiss);
 
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {

@@ -11,6 +11,7 @@ import { getStarterPackEligibility, markStarterPackShown } from '../services/Sta
 import { showStarterPackModal } from '../components/StarterPackModal';
 import { showHintStore } from '../components/HintStoreSheet';
 import { buildPuzzleTags } from '../components/PuzzleTags';
+import { formatDuration, formatTimeUntilMidnight } from '../utils/format';
 
 const STREAK_BANNER_DISMISSED_KEY = 'streak_banner_dismissed';
 
@@ -20,6 +21,8 @@ type MenuCallbacks = {
   onOpenArchive: () => void;
   onOpenHowToPlay: () => void;
   onOpenAchievements: () => void;
+  /** Local midnight passed while the menu was open — rebuild it for the new day. */
+  onDayChanged?: () => void;
 };
 
 export class MenuView {
@@ -137,7 +140,7 @@ export class MenuView {
 
     const countdownEl = document.createElement('span');
     countdownEl.className = 'daily-card-countdown';
-    countdownEl.textContent = t('menu.daily_next_in', { time: this.formatTimeUntilMidnight() });
+    countdownEl.textContent = t('menu.daily_next_in', { time: formatTimeUntilMidnight() });
 
     dailyCardHead.append(dailyTag, countdownEl);
 
@@ -215,20 +218,28 @@ export class MenuView {
     // likely to install). The Menu and Win both promoting was heavy
     // on web and competed with the play CTA on the home screen.
 
+    // Every second: the countdown shows seconds (it used to tick once a
+    // minute). Also catches local midnight so the daily card rolls over to
+    // the new puzzle without leaving the menu.
     const countdownIntervalId = window.setInterval(() => {
       if (!root.isConnected) {
         window.clearInterval(countdownIntervalId);
         return;
       }
-      countdownEl.textContent = t('menu.daily_next_in', { time: this.formatTimeUntilMidnight() });
-    }, 60_000);
+      if (getDayNumberSinceLaunch() !== dayNumber) {
+        window.clearInterval(countdownIntervalId);
+        callbacks.onDayChanged?.();
+        return;
+      }
+      countdownEl.textContent = t('menu.daily_next_in', { time: formatTimeUntilMidnight() });
+    }, 1000);
 
     void (async () => {
       // getMenuData() returns cached data immediately (stale-while-revalidate),
       // then fires a background refresh. If fresh data arrives while we're still
       // mounted, applyData() is called again to update the UI.
       const applyData = async (): Promise<void> => {
-        const [{ snapshot, solvedIds, solvedTimes, solvedRatings, streakStatus }, dismissedPref] =
+        const [{ snapshot, solvedIds, solvedTimes, firstSolveTimes, solvedRatings, streakStatus }, dismissedPref] =
           await Promise.all([
             getMenuData(),
             Preferences.get({ key: STREAK_BANNER_DISMISSED_KEY })
@@ -253,7 +264,7 @@ export class MenuView {
         solvedValue.textContent = String(snapshot.solvedCount);
         bestValue.textContent = snapshot.bestTimeSec === null
           ? t('menu.stat_empty')
-          : this.formatElapsed(snapshot.bestTimeSec);
+          : formatDuration(snapshot.bestTimeSec);
 
         // Show the streak-loss banner only if it hasn't been dismissed for this
         // specific brokenAt value. Storing the brokenAt count means: if the user
@@ -278,7 +289,8 @@ export class MenuView {
           if (yesterdayEntry) {
             const yesterdayPuzzle = yesterdayEntry.puzzle;
             const isSolved = solvedIds.includes(yesterdayPuzzle.id);
-            const time = isSolved ? (solvedTimes[yesterdayPuzzle.id] ?? null) : null;
+            // First-play time if there is one (docs/audit §6.2), else best run.
+            const time = isSolved ? (firstSolveTimes[yesterdayPuzzle.id] ?? solvedTimes[yesterdayPuzzle.id] ?? null) : null;
             const rating = normalizeStarRating(solvedRatings[yesterdayPuzzle.id]);
             // Only append if not already rendered (can be called twice with cache)
             if (!root.querySelector('.yesterday-card')) {
@@ -347,7 +359,7 @@ export class MenuView {
       const timeEl = document.createElement('span');
       timeEl.className = 'yesterday-card-time';
       timeEl.textContent = typeof time === 'number' && Number.isFinite(time)
-        ? this.formatElapsed(time)
+        ? formatDuration(time)
         : t('menu.stat_empty');
 
       status.append(stars, timeEl);
@@ -400,20 +412,4 @@ export class MenuView {
     return '★'.repeat(bounded) + '☆'.repeat(3 - bounded);
   }
 
-  private formatElapsed(totalSeconds: number): string {
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  }
-
-  private formatTimeUntilMidnight(): string {
-    const now = new Date();
-    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-    const diffMs = Math.max(0, tomorrow.getTime() - now.getTime());
-    const totalSeconds = Math.floor(diffMs / 1000);
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-  }
 }

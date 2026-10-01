@@ -107,6 +107,8 @@ const VIEW_ONLY = new Set([
   // Post-creator additions to GameView not shown in preview
   'endgame-crt-line', 'endgame-scanlines', 'path-segments-outro',
   'game-instructions',
+  // Visually hidden screen-reader live region (no visual — nothing to preview)
+  'sr-only',
   // Hint-row separator only rendered when words > 1
   'hint-word-separator',
   // WinView: share sheet + achievements section (added after creator was written)

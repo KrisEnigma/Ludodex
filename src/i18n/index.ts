@@ -15,6 +15,11 @@ const MAPS: Record<Language, Record<string, string>> = {
 
 let currentLang: Language = 'en';
 
+/** Keep <html lang> in sync (screen readers, hyphenation, browser translate). */
+function applyDocumentLang(): void {
+  if (typeof document !== 'undefined') document.documentElement.lang = currentLang;
+}
+
 function exposeDevOverride(): void {
   if (typeof window === 'undefined') return;
   (window as unknown as { __setLang?: (lang: Language) => Promise<void> }).__setLang = setLang;
@@ -25,6 +30,7 @@ export async function initI18n(): Promise<void> {
   if (stored.value === 'en' || stored.value === 'es') {
     currentLang = stored.value;
     setLocale(currentLang);
+    applyDocumentLang();
     exposeDevOverride();
     return;
   }
@@ -34,6 +40,7 @@ export async function initI18n(): Promise<void> {
     : 'en';
   currentLang = browserLang.startsWith('es') ? 'es' : 'en';
   setLocale(currentLang);
+  applyDocumentLang();
 
   exposeDevOverride();
 }
@@ -45,6 +52,7 @@ export function getLang(): Language {
 export async function setLang(lang: Language): Promise<void> {
   currentLang = lang;
   setLocale(currentLang);
+  applyDocumentLang();
   await Preferences.set({ key: STORAGE_KEY, value: lang });
 }
 

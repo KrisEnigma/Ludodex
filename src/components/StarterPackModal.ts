@@ -28,6 +28,7 @@ import {
 } from '../services/IAPService';
 import { grantHints } from '../services/HintService';
 import { getStarterPackMsRemaining } from '../services/StarterPackService';
+import { trackOverlay } from './overlayStack';
 
 /**
  * Show the Starter Pack modal. Call markStarterPackShown() before this.
@@ -164,6 +165,7 @@ export async function showStarterPackModal(): Promise<void> {
     card.append(badge, title, countdown, itemsList, ctaButton, dismissButton);
     overlay.append(card);
     document.body.append(overlay);
+    trackOverlay(overlay, close);
 
     // ─── Countdown tick ─────────────────────────────────────────────────────
     const TICK_MS = 1000;

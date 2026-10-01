@@ -11,6 +11,7 @@
  */
 
 import {
+  getFirstSolveTimes,
   getProgressSnapshot,
   getSolvedIds,
   getSolvedRatings,
@@ -23,6 +24,7 @@ export type MenuData = {
   snapshot: Awaited<ReturnType<typeof getProgressSnapshot>>;
   solvedIds: string[];
   solvedTimes: Record<string, number | undefined>;
+  firstSolveTimes: Record<string, number | undefined>;
   solvedRatings: Record<string, number | undefined>;
   streakStatus: StreakStatus;
 };
@@ -38,10 +40,11 @@ function fetchFresh(): Promise<MenuData> {
     getProgressSnapshot(),
     getSolvedIds(),
     getSolvedTimes(),
+    getFirstSolveTimes(),
     getSolvedRatings(),
     getStreakStatus()
-  ]).then(([snapshot, solvedIds, solvedTimes, solvedRatings, streakStatus]) => {
-    const data: MenuData = { snapshot, solvedIds, solvedTimes, solvedRatings, streakStatus };
+  ]).then(([snapshot, solvedIds, solvedTimes, firstSolveTimes, solvedRatings, streakStatus]) => {
+    const data: MenuData = { snapshot, solvedIds, solvedTimes, firstSolveTimes, solvedRatings, streakStatus };
     cache = data;
     inFlight = null;
     return data;

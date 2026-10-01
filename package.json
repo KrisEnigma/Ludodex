@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "npm run sync:puzzles && vite",
     "sync:puzzles": "tsx scripts/sync-puzzles.ts",
-    "build": "npm run sync:puzzles && node scripts/check-creator-drift.mjs || true && tsc --noEmit && vite build",
+    "build": "npm run sync:puzzles && npm run validate:puzzles && (node scripts/check-creator-drift.mjs || true) && tsc --noEmit && vite build",
     "deploy": "npm run build && wrangler deploy",
     "preview": "vite preview",
     "validate": "npm run validate:puzzles",
@@ -67,7 +67,6 @@
     "@capacitor/android": "^8.4.0",
     "@capacitor/cli": "^8.4.0",
     "@capacitor/ios": "^8.4.0",
-    "@fullhuman/postcss-purgecss": "^8.0.0",
     "@types/node": "^22.19.19",
     "sharp": "^0.35.2",
     "tsx": "^4.22.4",

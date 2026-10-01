@@ -1,3 +1,5 @@
+import { trackOverlay } from './overlayStack';
+
 export type InfoModalOptions = {
   title: string;
   body: string;
@@ -44,7 +46,8 @@ export function showInfoModal(options: InfoModalOptions): Promise<void> {
       if (event.target === backdrop) settle();
     };
     const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape' || event.key === 'Enter') settle();
+      // Escape is handled globally (overlayStack.installEscapeToClose).
+      if (event.key === 'Enter') settle();
     };
 
     closeBtn.addEventListener('click', settle);
@@ -55,6 +58,7 @@ export function showInfoModal(options: InfoModalOptions): Promise<void> {
     modal.append(titleEl, bodyEl, buttonRow);
     backdrop.append(modal);
     document.body.append(backdrop);
+    trackOverlay(backdrop, settle);
 
     closeBtn.focus();
   });
@@ -106,7 +110,6 @@ export function showConfirmModal(options: ConfirmModalOptions): Promise<boolean>
       if (settled) return;
       settled = true;
       backdrop.removeEventListener('click', onBackdropClick);
-      document.removeEventListener('keydown', onKeyDown);
       backdrop.remove();
       resolve(value);
     };
@@ -116,20 +119,19 @@ export function showConfirmModal(options: ConfirmModalOptions): Promise<boolean>
     const onBackdropClick = (event: MouseEvent): void => {
       if (event.target === backdrop) onCancel();
     };
-    const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') onCancel();
-      else if (event.key === 'Enter') onConfirm();
-    };
+    // Keyboard: no Enter handler — the browser activates whichever button has
+    // focus (Cancel for destructive dialogs). Escape → Cancel is handled
+    // globally by overlayStack.installEscapeToClose via trackOverlay below.
 
     cancelBtn.addEventListener('click', onCancel);
     confirmBtn.addEventListener('click', onConfirm);
     backdrop.addEventListener('click', onBackdropClick);
-    document.addEventListener('keydown', onKeyDown);
 
     buttonRow.append(cancelBtn, confirmBtn);
     modal.append(titleEl, bodyEl, buttonRow);
     backdrop.append(modal);
     document.body.append(backdrop);
+    trackOverlay(backdrop, onCancel);
 
     if (options.destructive) cancelBtn.focus();
     else confirmBtn.focus();

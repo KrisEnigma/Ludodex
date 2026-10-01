@@ -289,8 +289,21 @@ export async function showRewardedAdForHint(): Promise<'rewarded' | 'skipped' | 
       adId: getRewardedAdId(),
       isTesting: shouldUseTestAds(),
     });
-    const result = await AdMob.showRewardVideoAd();
-    const rewarded = result.type === RewardAdPluginEvents.Rewarded;
+    // `result.type` is the reward TYPE configured in AdMob (e.g. "hint"), not
+    // an event name, so comparing it to RewardAdPluginEvents.Rewarded was
+    // always false. Use the Rewarded event (fires when the reward is earned),
+    // with a non-zero reward amount as a fallback signal.
+    let rewardEventFired = false;
+    const rewardListener = await AdMob.addListener(RewardAdPluginEvents.Rewarded, () => {
+      rewardEventFired = true;
+    });
+    let result: { amount?: number } | undefined;
+    try {
+      result = await AdMob.showRewardVideoAd();
+    } finally {
+      void rewardListener.remove();
+    }
+    const rewarded = rewardEventFired || (result?.amount ?? 0) > 0;
     track('rewarded_ad_completed', { placement: 'hint', rewarded });
     return rewarded ? 'rewarded' : 'skipped';
   } catch (err) {

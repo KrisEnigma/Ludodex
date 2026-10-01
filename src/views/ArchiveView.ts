@@ -1,11 +1,12 @@
 import { ensureBundledPuzzlesLoaded, getDayNumberSinceLaunch, getPuzzleForDay } from '../game/PuzzleLoader';
 import { t } from '../i18n';
-import { getSolvedIds, getSolvedTimes, getSolvedRatings, normalizeStarRating } from '../services/ProgressService';
+import { getFirstSolveTimes, getSolvedIds, getSolvedTimes, getSolvedRatings, normalizeStarRating } from '../services/ProgressService';
 import type { Puzzle } from '../types/puzzle';
 import { t as tp } from '../utils/i18n';
 import { getMonetizationContext } from '../services/MonetizationContext';
 import { buildInstallCta } from '../components/InstallCta';
 import { buildPuzzleTags } from '../components/PuzzleTags';
+import { formatDuration } from '../utils/format';
 
 /** On web, only the most recent N days are freely accessible. */
 const WEB_FREE_DAYS = 7;
@@ -57,7 +58,7 @@ export class ArchiveView {
     const ctx = getMonetizationContext();
 
     // Dev full-access: show the entire catalog regardless of today's day number.
-    const isDevFullAccess = import.meta.env.DEV && sessionStorage.getItem('dev_sim_platform') !== 'web';
+    const isDevFullAccess = import.meta.env.DEV && sessionStorage.getItem('dev_sim_platform') === null;
     const lastArchiveDay = isDevFullAccess ? puzzleCount : Math.min(today - 1, puzzleCount);
 
     if (lastArchiveDay < 1) {
@@ -68,9 +69,10 @@ export class ArchiveView {
       return;
     }
 
-    const [solvedIds, solvedTimes, solvedRatings] = await Promise.all([
+    const [solvedIds, solvedTimes, firstSolveTimes, solvedRatings] = await Promise.all([
       getSolvedIds(),
       getSolvedTimes(),
+      getFirstSolveTimes(),
       getSolvedRatings()
     ]);
 
@@ -99,10 +101,12 @@ export class ArchiveView {
       }
 
       const isSolved = solvedIds.includes(puzzle.id);
-      const timeValue = solvedTimes[puzzle.id];
-      const time = isSolved && Number.isFinite(timeValue) ? timeValue : null;
+      const bestValue = solvedTimes[puzzle.id];
+      const firstValue = firstSolveTimes[puzzle.id];
+      const best = isSolved && Number.isFinite(bestValue) ? bestValue : null;
+      const first = isSolved && Number.isFinite(firstValue) ? firstValue : null;
       const rating = normalizeStarRating(solvedRatings[puzzle.id]);
-      this.listContainer.append(this.renderRow(day, puzzle, isSolved, time, rating));
+      this.listContainer.append(this.renderRow(day, puzzle, isSolved, first, best, rating));
     }
   }
 
@@ -124,7 +128,8 @@ export class ArchiveView {
     day: number,
     puzzle: Puzzle,
     isSolved: boolean,
-    time: number | null,
+    firstTime: number | null,
+    bestTime: number | null,
     rating: number
   ): HTMLElement {
     const row = document.createElement('button');
@@ -167,9 +172,18 @@ export class ArchiveView {
 
     const status = document.createElement('span');
     status.className = 'archive-row-status';
-    status.textContent = isSolved && time !== null
-      ? this.formatTime(time)
-      : t('archive.unsolved');
+    // First-play time is the headline (docs/audit §6.2); a faster replay best
+    // is shown next to it. No first-play time (forfeited) → best only.
+    if (!isSolved || (firstTime === null && bestTime === null)) {
+      status.textContent = t('archive.unsolved');
+    } else if (firstTime !== null && bestTime !== null && bestTime < firstTime) {
+      status.textContent = t('archive.time_first_best', {
+        first: formatDuration(firstTime),
+        best: formatDuration(bestTime)
+      });
+    } else {
+      status.textContent = formatDuration((firstTime ?? bestTime) as number);
+    }
 
     meta.append(stars, status);
 
@@ -180,9 +194,4 @@ export class ArchiveView {
     return row;
   }
 
-  private formatTime(totalSeconds: number): string {
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  }
 }

@@ -9,6 +9,7 @@ export type WinPayload = {
   mistakes: number;
   isTodaysDaily: boolean;
   starRating: 1 | 2 | 3;
+  /** First-play record beaten (docs/audit §6.2). Never true on replays. */
   wasNewBest: boolean;
   wasNewRating: boolean;
   /** Achievement IDs unlocked by the solve that produced this WinPayload. */

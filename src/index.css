@@ -604,6 +604,19 @@
   box-sizing: border-box;
 }
 
+/* Visually hidden but read by screen readers (live regions, labels). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 html,
 body {
   width: 100%;
@@ -1005,6 +1018,14 @@ body {
      the letter (below), and the recolor + border + glow carry the state. */
 }
 
+/* Touch-down on a chain tile while tap vs swipe is still undecided (GameView
+   updatePressedTile). Outline only — no transform/filter/opacity/z-index on
+   .tile (stacking-context rule above). */
+.tile[data-pressed="true"] {
+  outline: 2px solid var(--title-glow);
+  outline-offset: -5px;
+}
+
 /* Selected letters pop, and get a thin per-skin outline so they stay crisp
    where the ribbon crosses underneath them. */
 .tile[data-state="selected"] .tile-letter {
@@ -1314,8 +1335,10 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tile[data-revealing="true"]::before,
-  .hint-slot[data-revealing]::before {
+  /* `.hint-slot[data-revealing]::before` (the fill rising inside the slot
+     during a hint long-press) is intentionally NOT listed: like the charge
+     bar, it's a progress indicator and keeps running under reduced motion. */
+  .tile[data-revealing="true"]::before {
     animation: none !important;
     display: none;
   }
@@ -1327,7 +1350,9 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hint-charge-bar-wrap.is-charging .hint-charge-bar-fill,
+  /* The hint charge bar is intentionally NOT listed here: it's a progress
+     indicator for the long-press (a linear width fill, no translation or
+     scaling), so it keeps running under reduced motion. */
   .hint-slot[data-just-revealed="true"],
   .hint-slot[data-just-revealed="true"] .hint-slot-letter,
   .hint-count-decrement--active,
@@ -1916,6 +1941,13 @@ body {
   width: 100%;
   margin-top: 16px;
   letter-spacing: 0.18em;
+}
+
+/* No puzzle today: the button stays in place but must read as inactive. */
+.daily-play-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+  filter: none;
 }
 
 .menu-footer-actions {
@@ -2970,6 +3002,7 @@ body {
 }
 
 .archive-row-status {
+  white-space: nowrap; /* "1:12 · best 0:41" stays on one line */
   font-size: var(--type-caption);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
@@ -3244,7 +3277,8 @@ body {
    under a celebratory hero. Solid border (no dashed outlier), title
    carries the confident CTA, optional subhead clarifies. Buttons match
    the rest of the install-CTA surfaces in the app. */
-.archive-install-cta {
+.archive-install-cta,
+.hint-store-install-cta {
   margin-top: 16px;
   padding: 22px 18px;
   border: 1px solid var(--button-border);
@@ -3256,14 +3290,16 @@ body {
   text-align: center;
 }
 
-.archive-install-cta-label {
+.archive-install-cta-label,
+.hint-store-install-cta-label {
   font-size: var(--type-body);
   font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--title-color);
 }
 
-.archive-install-cta-sub {
+.archive-install-cta-sub,
+.hint-store-install-cta-sub {
   margin: 0;
   font-size: var(--type-caption);
   letter-spacing: 0.04em;
@@ -3271,7 +3307,8 @@ body {
   opacity: 0.75;
 }
 
-.archive-install-cta-links {
+.archive-install-cta-links,
+.hint-store-install-cta-links {
   display: flex;
   gap: 10px;
   width: 100%;
@@ -3279,7 +3316,8 @@ body {
 }
 
 /* <a> elements styled as buttons need explicit text-decoration reset */
-.archive-install-cta-link {
+.archive-install-cta-link,
+.hint-store-install-cta-link {
   flex: 1;
   text-decoration: none;
   display: flex;
@@ -3289,7 +3327,8 @@ body {
   /* padding, border, color come from button-secondary */
 }
 
-.archive-install-cta-link:hover {
+.archive-install-cta-link:hover,
+.hint-store-install-cta-link:hover {
   border-color: color-mix(in srgb, var(--title-glow) 60%, var(--button-border));
   color: var(--title-glow);
 }
