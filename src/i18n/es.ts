@@ -204,6 +204,13 @@ export const strings: Record<keyof typeof enStrings, string> = {
   // Archive
   'archive.title': 'Archivo',
   'archive.back': '← Menú',
+  'archive.mode_calendar': 'Calendario',
+  'archive.mode_list': 'Lista',
+  'archive.prev_month': 'Mes anterior',
+  'archive.next_month': 'Mes siguiente',
+  'archive.month_summary': '{solved}/{total} resueltos · {flawless} perfectos',
+  'archive.unplayed': 'Sin jugar',
+  'archive.month_count': '{solved}/{total} resueltos',
   'archive.empty': 'Vuelve mañana para tu primera entrada del archivo.',
   'archive.day_row': '#{n} — {title}',
   'archive.unsolved': '—',

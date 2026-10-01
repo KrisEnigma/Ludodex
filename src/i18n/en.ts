@@ -203,6 +203,13 @@ export const strings = {
   // Archive
   'archive.title': 'Archive',
   'archive.back': '← Menu',
+  'archive.mode_calendar': 'Calendar',
+  'archive.mode_list': 'List',
+  'archive.prev_month': 'Previous month',
+  'archive.next_month': 'Next month',
+  'archive.month_summary': '{solved}/{total} solved · {flawless} flawless',
+  'archive.unplayed': 'Not played',
+  'archive.month_count': '{solved}/{total} solved',
   'archive.empty': 'Come back tomorrow for the first archive entry.',
   'archive.day_row': '#{n} — {title}',
   'archive.unsolved': '—',

@@ -3521,6 +3521,186 @@ body::before {
   gap: 6px;
 }
 
+.archive-month-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 10px 2px 2px;
+  font-size: var(--type-caption);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--chrome-text);
+}
+
+.archive-month-heading:first-child {
+  margin-top: 0;
+}
+
+.archive-month-count {
+  letter-spacing: 0.04em;
+  opacity: 0.8;
+}
+
+.archive-list-sentinel {
+  height: 1px;
+}
+
+.archive-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── Archive calendar: one month, days coloured by star rating ── */
+.archive-calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.archive-cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.archive-cal-title {
+  font-family: var(--title-font-family, var(--wordmark-font-family, 'Space Mono', monospace));
+  font-weight: var(--title-font-weight, 700);
+  font-size: calc(var(--type-h2) * min(var(--title-font-scale, var(--display-font-scale, 1)), 1.3));
+  color: var(--heading-color, var(--title-color));
+  letter-spacing: 0.04em;
+}
+
+.archive-cal-nav {
+  width: 40px;
+  height: 40px;
+  font-size: 26px;
+  line-height: 1;
+  border-radius: var(--ui-radius, 10px);
+  border: 1px solid var(--button-border);
+  background: var(--button-bg);
+  color: var(--button-text);
+  cursor: pointer;
+}
+
+.archive-cal-nav:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.archive-cal-summary {
+  text-align: center;
+  font-size: var(--type-caption);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--chrome-text);
+}
+
+.archive-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+}
+
+.archive-cal-weekday {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--chrome-text);
+  opacity: 0.7;
+  padding-bottom: 2px;
+}
+
+.archive-cal-day {
+  aspect-ratio: 1;
+  min-width: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  border-radius: calc(var(--ui-radius, 10px) * 0.8);
+  border: 1px solid var(--button-border);
+  background: var(--button-bg);
+  color: var(--button-text);
+  font-family: inherit;
+  cursor: pointer;
+  position: relative;
+}
+
+.archive-cal-num {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.archive-cal-dots {
+  font-size: 7px;
+  letter-spacing: 1px;
+  line-height: 1;
+}
+
+/* Days outside the archive (before launch / future / beyond the catalog). */
+.archive-cal-day[data-state='none'] {
+  background: transparent;
+  border-color: transparent;
+  color: var(--chrome-text);
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* Played: the more stars, the more of the skin's accent. */
+.archive-cal-day[data-state='stars-1'] {
+  background: color-mix(in srgb, var(--title-glow) 22%, var(--button-bg));
+  border-color: color-mix(in srgb, var(--title-glow) 35%, var(--button-border));
+}
+
+.archive-cal-day[data-state='stars-2'] {
+  background: color-mix(in srgb, var(--title-glow) 48%, var(--button-bg));
+  border-color: color-mix(in srgb, var(--title-glow) 60%, var(--button-border));
+}
+
+.archive-cal-day[data-state='stars-3'] {
+  background: var(--primary-action-bg);
+  border-color: var(--primary-action-bg);
+  color: var(--primary-action-text);
+}
+
+/* Available but not played yet: an open invitation. */
+.archive-cal-day[data-state='open'] {
+  background: transparent;
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--chrome-text) 60%, transparent);
+  color: var(--chrome-text);
+}
+
+.archive-cal-day[data-state='locked'] {
+  background: transparent;
+  border-color: color-mix(in srgb, var(--chrome-text) 25%, transparent);
+  color: var(--chrome-text);
+  opacity: 0.55;
+}
+
+.archive-cal-day[data-today='true'] .archive-cal-num {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.archive-cal-day[data-selected='true'] {
+  outline: 2px solid var(--title-glow);
+  outline-offset: 2px;
+}
+
+.archive-cal-detail:empty {
+  display: none;
+}
+
+.archive-cal-detail .archive-row {
+  width: 100%;
+}
+
 /* ── Puzzle tags (category + difficulty) ───────────────────────────────────
    Reusable pill labels. Category is always neutral. Difficulty uses data-diff
    to escalate visual weight: easy = quiet, medium = warm, hard = accent.

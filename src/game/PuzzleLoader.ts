@@ -375,7 +375,7 @@ function getRotationIndices(puzzles: Puzzle[]): number[] {
     .map(({ index }) => index);
 }
 
-function getDateForDayNumber(dayNumber: number): Date {
+export function getDateForDayNumber(dayNumber: number): Date {
   const date = new Date(LAUNCH_DATE);
   date.setHours(0, 0, 0, 0);
   date.setDate(date.getDate() + (dayNumber - 1));

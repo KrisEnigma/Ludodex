@@ -448,6 +448,23 @@ const archiveMarkup = `
         <h2 class="view-topbar-title">Archive</h2>
         <span style="width:56px;"></span>
       </div>
+      <div class="archive-body">
+        <div class="settings-language-toggle archive-mode-toggle">
+          <button type="button" class="settings-language-button" data-active="true">Calendar</button>
+          <button type="button" class="settings-language-button">List</button>
+        </div>
+        <div class="archive-calendar">
+          <div class="archive-cal-header"><button type="button" class="archive-cal-nav">‹</button><span class="archive-cal-title">September 2026</span><button type="button" class="archive-cal-nav">›</button></div>
+          <div class="archive-cal-summary">24/30 solved · 18 flawless</div>
+          <div class="archive-cal-grid">
+            <span class="archive-cal-weekday">S</span><span class="archive-cal-weekday">M</span><span class="archive-cal-weekday">T</span><span class="archive-cal-weekday">W</span><span class="archive-cal-weekday">T</span><span class="archive-cal-weekday">F</span><span class="archive-cal-weekday">S</span>
+            <button type="button" class="archive-cal-day" data-state="stars-2"><span class="archive-cal-num">1</span><span class="archive-cal-dots">★★</span></button><button type="button" class="archive-cal-day" data-state="open"><span class="archive-cal-num">2</span></button><button type="button" class="archive-cal-day" data-state="stars-3"><span class="archive-cal-num">3</span><span class="archive-cal-dots">★★★</span></button><button type="button" class="archive-cal-day" data-state="stars-1"><span class="archive-cal-num">4</span><span class="archive-cal-dots">★</span></button><button type="button" class="archive-cal-day" data-state="stars-3"><span class="archive-cal-num">5</span><span class="archive-cal-dots">★★★</span></button><button type="button" class="archive-cal-day" data-state="none"><span class="archive-cal-num">6</span></button><button type="button" class="archive-cal-day" data-state="stars-3"><span class="archive-cal-num">7</span><span class="archive-cal-dots">★★★</span></button><button type="button" class="archive-cal-day" data-state="stars-2"><span class="archive-cal-num">8</span><span class="archive-cal-dots">★★</span></button><button type="button" class="archive-cal-day" data-state="open" data-selected="true"><span class="archive-cal-num">9</span></button><button type="button" class="archive-cal-day" data-state="stars-3"><span class="archive-cal-num">10</span><span class="archive-cal-dots">★★★</span></button><button type="button" class="archive-cal-day" data-state="stars-1"><span class="archive-cal-num">11</span><span class="archive-cal-dots">★</span></button><button type="button" class="archive-cal-day" data-state="stars-3"><span class="archive-cal-num">12</span><span class="archive-cal-dots">★★★</span></button><button type="button" class="archive-cal-day" data-state="none"><span class="archive-cal-num">13</span></button><button type="button" class="archive-cal-day" data-state="stars-3"><span class="archive-cal-num">14</span><span class="archive-cal-dots">★★★</span></button>
+          </div>
+          <div class="archive-cal-detail"></div>
+        </div>
+      </div>
+      <div class="archive-month-heading"><span>September 2026</span><span class="archive-month-count">24/30 solved</span></div>
+      <div class="archive-list-sentinel"></div>
       <div class="archive-list">
         <button type="button" class="archive-row" data-solved="true">
           <div class="archive-row-label">
