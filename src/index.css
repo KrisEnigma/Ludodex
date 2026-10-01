@@ -181,6 +181,7 @@
   display: flex;
   flex-direction: column;
   gap: 22px;
+  width: 100%;
 }
 
 .achievements-section {
@@ -225,11 +226,97 @@
   opacity: 1;
 }
 
-.achievement-row-icon {
-  font-size: var(--type-h2);
-  margin-right: 6px;
+/* Badge: hexagon in the achievement's tier metal, category glyph inside.
+   Locked badges are a flat outline with a padlock. */
+.achievement-badge {
+  --tier: #c98a4b;
+  --tier-hi: #f0c08a;
+  position: relative;
+  width: 40px;
+  height: 44px;
   flex-shrink: 0;
-  opacity: 0.92;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  background: linear-gradient(160deg, var(--tier-hi), var(--tier));
+  display: grid;
+  place-items: center;
+}
+
+.achievement-badge[data-tier='silver'] { --tier: #9aa4b1; --tier-hi: #eef2f6; }
+.achievement-badge[data-tier='gold'] { --tier: #d4a017; --tier-hi: #ffe58a; }
+.achievement-badge[data-tier='diamond'] { --tier: #3fb7e8; --tier-hi: #c9f3ff; }
+
+.achievement-badge-inner {
+  width: calc(100% - 6px);
+  height: calc(100% - 6px);
+  clip-path: inherit;
+  background: color-mix(in srgb, var(--tier) 30%, #12141a);
+  display: grid;
+  place-items: center;
+  color: var(--tier-hi);
+}
+
+.achievement-badge-inner .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.achievement-badge[data-earned='false'] {
+  background: color-mix(in srgb, var(--chrome-text) 45%, transparent);
+}
+
+.achievement-badge[data-earned='false'] .achievement-badge-inner {
+  background: var(--button-bg);
+  color: var(--chrome-text);
+}
+
+.achievement-badge[data-earned='false'] .achievement-badge-inner .icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* Progress toward a locked goal. */
+.achievement-row-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.achievement-row-progress-track {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--chrome-text) 22%, transparent);
+  overflow: hidden;
+}
+
+.achievement-row-progress-track > span {
+  display: block;
+  height: 100%;
+  background: var(--title-glow);
+}
+
+.achievement-row-progress-label {
+  font-size: var(--type-caption);
+  color: var(--chrome-text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.achievements-almost {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.achievements-almost[hidden] {
+  display: none;
+}
+
+.achievements-almost .achievement-row {
+  opacity: 1;
+  border-color: color-mix(in srgb, var(--title-glow) 45%, var(--button-border));
 }
 
 .achievement-row-text {

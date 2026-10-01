@@ -10,6 +10,9 @@ export const strings = {
   'achievements.back': '← Menu',
   'achievements.unlocked_summary': '{earned}/{total} unlocked',
   'achievements.unlocked_label': 'unlocked',
+  'achievements.almost_there': 'Almost there',
+  'achievements.progress_best': 'Best: {time}',
+  'achievements.progress_no_best': 'No first-play time yet',
   'achievements.earned_on': 'Earned on {date}',
   // Achievements
   'menu.achievements_aria': 'Achievements',

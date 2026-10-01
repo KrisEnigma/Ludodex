@@ -1,4 +1,4 @@
-type IconName = 'trophy' | 'settings' | 'lock' | 'chevron-right' | 'dismiss' | 'flame' | 'bulb' | 'check' | 'snowflake';
+type IconName = 'trophy' | 'settings' | 'lock' | 'chevron-right' | 'dismiss' | 'flame' | 'bulb' | 'check' | 'snowflake' | 'star' | 'bolt' | 'gem' | 'sparkle' | 'layers';
 
 type IconShape =
   | { type: 'path'; d: string; fillRule?: 'evenodd' | 'nonzero' }
@@ -42,6 +42,26 @@ const ICONS: Record<IconName, IconEntry> = {
   dismiss: { shapes: [
     { type: 'line', x1: 6, y1: 6, x2: 18, y2: 18 },
     { type: 'line', x1: 18, y1: 6, x2: 6, y2: 18 }
+  ]},
+  star: { shapes: [
+    { type: 'polyline', points: '12 3 14.6 9 21 9.5 16 13.6 17.7 20 12 16.5 6.3 20 8 13.6 3 9.5 9.4 9 12 3' }
+  ]},
+  bolt: { shapes: [
+    { type: 'polyline', points: '13 2 5 13.5 11.5 13.5 10.5 22 19 10 12.5 10 13 2' }
+  ]},
+  gem: { shapes: [
+    { type: 'polyline', points: '6 4 18 4 22 9.5 12 21 2 9.5 6 4' },
+    { type: 'polyline', points: '2 9.5 22 9.5' },
+    { type: 'polyline', points: '9 4 12 9.5 15 4' },
+    { type: 'polyline', points: '12 9.5 12 21' }
+  ]},
+  sparkle: { shapes: [
+    { type: 'path', d: 'M12 3 C12.8 8.5 15.5 11.2 21 12 C15.5 12.8 12.8 15.5 12 21 C11.2 15.5 8.5 12.8 3 12 C8.5 11.2 11.2 8.5 12 3 Z' }
+  ]},
+  layers: { shapes: [
+    { type: 'polyline', points: '12 3 21 8 12 13 3 8 12 3' },
+    { type: 'polyline', points: '3 12.5 12 17.5 21 12.5' },
+    { type: 'polyline', points: '3 16.5 12 21.5 21 16.5' }
   ]},
   check: { shapes: [
     { type: 'polyline', points: '5 12.5 10 17.5 19 7' }

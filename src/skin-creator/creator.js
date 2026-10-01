@@ -338,6 +338,17 @@ const achievementsMarkup = `
           <div class="achievements-summary-bar-fill" style="width:43%"></div>
         </div>
       </div>
+      <div class="achievements-almost">
+        <div class="achievements-section-heading"><span class="achievements-section-label">Almost there</span></div>
+        <div class="achievement-row" data-earned="false">
+          <div class="achievement-badge" data-tier="silver" data-earned="false" aria-hidden="true"><span class="achievement-badge-inner">${ICON.lock}</span></div>
+          <div class="achievement-row-text">
+            <div class="achievement-row-name">Unstoppable</div>
+            <div class="achievement-row-description">Maintain a 30-day streak</div>
+            <div class="achievement-row-progress"><span class="achievement-row-progress-track"><span style="width:40%"></span></span><span class="achievement-row-progress-label">12/30</span></div>
+          </div>
+        </div>
+      </div>
       <div class="achievements-list">
         <section class="achievements-section">
           <div class="achievements-section-heading">
@@ -345,7 +356,7 @@ const achievementsMarkup = `
             <span class="achievements-section-count">2/4</span>
           </div>
           <div class="achievement-row" data-earned="true">
-            <div class="achievement-row-icon" aria-hidden="true">${ICON.trophy}</div>
+            <div class="achievement-badge" data-tier="gold" data-earned="true" aria-hidden="true"><span class="achievement-badge-inner">${ICON.trophy}</span></div>
             <div class="achievement-row-text">
               <div class="achievement-row-name">On a Roll</div>
               <div class="achievement-row-description">Maintain a 3-day streak</div>
@@ -353,7 +364,7 @@ const achievementsMarkup = `
             </div>
           </div>
           <div class="achievement-row" data-earned="true">
-            <div class="achievement-row-icon" aria-hidden="true">${ICON.trophy}</div>
+            <div class="achievement-badge" data-tier="gold" data-earned="true" aria-hidden="true"><span class="achievement-badge-inner">${ICON.trophy}</span></div>
             <div class="achievement-row-text">
               <div class="achievement-row-name">Week Warrior</div>
               <div class="achievement-row-description">Maintain a 7-day streak</div>
@@ -361,14 +372,14 @@ const achievementsMarkup = `
             </div>
           </div>
           <div class="achievement-row" data-earned="false">
-            <div class="achievement-row-icon" aria-hidden="true">${ICON.lock}</div>
+            <div class="achievement-badge" data-tier="silver" data-earned="false" aria-hidden="true"><span class="achievement-badge-inner">${ICON.lock}</span></div>
             <div class="achievement-row-text">
               <div class="achievement-row-name">Unstoppable</div>
               <div class="achievement-row-description">Maintain a 30-day streak</div>
             </div>
           </div>
           <div class="achievement-row" data-earned="false">
-            <div class="achievement-row-icon" aria-hidden="true">${ICON.lock}</div>
+            <div class="achievement-badge" data-tier="silver" data-earned="false" aria-hidden="true"><span class="achievement-badge-inner">${ICON.lock}</span></div>
             <div class="achievement-row-text">
               <div class="achievement-row-name">Century</div>
               <div class="achievement-row-description">Maintain a 100-day streak</div>
@@ -381,7 +392,7 @@ const achievementsMarkup = `
             <span class="achievements-section-count">1/3</span>
           </div>
           <div class="achievement-row" data-earned="true">
-            <div class="achievement-row-icon" aria-hidden="true">${ICON.trophy}</div>
+            <div class="achievement-badge" data-tier="gold" data-earned="true" aria-hidden="true"><span class="achievement-badge-inner">${ICON.trophy}</span></div>
             <div class="achievement-row-text">
               <div class="achievement-row-name">Speed Demon</div>
               <div class="achievement-row-description">Solve a puzzle under 30 seconds</div>
@@ -389,14 +400,14 @@ const achievementsMarkup = `
             </div>
           </div>
           <div class="achievement-row" data-earned="false">
-            <div class="achievement-row-icon" aria-hidden="true">${ICON.lock}</div>
+            <div class="achievement-badge" data-tier="silver" data-earned="false" aria-hidden="true"><span class="achievement-badge-inner">${ICON.lock}</span></div>
             <div class="achievement-row-text">
               <div class="achievement-row-name">Blink and Miss It</div>
               <div class="achievement-row-description">Solve a puzzle under 10 seconds</div>
             </div>
           </div>
           <div class="achievement-row" data-earned="false">
-            <div class="achievement-row-icon" aria-hidden="true">${ICON.lock}</div>
+            <div class="achievement-badge" data-tier="silver" data-earned="false" aria-hidden="true"><span class="achievement-badge-inner">${ICON.lock}</span></div>
             <div class="achievement-row-text">
               <div class="achievement-row-name">Lightning</div>
               <div class="achievement-row-description">Solve a puzzle under 5 seconds</div>
@@ -409,7 +420,7 @@ const achievementsMarkup = `
             <span class="achievements-section-count">3/4</span>
           </div>
           <div class="achievement-row" data-earned="true">
-            <div class="achievement-row-icon" aria-hidden="true">${ICON.trophy}</div>
+            <div class="achievement-badge" data-tier="gold" data-earned="true" aria-hidden="true"><span class="achievement-badge-inner">${ICON.trophy}</span></div>
             <div class="achievement-row-text">
               <div class="achievement-row-name">First Steps</div>
               <div class="achievement-row-description">Solve your first puzzle</div>
@@ -417,7 +428,7 @@ const achievementsMarkup = `
             </div>
           </div>
           <div class="achievement-row" data-earned="false">
-            <div class="achievement-row-icon" aria-hidden="true">${ICON.lock}</div>
+            <div class="achievement-badge" data-tier="silver" data-earned="false" aria-hidden="true"><span class="achievement-badge-inner">${ICON.lock}</span></div>
             <div class="achievement-row-text">
               <div class="achievement-row-name">Centurion</div>
               <div class="achievement-row-description">Solve 100 puzzles</div>
