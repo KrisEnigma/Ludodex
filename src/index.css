@@ -2207,10 +2207,23 @@ body::before {
 }
 
 /* No puzzle today: the button stays in place but must read as inactive. */
-.daily-play-button:disabled {
-  opacity: 0.4;
+/* Disabled actions, for every skin: an empty dashed outline in the dim UI
+   colour — unmistakably inactive on light and dark skins alike, and never
+   confusable with a filled state such as "✓ Solved · Play again". Busy
+   purchase buttons use it too. A brief confirmation flash ("Copied!") sets
+   data-flash and keeps its normal look. */
+.button-primary:disabled:not([data-flash]),
+.button-secondary:disabled:not([data-flash]) {
+  background: transparent;
+  color: var(--chrome-text);
+  border-color: transparent;
+  /* outline, not border: no layout shift when a button toggles disabled */
+  outline: 1px dashed color-mix(in srgb, var(--chrome-text) 55%, transparent);
+  outline-offset: -1px;
+  box-shadow: none;
+  text-shadow: none;
+  opacity: 0.85;
   cursor: default;
-  filter: none;
 }
 
 .menu-footer-actions {

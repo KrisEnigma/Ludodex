@@ -588,9 +588,11 @@ function flashButton(btn: HTMLButtonElement, label: string, durationMs = 1800): 
   const original = btn.textContent ?? '';
   btn.textContent = label;
   btn.disabled = true;
+  btn.dataset.flash = 'true'; // confirmation, not "unavailable": keep the enabled look
   window.setTimeout(() => {
     btn.textContent = original;
     btn.disabled = false;
+    delete btn.dataset.flash;
   }, durationMs);
 }
 

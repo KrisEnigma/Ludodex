@@ -40,14 +40,16 @@ Deferred items from the Sep 2026 audit / fix pass. Details and rationale live in
 - [x] `og-image.png` added (1200×630, Void style). After deploying, re-check link
       previews (e.g. opengraph.xyz) — some apps cache old previews for days.
 
-## Skin pass (planned)
+## Skin pass (done Oct 1 2026)
 
-- [ ] Disabled Play button on Void looks close to the "✓ Solved · Play again"
-      state; Lumen's disabled state is very pale.
-- [ ] Disabled styling for purchase buttons (hint store Buy, Starter Pack CTA).
-      Keep the Share sheet's "Copied!" flash looking enabled.
-- [ ] Everything in §2.4 (fewer, deeper skins; backdrop / tile / ribbon layers;
-      picker redesign).
+- [x] Disabled buttons: one dashed-outline "inactive" look for every skin (Play
+      on no-puzzle days, busy purchase buttons); the Share "Copied!" flash keeps
+      its enabled look (`data-flash`).
+- [x] §2.4, revised with Kris: all 33 skins kept and individually reworked
+      (evoke through colour/type, no overlays on text or selections); layer
+      tokens; dev skin gallery (`?skins`); picker = mini-screen cards grouped
+      Yours / Earn / Buy with unlock progress.
+- [ ] Optional later: per-skin sound presets (§2.4), find / endgame FX variants.
 
 ## Device-only checks (need an unmanaged machine)
 
