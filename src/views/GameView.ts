@@ -34,6 +34,7 @@ import { track } from '../services/AnalyticsService';
 import type { RoutePayloads } from './Router';
 import type { WinPayload } from './types';
 import { formatDuration } from '../utils/format';
+import { playCollapse, playFind, playGlitch, playSelect } from '../services/SoundService';
 
 type PartEntry = {
   id: string;
@@ -275,6 +276,9 @@ export class GameView {
     hints.className = 'hints';
 
     const answers = [...puzzle.answers].sort((a, b) => a.display.localeCompare(b.display));
+    // Many answers → more slot rows; CSS switches to compact slots so the
+    // board still fits a phone screen without scrolling.
+    if (answers.length >= 5) hints.dataset.dense = 'true';
     const ownershipEntries: PartOwnershipEntry[] = [];
 
     for (const answer of puzzle.answers) {
@@ -812,7 +816,7 @@ export class GameView {
   }
 
   /** Screen readers: "Found MARIO. 2 of 3 words." (answers, not parts). */
-  private announceFound(partIds: string[]): void {
+  private announceFound(partIds: string[]): { found: number; total: number } {
     const word = partIds
       .map((id) => this.partEntriesById.get(id)?.word ?? '')
       .filter(Boolean)
@@ -825,6 +829,7 @@ export class GameView {
     const total = solvedByAnswer.size;
     const found = [...solvedByAnswer.values()].filter(Boolean).length;
     this.liveRegion.textContent = t('game.sr_found', { word, found, total });
+    return { found, total };
   }
 
   /**
@@ -851,6 +856,8 @@ export class GameView {
   private onChainChanged(chain: Tile[]): void {
     const prevLen = this.previousChainLength;
     const newLen = chain.length;
+
+    if (newLen > prevLen) playSelect(); // soft tick per added tile (no backtrack/clear)
 
     if (prevLen === 0 && newLen >= 1) {
       this.chainsStarted += 1;
@@ -1080,7 +1087,8 @@ export class GameView {
       });
     }
 
-    this.announceFound(partIds);
+    const progress = this.announceFound(partIds);
+    playFind(progress.found, progress.total);
 
     // Single coherent flash wave across the player's swipe, in the order they swiped.
     // For multi-part answers (e.g. LARA CROFT) this replaces two overlapping per-part
@@ -1258,6 +1266,7 @@ export class GameView {
     // Phase 1: corrupt. Tick the scramble every 40ms; 70% of ticks swap to a
     // glitch glyph, 30% restore so the original letters strobe through.
     this.element.dataset.endgamePhase = 'corrupt';
+    playGlitch(GameView.GLITCH_CORRUPT_MS);
     const corruptUntil = performance.now() + GameView.GLITCH_CORRUPT_MS;
     const tickScramble = (): void => {
       if (performance.now() >= corruptUntil) return;
@@ -1287,6 +1296,7 @@ export class GameView {
 
     // Phase 2 + 3: CRT collapse + horizontal line of light.
     this.element.dataset.endgamePhase = 'collapse';
+    playCollapse(GameView.GLITCH_COLLAPSE_MS);
     const crtLine = document.createElement('div');
     crtLine.className = 'endgame-crt-line';
     crtLine.setAttribute('aria-hidden', 'true');

@@ -18,6 +18,7 @@ import { captureException, initSentry } from './services/SentryService';
 import { initDailyNotification } from './services/NotificationService';
 import { Router } from './views/Router';
 import { parseCurrentUrl, parseDeepLinkUrl, type ParsedDeepLink } from './services/DeepLinking';
+import { initSound } from './services/SoundService';
 
 const app = document.querySelector<HTMLDivElement>('#app');
 if (!app) {
@@ -37,6 +38,7 @@ async function boot(root: HTMLDivElement): Promise<void> {
   await initI18n();
   i18nReady = true;
   updateLocale();
+  await initSound();
   // DEV-only: `?bootfail` simulates a startup failure to preview the error screen.
   if (import.meta.env.DEV && new URLSearchParams(window.location.search).has('bootfail')) {
     throw new Error('Simulated boot failure (?bootfail)');

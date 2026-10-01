@@ -21,6 +21,23 @@ import {
 } from '../services/NotificationService';
 import { trackOverlay } from '../components/overlayStack';
 import { formatDuration, formatTimeUntilMidnight } from '../utils/format';
+import { playWinCues, type WinCue } from '../services/SoundService';
+
+// Win-screen choreography, ms after mount — one timeline for animation AND
+// sound. Star / time / pill start delays live in index.css
+// (.win-star[data-position], .win-time 700ms, win-pill-in 900ms); the "land"
+// values here are those starts plus each animation's visual impact point.
+// Achievement timing is set from here (CSS vars) so it can't drift.
+const WIN_TIMELINE = {
+  starLand: [350, 530, 710],
+  confetti: 600, // also drives the confetti launch below
+  timeLand: 1000,
+  pills: 1100,
+  achievementsStart: 1250,
+  achievementGap: 140,
+  achievementLand: 220,
+  maxUnlockSounds: 6
+} as const;
 
 export class WinView {
   readonly element: HTMLDivElement;
@@ -58,7 +75,7 @@ export class WinView {
             'var(--path-grad-end)'
           ]
         });
-      }, 600);
+      }, WIN_TIMELINE.confetti);
     }
 
     const headline = document.createElement('div');
@@ -209,6 +226,8 @@ export class WinView {
         ? this.renderAchievementsSection(payload.unlockedAchievements)
         : null;
 
+    this.scheduleWinSounds(payload, achievementsSection);
+
     // Order matters: celebration → wrap-up info → primary CTA →
     // secondary actions → install footer. The next-puzzle countdown
     // sits right above SHARE so it reads as the "come back" hook
@@ -264,6 +283,8 @@ export class WinView {
 
     const achievementsSection = document.createElement('section');
     achievementsSection.className = 'win-achievements-section';
+    // Achievements come last in the sequence (after stars → time → pills).
+    achievementsSection.style.animationDelay = `${WIN_TIMELINE.achievementsStart}ms`;
 
     const heading = document.createElement('div');
     heading.className = 'win-achievements-heading';
@@ -298,11 +319,43 @@ export class WinView {
     return achievementsSection;
   }
 
+  /** One blip per visual beat, on the same timeline as the animations. */
+  private scheduleWinSounds(payload: WinPayload, achievementsSection: HTMLElement | null): void {
+    const cards = achievementsSection ? achievementsSection.querySelectorAll('.win-achievement-card').length : 0;
+    const showsPill = payload.wasNewBest || payload.wasNewRating || payload.freezeUsed;
+    const reduced = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    // The stinger is THE win sound (a longer flawless version on 3★); the
+    // rest are accents.
+    const cues: WinCue[] = [{ at: 0, kind: 'stinger', flawless: payload.starRating === 3 }];
+    if (reduced) {
+      // Everything appears at once: a short compact version.
+      for (let i = 0; i < payload.starRating; i++) cues.push({ at: 300 + i * 80, kind: 'star', index: i as 0 | 1 | 2 });
+      if (cards > 0) cues.push({ at: 300 + payload.starRating * 80 + 60, kind: 'unlock', index: 0 });
+    } else {
+      for (let i = 0; i < payload.starRating; i++) {
+        cues.push({ at: WIN_TIMELINE.starLand[i], kind: 'star', index: i as 0 | 1 | 2 });
+      }
+      if (payload.starRating === 3) cues.push({ at: WIN_TIMELINE.confetti, kind: 'confetti' });
+      cues.push({ at: WIN_TIMELINE.timeLand, kind: 'time' });
+      if (showsPill) cues.push({ at: WIN_TIMELINE.pills, kind: 'pill' });
+      // Rising tone per card; only the first few sound (a first solve can
+      // unlock ~10 at once — the rest slide in silently).
+      for (let i = 0; i < Math.min(cards, WIN_TIMELINE.maxUnlockSounds); i++) {
+        cues.push({
+          at: WIN_TIMELINE.achievementsStart + i * WIN_TIMELINE.achievementGap + WIN_TIMELINE.achievementLand,
+          kind: 'unlock',
+          index: i
+        });
+      }
+    }
+    playWinCues(cues);
+  }
+
   private renderAchievementCard(def: typeof ACHIEVEMENTS[number], index = 0): HTMLElement {
     const card = document.createElement('div');
     card.className = 'win-achievement-card';
-    // Stagger each card's slide-in by 80ms per position.
-    card.style.setProperty('--card-delay', `${index * 80}ms`);
+    // Cards slide in one by one after the rest of the celebration.
+    card.style.setProperty('--card-delay', `${WIN_TIMELINE.achievementsStart + index * WIN_TIMELINE.achievementGap}ms`);
 
     const icon = document.createElement('div');
     icon.className = 'win-achievement-card-icon';

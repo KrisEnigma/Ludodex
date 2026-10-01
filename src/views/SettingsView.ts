@@ -24,6 +24,7 @@ import { showConfirmModal } from '../components/Modal';
 import { addDragToDismiss } from '../components/sheetDrag';
 import { createIcon } from '../components/icons';
 import { trackOverlay } from '../components/overlayStack';
+import { isSoundEnabled, playFind, setSoundEnabled } from '../services/SoundService';
 
 // Icon-flow trace logs: dev builds only (silent in production).
 const debugLog: (...args: unknown[]) => void = import.meta.env.DEV ? console.log.bind(console) : () => {};
@@ -357,6 +358,7 @@ export class SettingsView {
     this.element.append(
       this.renderTopBar(),
       this.renderLanguageSection(),
+      this.renderSoundSection(),
       // Daily reminder is native-only (no web push surface).
       ...(this.isNative ? [this.renderNotificationSection()] : []),
       // App icon picker is native-only (launcher icons don't apply on web).
@@ -410,6 +412,41 @@ export class SettingsView {
 
     bar.append(back, title, spacer);
     return bar;
+  }
+
+  private renderSoundSection(): HTMLElement {
+    const section = document.createElement('section');
+    section.className = 'settings-section';
+
+    const heading = document.createElement('h3');
+    heading.className = 'settings-section-heading';
+    heading.textContent = t('settings.section_sound');
+
+    // Same two-button toggle styling as the language picker.
+    const toggle = document.createElement('div');
+    toggle.className = 'settings-language-toggle';
+
+    const makeButton = (on: boolean): HTMLButtonElement => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'settings-language-button';
+      button.textContent = t(on ? 'settings.sound_on' : 'settings.sound_off');
+      button.dataset.active = String(isSoundEnabled() === on);
+      button.addEventListener('click', () => {
+        void setSoundEnabled(on).then(() => {
+          onButton.dataset.active = String(on);
+          offButton.dataset.active = String(!on);
+          if (on) playFind(1, 2); // short preview so the player hears it's on
+        });
+      });
+      return button;
+    };
+    const onButton = makeButton(true);
+    const offButton = makeButton(false);
+
+    toggle.append(onButton, offButton);
+    section.append(heading, toggle);
+    return section;
   }
 
   private renderLanguageSection(): HTMLElement {

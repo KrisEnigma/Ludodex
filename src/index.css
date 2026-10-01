@@ -728,6 +728,23 @@ body {
   padding: 20px 18px 32px;
   --game-stack-gap: 18px;
   gap: var(--game-stack-gap);
+  /* Fill the shell so the board can be centred below the header, but still
+     shrink to it (min-height: 0) so a too-tall board scrolls instead of being
+     clipped by the shell. */
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* Centre the board (title → hints/instructions) in the space under the
+   header; phones previously had ~30% empty space at the bottom. Free space is
+   split between the header's bottom margin and an empty trailing spacer, so
+   it works whichever children are visible (instructions can be hidden). */
+.game-view > .header {
+  margin-bottom: auto;
+}
+.game-view::after {
+  content: '';
+  margin-top: auto;
 }
 
 .view-title {
@@ -894,7 +911,9 @@ body {
 
 .grid-wrap {
   position: relative;
-  width: min(82vw, 332px);
+  /* Also capped by screen height so short phones (e.g. 667px) keep the whole
+     board on screen; tall phones are unaffected. */
+  width: min(82vw, 332px, 40dvh);
   aspect-ratio: 1;
   margin: 0 auto;
 }
@@ -1297,6 +1316,31 @@ body {
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
+}
+
+/* Larger answer slots (28×37, were 22×30): easier to read and long-press. They
+   shrink proportionally (flex) when a long answer row would overflow. */
+.hint-row {
+  max-width: 100%;
+}
+.hint-slot {
+  /* Explicit width so the row sizes to 30px slots; flex-shrink lets a long
+     row compress down to min-width instead of overflowing. */
+  flex: 0 1 auto;
+  width: 28px;
+  min-width: 16px;
+  height: auto;
+  aspect-ratio: 3 / 4;
+  font-size: calc(var(--type-body) * 1.1);
+}
+/* 5+ answers (GameView sets data-dense): compact slots + tighter rows. */
+.hints[data-dense="true"] {
+  row-gap: 12px;
+  column-gap: 16px;
+}
+.hints[data-dense="true"] .hint-slot {
+  width: 26px;
+  font-size: var(--type-body);
 }
 
 .hint-slot-letter {
