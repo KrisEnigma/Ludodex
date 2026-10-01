@@ -13,6 +13,7 @@ import { showHintStore } from '../components/HintStoreSheet';
 import { buildPuzzleTags } from '../components/PuzzleTags';
 import { formatDuration, formatTimeUntilMidnight } from '../utils/format';
 import { consumeWordmarkSweep } from '../services/wordmarkSweep';
+import { renderRibbon } from '../components/ribbon';
 
 const STREAK_BANNER_DISMISSED_KEY = 'streak_banner_dismissed';
 
@@ -79,6 +80,30 @@ export class MenuView {
     // ribbon gradient). Screen readers get the whole word via aria-label.
     const brand = t('menu.brand');
     logo.setAttribute('aria-label', brand);
+    // Logo lockup: the 2×2 tile mark (boot splash / app icon / share card),
+    // drawn with this skin's real tiles, stacked above the wordmark.
+    const mark = document.createElement('span');
+    mark.className = 'menu-logo-mark';
+    mark.setAttribute('aria-hidden', 'true');
+    for (let i = 0; i < 4; i++) {
+      const cell = document.createElement('span');
+      cell.className = 'tile';
+      cell.dataset.state = i === 0 || i === 3 ? 'selected' : 'idle';
+      mark.append(cell);
+    }
+    // The swipe between the two selected tiles, in the skin's ribbon (same as
+    // the app icon). Drawn in during the launch sweep.
+    const swipe = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    swipe.setAttribute('class', 'menu-logo-swipe');
+    swipe.setAttribute('viewBox', '0 0 100 100');
+    const swipeGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    swipeGroup.setAttribute('class', 'path-segments');
+    renderRibbon(swipeGroup, [{ x: 22.5, y: 22.5 }, { x: 77.5, y: 77.5 }]);
+    swipe.append(swipeGroup);
+    mark.append(swipe);
+    const word = document.createElement('span');
+    word.className = 'menu-logo-word';
+    logo.append(mark, word);
     const brandLetters = Array.from(brand);
     brandLetters.forEach((ch, i) => {
       const letter = document.createElement('span');
@@ -87,7 +112,7 @@ export class MenuView {
       letter.textContent = ch;
       letter.style.setProperty('--i', String(i));
       letter.style.setProperty('--t', String(brandLetters.length > 1 ? i / (brandLetters.length - 1) : 0));
-      logo.append(letter);
+      word.append(letter);
     });
     if (consumeWordmarkSweep()) logo.dataset.sweep = 'true';
 

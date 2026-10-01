@@ -114,6 +114,8 @@ const VIEW_ONLY = new Set([
   'skin-scope',
   // Per-letter wordmark spans (built in JS for the launch sweep)
   'menu-logo-letter',
+  // Share preview sheet image block (desktop web fallback only)
+  'share-preview-image', 'share-preview-save',
   // Transient find fly-in clones (body-level, mid-animation only)
   'fly-letter',
   // Visually hidden screen-reader live region (no visual — nothing to preview)

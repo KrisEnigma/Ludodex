@@ -237,8 +237,14 @@ function buildWinMarkup() {
           </div>
           <span class="win-headline-label">Flawless</span>
         </div>
+        <div class="win-star-key">
+          <span class="win-star-key-item" data-earned="true"><span class="win-star-key-mark">★</span><span>Solved</span></span>
+          <span class="win-star-key-item" data-earned="true"><span class="win-star-key-mark">★</span><span>No mistakes</span></span>
+          <span class="win-star-key-item" data-earned="true"><span class="win-star-key-mark">★</span><span>No hints</span></span>
+        </div>
         <h2 class="view-title">Dark Souls Bosses</h2>
         <div class="win-time">0:07</div>
+        <ul class="win-words"><li class="win-word">GWYN</li><li class="win-word">SEATH</li><li class="win-word">GWYNDOLIN</li><li class="win-word">SIF</li></ul>
         <div class="win-pill-row"></div>
         <button type="button" class="win-share-button button-primary">Share</button>
         <div class="win-secondary-row">
@@ -259,7 +265,7 @@ const menuMarkup = `
         <button type="button" class="menu-icon-button" aria-label="Achievements">${ICON.trophy}</button>
         <button type="button" class="menu-icon-button" aria-label="Settings">${ICON.settings}</button>
       </div>
-      <h1 class="menu-logo">LUDODEX</h1>
+      <h1 class="menu-logo"><span class="menu-logo-mark"><span class="tile" data-state="selected"></span><span class="tile" data-state="idle"></span><span class="tile" data-state="idle"></span><span class="tile" data-state="selected"></span><svg class="menu-logo-swipe" viewBox="0 0 100 100"><line x1="22.8" y1="22.8" x2="77.2" y2="77.2" stroke="var(--path-color)" stroke-width="10" stroke-linecap="round"/></svg></span><span class="menu-logo-word">LUDODEX</span></h1>
       <div class="stats-strip">
         <div class="stat-card" data-highlight="true">
           <span class="stat-value-row">

@@ -1,34 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
-  <!-- THE LCD MATTE SCREEN (Maximized for dynamic clipping masks) -->
+  <!-- Ludodex app icon · Dot Matrix: the 2×2 tile mark (boot splash / share card / picker),
+       diagonal pair selected with the swipe between them. Generated 2026-10; render with
+       scripts/generate-icons.cjs. Keep the bg <rect> on its own line (the script strips it
+       for Android adaptive foregrounds). -->
+  <defs>
+    <linearGradient id="idle" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#8bac0f"/><stop offset="100%" stop-color="#8bac0f"/></linearGradient>
+    <linearGradient id="sel" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0f380f"/><stop offset="100%" stop-color="#0f380f"/></linearGradient>
+    <linearGradient id="path" gradientUnits="userSpaceOnUse" x1="330" y1="330" x2="694" y2="694"><stop offset="0%" stop-color="#306230"/><stop offset="100%" stop-color="#306230"/></linearGradient>
+  </defs>
   <rect width="1024" height="1024" fill="#9bbc0f" />
-
-  <!-- D-PAD INTER-NODE RUNNERS (Recessed LCD tracks) -->
-  <g stroke="#306230" stroke-width="56" stroke-linecap="round" stroke-linejoin="round" opacity="0.4">
-    <line x1="512" y1="212" x2="512" y2="812" />
-    <line x1="212" y1="512" x2="812" y2="512" />
-  </g>
-
-  <!-- THE INTERACTIVE TILES -->
-  <g fill="#8bac0f" stroke="#306230" stroke-width="14" stroke-linejoin="round">
-    <rect x="422" y="422" width="180" height="180" rx="32" />
-    <rect x="422" y="122" width="180" height="180" rx="32" />
-    <rect x="722" y="422" width="180" height="180" rx="32" />
-    <rect x="422" y="722" width="180" height="180" rx="32" />
-    <rect x="122" y="422" width="180" height="180" rx="32" />
-  </g>
-
-  <!-- THE ACTIVE SWIPE PATH (Thick, dense unlit pixel chunk) -->
-  <path d="M 512 212 L 512 512 L 812 512" 
-        fill="none" stroke="#0f380f" stroke-width="64" stroke-linecap="round" stroke-linejoin="round" />
-        
-  <!-- HIGH-CONTRAST INDENTED LCD TERMINALS -->
-  <g fill="#0f380f">
-    <circle cx="512" cy="512" r="28" />
-    
-    <circle cx="812" cy="512" r="48" />
-    <circle cx="812" cy="512" r="20" fill="#8bac0f" />
-
-    <circle cx="512" cy="212" r="48" />
-    <circle cx="512" cy="212" r="20" fill="#8bac0f" />
-  </g>
+  <rect x="180" y="180" width="300" height="300" rx="0" fill="url(#sel)" stroke="#0f380f" stroke-width="22" />
+  <rect x="544" y="180" width="300" height="300" rx="0" fill="url(#idle)" stroke="#306230" stroke-width="22" />
+  <rect x="180" y="544" width="300" height="300" rx="0" fill="url(#idle)" stroke="#306230" stroke-width="22" />
+  <rect x="544" y="544" width="300" height="300" rx="0" fill="url(#sel)" stroke="#0f380f" stroke-width="22" />
+  <line x1="330" y1="330" x2="694" y2="694" stroke="url(#path)" stroke-width="74" stroke-linecap="butt" />
+  <rect x="290" y="290" width="80" height="80" fill="#9bbc0f" />
+  <rect x="654" y="654" width="80" height="80" fill="#9bbc0f" />
 </svg>

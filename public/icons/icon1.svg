@@ -1,78 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Ludodex app icon · Void: the 2×2 tile mark (boot splash / share card / picker),
+       diagonal pair selected with the swipe between them. Generated 2026-10; render with
+       scripts/generate-icons.cjs. Keep the bg <rect> on its own line (the script strips it
+       for Android adaptive foregrounds). -->
   <defs>
-    <!-- Deep tech-blue gradient matching Void's UI tiles -->
-    <linearGradient id="voidTile" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1e2236" />
-      <stop offset="100%" stop-color="#131824" />
-    </linearGradient>
-    
-    <!-- Swipe path gradient matching Void's path (neon purple to electric cyan) -->
-    <linearGradient id="voidPath" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#8a7bff" />
-      <stop offset="100%" stop-color="#00d4e8" />
-    </linearGradient>
-
-    <radialGradient id="voidGlow" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
-      <stop offset="0%" stop-color="#00d4e8" stop-opacity="0.65" />
-      <stop offset="100%" stop-color="#00d4e8" stop-opacity="0" />
-    </radialGradient>
-    
-    <filter id="pathShadow" filterUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
-      <feGaussianBlur stdDeviation="12" in="SourceAlpha" result="blur" />
-      <feOffset dx="0" dy="8" in="blur" result="offset" />
-      <feColorMatrix type="matrix" values="0 0 0 0 0.54 0 0 0 0 0.48 0 0 0 0 1 0 0 0 0.45 0" in="offset" result="shadow" />
-      <feMerge>
-        <feMergeNode in="shadow" />
-        <feMergeNode in="SourceGraphic" />
-      </feMerge>
-    </filter>
-    
-    <filter id="endpointCyanGlow" filterUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
-      <feGaussianBlur stdDeviation="10" in="SourceAlpha" result="blur" />
-      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0.83 0 0 0 0 0.91 0 0 0 0.9 0" in="blur" result="glow" />
-      <feMerge>
-        <feMergeNode in="glow" />
-        <feMergeNode in="SourceGraphic" />
-      </feMerge>
-    </filter>
-    
-    <filter id="endpointPurpleGlow" filterUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
-      <feGaussianBlur stdDeviation="10" in="SourceAlpha" result="blur" />
-      <feColorMatrix type="matrix" values="0 0 0 0 0.54 0 0 0 0 0.48 0 0 0 0 1 0 0 0 0.9 0" in="blur" result="glow" />
-      <feMerge>
-        <feMergeNode in="glow" />
-        <feMergeNode in="SourceGraphic" />
-      </feMerge>
-    </filter>
+    <linearGradient id="idle" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e2236"/><stop offset="100%" stop-color="#131824"/></linearGradient>
+    <linearGradient id="sel" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0d3a42"/><stop offset="100%" stop-color="#071e26"/></linearGradient>
+    <linearGradient id="path" gradientUnits="userSpaceOnUse" x1="330" y1="330" x2="694" y2="694"><stop offset="0%" stop-color="#8a7bff"/><stop offset="100%" stop-color="#00d4e8"/></linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#00d4e8" stop-opacity="0.6"/><stop offset="100%" stop-color="#00d4e8" stop-opacity="0"/></radialGradient>
+    <filter id="selGlow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="22" in="SourceAlpha" result="b"/><feFlood flood-color="#00d4e8" flood-opacity="0.75"/><feComposite in2="b" operator="in" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="pathGlow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="16" in="SourceAlpha" result="b"/><feFlood flood-color="#8a7bff" flood-opacity="0.6"/><feComposite in2="b" operator="in" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="dotGlow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="12" in="SourceAlpha" result="b"/><feFlood flood-color="#00d4e8" flood-opacity="0.9"/><feComposite in2="b" operator="in" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   </defs>
-
-  <!-- Pure Black Background -->
   <rect width="1024" height="1024" fill="#000000" />
-  
-  <!-- Radial Ambient Glow (Mathematically perfect curve, zero boundary clipping) -->
-  <circle cx="512" cy="512" r="500" fill="url(#voidGlow)" />
-
-  <!-- D-PAD SKELETON CONNECTIONS (Recessed tech-blue tracks) -->
-  <g stroke="#2d3d5c" stroke-width="76" stroke-linecap="round" stroke-linejoin="round">
-    <line x1="512" y1="212" x2="512" y2="812" />
-    <line x1="212" y1="512" x2="812" y2="512" />
-  </g>
-
-  <!-- THE D-PAD NODES (Void tile gradients with electric cyan borders) -->
-  <g fill="url(#voidTile)" stroke="#00d4e8" stroke-width="12" stroke-linejoin="round" opacity="0.95">
-    <rect x="422" y="422" width="180" height="180" rx="36" />
-    <rect x="422" y="122" width="180" height="180" rx="36" />
-    <rect x="722" y="422" width="180" height="180" rx="36" />
-    <rect x="422" y="722" width="180" height="180" rx="36" />
-    <rect x="122" y="422" width="180" height="180" rx="36" />
-  </g>
-
-  <!-- THE ACTIVE SWIPE PATH (Vibrant gradient from purple to cyan) -->
-  <path d="M 512 212 L 512 512 L 812 512" 
-        fill="none" stroke="url(#voidPath)" stroke-width="76" stroke-linecap="round" stroke-linejoin="round" 
-        filter="url(#pathShadow)" />
-        
-  <!-- Glowing Endpoints (Color-matched to gradient nodes via standard filters) -->
-  <circle cx="812" cy="512" r="44" fill="#ffffff" filter="url(#endpointCyanGlow)" />
-  <circle cx="512" cy="212" r="44" fill="#ffffff" filter="url(#endpointPurpleGlow)" />
+  <circle cx="512" cy="512" r="500" fill="url(#glow)" />
+  <rect x="180" y="180" width="300" height="300" rx="64" fill="url(#sel)" stroke="#00d4e8" stroke-width="22" filter="url(#selGlow)" />
+  <rect x="544" y="180" width="300" height="300" rx="64" fill="url(#idle)" stroke="#2a3148" stroke-width="22" />
+  <rect x="180" y="544" width="300" height="300" rx="64" fill="url(#idle)" stroke="#2a3148" stroke-width="22" />
+  <rect x="544" y="544" width="300" height="300" rx="64" fill="url(#sel)" stroke="#00d4e8" stroke-width="22" filter="url(#selGlow)" />
+  <line x1="330" y1="330" x2="694" y2="694" stroke="url(#path)" stroke-width="74" stroke-linecap="round" filter="url(#pathGlow)" />
+  <circle cx="330" cy="330" r="46" fill="#ffffff" filter="url(#dotGlow)" />
+  <circle cx="694" cy="694" r="46" fill="#ffffff" filter="url(#dotGlow)" />
 </svg>
