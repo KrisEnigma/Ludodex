@@ -894,7 +894,10 @@ export class GameView {
     if (this.inputManager.getState() === 'SWIPING' && chain.length > 0) {
       const chainStr = chain.map((tile) => tile.letter).join('').toUpperCase();
       const match = this.findPartMatch(chainStr);
-      if (match && !this.isLongerPrefixPossible(chainStr)) {
+      // Found the moment the swipe spells it, even when a longer answer starts
+      // with it (GWYN ends the swipe; GWYNDOLIN is a separate swipe, which
+      // passes the solved GWYN without matching it).
+      if (match) {
         HapticService.impactMedium();
         this.onWordFound(match.partIds);
       }
@@ -994,16 +997,6 @@ export class GameView {
     for (const [display, fullWord] of this.answerFullWords) {
       if (this.solvedAnswerDisplays.has(display)) continue;
       if (fullWord.startsWith(chainStr)) return true;
-    }
-    return false;
-  }
-
-  private isLongerPrefixPossible(chainStr: string): boolean {
-    for (const [display, fullWord] of this.answerFullWords) {
-      if (this.solvedAnswerDisplays.has(display)) continue;
-      if (fullWord.length > chainStr.length && fullWord.startsWith(chainStr)) {
-        return true;
-      }
     }
     return false;
   }
