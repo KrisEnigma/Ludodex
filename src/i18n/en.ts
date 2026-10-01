@@ -178,6 +178,7 @@ export const strings = {
   'win.stat_hint_other': '{n} hints',
   'win.share_button': 'Share',
   'win.share_copy': 'Copy',
+  'win.share_save_image': 'Save image',
   'win.share_copied': 'Copied ✓',
   'win.share_fallback_close': 'Close',
   'win.done_link': 'Done',
@@ -186,6 +187,7 @@ export const strings = {
   'win.play_again': 'Play again',
 
   // Share string
+  'share.card_day': 'Puzzle #{day}',
   'share.header': 'Ludodex #{day} — {title}',
   'share.label_flawless': 'Flawless',
   'share.label_solved': 'Solved',

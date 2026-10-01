@@ -748,6 +748,29 @@ body::before {
    preview text. */
 .view,
 .share-picker-sheet,
+.share-preview-image {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.share-preview-image img {
+  width: min(100%, 300px);
+  aspect-ratio: 4 / 5;
+  height: auto;
+  border-radius: var(--ui-radius, 10px);
+  border: 1px solid var(--button-border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.share-preview-save {
+  width: min(100%, 300px);
+  text-align: center;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
 .share-preview-text {
   scrollbar-width: none;         /* Firefox 64+ */
 }

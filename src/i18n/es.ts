@@ -179,6 +179,7 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'win.stat_hint_other': '{n} pistas',
   'win.share_button': 'Compartir',
   'win.share_copy': 'Copiar',
+  'win.share_save_image': 'Guardar imagen',
   'win.share_copied': 'Copiado ✓',
   'win.share_fallback_close': 'Cerrar',
   'win.done_link': 'Listo',
@@ -187,6 +188,7 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'win.play_again': 'Jugar otra vez',
 
   // Share string
+  'share.card_day': 'Puzle #{day}',
   'share.header': 'Ludodex #{day} — {title}',
   'share.label_flawless': 'Impecable',
   'share.label_solved': 'Resuelto',

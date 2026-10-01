@@ -9,6 +9,7 @@ import type { Router } from './Router';
 import { ACHIEVEMENTS } from '../data/achievements';
 import { SKINS } from '../skins/registry';
 import type { WinPayload } from './types';
+import { renderShareCard } from '../components/ShareCard';
 import { getMonetizationContext } from '../services/MonetizationContext';
 import { track } from '../services/AnalyticsService';
 import { buildInstallCta } from '../components/InstallCta';
@@ -218,12 +219,16 @@ export class WinView {
       });
     }
 
+    // Spoiler-free share image in the current skin, rendered up front so the
+    // Share tap can hand it straight to the OS (share needs the live gesture).
+    const shareCard: Promise<Blob | null> = renderShareCard(payload, buildPuzzleDeepLink(payload.dayNumber)).catch(() => null);
+
     const shareButton = document.createElement('button');
     shareButton.type = 'button';
     shareButton.className = 'win-share-button button-primary';
     shareButton.textContent = t('win.share_button');
     shareButton.addEventListener('click', () => {
-      void shareWin(payload, shareButton);
+      void shareWin(payload, shareButton, shareCard);
     });
 
     // Web-only: install CTA row, UA-detected to point at the right store.
@@ -494,8 +499,8 @@ function buildShareText(payload: WinPayload): string {
  * Shape: `{VITE_SHARE_BASE_URL}/{dayNumber}` — e.g. `https://ludodex.com/123`.
  * The base URL is kept in an env var so it can change without code edits.
  *
- * Returns an empty string when no base URL is configured (dev builds), which
- * tells buildShareText to omit the footer entirely.
+ * Falls back to DEFAULT_SHARE_BASE_URL when VITE_SHARE_BASE_URL is unset, so
+ * shares always carry a link (interim domain until the final one is set).
  *
  * NOTE (receive-side, next session): for this link to actually route a friend
  * to puzzle #N on web, three things need to land together —
@@ -511,8 +516,11 @@ function buildShareText(payload: WinPayload): string {
  *      _redirects, depending on host). Without it, the browser 404s before
  *      our JS ever sees the URL.
  */
+/** Interim public URL until the final domain is set via VITE_SHARE_BASE_URL. */
+const DEFAULT_SHARE_BASE_URL = 'https://ludodex.krisenigma.com';
+
 function buildPuzzleDeepLink(dayNumber: number): string {
-  const base = import.meta.env.VITE_SHARE_BASE_URL?.trim() ?? '';
+  const base = import.meta.env.VITE_SHARE_BASE_URL?.trim() || DEFAULT_SHARE_BASE_URL;
   if (!base) return '';
   // Strip any trailing slash so we don't end up with `https://...//123`.
   return `${base.replace(/\/+$/, '')}/${dayNumber}`;
@@ -530,7 +538,7 @@ function buildInstallCtaRow(): HTMLElement {
   });
 }
 
-async function shareWin(payload: WinPayload, buttonEl: HTMLButtonElement): Promise<void> {
+async function shareWin(payload: WinPayload, buttonEl: HTMLButtonElement, shareCard: Promise<Blob | null>): Promise<void> {
   track('share_button_tapped', { day: payload.dayNumber });
 
   // Single text shape with the URL embedded as its own paragraph. We used to
@@ -566,10 +574,24 @@ async function shareWin(payload: WinPayload, buttonEl: HTMLButtonElement): Promi
   // share payload, which can produce a "Share 2 Items" dialog instead of a
   // plain text share. We accept that tradeoff — the native dialog is the
   // right primary path when it exists.
-  const webShareData: ShareData = {
+  // The image is usually ready long before the tap; never wait long for it
+  // (the OS share call must happen while the tap's activation is still live).
+  const cardBlob = await Promise.race([
+    shareCard,
+    new Promise<null>((resolve) => window.setTimeout(() => resolve(null), 250))
+  ]);
+  const cardFile = cardBlob ? new File([cardBlob], `ludodex-${payload.dayNumber}.png`, { type: 'image/png' }) : null;
+  const imageShareData: ShareData | null = cardFile ? { title, text: fullText, files: [cardFile] } : null;
+  const textShareData: ShareData = {
     title,
     text: fullText,
   };
+  const canShareImage =
+    imageShareData !== null &&
+    typeof navigator.share === 'function' &&
+    typeof navigator.canShare === 'function' &&
+    navigator.canShare(imageShareData);
+  const webShareData = canShareImage ? imageShareData! : textShareData;
   const canUseWebShare =
     typeof navigator.share === 'function' &&
     (typeof navigator.canShare !== 'function' || navigator.canShare(webShareData));
@@ -609,6 +631,8 @@ async function shareWin(payload: WinPayload, buttonEl: HTMLButtonElement): Promi
 
   showSharePreviewSheet({
     text: fullText,
+    image: cardBlob,
+    fileName: `ludodex-${payload.dayNumber}.png`,
     initiallyCopied,
     onCopied: () => {
       track('share_string_generated', { share_method: 'clipboard' });
@@ -643,6 +667,8 @@ function flashButton(btn: HTMLButtonElement, label: string, durationMs = 1800): 
  */
 function showSharePreviewSheet(opts: {
   text: string;
+  image: Blob | null;
+  fileName: string;
   initiallyCopied: boolean;
   onCopied: () => void;
 }): void {
@@ -709,7 +735,26 @@ function showSharePreviewSheet(opts: {
     // ⌘C / Ctrl+C themselves. No further UI action.
   });
 
-  sheet.append(handle, header, preview, copyBtn);
+  // Share image preview + save (desktop web): the picture is the shareable
+  // artefact; the text below stays for chats that prefer plain text.
+  let imageBlock: HTMLElement | null = null;
+  if (opts.image) {
+    const objectUrl = URL.createObjectURL(opts.image);
+    imageBlock = document.createElement('div');
+    imageBlock.className = 'share-preview-image';
+    const img = document.createElement('img');
+    img.src = objectUrl;
+    img.alt = '';
+    const save = document.createElement('a');
+    save.className = 'button-secondary share-preview-save';
+    save.href = objectUrl;
+    save.download = opts.fileName;
+    save.textContent = t('win.share_save_image');
+    imageBlock.append(img, save);
+    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 10 * 60 * 1000);
+  }
+
+  sheet.append(handle, header, ...(imageBlock ? [imageBlock] : []), preview, copyBtn);
   backdrop.append(sheet);
   document.body.append(backdrop);
   trackOverlay(backdrop, dismiss);
