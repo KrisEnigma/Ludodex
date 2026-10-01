@@ -34,6 +34,9 @@ Deferred items from the Sep 2026 audit / fix pass. Details and rationale live in
       puzzles; editor saves; `history/` snapshots appear in R2.
 - [ ] Replace non-commercial fonts (DooM, Diablo, AmazDooM) and rename
       trademarked skins (§3.2).
+- [ ] Rewrite skin descriptions that quote games verbatim ("This was a triumph",
+      "Stay a while and listen", "Rip and tear until it is done", "Gotta go fast",
+      "Seek Paleblood…", "It's showtime", "Wakka wakka"…) — evoke, don't quote.
 - [x] `og-image.png` added (1200×630, Void style). After deploying, re-check link
       previews (e.g. opengraph.xyz) — some apps cache old previews for days.
 

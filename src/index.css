@@ -35,7 +35,7 @@
   gap: 12px;
   background: var(--button-bg);
   border: 1px solid var(--button-border);
-  border-radius: 10px;
+  border-radius: var(--ui-radius, 10px);
   padding: 10px 16px;
   min-width: 0;
   max-width: 340px;
@@ -102,7 +102,7 @@
   gap: 12px;
   background: var(--button-bg);
   border: 1px solid var(--button-border);
-  border-radius: 10px;
+  border-radius: var(--ui-radius, 10px);
   padding: 10px 14px;
   font-size: var(--type-body-s);
   color: var(--button-text);
@@ -404,7 +404,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--type-body);
+  /* --hint-font-scale: per-skin correction for small-x-height faces (VT323). */
+  font-size: calc(var(--type-body) * var(--hint-font-scale, 1));
   font-family: var(--tile-font-family, 'Space Mono', ui-monospace, monospace);
   font-weight: var(--tile-font-weight, 700);
   transition:
@@ -628,7 +629,12 @@ body {
 body {
   font-family: 'Space Mono', ui-monospace, monospace;
   color: var(--title-color);
-  background: radial-gradient(circle at 50% 35%, var(--bg-center), var(--bg-edge));
+  /* Skin backdrop: optional pattern layer(s) (--bg-pattern, one
+     --bg-pattern-size entry per layer) over the skin's radial gradient. */
+  background-color: var(--bg-edge);
+  background-image: var(--bg-pattern, none), radial-gradient(circle at 50% 35%, var(--bg-center), var(--bg-edge));
+  background-size: var(--bg-pattern-size, auto), auto;
+  background-position: var(--bg-pattern-position, 0 0), 0 0;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -757,7 +763,7 @@ body {
   letter-spacing: var(--title-letter-spacing, var(--wordmark-letter-spacing, 0.04em));
   text-transform: var(--title-text-transform, none);
   color: var(--title-color);
-  text-shadow: 0 0 12px color-mix(in srgb, var(--title-glow) var(--title-glow-alpha, 40%), transparent);
+  text-shadow: var(--title-shadow, 0 0 12px color-mix(in srgb, var(--title-glow) var(--title-glow-alpha, 40%), transparent));
 }
 
 .view-subtitle {
@@ -807,7 +813,7 @@ body {
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  border-radius: 10px;
+  border-radius: var(--ui-radius, 10px);
 }
 
 .button-primary {
@@ -816,6 +822,7 @@ body {
   background: var(--primary-action-bg);
   color: var(--primary-action-text);
   padding: 13px;
+  box-shadow: var(--primary-action-shadow, none);
 }
 
 .button-secondary {
@@ -947,8 +954,10 @@ body {
   letter-spacing: 0.02em;
   background: var(--tile-bg);
   color: var(--tile-letter);
-  border: 1px solid var(--tile-border);
+  border: var(--tile-border-width, 1px) solid var(--tile-border);
   border-radius: var(--tile-radius, 14px);
+  /* Tile material (bevels, pixel steps, inner light): skin token, no-op default. */
+  box-shadow: var(--tile-shadow, 0 0 #0000);
   transition: transform 140ms ease-out, opacity 220ms ease-out, background 180ms ease-out, color 180ms ease-out, box-shadow 180ms ease-out;
   user-select: none;
   -webkit-user-select: none;
@@ -961,6 +970,8 @@ body {
   /* Above the ribbon overlay (z-index 10) so letters are never covered. */
   z-index: 20;
   pointer-events: none;
+  /* Skin glyph treatment (phosphor glow, outlines…); selected state has its own. */
+  text-shadow: var(--tile-letter-shadow, none);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1032,7 +1043,9 @@ body {
   background: var(--tile-selected-bg);
   color: var(--tile-selected-letter);
   border-color: var(--tile-selected-border);
-  box-shadow: 0 0 calc(18px * var(--glow-strength, 1)) var(--tile-selected-glow);
+  box-shadow:
+    var(--tile-selected-shadow, 0 0 #0000),
+    0 0 calc(18px * var(--glow-strength, 1)) var(--tile-selected-glow);
   /* No transform/z-index here — see .tile note. The selection "pop" lives on
      the letter (below), and the recolor + border + glow carry the state. */
 }
@@ -1040,6 +1053,22 @@ body {
 /* Touch-down on a chain tile while tap vs swipe is still undecided (GameView
    updatePressedTile). Outline only — no transform/filter/opacity/z-index on
    .tile (stacking-context rule above). */
+/* Tile surface overlay (gloss, texture, scan grain): skin token. Absolutely
+   positioned, no z-index, so it paints with the tile background — under the
+   ribbon (z 10) and the letter (z 20). ::before is the find flash. */
+.tile::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: var(--tile-overlay, none);
+}
+
+.tile[data-state="selected"]::after {
+  background: var(--tile-selected-overlay, var(--tile-overlay, none));
+}
+
 .tile[data-pressed="true"] {
   outline: 2px solid var(--title-glow);
   outline-offset: -5px;
@@ -1218,6 +1247,7 @@ body {
   stroke-opacity: var(--path-opacity, 0.95);
   stroke-linecap: var(--path-cap, round);
   stroke-linejoin: round;
+  stroke-dasharray: var(--path-dash, none);
   filter: drop-shadow(
     0 0 calc(var(--path-glow, 0) * 1px)
     color-mix(
@@ -1315,7 +1345,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--type-body);
+  font-size: calc(var(--type-body) * var(--hint-font-scale, 1));
   /* Answer-slot letters follow the skin's tile font so the hint row matches
      the grid (pixel on Game Boy, VT323 on Terminal, etc.). */
   font-family: var(--tile-font-family, 'Space Mono', ui-monospace, monospace);
@@ -1357,7 +1387,7 @@ body {
   min-width: 16px;
   height: auto;
   aspect-ratio: 3 / 4;
-  font-size: calc(var(--type-body) * 1.1);
+  font-size: calc(var(--type-body) * 1.1 * var(--hint-font-scale, 1));
 }
 /* 5+ answers (GameView sets data-dense): compact slots + tighter rows. */
 .hints[data-dense="true"] {
@@ -1366,7 +1396,7 @@ body {
 }
 .hints[data-dense="true"] .hint-slot {
   width: 26px;
-  font-size: var(--type-body);
+  font-size: calc(var(--type-body) * var(--hint-font-scale, 1));
 }
 
 .hint-slot-letter {
@@ -1463,7 +1493,7 @@ body {
 
 .skin-button {
   border: 1px solid var(--skin-button-border);
-  border-radius: 10px;
+  border-radius: var(--ui-radius, 10px);
   background: var(--skin-button-bg);
   color: var(--skin-button-text);
   display: flex;
@@ -1587,8 +1617,9 @@ body {
   white-space: nowrap;
   /* Larger than the other display titles: the wordmark is the menu's hero. */
   font-size: calc(clamp(34px, 11vw, 46px) * var(--menu-logo-scale, var(--title-font-scale, var(--wordmark-font-scale, var(--display-font-scale, 1)))));
-  color: var(--title-glow);
-  text-shadow: 0 0 calc(14px * var(--glow-strength, 1)) color-mix(in srgb, var(--title-glow) 30%, transparent);
+  color: var(--wordmark-color, var(--title-glow));
+  -webkit-text-stroke: var(--wordmark-stroke, 0 transparent);
+  text-shadow: var(--wordmark-shadow, 0 0 calc(14px * var(--glow-strength, 1)) color-mix(in srgb, var(--title-glow) 30%, transparent));
 }
 
 .menu-logo-letter {
@@ -1680,7 +1711,7 @@ body {
   padding: 12px 16px;
   background: var(--button-bg);
   border: 1px solid var(--button-border);
-  border-radius: 10px;
+  border-radius: var(--ui-radius, 10px);
   color: var(--button-text);
   text-align: left;
   font-family: inherit;
@@ -1856,7 +1887,7 @@ body {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   padding: 12px;
-  border-radius: 10px;
+  border-radius: var(--ui-radius, 10px);
   cursor: pointer;
 }
 
@@ -1930,7 +1961,8 @@ body {
 .stat-card {
   background: var(--button-bg);
   border: 1px solid var(--button-border);
-  border-radius: 10px;
+  box-shadow: var(--card-shadow, none);
+  border-radius: var(--ui-radius, 10px);
   padding: 10px 6px;
   display: flex;
   flex-direction: column;
@@ -2081,8 +2113,9 @@ body {
     var(--button-bg) 100%
   );
   border: 1px solid var(--button-border);
-  border-radius: 16px;
+  border-radius: calc(var(--ui-radius, 10px) * 1.6);
   padding: 18px 20px 20px;
+  box-shadow: var(--card-shadow, none);
   cursor: pointer;
   transition: border-color 180ms;
 }
@@ -2332,7 +2365,7 @@ body {
   background: var(--button-bg);
   color: var(--button-text);
   border: 1px solid var(--button-border);
-  border-radius: 10px;
+  border-radius: var(--ui-radius, 10px);
   padding: 12px;
   font-family: inherit;
   font-size: var(--type-body);
@@ -2594,7 +2627,7 @@ body {
 .settings-skin-card {
   width: 100%;
   border: 1px solid var(--button-border);
-  border-radius: 10px;
+  border-radius: var(--ui-radius, 10px);
   background: var(--button-bg);
   color: var(--button-text);
   display: flex;
@@ -2733,7 +2766,7 @@ body {
   background: var(--button-bg);
   border: 1px solid var(--button-border);
   border-top: 1px solid color-mix(in srgb, var(--accent) 40%, var(--button-border));
-  border-radius: 16px 16px 0 0;
+  border-radius: calc(var(--ui-radius, 10px) * 1.6) calc(var(--ui-radius, 10px) * 1.6) 0 0;
   padding: 12px 20px max(24px, env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
@@ -2808,7 +2841,7 @@ body {
   gap: 12px;
   align-items: center;
   padding: 16px 20px 14px;
-  border-radius: 10px;
+  border-radius: var(--ui-radius, 10px);
   background: color-mix(in srgb, var(--bg-top, #0d1118) 85%, transparent);
   border: 1px solid var(--button-border);
 }
@@ -3147,7 +3180,7 @@ body {
   gap: 12px;
   background: var(--button-bg);
   border: 1px solid var(--button-border);
-  border-radius: 10px;
+  border-radius: var(--ui-radius, 10px);
   color: var(--button-text);
   padding: 12px 14px;
   font-family: inherit;
@@ -3341,7 +3374,7 @@ body {
 .how-to-play-nav-back {
   background: transparent;
   border: 1px solid var(--button-border);
-  border-radius: 10px;
+  border-radius: var(--ui-radius, 10px);
   color: var(--button-text);
   padding: 12px 24px;
   font-family: inherit;
@@ -3484,7 +3517,7 @@ body {
   margin-top: 16px;
   padding: 22px 18px;
   border: 1px solid var(--button-border);
-  border-radius: 12px;
+  border-radius: calc(var(--ui-radius, 10px) * 1.2);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -3558,7 +3591,7 @@ body {
   background: var(--shell-bg, var(--button-bg));
   border: 1px solid var(--button-border);
   border-bottom: none;
-  border-radius: 16px 16px 0 0;
+  border-radius: calc(var(--ui-radius, 10px) * 1.6) calc(var(--ui-radius, 10px) * 1.6) 0 0;
   padding: 12px 20px max(20px, env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
@@ -3606,7 +3639,7 @@ body {
   padding: 10px 14px;
   background: var(--button-bg);
   border: 1px solid var(--button-border);
-  border-radius: 10px;
+  border-radius: var(--ui-radius, 10px);
 }
 
 .hint-store-balance-label {
@@ -3655,7 +3688,7 @@ body {
   padding: 10px 14px;
   background: var(--button-bg);
   border: 1px solid var(--button-border);
-  border-radius: 10px;
+  border-radius: var(--ui-radius, 10px);
   transition: border-color 180ms;
 }
 
@@ -3712,7 +3745,7 @@ body {
   background: var(--shell-bg, var(--button-bg));
   border: 1px solid var(--button-border);
   border-bottom: none;
-  border-radius: 16px 16px 0 0;
+  border-radius: calc(var(--ui-radius, 10px) * 1.6) calc(var(--ui-radius, 10px) * 1.6) 0 0;
   padding: 16px 16px max(16px, env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
@@ -3732,7 +3765,7 @@ body {
   text-align: left;
   background: var(--button-bg);
   border: 1px solid var(--button-border);
-  border-radius: 10px;
+  border-radius: var(--ui-radius, 10px);
   padding: 12px 14px;
   font-family: inherit;
   cursor: pointer;
@@ -3770,7 +3803,7 @@ body {
   background: var(--shell-bg, var(--button-bg));
   border: 1px solid var(--button-border);
   border-bottom: none;
-  border-radius: 16px 16px 0 0;
+  border-radius: calc(var(--ui-radius, 10px) * 1.6) calc(var(--ui-radius, 10px) * 1.6) 0 0;
   padding: 12px 20px max(20px, env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
@@ -3818,7 +3851,7 @@ body {
   padding: 14px 16px;
   background: var(--surface-base, color-mix(in srgb, var(--button-bg) 60%, #000));
   border: 1px solid var(--button-border);
-  border-radius: 10px;
+  border-radius: var(--ui-radius, 10px);
   font-family: var(--font-ui);
   font-size: var(--type-body-s);
   line-height: 1.65;
@@ -3842,7 +3875,7 @@ body {
     align-self: center;
     width: min(440px, 92vw);
     border-bottom: 1px solid var(--button-border);
-    border-radius: 16px;
+    border-radius: calc(var(--ui-radius, 10px) * 1.6);
     padding: 24px;
     transform: scale(0.94);
     opacity: 0;
@@ -3886,7 +3919,7 @@ body {
   width: min(360px, 100%);
   background: var(--shell-bg, var(--button-bg));
   border: 1px solid color-mix(in srgb, var(--title-glow) 50%, var(--button-border));
-  border-radius: 16px;
+  border-radius: calc(var(--ui-radius, 10px) * 1.6);
   padding: 28px 24px 24px;
   display: flex;
   flex-direction: column;

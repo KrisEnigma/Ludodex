@@ -309,7 +309,8 @@ function mount(): void {
   skinsBtn.addEventListener('click', openSkinGallery);
   toolsPill.appendChild(skinsBtn);
   if (new URLSearchParams(window.location.search).has('skins')) {
-    window.setTimeout(openSkinGallery, 300);
+    // After boot has applied the saved skin (the gallery swaps <html> to Void).
+    window.setTimeout(openSkinGallery, 1200);
   }
 
   const sep3 = document.createElement('div');

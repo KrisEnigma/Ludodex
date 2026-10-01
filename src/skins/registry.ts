@@ -96,7 +96,8 @@ export const SKINS: SkinMeta[] = [
     productId: 'skin_gameboy',
     bundleProductId: 'skin_bundle',
     unlockedByAchievement: 'streak_30',
-    unlockHint: '30-day streak'
+    unlockHint: '30-day streak',
+    isLight: true
   },
   {
     id: 'terminal',

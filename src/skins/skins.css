@@ -146,7 +146,7 @@
      font shared across skins is tuned in one place. */
   --tile-scale-orbitron:    0.84;
   --tile-scale-press-start: 0.62;
-  --tile-scale-vt323:       1.18;
+  --tile-scale-vt323:       1.4;
   --tile-scale-cinzel:      0.78;
   --tile-scale-anton:       0.9;
   --tile-scale-oswald:      0.92;
@@ -183,6 +183,29 @@
   --path-cap:     round;
   --path-opacity: 0.95;
   --path-glow:    7;
+
+  /* ── Optional layers (2026-10 skin pass) ───────────────────────────────────
+     `initial` = guaranteed-invalid, so each consumer's var() fallback in
+     index.css applies. Declared here (not just omitted) so a .skin-scope
+     preview never inherits the active skin's layers from <html>. */
+  --bg-pattern:            initial;  /* image list behind content */
+  --bg-pattern-size:       initial;  /* one size per --bg-pattern layer */
+  --bg-pattern-position:   initial;
+  --tile-shadow:           initial;  /* bevels / inner light (box-shadow) */
+  --tile-selected-shadow:  initial;
+  --tile-overlay:          initial;  /* surface layer on idle tiles (::after) */
+  --tile-selected-overlay: initial;
+  --tile-border-width:     initial;
+  --tile-letter-shadow:    initial;  /* idle glyph treatment */
+  --wordmark-color:        initial;
+  --wordmark-stroke:       initial;
+  --wordmark-shadow:       initial;
+  --title-shadow:          initial;
+  --primary-action-shadow: initial;
+  --card-shadow:           initial;
+  --ui-radius:             initial;  /* buttons, cards, sheets */
+  --hint-font-scale:       initial;
+  --path-dash:             initial;
 }
 
 /* Void — the :root default palette made explicit so preview-card var()
@@ -268,30 +291,30 @@
   --bg-top:    #040507;
   --bg-bottom: #000000;
   --surface:   #0a0f1d;
-  --border:    #162342;
+  --border: rgba(0, 240, 255, 0.35);
   --text:      #ffffff;
   --text-dim:  #5b6c8f;
   --accent:    #00f0ff;
   --action:    #ff007f;
-  --tile:      linear-gradient(145deg, #070b14, #020408);
-  --tile-sel:  linear-gradient(145deg, #004050, #001a24);
+  --tile: linear-gradient(145deg, rgba(0, 240, 255, 0.10), rgba(4, 10, 22, 0.78));
+  --tile-sel: linear-gradient(145deg, rgba(255, 0, 127, 0.26), rgba(30, 2, 18, 0.8));
   --path-start: #ff007f;
 
-  --tile-letter:          #8ba3cb;
-  --tile-selected-glow:   rgba(0, 240, 255, 0.5);
+  --tile-letter: #9ff8ff;
+  --tile-selected-glow: rgba(255, 0, 127, 0.55);
   --tile-font-family: 'Orbitron', sans-serif;
   --tile-font-weight: 700;
   --tile-font-scale:  0.84;
-  --tile-radius:      4px;
+  --tile-radius: 2px;
 
   /* Explicit overrides */
   --shell-bg: linear-gradient(180deg, rgba(5, 6, 10, 0.9), rgba(0, 0, 0, 0.95));
   --shell-border: #1a2233;
-  --primary-action-text: #ffffff;
-  --hint-solved-bg: #00f0ff;
-  --hint-solved-border: #80f7ff;
-  --hint-solved-letter: #001a24;
-  --path-grad-end: #ff55aa;
+  --primary-action-text: #ff9ccf;
+  --hint-solved-bg: rgba(0, 240, 255, 0.14);
+  --hint-solved-border: #00f0ff;
+  --hint-solved-letter: #c8fcff;
+  --path-grad-end: #00f0ff;
   --selected-letter-outline: #001a24;
 
    /* Typography & shape */
@@ -302,10 +325,28 @@
   --glow-strength: 1.5;
 
    /* Selection ribbon */
-  --path-width: 8px;
+  --path-width: 4px;
   --path-cap: round;
   --path-opacity: 0.95;
   --path-glow: 12;
+
+  /* Layers: vector line-art — hollow glowing outlines, stroked wordmark, sparse starfield */
+  --tile-border: rgba(0, 240, 255, 0.55);
+  --tile-selected-border: #ff4fa8;
+  --tile-selected-letter: #ffd6ec;
+  --tile-shadow: 0 0 6px rgba(0, 240, 255, 0.22), inset 0 0 8px rgba(0, 240, 255, 0.12);
+  --tile-selected-shadow: inset 0 0 12px rgba(255, 0, 127, 0.35);
+  --tile-letter-shadow: 0 0 6px rgba(0, 240, 255, 0.8);
+  --wordmark-color: transparent;
+  --wordmark-stroke: 1.5px #00f0ff;
+  --wordmark-shadow: 0 0 8px rgba(0, 240, 255, 0.85), 0 0 24px rgba(0, 240, 255, 0.35);
+  --title-shadow: 0 0 6px rgba(0, 240, 255, 0.7);
+  --primary-action-bg: rgba(255, 0, 127, 0.12);
+  --primary-action-shadow: inset 0 0 0 1.5px #ff007f, 0 0 14px rgba(255, 0, 127, 0.45);
+  --card-shadow: 0 0 8px rgba(0, 240, 255, 0.14);
+  --ui-radius: 2px;
+  --bg-pattern: radial-gradient(1px 1px at 23px 31px, rgba(255,255,255,0.7), transparent), radial-gradient(1px 1px at 131px 87px, rgba(0,240,255,0.6), transparent), radial-gradient(1.5px 1.5px at 77px 153px, rgba(255,255,255,0.45), transparent), radial-gradient(1px 1px at 190px 210px, rgba(255,0,127,0.5), transparent);
+  --bg-pattern-size: 180px 180px, 180px 180px, 240px 240px, 260px 260px;
 }
 
 /* ── Maze Chase ── Classic arcade cabinet aesthetic with deep maze black, electric blue borders, and neon ghost paths. */
@@ -1175,26 +1216,29 @@
 .skin-gameboy {
   --skin-desc: "Power on. That startup jingle never gets old.";
   --skin-name: "Dot Matrix";
-  color-scheme: dark;
+  color-scheme: light;
 
-  --bg-top:    #1a2219;
-  --bg-bottom: #0c120c;
-  --surface:   #0f380f;
-  --border:    #306230;
-  --text:      #9bbc0f;
-  --text-dim:  #8bac0f;
-  --accent:    #8bac0f;
-  --action:    #8bac0f;
-  --tile:      linear-gradient(145deg, #2b3824, #1c2618);
-  --tile-sel:  linear-gradient(145deg, #9bbc0f, #8bac0f);
+  --bg-top: #9bbc0f;
+  --bg-bottom: #8bac0f;
+  --surface: #8bac0f;
+  --border: #306230;
+  --text: #0f380f;
+  --text-dim: #306230;
+  --accent: #0f380f;
+  --action: #0f380f;
+  --tile: #8bac0f;
+  --tile-sel: #0f380f;
   --path-start: #306230;
 
-  --tile-border:          #111a10;
-  --tile-letter:          #8bac0f;
+  --tile-border: #306230;
+  --tile-letter: #0f380f;
   --tile-selected-border: #0f380f;
-  --tile-selected-letter: #0f380f;
-  --tile-selected-glow:   rgba(155, 188, 15, 0.45);
-  /* ── Typography & shape ──
+  --tile-selected-letter: #9bbc0f;
+  --tile-selected-glow: transparent;
+  /* ── Palette ── the original handheld's lit LCD: four greens only
+     (#0f380f, #306230, #8bac0f, #9bbc0f), dark ink on a pea-green screen.
+     A LIGHT skin (was a dark "screen off" variant before the 2026-10 pass).
+     ── Typography & shape ──
      Classic handheld pixel aesthetic. Press Start 2P for the single-letter
      tiles (its ideal use); square corners (radius 0) read as LCD pixels;
      glow off because an LCD doesn't bloom. Wordmark uses Silkscreen, a
@@ -1206,17 +1250,17 @@
   --tile-radius:      0px;
 
   /* Explicit overrides */
-  --shell-bg: linear-gradient(180deg, #243022, #161f15);
-  --shell-border: #303e2e;
-  --primary-action-text: #0f380f;
-  --hint-empty-bg: #1c2618;
+  --shell-bg: #9bbc0f;
+  --shell-border: #306230;
+  --primary-action-text: #9bbc0f;
+  --hint-empty-bg: rgba(15, 56, 15, 0.08);
   --hint-empty-border: #306230;
-  --hint-solved-bg: #9bbc0f;
+  --hint-solved-bg: #306230;
   --hint-solved-border: #0f380f;
-  --hint-solved-letter: #0f380f;
-  --path-color: #0f380f;
+  --hint-solved-letter: #9bbc0f;
+  --path-color: #306230;
   --path-grad-end: #306230;
-  --selected-letter-outline: #9bbc0f;
+  --selected-letter-outline: #0f380f;
 
   --wordmark-font-family: 'Silkscreen', monospace;
   --wordmark-font-weight: 700;
@@ -1231,13 +1275,29 @@
   --path-cap: butt;
   --path-opacity: 1;
   --path-glow: 0;
+
+  /* Layers: lit LCD in the four-green palette, pixel-grid overlay, LCD ghost offset */
+  --title-color: #0f380f;
+  --title-glow: #306230;
+  --title-glow-alpha: 0%;
+  --wordmark-color: #0f380f;
+  --wordmark-shadow: 2px 2px 0 rgba(48, 98, 48, 0.45);
+  --title-shadow: 1px 1px 0 rgba(48, 98, 48, 0.35);
+  --tile-deactivated-opacity: 0.4;
+  --hint-radius: 0px;
+  --ui-radius: 0px;
+
+  --bg-pattern: linear-gradient(rgba(15,56,15,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(15,56,15,0.07) 1px, transparent 1px);
+  --bg-pattern-size: 3px 3px, 3px 3px;
+  --tile-overlay: linear-gradient(rgba(15,56,15,0.09) 1px, transparent 1px), linear-gradient(90deg, rgba(15,56,15,0.09) 1px, transparent 1px);
+  --tile-selected-overlay: none;
 }
 
 /* ── Terminal ──
    Amber phosphor CRT / DOS monochrome. Example of a skin that needs a NEW
    bundled font (VT323, imported in main.ts). */
 .skin-terminal {
-  --skin-desc: "Blink cursor. Green text. Root access granted.";
+  --skin-desc: "Blinking cursor. Amber text. Root access granted.";
   --skin-name: "Terminal";
   --bg-top:    #0a0805;
   --bg-bottom: #050402;
@@ -1257,8 +1317,8 @@
   /* Typography & shape — amber phosphor terminal */
   --tile-font-family: 'VT323', monospace;
   --tile-font-weight: 400;
-  --tile-font-scale:  1.18;
-  --tile-radius:      2px;
+  --tile-font-scale:  var(--tile-scale-vt323);
+  --tile-radius: 0px;
 
   /* Explicit overrides */
   --shell-bg: linear-gradient(180deg, rgba(14, 11, 5, 0.9), rgba(8, 6, 3, 0.95));
@@ -1276,10 +1336,23 @@
 
   /* Ribbon: amber gradient, soft phosphor bloom */
   --path-width: 8px;
-  --path-cap: round;
+  --path-cap: butt;
   --path-opacity: 0.95;
   --path-glow: 9;
   --selected-letter-outline: #2a1500;
+
+  /* Layers: CRT scanlines + vignette, phosphor bloom on glyphs, text-mode boxes */
+  --ui-radius: 0px;
+  --bg-pattern: repeating-linear-gradient(0deg, rgba(0,0,0,0.26) 0 1px, transparent 1px 3px), radial-gradient(ellipse at 50% 45%, transparent 58%, rgba(0,0,0,0.55) 100%), radial-gradient(ellipse 70% 55% at 50% 40%, rgba(255,150,0,0.07), transparent 70%);
+  --bg-pattern-size: auto, auto, auto;
+  --tile-shadow: inset 0 0 14px rgba(255,176,0,0.07);
+  --tile-letter-shadow: 0 0 6px rgba(255,176,0,0.45);
+  --wordmark-shadow: 0 0 4px rgba(255,190,60,0.9), 0 0 16px rgba(255,140,0,0.55), 0 0 36px rgba(255,120,0,0.25);
+  --title-shadow: 0 0 4px rgba(255,190,60,0.7), 0 0 14px rgba(255,140,0,0.4);
+
+  --tile-overlay: repeating-linear-gradient(0deg, rgba(0,0,0,0.2) 0 1px, transparent 1px 3px);
+  --tile-selected-overlay: none;
+  --hint-font-scale: 1.5;
 }
 
 /* ── Phosphor ──
@@ -1307,8 +1380,8 @@
   /* VT323 like Terminal — they're siblings (same hardware era, different phosphor). */
   --tile-font-family: 'VT323', monospace;
   --tile-font-weight: 400;
-  --tile-font-scale:  1.18;
-  --tile-radius:      2px;
+  --tile-font-scale:  var(--tile-scale-vt323);
+  --tile-radius: 4px;
 
   /* Explicit overrides */
   --shell-bg: linear-gradient(180deg, rgba(2, 9, 3, 0.94), rgba(1, 5, 1, 0.98));
@@ -1329,62 +1402,94 @@
   --path-width: 8px;
   --path-cap: round;
   --path-opacity: 0.95;
-  --path-glow: 11;
+  --path-glow: 16;
   --selected-letter-outline: #04200a;
+
+  /* Layers: tighter scanlines, deep tube vignette, long phosphor persistence */
+  --ui-radius: 4px;
+  --bg-pattern: repeating-linear-gradient(0deg, rgba(0,0,0,0.32) 0 1px, transparent 1px 2px), radial-gradient(ellipse 85% 80% at 50% 48%, transparent 50%, rgba(0,0,0,0.75) 100%), radial-gradient(ellipse 60% 45% at 50% 42%, rgba(57,232,50,0.09), transparent 72%);
+  --bg-pattern-size: auto, auto, auto;
+  --tile-shadow: inset 0 0 16px rgba(57,232,50,0.08);
+  --tile-letter-shadow: 0 0 5px rgba(80,255,80,0.55), 0 0 14px rgba(57,232,50,0.25);
+  --wordmark-shadow: 0 0 3px rgba(200,255,190,0.9), 0 0 14px rgba(57,232,50,0.7), 0 0 40px rgba(57,232,50,0.3);
+  --title-shadow: 0 0 4px rgba(160,255,150,0.7), 0 0 16px rgba(57,232,50,0.4);
+
+  --tile-overlay: repeating-linear-gradient(0deg, rgba(0,0,0,0.24) 0 1px, transparent 1px 2px);
+  --tile-selected-overlay: none;
+  --hint-font-scale: 1.5;
 }
 
 /* ── BIOS ──
-   Early-PC firmware setup screen. Dark navy field, light steel-blue text, and
-   an electric-blue selection "highlight bar" — when a tile is selected the
-   light text inverts to dark-on-bright, exactly like the moving cursor bar in
-   an AMI/Award/IBM BIOS menu. CRT sibling of Terminal/Phosphor (same VT323
-   text-mode face, same era), distinguished by hue: this is the only blue skin.
-   Reuses VT323 — no new font dependency. */
+   Early-PC firmware setup screen, in the 16-colour CGA palette those menus
+   were drawn with: flat #0000AA field, grey double-line frames (box-drawing
+   ═══ rebuilt as border + inset ring), white values, yellow headings, a RED
+   highlight bar on the selected item, cyan for confirmed entries. Faint CRT
+   scanlines. CRT sibling of Terminal/Phosphor (same VT323 text-mode face),
+   distinguished by being the only blue, flat, boxed one. */
 .skin-bios {
   --skin-desc: "Memory check in progress. The longest three seconds before the fun begins.";
   --skin-name: "BIOS";
-  --bg-top:    #081835;
-  --bg-bottom: #03070f;
-  --surface:   #0c1c3c;
-  --border:    #244a85;
-  --text:      #e6f0ff;
-  --text-dim:  #6f8fc4;
-  --accent:    #2f9bff;
-  --action:    #2f9bff;
-  --tile:      linear-gradient(145deg, #14305e, #0b1d3c);
-  --tile-sel:  linear-gradient(145deg, #2f9bff, #1357c8);
-  --path-start: #ffd23b;
+  --bg-top: #0000aa;
+  --bg-bottom: #000080;
+  --surface: #0000aa;
+  --border: #aaaaaa;
+  --text: #ffffff;
+  --text-dim: #aaaaaa;
+  --accent: #ffff55;
+  --action: #aa0000;
+  --tile: #0000aa;
+  --tile-sel: #aa0000;
+  --path-start: #ffff55;
 
-  --tile-letter:          #cfe0ff;
-  --tile-selected-border: #8cc6ff;
-  --tile-selected-glow:   rgba(47, 155, 255, 0.55);
+  --tile-letter: #ffffff;
+  --tile-selected-border: #ffffff;
+  --tile-selected-glow: rgba(255, 85, 85, 0.35);
   /* VT323 like Terminal/Phosphor — same text-mode era, different screen. */
   --tile-font-family: 'VT323', monospace;
   --tile-font-weight: 400;
-  --tile-font-scale:  1.18;
-  --tile-radius:      3px;
+  --tile-font-scale:  var(--tile-scale-vt323);
+  --tile-radius: 0px;
 
   /* Explicit overrides */
-  --shell-bg: linear-gradient(180deg, rgba(8, 18, 40, 0.92), rgba(4, 9, 20, 0.97));
-  --shell-border: #1a3360;
-  --primary-action-text: #03122c;
-  --hint-solved-letter: #03122c;
-  --hint-solved-border: #8cc6ff;
+  --shell-bg: #0000aa;
+  --shell-border: #aaaaaa;
+  --primary-action-text: #ffffff;
+  --hint-solved-letter: #000080;
+  --hint-solved-border: #ffffff;
   --tile-deactivated-opacity: 0.45;
-  --path-grad-end: #5fc8ff;
+  --path-grad-end: #55ffff;
 
   --wordmark-font-family: 'VT323', monospace;
   --wordmark-font-weight: 400;
   --wordmark-letter-spacing: 0.12em;
   --display-font-scale: var(--display-scale-vt323);
-  --glow-strength: 1.2;
+  --glow-strength: 0.35;
 
   /* Ribbon: electric blue → pale sky, moderate CRT bloom */
-  --path-width: 8px;
-  --path-cap: round;
+  --path-width: 7px;
+  --path-cap: butt;
   --path-opacity: 0.95;
-  --path-glow: 9;
-  --selected-letter-outline: #052146;
+  --path-glow: 3;
+  --selected-letter-outline: #550000;
+
+  /* Layers: CGA palette, double-line frames, light scanlines */
+  --title-color: #ffff55;
+  --title-glow: #ffff55;
+  --wordmark-color: #ffffff;
+  --wordmark-shadow: 2px 2px 0 #000055;
+  --title-shadow: none;
+  --hint-solved-bg: #55ffff;
+  --hint-empty-bg: rgba(0, 0, 80, 0.6);
+  --hint-empty-border: #5555ff;
+  --hint-radius: 0px;
+  --ui-radius: 0px;
+  --tile-shadow: inset 0 0 0 2px #0000aa, inset 0 0 0 3px #aaaaaa;
+  --tile-selected-shadow: inset 0 0 0 2px #aa0000, inset 0 0 0 3px #ffffff;
+  --card-shadow: inset 0 0 0 2px #0000aa, inset 0 0 0 3px #aaaaaa;
+
+  --bg-pattern: repeating-linear-gradient(0deg, rgba(0,0,0,0.16) 0 1px, transparent 1px 3px);
+  --bg-pattern-size: auto;
+  --hint-font-scale: 1.5;
 }
 
 /* ── Super 16-Bit Lilac ──

@@ -33,7 +33,8 @@ export function openSkinGallery(): void {
 
   injectStyles();
   const overlay = document.createElement('div');
-  overlay.className = 'dev-skin-gallery';
+  // Own Void scope so cards never inherit layers from the skin on <html>.
+  overlay.className = 'dev-skin-gallery skin-scope skin-void';
 
   const bar = document.createElement('div');
   bar.className = 'dev-skin-gallery-bar';
@@ -225,7 +226,11 @@ function injectStyles(): void {
   width: 268px; box-sizing: border-box; padding: 16px 16px 18px; border-radius: 18px;
   isolation: isolate; /* keep the card's ribbon/letter z-indexes under the sticky bar */
   display: flex; flex-direction: column; align-items: center; gap: 12px;
-  background: radial-gradient(circle at 50% 35%, var(--bg-center), var(--bg-edge));
+  position: relative; overflow: hidden;
+  background-color: var(--bg-edge);
+  background-image: var(--bg-pattern, none), radial-gradient(circle at 50% 35%, var(--bg-center), var(--bg-edge));
+  background-size: var(--bg-pattern-size, auto), auto;
+  background-position: var(--bg-pattern-position, 0 0), 0 0;
   color: var(--title-color);
   font-family: 'Space Mono', ui-monospace, monospace;
   border: 1px solid #23262f;
@@ -248,7 +253,7 @@ function injectStyles(): void {
 .dev-skin-path .path-seg { stroke-width: max(5px, calc(var(--path-width, 9px) * 0.7)); }
 .dev-skin-tiles .tile-letter { position: relative; z-index: 20; }
 .dev-skin-hints { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.dev-skin-hints .hint-slot { width: 22px; height: 29px; font-size: 13px; }
+.dev-skin-hints .hint-slot { width: 22px; height: 29px; font-size: calc(13px * var(--hint-font-scale, 1)); }
 .dev-skin-play { padding: 10px 12px; font-size: 13px; pointer-events: none; }
 `;
   document.head.append(style);
