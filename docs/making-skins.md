@@ -509,11 +509,10 @@ export type SkinId = 'void' | 'neon-horizon' | 'gameboy' | 'terminal' | 'crimson
 is **invalid** and silently fails (the declaration is dropped, falling back to
 whatever came before — often an invisible result). If you need to blend, use a
 **solid** variable (e.g. `--hint-solved-bg`, `--title-glow`, `--button-bg`).
-2. **PurgeCSS runs on production builds.** `.skin-*` is safelisted, so skin classes
-survive. But: (a) any class applied only via a JS string must appear **literally**
-in source; (b) `variables: true` prunes **unused** CSS variables — every variable
-you define must be **consumed** somewhere in retained CSS (the templates here are
-all consumed already). `@font-face` and `@keyframes` are not purged.
+2. **No CSS purging.** PurgeCSS was removed (Sep 2026): it had never actually run
+(broken import), and its `[data-` safelist didn't match, so enabling it would have
+stripped the game-state selectors. All CSS ships as written — don't reintroduce a
+purger without a safelist that's tested against `[data-*]` selectors.
 3. **Don't create a stacking context on `.tile` (selected state).** No `transform`,
 `isolation`, `z-index`, `filter`, or `opacity` on `.tile[data-state="selected"]`
 — any of these traps the letter beneath the ribbon overlay (ribbon is `z-index:10`,
@@ -576,16 +575,11 @@ pnpm build              # runs `tsc --noEmit && vite build`
 
 ```
 
-`pnpm build` must be clean. For an explicit production build (PurgeCSS active):
-
-```bash
-NODE_ENV=production pnpm exec vite build
-
-```
+`pnpm build` must be clean.
 
 Sanity checks on the built CSS (`dist/assets/index-*.css`):
 
-* `grep -F 'skin-<id>' dist/assets/index-*.css` → present (survived purge).
+* `grep -F 'skin-<id>' dist/assets/index-*.css` → present.
 * A reused per-font scale (e.g. `--display-scale-orbitron`) should show
 *1 declaration + N references* (one per skin using it).
 * No new hardcoded hex outside `skins.css`.

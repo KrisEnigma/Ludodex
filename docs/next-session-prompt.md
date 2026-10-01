@@ -159,7 +159,7 @@ native-only, opt-in):
 **Android live-reload testing:**
 ```
 pnpm cap sync android
-npx cap run android --livereload --external
+npx cap run android --live-reload --host $(ipconfig getifaddr en0) --port 5173   # Capacitor 8 flags; USB alt: --host localhost --port 5173 --forwardPorts 5173:5173
 ```
 Requires phone on same network as dev machine. Vite serves, Capacitor loads from it.
 
@@ -208,7 +208,7 @@ Requires phone on same network as dev machine. Vite serves, Capacitor loads from
 5. **Smoke-test the native build on a device** — use Android live-reload:
    ```
    pnpm cap sync android
-   npx cap run android --livereload --external
+   npx cap run android --live-reload --host $(ipconfig getifaddr en0) --port 5173   # Capacitor 8 flags; USB alt: --host localhost --port 5173 --forwardPorts 5173:5173
    ```
    Test specifically:
    - **Daily notifications**: `enableDailyNotification()` prompts permission, schedules 09:00 repeating. Verify it fires. Test `disableDailyNotification()` cancels it. First-solve win-screen soft prompt only shows once.
@@ -230,10 +230,8 @@ Requires phone on same network as dev machine. Vite serves, Capacitor loads from
   `--shell-bg` are gradients — never `color-mix` them (it silently fails → bad
   fallback). Use solid vars (`--hint-solved-bg`, `--title-glow`, `--button-bg`).
   This caused a real invisible-hint-letters bug.
-- **PurgeCSS runs on prod builds**: classes applied via JS strings must appear
-  literally (skin classes safelisted via `/^skin-/`, `[data-` greedy); unused CSS
-  variables are pruned (`variables: true`) so every var must be consumed in
-  retained CSS. `@font-face`/`@keyframes` aren't purged.
+- **No CSS purging** (PurgeCSS removed Sep 2026 — it never ran, and its
+  `[data-` safelist would have stripped game-state CSS if it had).
 - **Never put `transform`/`isolation`/`z-index`/`filter`/`opacity` on `.tile`**
   (esp. the selected state) — it re-creates the stacking context that traps the
   letter under the ribbon.
@@ -269,7 +267,6 @@ Requires phone on same network as dev machine. Vite serves, Capacitor loads from
 
 ## Verify
 
-`pnpm build` must be clean (`tsc --noEmit && vite build`). For PurgeCSS-active
-checks use `NODE_ENV=production`. There is no automated UI test — smoke-test
+`pnpm build` must be clean (`tsc --noEmit && vite build`). There is no automated UI test — smoke-test
 screens visually, and the native-only paths (notifications, IAP, deep links) on
 a device.
