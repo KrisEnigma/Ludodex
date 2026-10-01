@@ -36,6 +36,7 @@ import type { WinPayload } from './types';
 import { formatDuration } from '../utils/format';
 import { playCollapse, playFind, playGlitch, playSelect } from '../services/SoundService';
 import { renderRibbon } from '../components/ribbon';
+import { requestWordmarkSweep } from './MenuView';
 
 type PartEntry = {
   id: string;
@@ -147,6 +148,8 @@ export class GameView {
     this.isPreview = isPreview ?? false;
     this.puzzleId = puzzle.id;
     this.puzzleTitle = tp(puzzle.name, puzzle.id);
+    // Coming back to the menu after a puzzle replays the wordmark sweep.
+    requestWordmarkSweep();
 
     this.element = document.createElement('div');
     this.element.className = 'view game-view';

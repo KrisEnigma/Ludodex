@@ -603,46 +603,50 @@
   --path-glow: 4;
 }
 
-/* ── Paleblood ── Grim Victorian gothic atmosphere with cold blood-moon accents and a thick coagulated crimson trail. */
+/* ── Paleblood ── Bloodborne. What reads as Yharnam: sickly sepia-grey fog
+   and soot (not blue), a huge BLOOD MOON glowing over the top of the screen,
+   weathered Victorian stone with tarnished-brass trim, ivory engraved serif
+   type, and blood that is dark and wet rather than bright. All colour and
+   glow — no drawn moon. */
 .skin-paleblood {
   --skin-desc: "Seek Paleblood to transcend the hunt.";
   --skin-name: "Paleblood";
-  --bg-top:    #121318;
-  --bg-bottom: #08090c;
-  --surface:   #14161f;
-  --border:    #2c3240;
-  --text:      #d2d6de;
-  --text-dim:  #6f788a;
-  --accent:    #b82531;
-  --action:    #80000a;
-  --tile:      linear-gradient(145deg, #1d212c, #10121a);
-  --tile-sel:  linear-gradient(145deg, #300c14, #180307);
-  --path-start: #5a0005;
+  --bg-top: #2a2520;
+  --bg-bottom: #0e0c0b;
+  --surface: #1c1916;
+  --border: #4a4034;
+  --text: #e6dcc8;
+  --text-dim: #9a8c74;
+  --accent: #b8902e;
+  --action: #7a0c14;
+  --tile: linear-gradient(180deg, #2c2722, #1a1714);
+  --tile-sel: linear-gradient(180deg, #6a0a14, #300308);
+  --path-start: #e0303e;
 
-  --tile-letter:          #8ca0ba;
-  --tile-selected-border: #801a24;
-  --tile-selected-glow:   rgba(128, 26, 36, 0.5);
+  --tile-letter: #d8ccb2;
+  --tile-selected-border: #b8902e;
+  --tile-selected-glow: rgba(160, 20, 30, 0.45);
   --tile-font-family: 'Almendra', serif;
   --tile-font-weight: 700;
   --tile-font-scale:  0.9;
   --tile-radius:      2px;
 
   /* Explicit overrides */
-  --shell-bg: linear-gradient(180deg, rgba(16, 18, 24, 0.94), rgba(8, 9, 12, 0.98));
-  --shell-border: #2c3240;
+  --shell-bg: linear-gradient(180deg, rgba(28, 25, 22, 0.96), rgba(14, 12, 11, 0.98));
+  --shell-border: #4a4034;
   --primary-action-text: #ffffff;
-  --hint-solved-bg: #80000a;
-  --hint-solved-border: #b82531;
+  --hint-solved-bg: #6a0a14;
+  --hint-solved-border: #b8902e;
   --tile-deactivated-opacity: 0.45;
-  --path-grad-end: #9e000c;
+  --path-grad-end: #8a0010;
 
    /* Typography & shape */
-  --wordmark-font-family: 'UnifrakturMaguntia', serif;
-  --wordmark-font-weight: 400;
-  --wordmark-letter-spacing: 0.08em;
-  --title-font-family: 'Almendra', serif;
+  --wordmark-font-family: 'Cinzel', serif;
+  --wordmark-font-weight: 700;
+  --wordmark-letter-spacing: 0.16em;
+  --title-font-family: 'Cinzel', serif;
   --title-font-weight: 700;
-  --display-font-scale: 1.3;
+  --display-font-scale: var(--display-scale-cinzel);
   --title-glow-alpha: 45%;
   --glow-strength: 1.1;
 
@@ -650,8 +654,20 @@
   --path-width: 10px;
   --path-cap: round;
   --path-opacity: 0.95;
-  --path-glow: 8;
+  --path-glow: 6;
   --selected-letter-outline: #180307;
+
+  /* Layers: pale-moon glow over a cold night, iron-framed tiles, wet-blood selection */
+  --bg-pattern: radial-gradient(circle at 50% -14%, rgba(255, 210, 170, 0.22) 0 14%, rgba(200, 50, 40, 0.30) 22%, rgba(120, 20, 20, 0.12) 40%, transparent 62%), radial-gradient(ellipse 120% 30% at 50% 108%, rgba(200, 186, 160, 0.10), transparent 70%);
+  --bg-pattern-size: 100% 100%, 100% 100%;
+  --bg-pattern-repeat: no-repeat, no-repeat;
+  --tile-shadow: inset 0 0 0 1px rgba(184, 144, 46, 0.16), inset 0 -3px 6px rgba(0, 0, 0, 0.55);
+  --tile-selected-shadow: inset 0 2px 0 rgba(255, 160, 160, 0.18), inset 0 -4px 6px rgba(20, 0, 0, 0.6);
+  --wordmark-color: #ece2cc;
+  --wordmark-shadow: 0 2px 0 #3a0006, 0 0 20px rgba(200, 50, 40, 0.35);
+  --title-color: #ece2cc;
+  --title-shadow: 0 1px 0 #000, 0 0 10px rgba(200, 50, 40, 0.28);
+  --card-shadow: inset 0 0 0 1px rgba(184, 144, 46, 0.22);
 }
 
 /* ── Aero ── Glossy mid-2000s tech style with fluid gradients, glassy panels, and a radioactive loop trail. */
@@ -791,62 +807,80 @@
   --card-shadow: inset 0 0 8px rgba(57, 232, 50, 0.1);
 }
 
-/* ── Hyrule Vault ── Legend of Zelda. Ancient stone, triforce amber tiles, Kokiri-green trail lighting the way. */
+/* ── Hyrule Vault ── Zelda, one era: Breath of the Wild's ancient SHRINES.
+   Dark slate stone lit by glowing Sheikah-blue lines; the active path glows
+   that blue; a completed word turns the shrine's ancient ORANGE. Clean white
+   type, thin tech face on the tiles, a classic serif wordmark with a blue
+   glow. (Was a mix of eras: Ocarina green + Triforce gold.) */
 .skin-relic-gold {
-  --skin-desc: "Kokiri Emerald. Triforce Amber. The dungeon calls.";
+  --skin-desc: "Ancient stone. Blue light. The shrine is waiting.";
   --skin-name: "Hyrule Vault";
-  --bg-top:    #13110c;
-  --bg-bottom: #070603;
-  --surface:   #1d1810;
-  --border:    #4a3c25;
-  --text:      #f5e9cc;
-  --text-dim:  #8c7448;
-  --accent:    #3a9a48;
-  --action:    #d4aa28;
-  --tile:      linear-gradient(145deg, #2e2519, #181309);
-  --tile-sel:  linear-gradient(145deg, #6a4a00, #3c2a00);
-  --path-start: #2a8a3a;
+  --bg-top: #1a2026;
+  --bg-bottom: #0a0d10;
+  --surface: #151b20;
+  --border: #2c3a44;
+  --text: #eaf6ff;
+  --text-dim: #86a0b0;
+  --accent: #3cd4ff;
+  --action: #3cd4ff;
+  --tile: linear-gradient(180deg, #27303a, #1a2128);
+  --tile-sel: linear-gradient(180deg, #0e4a66, #072a3c);
+  --path-start: #7ae8ff;
 
-  --tile-letter:          #c8a838;
-  --tile-selected-border: #f0c840;
-  --tile-selected-letter: #fff0c0;
-  --tile-selected-glow:   rgba(212, 170, 40, 0.6);
-  --tile-font-family: 'Almendra', serif;
-  --tile-font-weight: 700;
-  --tile-font-scale:  0.88;
-  --tile-radius:      4px;
+  --tile-letter: #cfe6f2;
+  --tile-selected-border: #7ae8ff;
+  --tile-selected-letter: #e8fbff;
+  --tile-selected-glow: rgba(60, 212, 255, 0.55);
+  --tile-font-family: 'Electrolize', sans-serif;
+  --tile-font-weight: 400;
+  --tile-font-scale: 0.92;
+  --tile-radius: 3px;
 
   /* Explicit overrides */
-  --shell-bg: linear-gradient(180deg, rgba(24, 20, 12, 0.94), rgba(10, 8, 4, 0.98));
-  --shell-border: #4a3c25;
+  --shell-bg: linear-gradient(180deg, rgba(21, 27, 32, 0.95), rgba(10, 13, 16, 0.98));
+  --shell-border: #2c3a44;
   --shell-shadow: rgba(0, 0, 0, 0.7);
-  --primary-action-text: #13110c;
-  --hint-solved-bg: #6a4a00;
-  --hint-solved-border: #d4aa28;
-  --hint-solved-letter: #fff0c0;
+  --primary-action-text: #03141c;
+  --hint-solved-bg: #ff8a1e;
+  --hint-solved-border: #ffc27a;
+  --hint-solved-letter: #2a1200;
   --tile-deactivated-opacity: 0.35;
-  --path-color: #2a8a3a;
-  --path-grad-end: #1a6028;
-  --selected-letter-outline: #1d1810;
+  --path-color: #3cd4ff;
+  --path-grad-end: #3cd4ff;
+  --selected-letter-outline: #03202c;
 
    /* Typography & shape */
-   --wordmark-font-family: 'Cinzel Decorative', serif;
+   --wordmark-font-family: 'Cinzel', serif;
    --wordmark-font-weight: 700;
    --wordmark-letter-spacing: 0.1em;
-   --title-font-family: 'Almendra', serif;
-   --title-font-weight: 700;
-   --display-font-scale: 1.15;
+   --title-font-family: 'Electrolize', sans-serif;
+   --title-font-weight: 400;
+   --display-font-scale: var(--display-scale-cinzel);
    --title-text-transform: uppercase;
    --title-letter-spacing: 0.04em;
    --title-glow-alpha: 36%;
-   --glow-strength: 1.2;
+   --glow-strength: 1.3;
 
    /* Selection ribbon */
-   --path-width: 8px;
+   --path-width: 7px;
    --path-cap: round;
    --path-opacity: 0.95;
-   --path-glow: 10;
+   --path-glow: 12;
    --selected-letter-outline: #1d1810;
+
+  /* Layers: torch-lit stone, Triforce gold, Kokiri green */
+  --bg-pattern: radial-gradient(ellipse 80% 35% at 50% 108%, rgba(60, 212, 255, 0.12), transparent 70%);
+  --bg-pattern-size: 100% 100%;
+  --bg-pattern-repeat: no-repeat;
+  --tile-shadow: inset 0 0 0 1px rgba(60, 212, 255, 0.14), inset 0 -3px 5px rgba(0, 0, 0, 0.5);
+  --tile-selected-shadow: inset 0 0 0 1px rgba(122, 232, 255, 0.6), inset 0 0 14px rgba(60, 212, 255, 0.35);
+  --wordmark-color: #f2fbff;
+  --wordmark-shadow: 0 0 8px rgba(60, 212, 255, 0.75), 0 0 24px rgba(60, 212, 255, 0.35);
+  --title-color: #eaf6ff;
+  --card-shadow: inset 0 0 0 1px rgba(60, 212, 255, 0.18);
+
+  --tile-letter-shadow: 0 0 6px rgba(60, 212, 255, 0.25);
+  --title-shadow: 0 0 8px rgba(60, 212, 255, 0.45);
 }
 
 /* ── Puff Star ── Kirby / Dream Land, through colour and softness alone (no
@@ -1913,6 +1947,18 @@
   --path-opacity: 0.95;
   --path-glow: 13;
   --selected-letter-outline: #3a0a02;
+
+  /* Layers: hellfire glow from below, carved-stone bevels, gold-trimmed frames */
+  --bg-pattern: radial-gradient(ellipse 110% 45% at 50% 112%, rgba(255, 90, 20, 0.34), transparent 70%), radial-gradient(ellipse 60% 25% at 50% 104%, rgba(255, 200, 80, 0.14), transparent 70%);
+  --bg-pattern-size: 100% 100%, 100% 100%;
+  --bg-pattern-repeat: no-repeat, no-repeat;
+  --tile-shadow: inset 0 1px 0 rgba(255, 200, 140, 0.08), inset 0 -3px 5px rgba(0, 0, 0, 0.6);
+  --tile-selected-shadow: inset 0 2px 0 rgba(255, 220, 160, 0.4), inset 0 -3px 5px rgba(80, 10, 0, 0.6);
+  --card-shadow: inset 0 0 0 1px rgba(224, 168, 46, 0.32);
+  --primary-action-shadow: inset 0 1px 0 rgba(255, 240, 200, 0.5), inset 0 -3px 0 rgba(120, 70, 0, 0.5), 0 0 0 1px #5a2410;
+  --wordmark-color: #f0b040;
+  --wordmark-shadow: 0 2px 0 #3a0a02, 0 0 10px rgba(255, 120, 30, 0.7), 0 0 26px rgba(255, 70, 0, 0.35);
+  --title-shadow: 0 2px 0 #1a0805, 0 0 10px rgba(255, 120, 30, 0.35);
 }
 
 /* ── Test Chamber ──
@@ -2214,13 +2260,13 @@
   --skin-name: "Rip & Tear";
   --bg-top:    #0d0d0b;
   --bg-bottom: #050505;
-  --surface:   #1a1212;
-  --border:    #3a2020;
+  --surface: #2a2824;
+  --border: #4a4840;
   --text:      #d2c49c;
   --text-dim:  #8b7d62;
   --accent:    #cc1111;
   --action:    #cc1111;
-  --tile:      linear-gradient(145deg, #1c1414, #0f0b0b);
+  --tile: linear-gradient(180deg, #34322d, #24221e);
   --tile-sel:  linear-gradient(145deg, #cc1111, #7a0a0a);
   --path-start: #a8e060;
 
@@ -2255,52 +2301,93 @@
   --path-opacity: 0.98;
   --path-glow: 4;
   --selected-letter-outline: #3a0505;
+
+  /* Layers: gunmetal HUD panels, extruded logo, hell glow top and bottom */
+  --tile-border: #121110;
+  --tile-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.08), inset -2px -2px 0 rgba(0, 0, 0, 0.6);
+  --tile-selected-shadow: inset 2px 2px 0 rgba(255, 160, 140, 0.35), inset -2px -2px 0 rgba(60, 0, 0, 0.6);
+  --bg-pattern: radial-gradient(ellipse 120% 40% at 50% 112%, rgba(204, 30, 10, 0.3), transparent 70%), radial-gradient(ellipse 80% 22% at 50% -6%, rgba(204, 60, 10, 0.16), transparent 70%);
+  --bg-pattern-size: 100% 100%, 100% 100%;
+  --bg-pattern-repeat: no-repeat, no-repeat;
+  --wordmark-color: #e85020;
+  --wordmark-shadow: 0 -1px 0 #ffd060, 0 1px 0 #c03010, 0 2px 0 #a02008, 0 3px 0 #801000, 0 4px 0 #500800, 0 6px 8px rgba(0, 0, 0, 0.6);
+  --card-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.06), inset -2px -2px 0 rgba(0, 0, 0, 0.5);
+  --primary-action-shadow: inset 2px 2px 0 rgba(255, 160, 140, 0.35), inset -2px -2px 0 rgba(60, 0, 0, 0.6);
+  --ui-radius: 0px;
+  --hint-radius: 0px;
 }
 
 /* ── Crimson ──
-   Molten boss-fight red with a brutalist slab typography profile. */
+   Reworked (2026-10) from a generic "boss red" — which overlapped Dragon Heat,
+   Rip & Tear and Lord of Terror — into ink on paper: washi-cream ground, sumi
+   black ink, one crimson SEAL colour (sun / hanko stamp). Painterly ink-wash
+   games are the reference (Okami-style), evoked purely by palette: cream
+   tiles with black ink letters, a crimson seal for the selection, a thick
+   black ink trail, ink-black found words. A LIGHT skin. */
 .skin-crimson {
-  --skin-desc: "Final boss music. No checkpoint. Full send.";
+  --skin-desc: "Black ink, a red seal, one stroke at a time.";
   --skin-name: "Crimson";
-  --bg-top:    #1a0608;
-  --bg-bottom: #0a0203;
-  --surface:   #1e0608;
-  --border:    #5a1418;
-  --text:      #ffd2d2;
-  --text-dim:  #d98a90;
-  --accent:    #ff2d2d;
-  --action:    #ff2d2d;
-  --tile:      linear-gradient(145deg, #2c0a0e, #170406);
-  --tile-sel:  linear-gradient(145deg, #ff2d2d, #8a0f12);
-  --path-start: #ffb03a;
+  --bg-top: #f4ead4;
+  --bg-bottom: #e2d3b2;
+  --surface: #fbf5e6;
+  --border: #2a221a;
+  --text: #1a1612;
+  --text-dim: #5e5040;
+  --accent: #c8102e;
+  --action: #c8102e;
+  --tile: linear-gradient(180deg, #fbf5e6, #efe3c8);
+  --tile-sel: #c8102e;
+  --path-start: #1a1612;
 
-  --tile-selected-border: #ff8a3d;
-  --tile-selected-glow:   rgba(255, 45, 45, 0.55);
-  --tile-font-family: 'Unbounded', sans-serif;
-  --tile-font-weight: 700;
-  --tile-font-scale:  0.82;
-  --tile-radius:      6px;
+  --tile-selected-border: #7a0a1c;
+  --tile-selected-glow: rgba(200, 16, 46, 0.25);
+  --tile-font-family: 'Dela Gothic One', sans-serif;
+  --tile-font-weight: 400;
+  --tile-font-scale: 0.86;
+  --tile-radius: 3px;
 
   /* Explicit overrides */
-  --shell-bg: linear-gradient(180deg, rgba(24, 6, 9, 0.9), rgba(14, 3, 5, 0.95));
-  --shell-border: #5a1418;
-  --primary-action-text: #ffffff;
-  --hint-solved-border: #ff8a3d;
-  --path-grad-end: #ff2d2d;
+  --shell-bg: linear-gradient(180deg, #fbf5e6, #f4ead4);
+  --shell-border: #2a221a;
+  --primary-action-text: #fbf5e6;
+  --hint-solved-border: #1a1612;
+  --path-grad-end: #1a1612;
 
    /* Typography & shape */
-   --wordmark-font-family: 'Russo One', sans-serif;
+   --wordmark-font-family: 'Dela Gothic One', sans-serif;
    --wordmark-font-weight: 400;
-   --wordmark-letter-spacing: 0.08em;
+   --wordmark-letter-spacing: 0.06em;
    --display-font-scale: 1.05;
-  --glow-strength: 1.3;
+  --glow-strength: 0;
 
   /* Ribbon: molten red→orange progress gradient */
-  --path-width: 10px;
+  --path-width: 11px;
   --path-cap: round;
-  --path-opacity: 0.95;
-  --path-glow: 12;
-  --selected-letter-outline: #2a0606;
+  --path-opacity: 0.92;
+  --path-glow: 0;
+  --selected-letter-outline: #7a0a1c;
+
+  /* Layers: ink on washi paper, a soft crimson sun */
+  color-scheme: light;
+  --tile-border: #2a221a;
+  --tile-letter: #1a1612;
+  --tile-selected-letter: #fbf5e6;
+  --hint-solved-bg: #1a1612;
+  --hint-solved-letter: #fbf5e6;
+  --hint-empty-bg: rgba(26, 22, 18, 0.05);
+  --hint-empty-border: #8a7a62;
+  --title-color: #1a1612;
+  --title-glow: #c8102e;
+  --title-glow-alpha: 0%;
+  --wordmark-color: #c8102e;
+  --wordmark-shadow: 2px 2px 0 rgba(26, 22, 18, 0.18);
+  --title-shadow: none;
+  --bg-pattern: radial-gradient(circle at 86% 12%, rgba(200, 16, 46, 0.14) 0 18%, transparent 40%);
+  --bg-pattern-size: 100% 100%;
+  --bg-pattern-repeat: no-repeat;
+  --tile-shadow: 0 1px 0 rgba(26, 22, 18, 0.15);
+  --ui-radius: 3px;
+  --hint-radius: 2px;
 }
 
 /* ── Blood & Darkness ──
@@ -2357,4 +2444,15 @@
   --path-opacity: 0.95;
   --path-glow: 14;
   --selected-letter-outline: #3a2400;
+
+  /* Layers: Styx glow from below, Greek gold-trim frames */
+  --bg-pattern: radial-gradient(ellipse 110% 45% at 50% 114%, rgba(224, 40, 70, 0.32), transparent 70%);
+  --bg-pattern-size: 100% 100%;
+  --bg-pattern-repeat: no-repeat;
+  --tile-shadow: inset 0 0 0 1px rgba(232, 160, 16, 0.22), inset 0 -3px 5px rgba(0, 0, 0, 0.45);
+  --tile-selected-shadow: inset 0 0 0 1px rgba(255, 240, 200, 0.5), inset 0 -3px 5px rgba(90, 50, 0, 0.45);
+  --card-shadow: inset 0 0 0 1px rgba(232, 160, 16, 0.3);
+  --wordmark-color: #f0b030;
+  --wordmark-shadow: 0 2px 0 #2a1200, 0 0 16px rgba(240, 176, 48, 0.4);
+  --title-shadow: 0 2px 0 #000, 0 0 10px rgba(224, 52, 74, 0.35);
 }

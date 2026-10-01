@@ -138,7 +138,7 @@ export const SKINS: SkinMeta[] = [
   { id: 'dream-spiral', name: 'Dream Spiral', productId: null, isLight: true },
   { id: 'rip-tear', name: 'Rip & Tear', productId: null },
   { id: 'blood-darkness', name: 'Blood & Darkness', productId: null },
-  { id: 'crimson', name: 'Crimson', productId: null }
+  { id: 'crimson', name: 'Crimson', productId: null, isLight: true }
 ];
 
 const SKIN_CLASS_PREFIX = 'skin-';

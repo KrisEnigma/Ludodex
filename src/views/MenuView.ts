@@ -15,8 +15,16 @@ import { formatDuration, formatTimeUntilMidnight } from '../utils/format';
 
 const STREAK_BANNER_DISMISSED_KEY = 'streak_banner_dismissed';
 
-/** The wordmark sweep plays once per app launch, not on every return to the menu. */
-let wordmarkSweepPlayed = false;
+/**
+ * The wordmark sweep plays on app launch and on the first menu after playing a
+ * puzzle — not on every return from Settings, Archive, etc.
+ */
+let wordmarkSweepPending = true;
+
+/** Queue the sweep for the next menu (called when a puzzle starts). */
+export function requestWordmarkSweep(): void {
+  wordmarkSweepPending = true;
+}
 
 type MenuCallbacks = {
   onPlay: (payload: RoutePayloads['game']) => void;
@@ -90,8 +98,8 @@ export class MenuView {
       letter.style.setProperty('--t', String(brandLetters.length > 1 ? i / (brandLetters.length - 1) : 0));
       logo.append(letter);
     });
-    if (!wordmarkSweepPlayed) {
-      wordmarkSweepPlayed = true;
+    if (wordmarkSweepPending) {
+      wordmarkSweepPending = false;
       logo.dataset.sweep = 'true';
     }
 
