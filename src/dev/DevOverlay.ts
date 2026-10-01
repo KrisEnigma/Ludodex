@@ -13,6 +13,9 @@
  *
  * Tap the badge to cycle DEV → WEB → NATIVE. Page reloads to apply.
  *
+ * 🎨 button
+ *   Skin gallery: every skin side by side as a mini screen (also ?skins).
+ *
  * 🏆 button
  *   Opens a panel to grant / revoke individual achievements (writes the real
  *   `ludodex.achievements_earned` store). Reload to apply everywhere.
@@ -39,6 +42,7 @@ import { ACHIEVEMENTS } from '../data/achievements';
 import { devSetEarned, getEarnedAchievements } from '../services/AchievementService';
 import { resetAllProgress } from '../services/ProgressService';
 import { showConfirmModal } from '../components/Modal';
+import { openSkinGallery } from './SkinGallery';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -294,6 +298,19 @@ function mount(): void {
   toolsPill.appendChild(notifBtn);
   toolsPill.appendChild(sep2);
   toolsPill.appendChild(achBtn);
+
+  // 🎨 button — all skins side by side (also opens with ?skins in the URL)
+  const skinsBtn = document.createElement('button');
+  skinsBtn.type = 'button';
+  skinsBtn.className = 'dev-tool-btn';
+  skinsBtn.textContent = '🎨';
+  skinsBtn.title = 'Skin gallery: every skin side by side';
+  skinsBtn.setAttribute('aria-label', 'Open skin gallery');
+  skinsBtn.addEventListener('click', openSkinGallery);
+  toolsPill.appendChild(skinsBtn);
+  if (new URLSearchParams(window.location.search).has('skins')) {
+    window.setTimeout(openSkinGallery, 300);
+  }
 
   const sep3 = document.createElement('div');
   sep3.className = 'dev-tool-sep';
