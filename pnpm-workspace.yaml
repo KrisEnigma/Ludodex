@@ -6,3 +6,5 @@ allowBuilds:
   '@sentry/capacitor': true
   core-js: true
   esbuild: true
+  # Local Workers runtime used by wrangler (deploy / dev)
+  workerd: true
