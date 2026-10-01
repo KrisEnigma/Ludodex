@@ -116,6 +116,8 @@ const VIEW_ONLY = new Set([
   'menu-logo-letter',
   // Share preview sheet image block (desktop web fallback only)
   'share-preview-image', 'share-preview-save',
+  // Transient find counter pill (only visible for ~1s after a find)
+  'find-counter', 'find-counter--pop',
   // Transient find fly-in clones (body-level, mid-animation only)
   'fly-letter',
   // Visually hidden screen-reader live region (no visual — nothing to preview)

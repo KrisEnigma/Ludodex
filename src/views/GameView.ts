@@ -67,6 +67,9 @@ export class GameView {
     'ÀÁÂÃÄÅÆĆČĐÈÉÊËĞĐÌÍÎÏÑÒÓÔÕÖØŒÙÚÛÜÝŠŽß#@%&*<>?!~∆ΩΣΨ█▓▒░╳';
   readonly element: HTMLDivElement;
   private readonly gridWrap: HTMLDivElement;
+  /** "2 / 4" pill that pops under the board on each find. */
+  private readonly findCounter: HTMLSpanElement;
+  private findCounterTimer: number | null = null;
   private readonly overlay: SVGSVGElement;
   private readonly pathSegments: SVGGElement;
   private readonly tileElements = new Map<Tile, HTMLDivElement>();
@@ -225,6 +228,9 @@ export class GameView {
 
     this.gridWrap = document.createElement('div');
     this.gridWrap.className = 'grid-wrap';
+    this.findCounter = document.createElement('span');
+    this.findCounter.className = 'find-counter';
+    this.findCounter.setAttribute('aria-hidden', 'true'); // the live region announces finds
 
     const gridEl = document.createElement('div');
     gridEl.className = 'grid';
@@ -278,7 +284,7 @@ export class GameView {
     chargeBarWrap.append(chargeBarLabel, chargeBarTrack);
     this.chargeBarWrapEl = chargeBarWrap;
 
-    this.gridWrap.append(gridEl, this.overlay, chargeBarWrap);
+    this.gridWrap.append(gridEl, this.overlay, chargeBarWrap, this.findCounter);
 
     const hints = document.createElement('div');
     hints.className = 'hints';
@@ -824,6 +830,30 @@ export class GameView {
   }
 
   /** Screen readers: "Found MARIO. 2 of 3 words." (answers, not parts). */
+  /**
+   * "2 / 4" pops under the board when a find completes an answer (multi-part
+   * answers count once, when their last part lands). The last word gets a
+   * bigger pop in the celebration colour and a distinct "success" haptic.
+   */
+  private popFindCounter(found: number, total: number, partIds: string[]): void {
+    const entry = this.partEntriesById.get(partIds[0]);
+    const answerParts = entry ? this.partIdsByAnswer.get(entry.answerDisplay) ?? [] : [];
+    if (!answerParts.every((id) => this.solvedPartIds.has(id) || partIds.includes(id))) return;
+    const isLast = found >= total;
+    if (isLast) HapticService.notification('success');
+    const el = this.findCounter;
+    el.textContent = `${found} / ${total}`;
+    el.dataset.last = String(isLast);
+    el.classList.remove('find-counter--pop');
+    void el.offsetWidth; // restart the animation
+    el.classList.add('find-counter--pop');
+    if (this.findCounterTimer !== null) window.clearTimeout(this.findCounterTimer);
+    this.findCounterTimer = window.setTimeout(() => {
+      el.classList.remove('find-counter--pop');
+      this.findCounterTimer = null;
+    }, 1300);
+  }
+
   private announceFound(partIds: string[]): { found: number; total: number } {
     const word = partIds
       .map((id) => this.partEntriesById.get(id)?.word ?? '')
@@ -1072,6 +1102,7 @@ export class GameView {
 
     const progress = this.announceFound(partIds);
     playFind(progress.found, progress.total);
+    this.popFindCounter(progress.found, progress.total, partIds);
 
     // Single coherent flash wave across the player's swipe, in the order they swiped.
     // For multi-part answers (e.g. LARA CROFT) this replaces two overlapping per-part
