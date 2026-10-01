@@ -94,6 +94,29 @@ export class WinView {
     }
     headline.append(starsRow);
 
+    // Star key: what each star stands for, so a 1–2★ result explains itself.
+    // ★ solved · ★ no mistakes · ★ no hints (the rating is 1 + each of those).
+    const starKey = document.createElement('div');
+    starKey.className = 'win-star-key';
+    const keyItems: Array<{ earned: boolean; text: string }> = [
+      { earned: true, text: t('win.key_solved') },
+      { earned: payload.mistakes === 0, text: payload.mistakes === 0 ? t('win.key_no_mistakes') : tn('win.stat_mistake', payload.mistakes) },
+      { earned: payload.hintsUsed === 0, text: payload.hintsUsed === 0 ? t('win.key_no_hints') : tn('win.stat_hint', payload.hintsUsed) }
+    ];
+    for (const item of keyItems) {
+      const el = document.createElement('span');
+      el.className = 'win-star-key-item';
+      el.dataset.earned = String(item.earned);
+      const mark = document.createElement('span');
+      mark.className = 'win-star-key-mark';
+      mark.setAttribute('aria-hidden', 'true');
+      mark.textContent = item.earned ? '★' : '☆';
+      const label = document.createElement('span');
+      label.textContent = item.text;
+      el.append(mark, label);
+      starKey.append(el);
+    }
+
     if (payload.starRating === 3) {
       const label = document.createElement('span');
       label.className = 'win-headline-label';
@@ -113,6 +136,17 @@ export class WinView {
     const time = document.createElement('div');
     time.className = 'win-time';
     time.textContent = formatDuration(payload.elapsedSeconds);
+
+    // The words you found, in the skin's tile font.
+    const words = document.createElement('ul');
+    words.className = 'win-words';
+    words.setAttribute('aria-label', t('win.words_aria'));
+    for (const answer of payload.answers ?? []) {
+      const li = document.createElement('li');
+      li.className = 'win-word';
+      li.textContent = answer;
+      words.append(li);
+    }
 
     const nextCountdown = document.createElement('p');
     nextCountdown.className = 'win-next-countdown';
@@ -156,9 +190,8 @@ export class WinView {
     pillRow.append(newBest, newRating, freezePill);
 
     const showStreak = payload.currentStreak >= 2;
-    const showMistakes = payload.mistakes > 0;
-    const showHints = payload.hintsUsed > 0;
-    const hasStats = showStreak || showMistakes || showHints;
+    // Mistakes and hints live in the star key under the stars.
+    const hasStats = showStreak;
 
     let stats: HTMLDivElement | null = null;
     if (hasStats) {
@@ -168,8 +201,6 @@ export class WinView {
       type StatPart = { icon?: 'flame' | 'bulb'; text: string };
       const parts: StatPart[] = [];
       if (showStreak) parts.push({ icon: 'flame', text: t('win.stat_day_streak', { n: payload.currentStreak }) });
-      if (showMistakes) parts.push({ text: tn('win.stat_mistake', payload.mistakes) });
-      if (showHints) parts.push({ icon: 'bulb', text: tn('win.stat_hint', payload.hintsUsed) });
 
       parts.forEach((part, i) => {
         if (i > 0) {
@@ -234,8 +265,10 @@ export class WinView {
     // alongside the primary CTA, not as a buried footer line.
     const children: HTMLElement[] = [
       headline,
+      starKey,
       title,
       time,
+      ...(words.childElementCount > 0 ? [words] : []),
       pillRow,
       ...(achievementsSection ? [achievementsSection] : []),
       ...(stats ? [stats] : []),

@@ -16,4 +16,6 @@ export type WinPayload = {
   unlockedAchievements: string[];
   /** True if a streak freeze token was auto-consumed to cover a missed day this solve. */
   freezeUsed: boolean;
+  /** The puzzle's answers (display form), listed on the win screen — your own screen, no spoiler. */
+  answers: string[];
 };

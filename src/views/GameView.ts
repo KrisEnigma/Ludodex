@@ -1518,7 +1518,8 @@ export class GameView {
           wasNewBest,
           wasNewRating,
           unlockedAchievements,
-          freezeUsed: snapshot.freezeUsed
+          freezeUsed: snapshot.freezeUsed,
+          answers: this.puzzle.answers.map((a) => a.display)
         });
       } catch (err) {
         console.warn('[GameView] onPuzzleSolved failed', err);
@@ -1545,7 +1546,8 @@ export class GameView {
           wasNewBest: false,
           wasNewRating: false,
           unlockedAchievements: [],
-          freezeUsed: false
+          freezeUsed: false,
+          answers: this.puzzle.answers.map((a) => a.display)
         });
       }
     })();

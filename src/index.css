@@ -2290,6 +2290,72 @@ body::before {
   to   { opacity: 1; transform: none; }
 }
 
+/* Star key: ★ solved · ★ no mistakes · ★ no hints (earned stars bright). */
+.win-star-key {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 14px;
+  margin-top: 2px;
+  font-size: var(--type-caption);
+  letter-spacing: 0.04em;
+  color: var(--chrome-text);
+  animation: win-fade-up 360ms ease-out 900ms backwards;
+}
+
+.win-star-key-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.win-star-key-item[data-earned='false'] {
+  color: var(--title-color);
+}
+
+.win-star-key-mark {
+  color: var(--celebrate-color, var(--title-glow));
+}
+
+.win-star-key-item[data-earned='false'] .win-star-key-mark {
+  opacity: 0.6;
+}
+
+/* Words found, as tile-font chips. */
+.win-words {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  max-width: 100%;
+  animation: win-fade-up 360ms ease-out 1050ms backwards;
+}
+
+.win-word {
+  font-family: var(--tile-font-family, 'Space Mono', ui-monospace, monospace);
+  font-weight: var(--tile-font-weight, 700);
+  font-size: calc(var(--type-caption) * var(--hint-font-scale, 1));
+  letter-spacing: 0.08em;
+  padding: 4px 9px;
+  border-radius: var(--hint-radius, 6px);
+  background: var(--hint-solved-bg);
+  border: 1px solid var(--hint-solved-border);
+  color: var(--hint-solved-letter);
+}
+
+@keyframes win-fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .win-star-key,
+  .win-words { animation: none; }
+}
+
 .win-stats-line {
   min-height: 20px;
   display: flex;
