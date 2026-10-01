@@ -206,6 +206,11 @@
   --card-shadow:           initial;
   --ui-radius:             initial;  /* buttons, cards, sheets */
   --hint-font-scale:       initial;
+  --text-shadow:           initial;  /* skin-wide UI text drop */
+  --heading-color:         initial;  /* level/win titles + win time */
+  --time-shadow:           initial;  /* win time */
+  --celebrate-color:       initial;  /* win stars + FLAWLESS label */
+  --celebrate-shadow:      initial;
   --path-dash:             initial;
 }
 
@@ -236,6 +241,10 @@
   --tile-radius:      14px;
   /* Hint fine-tuning */
   --hint-solved-bg:   #0d3a42;
+
+  /* Layers (restrained): hairline tile highlight, soft wordmark glow */
+  --tile-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --wordmark-shadow: 0 0 18px rgba(0, 212, 232, 0.35);
 }
 
 /* ── Neon Horizon ── neon skyline with magenta-cyan glow rails and arcade bloom. */
@@ -417,7 +426,6 @@
   --path-dash: 0.1 15;
   --wordmark-shadow: 3px 3px 0 #2121de;
   --ui-radius: 8px;
-  --bg-pattern-size: 48px 48px, 336px 288px;
 }
 
 /* ── Swarm ── Alien hive look with organic carapace purples, creep magentas, and toxic acid beams. */
@@ -542,6 +550,9 @@
   --primary-action-shadow: 4px 4px 0 #000;
   --ui-radius: 0px;
   --hint-radius: 0px;
+
+  --celebrate-color: #ffffff;
+  --celebrate-shadow: 3px 3px 0 #000;
 }
 
 
@@ -566,25 +577,25 @@
   --border:    #cbd0d8;
   --text:      #11141a;
   --text-dim:  #606877;
-  --accent:    #e63400;
-  --action:    #e63400;
-  --tile:      linear-gradient(145deg, #ffffff, #e1e4e8);
-  --tile-sel:  linear-gradient(145deg, #222630, #11141a);
-  --path-start: #e63400;
+  --accent: #e8202a;
+  --action: #e8202a;
+  --tile: #ffffff;
+  --tile-sel: #e8202a;
+  --path-start: #11141a;
 
-  --tile-selected-glow:   rgba(0, 0, 0, 0.15);
+  --tile-selected-glow: rgba(232, 32, 42, 0.3);
   --tile-font-family: 'Antonio', sans-serif;
   --tile-font-weight: 700;
   --tile-font-scale:  0.95;
-  --tile-radius:      6px;
+  --tile-radius: 2px;
 
   /* Explicit overrides */
   --shell-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(240, 242, 245, 0.98));
   --shell-border: #cbd0d8;
   --primary-action-text: #ffffff;
-  --hint-solved-border: #ff7744;
-  --path-grad-end: #ff5522;
-  --selected-letter-outline: #11141a;
+  --hint-solved-border: #11141a;
+  --path-grad-end: #3a3f4a;
+  --selected-letter-outline: #7a0a10;
 
    /* Typography & shape */
   --wordmark-font-family: 'Syncopate', sans-serif;
@@ -601,6 +612,19 @@
   --path-cap: round;
   --path-opacity: 0.95;
   --path-glow: 4;
+
+  /* Layers: clean sky-to-white city, red runner-vision route */
+  --tile-selected-border: #b8101a;
+  --hint-solved-bg: #11141a;
+  --hint-solved-letter: #ffffff;
+  --bg-pattern: linear-gradient(180deg, #e6f2fb 0%, #fdfdfd 38%, #f2f3f5 100%);
+  --bg-pattern-size: 100% 100%;
+  --bg-pattern-repeat: no-repeat;
+  --wordmark-color: #11141a;
+  --wordmark-shadow: none;
+  --ui-radius: 2px;
+
+  --path-color: #11141a;
 }
 
 /* ── Paleblood ── Bloodborne. What reads as Yharnam: sickly sepia-grey fog
@@ -670,26 +694,30 @@
   --card-shadow: inset 0 0 0 1px rgba(184, 144, 46, 0.22);
 }
 
-/* ── Aero ── Glossy mid-2000s tech style with fluid gradients, glassy panels, and a radioactive loop trail. */
+/* ── Aero ── Frutiger Aero (mid-2000s "tech optimism"): a clear sky running
+   down into fresh grass green, soft light blooms, glossy aqua bubble buttons
+   with a hard specular highlight, frosted translucent-white glass panels, and
+   grass-green for success. Contrast rules: ink is deep navy, never mid-blue;
+   white type only sits on the deep end of a gradient. */
 .skin-aero {
   --skin-desc: "Peak 2000s. Gradients, gloss, and pure tech optimism.";
   --skin-name: "Aero";
   color-scheme: light;
 
-  --bg-top:    #eefcff;
-  --bg-bottom: #73d5ff;
-  --surface:   rgba(255,255,255,0.82);
+  --bg-top: #e8f8ff;
+  --bg-bottom: #8fd8ff;
+  --surface: rgba(255, 255, 255, 0.72);
   --border:    rgba(255,255,255,1);
-  --text:      #17425e;
-  --text-dim:  #5f8ea8;
-  --accent:    #8ce26b;
-  --action:    #35cfff;
-  --tile:      linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0.98) 18%, rgba(230,247,255,0.96) 55%, rgba(178,225,245,0.95) 100%);
-  --tile-sel:  linear-gradient(145deg, #7fefff, #29b7ff);
-  --path-start: #9be973;
+  --text: #0b3550;
+  --text-dim: #2c5b76;
+  --accent: #1aa3e8;
+  --action: #0a86d0;
+  --tile: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(240, 250, 255, 0.82) 50%, rgba(205, 236, 250, 0.8) 100%);
+  --tile-sel: linear-gradient(180deg, #6fd0fa 0%, #2aa8ec 48%, #0a86d0 52%, #0a6cb8 100%);
+  --path-start: #3fb82a;
 
-  --tile-selected-border: #e6fdff;
-  --tile-selected-glow:   rgba(73,216,255,0.85);
+  --tile-selected-border: #ffffff;
+  --tile-selected-glow: rgba(26, 163, 232, 0.6);
   --tile-font-family: 'Comfortaa', cursive;
   --tile-font-weight: 700;
   --tile-font-scale:  0.88;
@@ -700,15 +728,15 @@
   --shell-border: rgba(255,255,255,0.98);
   --shell-shadow: rgba(40,60,80,0.18);
   --primary-action-text: #ffffff;
-  --hint-empty-bg: rgba(255,255,255,0.90);
-  --hint-empty-border: #8adfff;
-  --hint-solved-bg: linear-gradient(180deg, #b6f49b, #72d85f);
+  --hint-empty-bg: rgba(255, 255, 255, 0.75);
+  --hint-empty-border: #7fd0f4;
+  --hint-solved-bg: linear-gradient(180deg, #d4ffb8 0%, #7fdc5a 48%, #3fb82a 52%, #2a9a1a 100%);
   --hint-solved-border: #ffffff;
-  --hint-solved-letter: #17425e;
+  --hint-solved-letter: #0b3a10;
   --hint-radius: 12px;
-  --path-color: #8ce26b;
-  --path-grad-end: #72d85f;
-  --selected-letter-outline: #0d4768;
+  --path-color: #3fb82a;
+  --path-grad-end: #1a9e1a;
+  --selected-letter-outline: #064a7a;
 
   /* Typography */
   --wordmark-font-family: 'Audiowide', cursive;
@@ -730,20 +758,32 @@
   --path-glow: 20;
 
   --shell-radius: 24px;
+
+  /* Layers: glass sheen (overlay), bloom glows, glossy pills */
+  --tile-overlay: linear-gradient(180deg, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0) 45%) 2px 2px / calc(100% - 4px) 50% no-repeat;
+  --tile-selected-overlay: linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0) 45%) 2px 2px / calc(100% - 4px) 50% no-repeat;
+  --primary-action-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 2px 6px rgba(0, 90, 160, 0.3);
+  --card-shadow: inset 0 1px 0 #ffffff, 0 2px 8px rgba(30, 110, 160, 0.15);
+  --bg-pattern: radial-gradient(ellipse 50% 22% at 18% 14%, rgba(255, 255, 255, 0.8), transparent 70%), radial-gradient(ellipse 40% 18% at 82% 30%, rgba(255, 255, 255, 0.55), transparent 70%), linear-gradient(180deg, #2a9fe8 0%, #7fd0ff 38%, #dff6ff 62%, #b8ec7a 78%, #5cc232 100%);
+  --bg-pattern-size: 100% 100%, 100% 100%, 100% 100%;
+  --bg-pattern-repeat: no-repeat, no-repeat, no-repeat;
+  --wordmark-shadow: 0 1px 0 rgba(255, 255, 255, 0.95), 0 3px 8px rgba(0, 80, 140, 0.3);
+
+  --tile-letter: #0b3550;
+  --tile-selected-letter: #ffffff;
+  --primary-action-bg: linear-gradient(180deg, #8fdcff 0%, #2aa8ec 48%, #0a86d0 52%, #0a6cb8 100%);
+  --title-color: #0b3550;
+  --title-glow: #0a5fa8;
+  --wordmark-color: #0d6fb8;
+  --title-shadow: 0 1px 0 #0a5fa8, 0 -1px 0 #0a5fa8, 1px 0 0 #0a5fa8, -1px 0 0 #0a5fa8, 0 3px 6px rgba(0, 60, 120, 0.45), 0 0 16px rgba(120, 220, 255, 0.6);
+
+  --celebrate-color: #ffffff;
+  --heading-color: #ffffff;
+  --time-shadow: 0 2px 0 #0a5fa8, 0 4px 10px rgba(0, 60, 120, 0.4), 0 0 20px rgba(120, 220, 255, 0.6);
+
+  --celebrate-shadow: 0 2px 0 #0a5fa8, 0 0 1px #0a5fa8, 0 0 14px rgba(10, 95, 168, 0.75);
 }
 
-.skin-aero .tile::before {
-  content: "";
-  position: absolute;
-  inset: 2px 2px 55% 2px;
-  border-radius: inherit;
-  background: linear-gradient(
-    180deg,
-    rgba(255,255,255,0.75),
-    rgba(255,255,255,0)
-  );
-  pointer-events: none;
-}
 
 /* ── Star Hunter ── Deep subterranean alien caverns with high-contrast power-suit energy blooms. */
 .skin-star-hunter {
@@ -947,7 +987,7 @@
   --card-shadow: 0 3px 0 rgba(200, 70, 130, 0.2);
   --wordmark-color: #ff6fae;
   --title-color: #26307a;
-  --title-glow: #ff6fae;
+  --title-glow: #e0245e;
   --title-shadow: 0 2px 0 #ffffff;
 
   --tile-selected-letter: #26307a;
@@ -1029,7 +1069,10 @@
 
   --bg-pattern-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
 
-  --bg-pattern-position: 6% 21%, 94% 47%, 16% 69%, 22% 100%, 83% 100%;
+  --bg-pattern-position: 6% 18%, 94% 33%, 18% 48%, 22% 100%, 83% 100%;
+
+  --celebrate-color: #fcc044;
+  --celebrate-shadow: 3px 3px 0 #000;
 }
 
 /* Custom 3D Drop-Shadow Blocks — Accurately reconstructs the original box-art look */
@@ -1160,6 +1203,9 @@
   --hint-empty-border: #ffffff;
   --hint-radius: 5px;
   --bg-pattern-repeat: no-repeat;
+
+  --celebrate-color: #f8d820;
+  --celebrate-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 2px 0 #000, 0 -2px 0 #000, 2px 0 0 #000, -2px 0 0 #000;
 }
 
 
@@ -1381,6 +1427,9 @@
   --wordmark-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 -2px 0 #000, 0 2px 0 #000, -2px 0 0 #000, 2px 0 0 #000, 5px 5px 0 #ff2d95, 7px 7px 0 #000;
   --ui-radius: 6px;
   --hint-radius: 4px;
+
+  --celebrate-color: #ffffff;
+  --celebrate-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 2px 0 #000, 0 -2px 0 #000, 2px 0 0 #000, -2px 0 0 #000, 4px 4px 0 #000;
 }
 
 /* ── Cyber Shinobi ── Shinobi III. Deep shadow-purple night, crimson-strike selections, ninjutsu-red trail. Angular precision. */
@@ -1529,6 +1578,9 @@
   --bg-pattern-size: 3px 3px, 3px 3px;
   --tile-overlay: linear-gradient(rgba(15,56,15,0.09) 1px, transparent 1px), linear-gradient(90deg, rgba(15,56,15,0.09) 1px, transparent 1px);
   --tile-selected-overlay: none;
+
+  --celebrate-color: #0f380f;
+  --celebrate-shadow: 2px 2px 0 rgba(48, 98, 48, 0.45);
 }
 
 /* ── Terminal ──
@@ -1795,7 +1847,6 @@
   --primary-action-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35), inset 0 -3px 0 rgba(40, 15, 100, 0.45);
   --card-shadow: 0 1px 2px rgba(60, 50, 90, 0.18);
   --ui-radius: 12px;
-  --bg-pattern-size: auto;
 
   --tile-selected-letter: #ffffff;
   --shell-shadow: rgba(40, 30, 70, 0.2);
@@ -1807,6 +1858,8 @@
   --title-glow-alpha: 20%;
   --wordmark-color: #5a3fa6;
   --wordmark-shadow: 0 2px 0 #ffffff, 0 -1px 0 rgba(0, 0, 0, 0.25);
+
+  --celebrate-color: #5a3fa6;
 }
 
 /* ── Toaster ──
@@ -1889,6 +1942,9 @@
   --wordmark-color: #e8281f;
 
   --bg-pattern-repeat: no-repeat;
+
+  --celebrate-color: #b01810;
+  --celebrate-shadow: 0 2px 0 #141414;
 }
 
 /* ── Lord of Terror ──
@@ -1981,15 +2037,15 @@
   --border:    #c4c8d0;
   --text:      #2a2d33;
   --text-dim:  #5f6670;
-  --accent:    #1487bd;
+  --accent: #1ea4e9;
   --action:    #ff9a00;
   --tile:      radial-gradient(circle at 50% 38%, #ffffff 30%, #f2f2f2 55%, #e6e6e6 75%, #d6d6da 100%);
-  --tile-sel:  radial-gradient(circle at 50% 38%, #5cc6ee, #1c93c8);
+  --tile-sel: radial-gradient(circle at 50% 38%, #8ee0ff, #27b0f0 70%);
   --path-start: #ff9a00;
 
   --tile-letter:          #2f3338;
-  --tile-selected-border: #7fd6f4;
-  --tile-selected-glow:   rgba(39, 167, 216, 0.55);
+  --tile-selected-border: #bfeeff;
+  --tile-selected-glow: rgba(39, 176, 240, 0.65);
   /* Oswald — condensed industrial signage. */
   --tile-font-family: 'Oswald', sans-serif;
   --tile-font-weight: 500;
@@ -2005,7 +2061,7 @@
   --hint-solved-border: #ffc870;
   --tile-deactivated-opacity: 0.4;
   --path-grad-end: #ff9a00;
-  --selected-letter-outline: #0e5a7e;
+  --selected-letter-outline: #0b5a82;
 
   --wordmark-font-family: 'Oswald', sans-serif;
   --wordmark-font-weight: 600;
@@ -2022,6 +2078,16 @@
   --path-cap: round;
   --path-opacity: 0.95;
   --path-glow: 8;
+
+  /* Layers: panel seams, blue-portal ring on selection */
+  --tile-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.8), 0 1px 0 rgba(0, 0, 0, 0.12);
+  --tile-selected-shadow: inset 0 0 0 3px #9fe2fa, 0 0 14px rgba(39, 167, 216, 0.55);
+  --card-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.06);
+  --ui-radius: 2px;
+
+  --celebrate-color: #27b0f0;
+
+  --celebrate-shadow: 0 2px 0 #0b5a82, 0 0 14px rgba(39, 176, 240, 0.75);
 }
 
 /* ── Lumen ──
@@ -2080,6 +2146,12 @@
   --path-cap: round;
   --path-opacity: 0.95;
   --path-glow: 7;
+
+  /* Layers (restrained): paper-light tile lift */
+  --tile-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 2px rgba(20, 40, 60, 0.12);
+  --card-shadow: 0 1px 2px rgba(20, 40, 60, 0.08);
+
+  --celebrate-color: #00788a;
 }
 
 /* ── Polygon ──
@@ -2093,15 +2165,15 @@
   --skin-name: "Polygon";
   color-scheme: light;
 
-  --bg-top:    #dedcd6;
-  --bg-bottom: #c4c1b8;
-  --surface:   #ffffff;
-  --border:    #c0bcb2;
-  --text:      #3a3833;
-  --text-dim:  #6e6a60;
+  --bg-top: #d6d6dc;
+  --bg-bottom: #a9a9b3;
+  --surface: #eeeef2;
+  --border: #9c9caa;
+  --text: #1e2a5a;
+  --text-dim: #4a5482;
   --accent:    #2f6fd6;
   --action:    #d94db0;
-  --tile:      linear-gradient(145deg, #ffffff, #e6e4dd);
+  --tile: linear-gradient(180deg, #f2f2f6, #d8d8e0);
   --tile-sel:  linear-gradient(145deg, #5aa8e8, #2f6fd6);
   --path-start: #d94db0;
 
@@ -2110,11 +2182,11 @@
   --tile-font-family: 'Share Tech Mono', monospace;
   --tile-font-weight: 700;
   --tile-font-scale:  1.02;
-  --tile-radius:      8px;
+  --tile-radius: 4px;
 
   /* Explicit overrides */
-  --shell-bg: linear-gradient(180deg, #efeee9, #dedcd6);
-  --shell-border: #b8b4aa;
+  --shell-bg: linear-gradient(180deg, #f2f2f6, #d6d6dc);
+  --shell-border: #9c9caa;
   --shell-shadow: rgba(50, 48, 40, 0.16);
   --primary-action-text: #ffffff;
   --hint-solved-bg: #1f9e76;
@@ -2136,63 +2208,114 @@
   --path-cap: round;
   --path-opacity: 0.95;
   --path-glow: 7;
+
+  /* Layers: flat-shaded low-poly facets, face-button colours */
+  --tile-overlay: linear-gradient(135deg, rgba(255, 255, 255, 0.35) 50%, rgba(0, 0, 0, 0.05) 50%);
+  --tile-selected-overlay: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 50%, rgba(0, 0, 40, 0.14) 50%);
+  --tile-shadow: 0 1px 0 rgba(0, 0, 0, 0.12);
+  --wordmark-shadow: 0 2px 0 rgba(58, 56, 51, 0.25);
+  --ui-radius: 6px;
+
+  --tile-letter: #1e2a5a;
+  --title-color: #1e2a5a;
+  --hint-empty-bg: rgba(30, 42, 90, 0.06);
+  --hint-empty-border: #9c9caa;
+  --card-shadow: inset 0 -3px 0 #2f6fd6;
+  --bg-pattern: radial-gradient(ellipse 60% 25% at 50% 0%, rgba(47, 111, 214, 0.18), transparent 70%), radial-gradient(ellipse 50% 22% at 0% 100%, rgba(31, 158, 118, 0.14), transparent 70%), radial-gradient(ellipse 50% 22% at 100% 100%, rgba(217, 77, 176, 0.14), transparent 70%);
+  --bg-pattern-size: 100% 100%, 100% 100%, 100% 100%;
+  --bg-pattern-repeat: no-repeat, no-repeat, no-repeat;
+
+  --celebrate-color: #1e4fb0;
 }
 
+/* Polygon wordmark: letters cycle through the four controller face-button
+   colours (triangle green, circle red, cross blue, square pink). */
+.skin-polygon .menu-logo-letter:nth-child(4n+1) { color: #1f9e76; }
+.skin-polygon .menu-logo-letter:nth-child(4n+2) { color: #e0424a; }
+.skin-polygon .menu-logo-letter:nth-child(4n+3) { color: #2f6fd6; }
+.skin-polygon .menu-logo-letter:nth-child(4n)   { color: #d94db0; }
+
 /* ── Ring of Light ──
-   Xbox 360 inspired (the "Ring of Light"), and a LIGHT skin. Off-white shell,
-   silver-grey frame, and the Xbox green as the signature — tiles light up
-   green on the active swipe like the power ring, solved words settle to a soft
-   green. Oswald gives the clean dashboard voice. Light theme. No new font. */
+   Xbox 360. Read through its two loudest memories: the glowing GREEN ORB of
+   the boot/dashboard backdrop (bright lime at the centre falling to deep
+   green), and glossy white console plastic. Tiles are glossy white; the
+   swipe lights them as green gel orbs; found words land as the dark
+   "achievement unlocked" toast pill. A DARK skin now (was light-grey). */
 .skin-ring-of-light {
   --skin-desc: "No red ring. Achievement unlocked. Gamerscore: all of it.";
   --skin-name: "Ring of Light";
-  color-scheme: light;
+  color-scheme: dark;
 
-  --bg-top:    #eef0ee;
-  --bg-bottom: #d6dad6;
-  --surface:   #ffffff;
-  --border:    #c6ccc6;
-  --text:      #283028;
-  --text-dim:  #6a726a;
-  --accent:    #138a13;
-  --action:    #0e8a14;
-  --tile:      linear-gradient(145deg, #ffffff, #e8ece8);
-  --tile-sel:  linear-gradient(145deg, #4cd44e, #0e9e14);
-  --path-start: #0c6e16;
+  --bg-top: #4caf1a;
+  --bg-bottom: #062a04;
+  --surface: rgba(22, 26, 22, 0.88);
+  --border: rgba(255, 255, 255, 0.28);
+  --text: #ffffff;
+  --text-dim: #d6f0c8;
+  --accent: #9cff4a;
+  --action: #7ed321;
+  --tile: linear-gradient(180deg, #ffffff 0%, #f0f2f0 48%, #d8dcd8 52%, #e8ece8 100%);
+  --tile-sel: linear-gradient(180deg, #d8ff9a 0%, #8ee03a 48%, #4caf1a 52%, #2f8a0e 100%);
+  --path-start: #ffffff;
 
-  --tile-letter:          #2a322a;
-  --tile-selected-border: #7fe87f;
-  --tile-selected-letter: #052a05;
-  --tile-selected-glow:   rgba(43, 197, 43, 0.5);
+  --tile-letter: #1a2a1a;
+  --tile-selected-border: #ffffff;
+  --tile-selected-letter: #ffffff;
+  --tile-selected-glow: rgba(160, 255, 80, 0.7);
   --tile-font-family: 'Oswald', sans-serif;
   --tile-font-weight: 500;
   --tile-font-scale:  0.92;
   --tile-radius:      12px;
 
   /* Explicit overrides */
-  --shell-bg: linear-gradient(180deg, #ffffff, #eef1ef);
-  --shell-border: #c6ccc6;
-  --shell-shadow: rgba(30, 50, 35, 0.15);
+  --shell-bg: linear-gradient(180deg, rgba(40, 44, 40, 0.96), rgba(16, 18, 16, 0.98));
+  --shell-border: rgba(255, 255, 255, 0.25);
+  --shell-shadow: rgba(0, 0, 0, 0.5);
   --primary-action-text: #ffffff;
-  --hint-solved-bg: #16a51a;
-  --hint-solved-border: #7fe87f;
-  --hint-solved-letter: #052a05;
+  --hint-solved-bg: linear-gradient(180deg, #3a3e3a, #161816);
+  --hint-solved-border: #7ed321;
+  --hint-solved-letter: #ffffff;
   --tile-deactivated-opacity: 0.45;
-  --path-color: #16a51a;
-  --path-grad-end: #06330a;
-  --selected-letter-outline: #dff5df;
+  --path-color: #ffffff;
+  --path-grad-end: #d8ff9a;
+  --selected-letter-outline: #0b3a05;
 
-  --wordmark-font-family: 'Oswald', sans-serif;
-  --wordmark-font-weight: 600;
-  --wordmark-letter-spacing: 0.16em;
-  --display-font-scale: var(--display-scale-oswald);
-  --glow-strength: 0.9;
+  --wordmark-font-family: 'Exo 2', sans-serif;
+  --wordmark-font-weight: 700;
+  --wordmark-letter-spacing: 0.1em;
+  --display-font-scale: 1;
+  --glow-strength: 1.2;
 
   /* Ribbon: green → bright green */
   --path-width: 9px;
   --path-cap: round;
   --path-opacity: 0.95;
   --path-glow: 8;
+
+  /* Layers: green ring glow, glossy white console finish */
+  --bg-pattern: radial-gradient(ellipse 85% 55% at 50% 42%, #5cb82a 0%, #2f8a14 30%, #14520a 62%, #062a04 100%);
+  --bg-pattern-size: 100% 100%;
+  --bg-pattern-repeat: no-repeat;
+  --tile-overlay: none;
+  --tile-selected-overlay: none;
+  --tile-shadow: inset 0 1px 0 #ffffff, 0 2px 4px rgba(0, 40, 0, 0.35);
+  --wordmark-color: #ffffff;
+  --wordmark-shadow: 0 2px 4px rgba(0, 40, 0, 0.5), 0 0 22px rgba(156, 255, 74, 0.7);
+  --primary-action-shadow: inset 0 0 0 1px rgba(126, 211, 33, 0.7), 0 0 12px rgba(126, 211, 33, 0.35);
+
+  --tile-border: #b8c0b8;
+  --hint-empty-bg: rgba(0, 30, 0, 0.35);
+  --hint-empty-border: rgba(255, 255, 255, 0.45);
+  --tile-selected-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --title-color: #ffffff;
+  --title-glow: #9cff4a;
+  --title-shadow: 0 1px 2px rgba(0, 40, 0, 0.6), 0 0 12px rgba(156, 255, 74, 0.35);
+  --primary-action-bg: linear-gradient(180deg, #4a4e4a 0%, #2a2e2a 48%, #181a18 52%, #121412 100%);
+  --card-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+
+  --celebrate-color: #ffffff;
+  --celebrate-shadow: 0 2px 4px rgba(0, 40, 0, 0.7), 0 0 16px rgba(156, 255, 74, 0.8);
+  --time-shadow: 0 2px 4px rgba(0, 40, 0, 0.7), 0 0 14px rgba(0, 60, 0, 0.5);
 }
 
 /* ── Dream Spiral ──
@@ -2249,6 +2372,18 @@
   --path-cap: round;
   --path-opacity: 0.95;
   --path-glow: 8;
+
+  /* Layers: cream plastic, swirl-orange glow */
+  --bg-pattern: radial-gradient(ellipse 55% 30% at 50% 0%, rgba(244, 123, 32, 0.16), transparent 70%);
+  --bg-pattern-size: 100% 100%;
+  --bg-pattern-repeat: no-repeat;
+  --tile-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.9), inset 0 -3px 0 rgba(120, 90, 50, 0.12), 0 1px 2px rgba(60, 45, 25, 0.15);
+  --tile-selected-shadow: inset 0 2px 0 rgba(255, 220, 180, 0.6), inset 0 -3px 0 rgba(140, 50, 0, 0.25);
+  --wordmark-color: #f47b20;
+  --wordmark-shadow: 0 2px 0 rgba(150, 60, 0, 0.25);
+  --primary-action-shadow: inset 0 2px 0 rgba(255, 220, 180, 0.6), inset 0 -3px 0 rgba(140, 50, 0, 0.25);
+
+  --celebrate-color: #b84e00;
 }
 
 /* ── Rip & Tear ──

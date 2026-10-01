@@ -36,7 +36,7 @@ import type { WinPayload } from './types';
 import { formatDuration } from '../utils/format';
 import { playCollapse, playFind, playGlitch, playSelect } from '../services/SoundService';
 import { renderRibbon } from '../components/ribbon';
-import { requestWordmarkSweep } from './MenuView';
+import { requestWordmarkSweep } from '../services/wordmarkSweep';
 
 type PartEntry = {
   id: string;
@@ -1188,6 +1188,28 @@ export class GameView {
     // the trigger and flashes first (t=0), so its letter can't match its own
     // flash and still go last — it simply follows one ripple step later.
     const lastIndex = chainCoords.length - 1;
+
+    // Colour: letters leave in the tile's colour and land in the colour the
+    // slot will show (solved-word ink if this find completes the answer, the
+    // revealed-letter ink otherwise). A thin outline keeps them legible over
+    // any tile/background, easing from the selected-letter outline to the
+    // destination slot's fill so the letter "brings" its slot colour along.
+    const rootStyle = getComputedStyle(document.documentElement);
+    const cssColor = (name: string, fallback: string): string => {
+      const v = rootStyle.getPropertyValue(name).trim();
+      return v && CSS.supports('color', v) ? v : fallback;
+    };
+    const firstEntry = this.partEntriesById.get(partIds[0]);
+    const answerParts = firstEntry ? this.partIdsByAnswer.get(firstEntry.answerDisplay) ?? [] : [];
+    const completes = answerParts.every((id) => this.solvedPartIds.has(id) || partIds.includes(id));
+    const endColor = completes ? cssColor('--hint-solved-letter', '#fff') : cssColor('--tile-letter', '#fff');
+    const startOutline = cssColor('--selected-letter-outline', 'rgba(0, 0, 0, 0.6)');
+    const endOutline = completes
+      ? cssColor('--hint-solved-bg', cssColor('--hint-solved-border', startOutline))
+      : cssColor('--hint-empty-border', startOutline);
+    const outline = (c: string): string =>
+      `1.5px 0 0 ${c}, -1.5px 0 0 ${c}, 0 1.5px 0 ${c}, 0 -1.5px 0 ${c}`;
+
     const departAt = (i: number): number =>
       i * GameView.TILE_REVEAL_STAGGER_MS + 0.4 * GameView.TILE_REVEAL_DURATION_MS;
 
@@ -1202,6 +1224,7 @@ export class GameView {
       const from = letterEl.getBoundingClientRect();
       const to = slot.getBoundingClientRect();
       const fromSize = parseFloat(getComputedStyle(letterEl).fontSize) || 24;
+      const startColor = getComputedStyle(letterEl).color;
       const toSize = parseFloat(getComputedStyle(slotLetterEl).fontSize) || fromSize * 0.5;
 
       const fly = document.createElement('span');
@@ -1222,9 +1245,9 @@ export class GameView {
         `translate(${x}px, ${y}px) translate(-50%, -50%) scale(${k})`;
       const anim = fly.animate(
         [
-          { transform: at(x0, y0, startScale), opacity: 1 },
+          { transform: at(x0, y0, startScale), opacity: 1, color: startColor, textShadow: outline(startOutline) },
           { transform: at((x0 + x1) / 2, Math.min(y0, y1) - 24, (startScale + scale) / 2 + 0.1), opacity: 1, offset: 0.45 },
-          { transform: at(x1, y1, scale), opacity: 1 }
+          { transform: at(x1, y1, scale), opacity: 1, color: endColor, textShadow: outline(endOutline) }
         ],
         { duration: FLY_MS, delay, easing: 'cubic-bezier(0.45, 0, 0.2, 1)', fill: 'both' }
       );

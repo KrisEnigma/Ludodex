@@ -12,19 +12,10 @@ import { showStarterPackModal } from '../components/StarterPackModal';
 import { showHintStore } from '../components/HintStoreSheet';
 import { buildPuzzleTags } from '../components/PuzzleTags';
 import { formatDuration, formatTimeUntilMidnight } from '../utils/format';
+import { consumeWordmarkSweep } from '../services/wordmarkSweep';
 
 const STREAK_BANNER_DISMISSED_KEY = 'streak_banner_dismissed';
 
-/**
- * The wordmark sweep plays on app launch and on the first menu after playing a
- * puzzle — not on every return from Settings, Archive, etc.
- */
-let wordmarkSweepPending = true;
-
-/** Queue the sweep for the next menu (called when a puzzle starts). */
-export function requestWordmarkSweep(): void {
-  wordmarkSweepPending = true;
-}
 
 type MenuCallbacks = {
   onPlay: (payload: RoutePayloads['game']) => void;
@@ -98,10 +89,7 @@ export class MenuView {
       letter.style.setProperty('--t', String(brandLetters.length > 1 ? i / (brandLetters.length - 1) : 0));
       logo.append(letter);
     });
-    if (wordmarkSweepPending) {
-      wordmarkSweepPending = false;
-      logo.dataset.sweep = 'true';
-    }
+    if (consumeWordmarkSweep()) logo.dataset.sweep = 'true';
 
     const statsStrip = document.createElement('div');
     statsStrip.className = 'stats-strip';

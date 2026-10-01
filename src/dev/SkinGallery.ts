@@ -108,7 +108,13 @@ function buildCard(skin: SkinMeta): HTMLElement {
 
   const logo = document.createElement('div');
   logo.className = 'menu-logo';
-  logo.textContent = 'LUDODEX';
+  // Per-letter spans like MenuView, so per-letter skin styling shows here too.
+  for (const ch of 'LUDODEX') {
+    const letter = document.createElement('span');
+    letter.className = 'menu-logo-letter';
+    letter.textContent = ch;
+    logo.append(letter);
+  }
 
   const stats = document.createElement('div');
   stats.className = 'dev-skin-stats';
@@ -161,7 +167,28 @@ function buildCard(skin: SkinMeta): HTMLElement {
   play.textContent = '▶ Play';
   play.tabIndex = -1;
 
-  screen.append(logo, stats, levelTitle, board, hints, play);
+  // Win-screen strip: stars, FLAWLESS label and final time (real win classes).
+  const win = document.createElement('div');
+  win.className = 'win-view dev-skin-win';
+  const stars = document.createElement('div');
+  stars.className = 'win-stars';
+  for (let i = 1; i <= 3; i++) {
+    const star = document.createElement('span');
+    star.className = 'win-star';
+    star.dataset.filled = 'true';
+    star.dataset.position = String(i);
+    star.textContent = '★';
+    stars.append(star);
+  }
+  const label = document.createElement('div');
+  label.className = 'win-headline-label';
+  label.textContent = 'Flawless';
+  const time = document.createElement('div');
+  time.className = 'win-time';
+  time.textContent = '0:10';
+  win.append(stars, label, time);
+
+  screen.append(logo, stats, levelTitle, board, hints, win, play);
   card.append(head, tags, screen);
   return card;
 }
@@ -255,6 +282,10 @@ function injectStyles(): void {
 .dev-skin-tiles .tile-letter { position: relative; z-index: 20; }
 .dev-skin-hints { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .dev-skin-hints .hint-slot { width: 22px; height: 29px; font-size: calc(13px * var(--hint-font-scale, 1)); }
+.dev-skin-win.win-view { display: flex; flex-direction: column; align-items: center; padding: 0; margin: 0; gap: 2px; min-height: 0; width: 100%; flex: none; animation: none; }
+.dev-skin-win .win-stars { font-size: 26px; gap: 8px; margin: 0; }
+.dev-skin-win .win-headline-label { font-size: calc(11px * var(--title-font-scale, var(--display-font-scale, 1))); }
+.dev-skin-win .win-time { font-size: calc(26px * var(--win-timer-scale, var(--title-font-scale, var(--display-font-scale, 1)))); margin: 0; }
 .dev-skin-play { padding: 10px 12px; font-size: 13px; pointer-events: none; }
 `;
   document.head.append(style);

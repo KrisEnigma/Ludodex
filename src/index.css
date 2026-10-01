@@ -630,8 +630,24 @@ body {
   font-family: 'Space Mono', ui-monospace, monospace;
   color: var(--title-color);
   background-color: var(--bg-edge);
+  /* Optional skin-wide text drop (e.g. NES-style shadow so white UI text stays
+     readable over Mushroom Kingdom's clouds). Elements with their own
+     text-shadow (tiles, titles…) override it. */
+  text-shadow: var(--text-shadow, none);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* Skin previews re-evaluate the text drop for their own skin (the property
+   itself inherits, so the active skin's drop would otherwise leak in). */
+.skin-scope {
+  text-shadow: var(--text-shadow, none);
+}
+
+/* Browsers reset text-shadow on form controls (UA: button { text-shadow: none }),
+   so buttons opt back into the skin's text drop explicitly. */
+button {
+  text-shadow: var(--text-shadow, none);
 }
 
 /* Skin backdrop, pinned to the VIEWPORT (not the body, whose height follows
@@ -774,7 +790,7 @@ body::before {
   font-weight: var(--title-font-weight, var(--wordmark-font-weight, 700));
   letter-spacing: var(--title-letter-spacing, var(--wordmark-letter-spacing, 0.04em));
   text-transform: var(--title-text-transform, none);
-  color: var(--title-color);
+  color: var(--heading-color, var(--title-color));
   text-shadow: var(--title-shadow, 0 0 12px color-mix(in srgb, var(--title-glow) var(--title-glow-alpha, 40%), transparent));
 }
 
@@ -2450,7 +2466,7 @@ body::before {
 .win-view .view-title {
   font-size: calc(var(--type-h1) * var(--level-title-scale, var(--title-font-scale, var(--display-font-scale, 1))));
   text-align: center;
-  color: var(--title-color);
+  color: var(--heading-color, var(--title-color));
   margin: 6px 0;
 }
 
@@ -2475,7 +2491,7 @@ body::before {
   display: inline-block;
   font-size: inherit;
   line-height: 1;
-  color: var(--title-glow);
+  color: var(--celebrate-color, var(--title-glow));
   opacity: 0.22;
   transform-origin: center;
   text-shadow: 0 0 0 transparent;
@@ -2483,7 +2499,7 @@ body::before {
 }
 
 .win-view .win-star[data-filled="false"] {
-  color: var(--title-glow);
+  color: var(--celebrate-color, var(--title-glow));
   opacity: 0.22;
   text-shadow: 0 0 0 transparent;
 }
@@ -2491,7 +2507,7 @@ body::before {
 .win-view .win-star[data-filled="true"] {
   opacity: 1;
   animation: star-pop 640ms cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
-  text-shadow: 0 0 24px var(--title-glow), 0 0 8px var(--title-glow);
+  text-shadow: var(--celebrate-shadow, 0 0 24px var(--title-glow), 0 0 8px var(--title-glow));
 }
 
 .win-star[data-filled="true"][data-position="1"] { animation-delay: 0ms; }
@@ -2507,8 +2523,8 @@ body::before {
   font-weight: var(--title-font-weight, var(--wordmark-font-weight, 700));
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: var(--title-glow);
-  text-shadow: 0 0 8px var(--title-glow);
+  color: var(--celebrate-color, var(--title-glow));
+  text-shadow: var(--celebrate-shadow, 0 0 8px var(--title-glow));
   animation: label-glow 2400ms ease-in-out 800ms infinite;
 }
 
@@ -2519,7 +2535,8 @@ body::before {
   font-size: calc(var(--type-display-l) * var(--win-timer-scale, var(--title-font-scale, var(--display-font-scale, 1))));
   font-weight: var(--title-font-weight, var(--wordmark-font-weight, 700));
   font-variant-numeric: tabular-nums;
-  color: var(--title-color);
+  color: var(--heading-color, var(--title-color));
+  text-shadow: var(--time-shadow, none);
   letter-spacing: var(--title-letter-spacing, var(--wordmark-letter-spacing, 0.04em));
   margin: 4px 0;
   line-height: 1;
@@ -2583,10 +2600,10 @@ body::before {
 
 @keyframes label-glow {
   0%, 100% {
-    text-shadow: 0 0 8px var(--title-glow);
+    text-shadow: var(--celebrate-shadow, 0 0 8px var(--title-glow));
   }
   50% {
-    text-shadow: 0 0 22px var(--title-glow), 0 0 6px var(--title-glow);
+    text-shadow: var(--celebrate-shadow, 0 0 6px var(--title-glow)), 0 0 22px var(--title-glow);
   }
 }
 

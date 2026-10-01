@@ -1,3 +1,5 @@
+import { requestWordmarkSweep } from '../services/wordmarkSweep';
+
 export type SkinId =
   | 'void'
   | 'lumen'
@@ -132,8 +134,7 @@ export const SKINS: SkinMeta[] = [
     productId: 'skin_ring_of_light',
     bundleProductId: 'skin_bundle',
     unlockedByAchievement: 'solve_25',
-    unlockHint: '25 puzzles solved',
-    isLight: true
+    unlockHint: '25 puzzles solved'
   },
   { id: 'dream-spiral', name: 'Dream Spiral', productId: null, isLight: true },
   { id: 'rip-tear', name: 'Rip & Tear', productId: null },
@@ -168,7 +169,10 @@ export function onSkinChanged(cb: SkinChangedCallback): void {
 
 export function applySkin(skinId: SkinId): void {
   const root = document.documentElement;
+  const changed = !root.classList.contains(`${SKIN_CLASS_PREFIX}${skinId}`);
   root.classList.remove(...SKIN_CLASS_NAMES);
   root.classList.add(`${SKIN_CLASS_PREFIX}${skinId}`);
+  // New skin → the next menu replays the wordmark sweep in its colours.
+  if (changed) requestWordmarkSweep();
   skinChangedCallback?.(skinId);
 }
