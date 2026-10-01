@@ -1318,6 +1318,22 @@ body {
   -webkit-touch-callout: none;
 }
 
+/* Find fly-in: clone of a found tile's letter flying into its slot
+   (GameView.launchLetterFlight). Fixed overlay; transform set by WAAPI. */
+.fly-letter {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 60;
+  pointer-events: none;
+  line-height: 1;
+  font-family: var(--tile-font-family, 'Space Mono', ui-monospace, monospace);
+  font-weight: var(--tile-font-weight, 700);
+  color: var(--tile-selected-letter);
+  text-shadow: 0 0 10px var(--title-glow);
+  will-change: transform;
+}
+
 /* Larger answer slots (28×37, were 22×30): easier to read and long-press. They
    shrink proportionally (flex) when a long answer row would overflow. */
 .hint-row {
@@ -1368,9 +1384,14 @@ body {
    color-mix() of --tile-selected-bg, but that variable is a *gradient* and
    color-mix only accepts colors — so the declaration was invalid and silently
    fell back to the dark empty background, hiding dark solved letters. */
-.hint-row[data-solved="true"] .hint-slot {
+/* Per slot, once filled — so with the find fly-in each slot lights up as its
+   letter lands (final state unchanged: every slot ends up filled). No colour
+   transition: the background appears the instant the letter lands; the
+   hint-slot-complete pop carries the emphasis. */
+.hint-row[data-solved="true"] .hint-slot[data-filled="true"] {
   background: var(--hint-solved-bg);
   border-color: var(--hint-solved-border);
+  transition: none;
 }
 
 .hint-row[data-solved="true"] .hint-slot[data-filled="true"] .hint-slot-letter {

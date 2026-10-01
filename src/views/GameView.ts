@@ -51,6 +51,10 @@ export class GameView {
   private static readonly EXIT_FADE_MS = GameView.GLITCH_CORRUPT_MS + GameView.GLITCH_COLLAPSE_MS;
   private static readonly TILE_REVEAL_STAGGER_MS = 50;
   private static readonly TILE_REVEAL_DURATION_MS = 360;
+  // Find fly-in (letters → answer slots).
+  private static readonly LETTER_FLY_MS = 420;
+  // Trigger tile's found-flash duration (index.css tile-found-flash-trigger).
+  private static readonly TILE_TRIGGER_FLASH_MS = 480;
   private static readonly RIBBON_OUTRO_MS = 180;
   // Long-press duration to reveal a hint letter. The reveal is driven by this
   // JS timer (not by `animationend`) so it still works when reduced-motion
@@ -1042,6 +1046,10 @@ export class GameView {
     const playerChainCoords = this.inputManager.getChain().map((tile) => tile.coord);
     const deactivatedCoordsForSolve = new Set<string>();
 
+    // Letters fly from the grid into their slots; each slot fills (and pops)
+    // when its letter arrives. null → reduced motion / mismatch → old timing.
+    const flight = this.launchLetterFlight(partIds, playerChainCoords);
+
     // Mark all parts as solved
     let anyDeactivated = false;
     for (const partId of partIds) {
@@ -1083,7 +1091,7 @@ export class GameView {
             solvedLetterEl.textContent = solvedMeta.letter;
           }
           slot.dataset.filled = 'true';
-        }, index * 60);
+        }, flight?.get(slot) ?? index * 60);
       });
     }
 
@@ -1126,22 +1134,26 @@ export class GameView {
         const row = this.hintRowsByDisplay.get(firstEntry.answerDisplay);
         if (row) {
           row.dataset.solved = 'true';
-          this.triggerCascade(row);
+          this.triggerCascade(row, flight);
         }
       }
     }
 
   }
 
-  private triggerCascade(row: HTMLDivElement): void {
+  private triggerCascade(row: HTMLDivElement, flight: Map<HTMLElement, number> | null = null): void {
     const slots = row.querySelectorAll<HTMLElement>('.hint-slot');
+    let lastDelay = 0;
     slots.forEach((slot, index) => {
-      slot.style.setProperty('--cascade-delay', `${index * 60}ms`);
+      // With the fly-in, each slot pops when its letter lands.
+      const delay = flight?.get(slot) ?? index * 60;
+      lastDelay = Math.max(lastDelay, delay);
+      slot.style.setProperty('--cascade-delay', `${delay}ms`);
     });
     row.dataset.justSolved = 'true';
 
-    // Total animation time = (slots.length - 1) * 60ms delay + 220ms duration
-    const totalMs = (slots.length - 1) * 60 + 220 + 40;
+    // Total animation time = last slot's delay + 220ms pop duration
+    const totalMs = lastDelay + 220 + 40;
     window.setTimeout(() => {
       if (!row.isConnected) return;
       row.removeAttribute('data-just-solved');
@@ -1181,10 +1193,78 @@ export class GameView {
     }, GameView.RIBBON_OUTRO_MS + 20);
   }
 
+  /**
+   * Find fly-in: a clone of each found tile's letter flies (slight arc,
+   * shrinking to slot size) into its answer slot, staggered like the flash
+   * wave. Clones are fixed-position overlays — the grid itself is untouched
+   * (no transforms on .tile). Returns each slot's arrival time (ms) so the
+   * caller fills / pops slots on arrival, or null to keep the old timing
+   * (reduced motion, or chain/slot count mismatch).
+   */
+  private launchLetterFlight(partIds: string[], chainCoords: string[]): Map<HTMLElement, number> | null {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return null;
+    const slots = partIds.flatMap((id) => this.hintSlotsByPartId.get(id) ?? []);
+    if (slots.length === 0 || slots.length !== chainCoords.length) return null;
+
+    const FLY_MS = GameView.LETTER_FLY_MS;
+    const arrivals = new Map<HTMLElement, number>();
+    // Depart in word order (first → last). Letters 1…n-1 leave at their tile's
+    // found-flash peak (50ms ripple, peak at 40% of 360ms). The last tile is
+    // the trigger and flashes first (t=0), so its letter can't match its own
+    // flash and still go last — it simply follows one ripple step later.
+    const lastIndex = chainCoords.length - 1;
+    const departAt = (i: number): number =>
+      i * GameView.TILE_REVEAL_STAGGER_MS + 0.4 * GameView.TILE_REVEAL_DURATION_MS;
+
+    chainCoords.forEach((coord, i) => {
+      const slot = slots[i];
+      if (slot.dataset.filled === 'true') return; // already revealed by a hint
+      const tile = this.tileByCoord.get(coord);
+      const letterEl = tile ? this.tileElements.get(tile)?.querySelector<HTMLElement>('.tile-letter') : null;
+      const slotLetterEl = slot.querySelector<HTMLElement>('.hint-slot-letter');
+      if (!tile || !letterEl || !slotLetterEl) return;
+
+      const from = letterEl.getBoundingClientRect();
+      const to = slot.getBoundingClientRect();
+      const fromSize = parseFloat(getComputedStyle(letterEl).fontSize) || 24;
+      const toSize = parseFloat(getComputedStyle(slotLetterEl).fontSize) || fromSize * 0.5;
+
+      const fly = document.createElement('span');
+      fly.className = 'fly-letter';
+      fly.setAttribute('aria-hidden', 'true');
+      fly.textContent = tile.letter;
+      fly.style.fontSize = `${fromSize}px`;
+      document.body.append(fly);
+
+      const x0 = from.left + from.width / 2;
+      const y0 = from.top + from.height / 2;
+      const x1 = to.left + to.width / 2;
+      const y1 = to.top + to.height / 2;
+      const scale = toSize / fromSize;
+      const delay = departAt(i);
+      const startScale = i === lastIndex ? 1 : 1.22; // the tile letter's pop size at its flash peak (trigger's pop is over)
+      const at = (x: number, y: number, k: number): string =>
+        `translate(${x}px, ${y}px) translate(-50%, -50%) scale(${k})`;
+      const anim = fly.animate(
+        [
+          { transform: at(x0, y0, startScale), opacity: 1 },
+          { transform: at((x0 + x1) / 2, Math.min(y0, y1) - 24, (startScale + scale) / 2 + 0.1), opacity: 1, offset: 0.45 },
+          { transform: at(x1, y1, scale), opacity: 1 }
+        ],
+        { duration: FLY_MS, delay, easing: 'cubic-bezier(0.45, 0, 0.2, 1)', fill: 'both' }
+      );
+      anim.onfinish = () => fly.remove();
+      anim.oncancel = () => fly.remove();
+      arrivals.set(slot, delay + FLY_MS);
+    });
+
+    return arrivals.size > 0 ? arrivals : null;
+  }
+
   private triggerTileFoundAnimation(path: string[]): void {
     const STAGGER_MS = GameView.TILE_REVEAL_STAGGER_MS;
     const ANIMATION_DURATION_MS = GameView.TILE_REVEAL_DURATION_MS;
-    const TRIGGER_ANIMATION_DURATION_MS = 480;
+    const TRIGGER_ANIMATION_DURATION_MS = GameView.TILE_TRIGGER_FLASH_MS;
     const triggerIndex = path.length - 1;
 
     path.forEach((coord, index) => {
