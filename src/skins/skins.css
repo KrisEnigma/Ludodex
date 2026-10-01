@@ -190,7 +190,8 @@
      preview never inherits the active skin's layers from <html>. */
   --bg-pattern:            initial;  /* image list behind content */
   --bg-pattern-size:       initial;  /* one size per --bg-pattern layer */
-  --bg-pattern-position:   initial;
+  --bg-pattern-position:   initial;  /* one entry per --bg-pattern layer */
+  --bg-pattern-repeat:     initial;  /* one entry per --bg-pattern layer */
   --tile-shadow:           initial;  /* bevels / inner light (box-shadow) */
   --tile-selected-shadow:  initial;
   --tile-overlay:          initial;  /* surface layer on idle tiles (::after) */
@@ -358,19 +359,19 @@
   --surface:   #0b0b14;
   --border:    #2121de;
   --text:      #ffffff;
-  --text-dim:  #5555ff;
+  --text-dim: #9a9aff;
   --accent:    #ffde00;
   --action:    #ffde00;
   --tile:      linear-gradient(145deg, #101015, #000000);
   --tile-sel:  linear-gradient(145deg, #181826, #050510);
-  --path-start: #00ffff;
+  --path-start: #ffb897;
 
   --tile-selected-letter: #ffde00;
   --tile-selected-glow:   rgba(255, 222, 0, 0.45);
   --tile-font-family: 'Press Start 2P', monospace;
   --tile-font-weight: 400;
   --tile-font-scale:  0.62;
-  --tile-radius:      0px;
+  --tile-radius: 10px;
 
   /* Explicit overrides */
   --shell-bg: linear-gradient(180deg, rgba(10, 10, 15, 0.95), rgba(0, 0, 0, 1));
@@ -379,8 +380,8 @@
   --hint-solved-bg: #ffde00;
   --hint-solved-border: #2121de;
   --hint-solved-letter: #000000;
-  --path-color: #00ffff;
-  --path-grad-end: #00ffff;
+  --path-color: #ffde00;
+  --path-grad-end: #ffde00;
   --selected-letter-outline: #000000;
 
    /* Typography & shape */
@@ -391,10 +392,19 @@
   --glow-strength: 1.1;
 
    /* Selection ribbon */
-  --path-width: 7px;
-  --path-cap: butt;                 /* square pixel caps */
+  --path-width: 9px;
+  --path-cap: round;
   --path-opacity: 1;
-  --path-glow: 6;
+  --path-glow: 5;
+
+  /* Layers: rounded double-line maze walls, pellet field, dotted pellet trail */
+  --tile-border-width: 2px;
+  --tile-shadow: inset 0 0 0 3px #000, inset 0 0 0 4px #2121de;
+  --tile-selected-shadow: inset 0 0 0 3px #000, inset 0 0 0 4px #ffde00;
+  --path-dash: 0.1 15;
+  --wordmark-shadow: 3px 3px 0 #2121de;
+  --ui-radius: 8px;
+  --bg-pattern-size: 48px 48px, 336px 288px;
 }
 
 /* ── Swarm ── Alien hive look with organic carapace purples, creep magentas, and toxic acid beams. */
@@ -782,37 +792,41 @@
    --selected-letter-outline: #1d1810;
 }
 
-/* ── Puff Star ── Dream-fountain deep indigo night skies with bright bubblegum cloud blooms. */
+/* ── Puff Star ── Kirby / Dream Land, through colour and softness alone (no
+   scenery, no character): a pink world, marshmallow extra-round tiles, deep
+   navy ink (the eyes), WARP-STAR YELLOW selection, shoe-red trail and
+   buttons, a bubbly pink wordmark with a white outline. A LIGHT skin. */
 .skin-puff-star {
   --skin-desc: "Inhale. Copy. Float. Dream Land awaits.";
   --skin-name: "Puff Star";
-  --bg-top:    #120a2a;
-  --bg-bottom: #060310;
-  --surface:   #170d33;
-  --border:    #4a297a;
-  --text:      #ffb3d9;
-  --text-dim:  #9f86c0;
-  --accent:    #ff99cc;
-  --action:    #ff66b2;
-  --tile:      linear-gradient(145deg, #261654, #100924);
-  --tile-sel:  linear-gradient(145deg, #ff66b2, #cc3377);
-  --path-start: #ffcc00;
+  color-scheme: light;
+  --bg-top: #ffe6f1;
+  --bg-bottom: #ffbfdb;
+  --surface: #fff5f9;
+  --border: #f08ab8;
+  --text: #26307a;
+  --text-dim: #8a4478;
+  --accent: #e0245e;
+  --action: #e0245e;
+  --tile: linear-gradient(180deg, #fff6fa, #ffd3e6);
+  --tile-sel: linear-gradient(180deg, #fff07a, #ffc61a);
+  --path-start: #e0245e;
 
-  --tile-selected-glow:   rgba(255, 102, 178, 0.6);
+  --tile-selected-glow: rgba(255, 200, 30, 0.55);
   --tile-font-family: 'Comfortaa', cursive;
   --tile-font-weight: 700;
   --tile-font-scale:  0.85;
-  --tile-radius:      16px;
+  --tile-radius: 26px;
 
   /* Explicit overrides */
-  --shell-bg: linear-gradient(180deg, rgba(22, 13, 51, 0.9), rgba(10, 5, 24, 0.95));
-  --shell-border: #4a297a;
-  --shell-shadow: rgba(0, 0, 0, 0.55);
+  --shell-bg: linear-gradient(180deg, #ffffff, #ffeef6);
+  --shell-border: #f3a5c8;
+  --shell-shadow: rgba(160, 40, 100, 0.18);
   --primary-action-text: #ffffff;
-  --hint-solved-border: #ff99cc;
-  --tile-deactivated-opacity: 0.5;
-  --path-color: #ffcc00;
-  --path-grad-end: #ffe600;
+  --hint-solved-border: #e0245e;
+  --tile-deactivated-opacity: 0.45;
+  --path-color: #e0245e;
+  --path-grad-end: #ff5a95;
 
    /* Typography & shape */
    --wordmark-font-family: 'Titan One', cursive;
@@ -822,14 +836,36 @@
    --title-text-transform: uppercase;
    --title-letter-spacing: 0.03em;
    --title-glow-alpha: 48%;
-   --glow-strength: 1.5;
+   --glow-strength: 0.8;
 
    /* Selection ribbon */
    --path-width: 10px;
    --path-cap: round;
    --path-opacity: 0.95;
-   --path-glow: 12;
-   --selected-letter-outline: #4a0025;
+   --path-glow: 6;
+   --selected-letter-outline: #fff4c0;
+
+  /* Layers: puffy round tiles, sparkle sky, candy-pink extruded wordmark */
+  --tile-shadow: inset 0 4px 0 rgba(255, 255, 255, 0.75), inset 0 -5px 8px rgba(220, 80, 140, 0.25), 0 3px 0 rgba(200, 70, 130, 0.25);
+  --tile-selected-shadow: inset 0 4px 0 rgba(255, 255, 255, 0.7), inset 0 -5px 8px rgba(200, 120, 0, 0.3), 0 3px 0 rgba(200, 120, 0, 0.3);
+  --primary-action-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.35), inset 0 -4px 0 rgba(120, 0, 40, 0.4);
+  --wordmark-shadow: -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff, 0 -2px 0 #fff, 0 2px 0 #fff, -2px 0 0 #fff, 2px 0 0 #fff, 0 5px 0 #c0306e;
+  --ui-radius: 16px;
+  --hint-radius: 10px;
+
+  --card-shadow: 0 3px 0 rgba(200, 70, 130, 0.2);
+  --wordmark-color: #ff6fae;
+  --title-color: #26307a;
+  --title-glow: #ff6fae;
+  --title-shadow: 0 2px 0 #ffffff;
+
+  --tile-selected-letter: #26307a;
+  --tile-selected-border: #e8a000;
+  --tile-letter: #26307a;
+  --tile-border: #f08ab8;
+
+  --hint-solved-bg: #ff5a95;
+  --hint-solved-letter: #ffffff;
 }
 
 /* ── Mushroom Kingdom ── Flat NES overworld. Sky blue field, brick terracotta UI,
@@ -887,6 +923,22 @@
   --display-font-scale: 1.8;
   --glow-strength: 0;
   --title-glow-alpha: 0%;
+
+  /* Layers: ?-block bevel + corner rivets, pixel-sky clouds, square NES UI */
+  --tile-shadow: inset 3px 3px 0 rgba(255, 255, 255, 0.45), inset -3px -3px 0 rgba(120, 40, 0, 0.55);
+  --tile-selected-shadow: inset 3px 3px 0 rgba(255, 200, 180, 0.45), inset -3px -3px 0 rgba(90, 0, 0, 0.55);
+  --tile-overlay: radial-gradient(circle at 13% 13%, rgba(0, 0, 0, 0.55) 0 2px, transparent 2.6px), radial-gradient(circle at 87% 13%, rgba(0, 0, 0, 0.55) 0 2px, transparent 2.6px), radial-gradient(circle at 13% 87%, rgba(0, 0, 0, 0.55) 0 2px, transparent 2.6px), radial-gradient(circle at 87% 87%, rgba(0, 0, 0, 0.55) 0 2px, transparent 2.6px);
+  --tile-selected-overlay: radial-gradient(circle at 13% 13%, rgba(0, 0, 0, 0.45) 0 2px, transparent 2.6px), radial-gradient(circle at 87% 13%, rgba(0, 0, 0, 0.45) 0 2px, transparent 2.6px), radial-gradient(circle at 13% 87%, rgba(0, 0, 0, 0.45) 0 2px, transparent 2.6px), radial-gradient(circle at 87% 87%, rgba(0, 0, 0, 0.45) 0 2px, transparent 2.6px);
+  --primary-action-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.35), inset 0 -4px 0 rgba(0, 60, 0, 0.45), 0 0 0 2px #000, 0 4px 0 #000;
+  --card-shadow: inset 2px 2px 0 rgba(255, 160, 120, 0.35), inset -2px -2px 0 rgba(60, 10, 0, 0.5);
+  --ui-radius: 0px;
+  --hint-radius: 0px;
+  --bg-pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 12' shape-rendering='crispEdges'%3E%3Cpath fill='%235a7fd0' d='M10 0h1v1h-1zM11 0h1v1h-1zM12 0h1v1h-1zM13 0h1v1h-1zM9 1h1v1h-1zM14 1h1v1h-1zM20 1h1v1h-1zM21 1h1v1h-1zM22 1h1v1h-1zM23 1h1v1h-1zM6 2h1v1h-1zM7 2h1v1h-1zM8 2h1v1h-1zM9 2h1v1h-1zM15 2h1v1h-1zM19 2h1v1h-1zM24 2h1v1h-1zM5 3h1v1h-1zM16 3h1v1h-1zM17 3h1v1h-1zM18 3h1v1h-1zM19 3h1v1h-1zM25 3h1v1h-1zM4 4h1v1h-1zM26 4h1v1h-1zM3 5h1v1h-1zM27 5h1v1h-1zM2 6h1v1h-1zM27 6h1v1h-1zM1 7h1v1h-1zM27 7h1v1h-1zM0 8h1v1h-1zM27 8h1v1h-1zM0 9h1v1h-1zM27 9h1v1h-1zM0 10h1v1h-1zM27 10h1v1h-1zM1 11h1v1h-1zM2 11h1v1h-1zM3 11h1v1h-1zM4 11h1v1h-1zM5 11h1v1h-1zM6 11h1v1h-1zM7 11h1v1h-1zM8 11h1v1h-1zM9 11h1v1h-1zM10 11h1v1h-1zM11 11h1v1h-1zM12 11h1v1h-1zM13 11h1v1h-1zM14 11h1v1h-1zM15 11h1v1h-1zM16 11h1v1h-1zM17 11h1v1h-1zM18 11h1v1h-1zM19 11h1v1h-1zM20 11h1v1h-1zM21 11h1v1h-1zM22 11h1v1h-1zM23 11h1v1h-1zM24 11h1v1h-1zM25 11h1v1h-1zM26 11h1v1h-1z'/%3E%3Cpath fill='%23ffffff' d='M10 1h1v1h-1zM11 1h1v1h-1zM12 1h1v1h-1zM13 1h1v1h-1zM10 2h1v1h-1zM11 2h1v1h-1zM12 2h1v1h-1zM13 2h1v1h-1zM14 2h1v1h-1zM20 2h1v1h-1zM21 2h1v1h-1zM22 2h1v1h-1zM23 2h1v1h-1zM6 3h1v1h-1zM7 3h1v1h-1zM8 3h1v1h-1zM9 3h1v1h-1zM10 3h1v1h-1zM11 3h1v1h-1zM12 3h1v1h-1zM13 3h1v1h-1zM14 3h1v1h-1zM15 3h1v1h-1zM20 3h1v1h-1zM21 3h1v1h-1zM22 3h1v1h-1zM23 3h1v1h-1zM24 3h1v1h-1zM5 4h1v1h-1zM6 4h1v1h-1zM7 4h1v1h-1zM8 4h1v1h-1zM9 4h1v1h-1zM10 4h1v1h-1zM11 4h1v1h-1zM12 4h1v1h-1zM13 4h1v1h-1zM14 4h1v1h-1zM15 4h1v1h-1zM16 4h1v1h-1zM17 4h1v1h-1zM18 4h1v1h-1zM19 4h1v1h-1zM20 4h1v1h-1zM21 4h1v1h-1zM22 4h1v1h-1zM23 4h1v1h-1zM24 4h1v1h-1zM25 4h1v1h-1zM4 5h1v1h-1zM5 5h1v1h-1zM6 5h1v1h-1zM7 5h1v1h-1zM8 5h1v1h-1zM9 5h1v1h-1zM10 5h1v1h-1zM11 5h1v1h-1zM12 5h1v1h-1zM13 5h1v1h-1zM14 5h1v1h-1zM15 5h1v1h-1zM16 5h1v1h-1zM17 5h1v1h-1zM18 5h1v1h-1zM19 5h1v1h-1zM20 5h1v1h-1zM21 5h1v1h-1zM22 5h1v1h-1zM23 5h1v1h-1zM24 5h1v1h-1zM25 5h1v1h-1zM26 5h1v1h-1zM3 6h1v1h-1zM4 6h1v1h-1zM5 6h1v1h-1zM6 6h1v1h-1zM7 6h1v1h-1zM8 6h1v1h-1zM9 6h1v1h-1zM10 6h1v1h-1zM11 6h1v1h-1zM12 6h1v1h-1zM13 6h1v1h-1zM14 6h1v1h-1zM15 6h1v1h-1zM16 6h1v1h-1zM17 6h1v1h-1zM18 6h1v1h-1zM19 6h1v1h-1zM20 6h1v1h-1zM21 6h1v1h-1zM22 6h1v1h-1zM23 6h1v1h-1zM24 6h1v1h-1zM25 6h1v1h-1zM26 6h1v1h-1zM2 7h1v1h-1zM3 7h1v1h-1zM4 7h1v1h-1zM5 7h1v1h-1zM6 7h1v1h-1zM7 7h1v1h-1zM8 7h1v1h-1zM9 7h1v1h-1zM10 7h1v1h-1zM11 7h1v1h-1zM12 7h1v1h-1zM13 7h1v1h-1zM14 7h1v1h-1zM15 7h1v1h-1zM16 7h1v1h-1zM17 7h1v1h-1zM18 7h1v1h-1zM19 7h1v1h-1zM20 7h1v1h-1zM21 7h1v1h-1zM22 7h1v1h-1zM23 7h1v1h-1zM24 7h1v1h-1zM25 7h1v1h-1zM26 7h1v1h-1zM1 8h1v1h-1zM2 8h1v1h-1zM3 8h1v1h-1zM5 8h1v1h-1zM6 8h1v1h-1zM7 8h1v1h-1zM8 8h1v1h-1zM9 8h1v1h-1zM10 8h1v1h-1zM11 8h1v1h-1zM12 8h1v1h-1zM13 8h1v1h-1zM15 8h1v1h-1zM16 8h1v1h-1zM17 8h1v1h-1zM18 8h1v1h-1zM19 8h1v1h-1zM20 8h1v1h-1zM21 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM25 8h1v1h-1zM26 8h1v1h-1zM1 9h1v1h-1zM2 9h1v1h-1zM6 9h1v1h-1zM7 9h1v1h-1zM8 9h1v1h-1zM9 9h1v1h-1zM10 9h1v1h-1zM11 9h1v1h-1zM12 9h1v1h-1zM16 9h1v1h-1zM17 9h1v1h-1zM18 9h1v1h-1zM19 9h1v1h-1zM20 9h1v1h-1zM21 9h1v1h-1zM25 9h1v1h-1zM26 9h1v1h-1z'/%3E%3Cpath fill='%23c4e8ff' d='M4 8h1v1h-1zM14 8h1v1h-1zM23 8h1v1h-1zM3 9h1v1h-1zM4 9h1v1h-1zM5 9h1v1h-1zM13 9h1v1h-1zM14 9h1v1h-1zM15 9h1v1h-1zM22 9h1v1h-1zM23 9h1v1h-1zM24 9h1v1h-1zM1 10h1v1h-1zM2 10h1v1h-1zM3 10h1v1h-1zM4 10h1v1h-1zM5 10h1v1h-1zM6 10h1v1h-1zM7 10h1v1h-1zM8 10h1v1h-1zM9 10h1v1h-1zM10 10h1v1h-1zM11 10h1v1h-1zM12 10h1v1h-1zM13 10h1v1h-1zM14 10h1v1h-1zM15 10h1v1h-1zM16 10h1v1h-1zM17 10h1v1h-1zM18 10h1v1h-1zM19 10h1v1h-1zM20 10h1v1h-1zM21 10h1v1h-1zM22 10h1v1h-1zM23 10h1v1h-1zM24 10h1v1h-1zM25 10h1v1h-1zM26 10h1v1h-1z'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 12' shape-rendering='crispEdges'%3E%3Cpath fill='%235a7fd0' d='M10 0h1v1h-1zM11 0h1v1h-1zM12 0h1v1h-1zM13 0h1v1h-1zM9 1h1v1h-1zM14 1h1v1h-1zM20 1h1v1h-1zM21 1h1v1h-1zM22 1h1v1h-1zM23 1h1v1h-1zM6 2h1v1h-1zM7 2h1v1h-1zM8 2h1v1h-1zM9 2h1v1h-1zM15 2h1v1h-1zM19 2h1v1h-1zM24 2h1v1h-1zM5 3h1v1h-1zM16 3h1v1h-1zM17 3h1v1h-1zM18 3h1v1h-1zM19 3h1v1h-1zM25 3h1v1h-1zM4 4h1v1h-1zM26 4h1v1h-1zM3 5h1v1h-1zM27 5h1v1h-1zM2 6h1v1h-1zM27 6h1v1h-1zM1 7h1v1h-1zM27 7h1v1h-1zM0 8h1v1h-1zM27 8h1v1h-1zM0 9h1v1h-1zM27 9h1v1h-1zM0 10h1v1h-1zM27 10h1v1h-1zM1 11h1v1h-1zM2 11h1v1h-1zM3 11h1v1h-1zM4 11h1v1h-1zM5 11h1v1h-1zM6 11h1v1h-1zM7 11h1v1h-1zM8 11h1v1h-1zM9 11h1v1h-1zM10 11h1v1h-1zM11 11h1v1h-1zM12 11h1v1h-1zM13 11h1v1h-1zM14 11h1v1h-1zM15 11h1v1h-1zM16 11h1v1h-1zM17 11h1v1h-1zM18 11h1v1h-1zM19 11h1v1h-1zM20 11h1v1h-1zM21 11h1v1h-1zM22 11h1v1h-1zM23 11h1v1h-1zM24 11h1v1h-1zM25 11h1v1h-1zM26 11h1v1h-1z'/%3E%3Cpath fill='%23ffffff' d='M10 1h1v1h-1zM11 1h1v1h-1zM12 1h1v1h-1zM13 1h1v1h-1zM10 2h1v1h-1zM11 2h1v1h-1zM12 2h1v1h-1zM13 2h1v1h-1zM14 2h1v1h-1zM20 2h1v1h-1zM21 2h1v1h-1zM22 2h1v1h-1zM23 2h1v1h-1zM6 3h1v1h-1zM7 3h1v1h-1zM8 3h1v1h-1zM9 3h1v1h-1zM10 3h1v1h-1zM11 3h1v1h-1zM12 3h1v1h-1zM13 3h1v1h-1zM14 3h1v1h-1zM15 3h1v1h-1zM20 3h1v1h-1zM21 3h1v1h-1zM22 3h1v1h-1zM23 3h1v1h-1zM24 3h1v1h-1zM5 4h1v1h-1zM6 4h1v1h-1zM7 4h1v1h-1zM8 4h1v1h-1zM9 4h1v1h-1zM10 4h1v1h-1zM11 4h1v1h-1zM12 4h1v1h-1zM13 4h1v1h-1zM14 4h1v1h-1zM15 4h1v1h-1zM16 4h1v1h-1zM17 4h1v1h-1zM18 4h1v1h-1zM19 4h1v1h-1zM20 4h1v1h-1zM21 4h1v1h-1zM22 4h1v1h-1zM23 4h1v1h-1zM24 4h1v1h-1zM25 4h1v1h-1zM4 5h1v1h-1zM5 5h1v1h-1zM6 5h1v1h-1zM7 5h1v1h-1zM8 5h1v1h-1zM9 5h1v1h-1zM10 5h1v1h-1zM11 5h1v1h-1zM12 5h1v1h-1zM13 5h1v1h-1zM14 5h1v1h-1zM15 5h1v1h-1zM16 5h1v1h-1zM17 5h1v1h-1zM18 5h1v1h-1zM19 5h1v1h-1zM20 5h1v1h-1zM21 5h1v1h-1zM22 5h1v1h-1zM23 5h1v1h-1zM24 5h1v1h-1zM25 5h1v1h-1zM26 5h1v1h-1zM3 6h1v1h-1zM4 6h1v1h-1zM5 6h1v1h-1zM6 6h1v1h-1zM7 6h1v1h-1zM8 6h1v1h-1zM9 6h1v1h-1zM10 6h1v1h-1zM11 6h1v1h-1zM12 6h1v1h-1zM13 6h1v1h-1zM14 6h1v1h-1zM15 6h1v1h-1zM16 6h1v1h-1zM17 6h1v1h-1zM18 6h1v1h-1zM19 6h1v1h-1zM20 6h1v1h-1zM21 6h1v1h-1zM22 6h1v1h-1zM23 6h1v1h-1zM24 6h1v1h-1zM25 6h1v1h-1zM26 6h1v1h-1zM2 7h1v1h-1zM3 7h1v1h-1zM4 7h1v1h-1zM5 7h1v1h-1zM6 7h1v1h-1zM7 7h1v1h-1zM8 7h1v1h-1zM9 7h1v1h-1zM10 7h1v1h-1zM11 7h1v1h-1zM12 7h1v1h-1zM13 7h1v1h-1zM14 7h1v1h-1zM15 7h1v1h-1zM16 7h1v1h-1zM17 7h1v1h-1zM18 7h1v1h-1zM19 7h1v1h-1zM20 7h1v1h-1zM21 7h1v1h-1zM22 7h1v1h-1zM23 7h1v1h-1zM24 7h1v1h-1zM25 7h1v1h-1zM26 7h1v1h-1zM1 8h1v1h-1zM2 8h1v1h-1zM3 8h1v1h-1zM5 8h1v1h-1zM6 8h1v1h-1zM7 8h1v1h-1zM8 8h1v1h-1zM9 8h1v1h-1zM10 8h1v1h-1zM11 8h1v1h-1zM12 8h1v1h-1zM13 8h1v1h-1zM15 8h1v1h-1zM16 8h1v1h-1zM17 8h1v1h-1zM18 8h1v1h-1zM19 8h1v1h-1zM20 8h1v1h-1zM21 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM25 8h1v1h-1zM26 8h1v1h-1zM1 9h1v1h-1zM2 9h1v1h-1zM6 9h1v1h-1zM7 9h1v1h-1zM8 9h1v1h-1zM9 9h1v1h-1zM10 9h1v1h-1zM11 9h1v1h-1zM12 9h1v1h-1zM16 9h1v1h-1zM17 9h1v1h-1zM18 9h1v1h-1zM19 9h1v1h-1zM20 9h1v1h-1zM21 9h1v1h-1zM25 9h1v1h-1zM26 9h1v1h-1z'/%3E%3Cpath fill='%23c4e8ff' d='M4 8h1v1h-1zM14 8h1v1h-1zM23 8h1v1h-1zM3 9h1v1h-1zM4 9h1v1h-1zM5 9h1v1h-1zM13 9h1v1h-1zM14 9h1v1h-1zM15 9h1v1h-1zM22 9h1v1h-1zM23 9h1v1h-1zM24 9h1v1h-1zM1 10h1v1h-1zM2 10h1v1h-1zM3 10h1v1h-1zM4 10h1v1h-1zM5 10h1v1h-1zM6 10h1v1h-1zM7 10h1v1h-1zM8 10h1v1h-1zM9 10h1v1h-1zM10 10h1v1h-1zM11 10h1v1h-1zM12 10h1v1h-1zM13 10h1v1h-1zM14 10h1v1h-1zM15 10h1v1h-1zM16 10h1v1h-1zM17 10h1v1h-1zM18 10h1v1h-1zM19 10h1v1h-1zM20 10h1v1h-1zM21 10h1v1h-1zM22 10h1v1h-1zM23 10h1v1h-1zM24 10h1v1h-1zM25 10h1v1h-1zM26 10h1v1h-1z'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 12' shape-rendering='crispEdges'%3E%3Cpath fill='%235a7fd0' d='M10 0h1v1h-1zM11 0h1v1h-1zM12 0h1v1h-1zM13 0h1v1h-1zM9 1h1v1h-1zM14 1h1v1h-1zM20 1h1v1h-1zM21 1h1v1h-1zM22 1h1v1h-1zM23 1h1v1h-1zM6 2h1v1h-1zM7 2h1v1h-1zM8 2h1v1h-1zM9 2h1v1h-1zM15 2h1v1h-1zM19 2h1v1h-1zM24 2h1v1h-1zM5 3h1v1h-1zM16 3h1v1h-1zM17 3h1v1h-1zM18 3h1v1h-1zM19 3h1v1h-1zM25 3h1v1h-1zM4 4h1v1h-1zM26 4h1v1h-1zM3 5h1v1h-1zM27 5h1v1h-1zM2 6h1v1h-1zM27 6h1v1h-1zM1 7h1v1h-1zM27 7h1v1h-1zM0 8h1v1h-1zM27 8h1v1h-1zM0 9h1v1h-1zM27 9h1v1h-1zM0 10h1v1h-1zM27 10h1v1h-1zM1 11h1v1h-1zM2 11h1v1h-1zM3 11h1v1h-1zM4 11h1v1h-1zM5 11h1v1h-1zM6 11h1v1h-1zM7 11h1v1h-1zM8 11h1v1h-1zM9 11h1v1h-1zM10 11h1v1h-1zM11 11h1v1h-1zM12 11h1v1h-1zM13 11h1v1h-1zM14 11h1v1h-1zM15 11h1v1h-1zM16 11h1v1h-1zM17 11h1v1h-1zM18 11h1v1h-1zM19 11h1v1h-1zM20 11h1v1h-1zM21 11h1v1h-1zM22 11h1v1h-1zM23 11h1v1h-1zM24 11h1v1h-1zM25 11h1v1h-1zM26 11h1v1h-1z'/%3E%3Cpath fill='%23ffffff' d='M10 1h1v1h-1zM11 1h1v1h-1zM12 1h1v1h-1zM13 1h1v1h-1zM10 2h1v1h-1zM11 2h1v1h-1zM12 2h1v1h-1zM13 2h1v1h-1zM14 2h1v1h-1zM20 2h1v1h-1zM21 2h1v1h-1zM22 2h1v1h-1zM23 2h1v1h-1zM6 3h1v1h-1zM7 3h1v1h-1zM8 3h1v1h-1zM9 3h1v1h-1zM10 3h1v1h-1zM11 3h1v1h-1zM12 3h1v1h-1zM13 3h1v1h-1zM14 3h1v1h-1zM15 3h1v1h-1zM20 3h1v1h-1zM21 3h1v1h-1zM22 3h1v1h-1zM23 3h1v1h-1zM24 3h1v1h-1zM5 4h1v1h-1zM6 4h1v1h-1zM7 4h1v1h-1zM8 4h1v1h-1zM9 4h1v1h-1zM10 4h1v1h-1zM11 4h1v1h-1zM12 4h1v1h-1zM13 4h1v1h-1zM14 4h1v1h-1zM15 4h1v1h-1zM16 4h1v1h-1zM17 4h1v1h-1zM18 4h1v1h-1zM19 4h1v1h-1zM20 4h1v1h-1zM21 4h1v1h-1zM22 4h1v1h-1zM23 4h1v1h-1zM24 4h1v1h-1zM25 4h1v1h-1zM4 5h1v1h-1zM5 5h1v1h-1zM6 5h1v1h-1zM7 5h1v1h-1zM8 5h1v1h-1zM9 5h1v1h-1zM10 5h1v1h-1zM11 5h1v1h-1zM12 5h1v1h-1zM13 5h1v1h-1zM14 5h1v1h-1zM15 5h1v1h-1zM16 5h1v1h-1zM17 5h1v1h-1zM18 5h1v1h-1zM19 5h1v1h-1zM20 5h1v1h-1zM21 5h1v1h-1zM22 5h1v1h-1zM23 5h1v1h-1zM24 5h1v1h-1zM25 5h1v1h-1zM26 5h1v1h-1zM3 6h1v1h-1zM4 6h1v1h-1zM5 6h1v1h-1zM6 6h1v1h-1zM7 6h1v1h-1zM8 6h1v1h-1zM9 6h1v1h-1zM10 6h1v1h-1zM11 6h1v1h-1zM12 6h1v1h-1zM13 6h1v1h-1zM14 6h1v1h-1zM15 6h1v1h-1zM16 6h1v1h-1zM17 6h1v1h-1zM18 6h1v1h-1zM19 6h1v1h-1zM20 6h1v1h-1zM21 6h1v1h-1zM22 6h1v1h-1zM23 6h1v1h-1zM24 6h1v1h-1zM25 6h1v1h-1zM26 6h1v1h-1zM2 7h1v1h-1zM3 7h1v1h-1zM4 7h1v1h-1zM5 7h1v1h-1zM6 7h1v1h-1zM7 7h1v1h-1zM8 7h1v1h-1zM9 7h1v1h-1zM10 7h1v1h-1zM11 7h1v1h-1zM12 7h1v1h-1zM13 7h1v1h-1zM14 7h1v1h-1zM15 7h1v1h-1zM16 7h1v1h-1zM17 7h1v1h-1zM18 7h1v1h-1zM19 7h1v1h-1zM20 7h1v1h-1zM21 7h1v1h-1zM22 7h1v1h-1zM23 7h1v1h-1zM24 7h1v1h-1zM25 7h1v1h-1zM26 7h1v1h-1zM1 8h1v1h-1zM2 8h1v1h-1zM3 8h1v1h-1zM5 8h1v1h-1zM6 8h1v1h-1zM7 8h1v1h-1zM8 8h1v1h-1zM9 8h1v1h-1zM10 8h1v1h-1zM11 8h1v1h-1zM12 8h1v1h-1zM13 8h1v1h-1zM15 8h1v1h-1zM16 8h1v1h-1zM17 8h1v1h-1zM18 8h1v1h-1zM19 8h1v1h-1zM20 8h1v1h-1zM21 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM25 8h1v1h-1zM26 8h1v1h-1zM1 9h1v1h-1zM2 9h1v1h-1zM6 9h1v1h-1zM7 9h1v1h-1zM8 9h1v1h-1zM9 9h1v1h-1zM10 9h1v1h-1zM11 9h1v1h-1zM12 9h1v1h-1zM16 9h1v1h-1zM17 9h1v1h-1zM18 9h1v1h-1zM19 9h1v1h-1zM20 9h1v1h-1zM21 9h1v1h-1zM25 9h1v1h-1zM26 9h1v1h-1z'/%3E%3Cpath fill='%23c4e8ff' d='M4 8h1v1h-1zM14 8h1v1h-1zM23 8h1v1h-1zM3 9h1v1h-1zM4 9h1v1h-1zM5 9h1v1h-1zM13 9h1v1h-1zM14 9h1v1h-1zM15 9h1v1h-1zM22 9h1v1h-1zM23 9h1v1h-1zM24 9h1v1h-1zM1 10h1v1h-1zM2 10h1v1h-1zM3 10h1v1h-1zM4 10h1v1h-1zM5 10h1v1h-1zM6 10h1v1h-1zM7 10h1v1h-1zM8 10h1v1h-1zM9 10h1v1h-1zM10 10h1v1h-1zM11 10h1v1h-1zM12 10h1v1h-1zM13 10h1v1h-1zM14 10h1v1h-1zM15 10h1v1h-1zM16 10h1v1h-1zM17 10h1v1h-1zM18 10h1v1h-1zM19 10h1v1h-1zM20 10h1v1h-1zM21 10h1v1h-1zM22 10h1v1h-1zM23 10h1v1h-1zM24 10h1v1h-1zM25 10h1v1h-1zM26 10h1v1h-1z'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 12' shape-rendering='crispEdges'%3E%3Cpath fill='%231f7a00' d='M10 0h1v1h-1zM11 0h1v1h-1zM12 0h1v1h-1zM13 0h1v1h-1zM9 1h1v1h-1zM14 1h1v1h-1zM20 1h1v1h-1zM21 1h1v1h-1zM22 1h1v1h-1zM23 1h1v1h-1zM6 2h1v1h-1zM7 2h1v1h-1zM8 2h1v1h-1zM9 2h1v1h-1zM15 2h1v1h-1zM19 2h1v1h-1zM24 2h1v1h-1zM5 3h1v1h-1zM16 3h1v1h-1zM17 3h1v1h-1zM18 3h1v1h-1zM19 3h1v1h-1zM25 3h1v1h-1zM4 4h1v1h-1zM26 4h1v1h-1zM3 5h1v1h-1zM27 5h1v1h-1zM2 6h1v1h-1zM27 6h1v1h-1zM1 7h1v1h-1zM27 7h1v1h-1zM0 8h1v1h-1zM27 8h1v1h-1zM0 9h1v1h-1zM27 9h1v1h-1zM0 10h1v1h-1zM27 10h1v1h-1zM1 11h1v1h-1zM2 11h1v1h-1zM3 11h1v1h-1zM4 11h1v1h-1zM5 11h1v1h-1zM6 11h1v1h-1zM7 11h1v1h-1zM8 11h1v1h-1zM9 11h1v1h-1zM10 11h1v1h-1zM11 11h1v1h-1zM12 11h1v1h-1zM13 11h1v1h-1zM14 11h1v1h-1zM15 11h1v1h-1zM16 11h1v1h-1zM17 11h1v1h-1zM18 11h1v1h-1zM19 11h1v1h-1zM20 11h1v1h-1zM21 11h1v1h-1zM22 11h1v1h-1zM23 11h1v1h-1zM24 11h1v1h-1zM25 11h1v1h-1zM26 11h1v1h-1z'/%3E%3Cpath fill='%2380d010' d='M10 1h1v1h-1zM11 1h1v1h-1zM12 1h1v1h-1zM13 1h1v1h-1zM10 2h1v1h-1zM11 2h1v1h-1zM12 2h1v1h-1zM13 2h1v1h-1zM14 2h1v1h-1zM20 2h1v1h-1zM21 2h1v1h-1zM22 2h1v1h-1zM23 2h1v1h-1zM6 3h1v1h-1zM7 3h1v1h-1zM8 3h1v1h-1zM9 3h1v1h-1zM10 3h1v1h-1zM11 3h1v1h-1zM12 3h1v1h-1zM13 3h1v1h-1zM14 3h1v1h-1zM15 3h1v1h-1zM20 3h1v1h-1zM21 3h1v1h-1zM22 3h1v1h-1zM23 3h1v1h-1zM24 3h1v1h-1zM5 4h1v1h-1zM6 4h1v1h-1zM7 4h1v1h-1zM8 4h1v1h-1zM9 4h1v1h-1zM10 4h1v1h-1zM11 4h1v1h-1zM12 4h1v1h-1zM13 4h1v1h-1zM14 4h1v1h-1zM15 4h1v1h-1zM16 4h1v1h-1zM17 4h1v1h-1zM18 4h1v1h-1zM19 4h1v1h-1zM20 4h1v1h-1zM21 4h1v1h-1zM22 4h1v1h-1zM23 4h1v1h-1zM24 4h1v1h-1zM25 4h1v1h-1zM4 5h1v1h-1zM5 5h1v1h-1zM6 5h1v1h-1zM7 5h1v1h-1zM8 5h1v1h-1zM9 5h1v1h-1zM10 5h1v1h-1zM11 5h1v1h-1zM12 5h1v1h-1zM13 5h1v1h-1zM14 5h1v1h-1zM15 5h1v1h-1zM16 5h1v1h-1zM17 5h1v1h-1zM18 5h1v1h-1zM19 5h1v1h-1zM20 5h1v1h-1zM21 5h1v1h-1zM22 5h1v1h-1zM23 5h1v1h-1zM24 5h1v1h-1zM25 5h1v1h-1zM26 5h1v1h-1zM3 6h1v1h-1zM4 6h1v1h-1zM5 6h1v1h-1zM6 6h1v1h-1zM7 6h1v1h-1zM8 6h1v1h-1zM9 6h1v1h-1zM10 6h1v1h-1zM11 6h1v1h-1zM12 6h1v1h-1zM13 6h1v1h-1zM14 6h1v1h-1zM15 6h1v1h-1zM16 6h1v1h-1zM17 6h1v1h-1zM18 6h1v1h-1zM19 6h1v1h-1zM20 6h1v1h-1zM21 6h1v1h-1zM22 6h1v1h-1zM23 6h1v1h-1zM24 6h1v1h-1zM25 6h1v1h-1zM26 6h1v1h-1zM2 7h1v1h-1zM3 7h1v1h-1zM4 7h1v1h-1zM5 7h1v1h-1zM6 7h1v1h-1zM7 7h1v1h-1zM8 7h1v1h-1zM9 7h1v1h-1zM10 7h1v1h-1zM11 7h1v1h-1zM12 7h1v1h-1zM13 7h1v1h-1zM14 7h1v1h-1zM15 7h1v1h-1zM16 7h1v1h-1zM17 7h1v1h-1zM18 7h1v1h-1zM19 7h1v1h-1zM20 7h1v1h-1zM21 7h1v1h-1zM22 7h1v1h-1zM23 7h1v1h-1zM24 7h1v1h-1zM25 7h1v1h-1zM26 7h1v1h-1zM1 8h1v1h-1zM2 8h1v1h-1zM3 8h1v1h-1zM5 8h1v1h-1zM6 8h1v1h-1zM7 8h1v1h-1zM8 8h1v1h-1zM9 8h1v1h-1zM10 8h1v1h-1zM11 8h1v1h-1zM12 8h1v1h-1zM13 8h1v1h-1zM15 8h1v1h-1zM16 8h1v1h-1zM17 8h1v1h-1zM18 8h1v1h-1zM19 8h1v1h-1zM20 8h1v1h-1zM21 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM25 8h1v1h-1zM26 8h1v1h-1zM1 9h1v1h-1zM2 9h1v1h-1zM6 9h1v1h-1zM7 9h1v1h-1zM8 9h1v1h-1zM9 9h1v1h-1zM10 9h1v1h-1zM11 9h1v1h-1zM12 9h1v1h-1zM16 9h1v1h-1zM17 9h1v1h-1zM18 9h1v1h-1zM19 9h1v1h-1zM20 9h1v1h-1zM21 9h1v1h-1zM25 9h1v1h-1zM26 9h1v1h-1z'/%3E%3Cpath fill='%2348b000' d='M4 8h1v1h-1zM14 8h1v1h-1zM23 8h1v1h-1zM3 9h1v1h-1zM4 9h1v1h-1zM5 9h1v1h-1zM13 9h1v1h-1zM14 9h1v1h-1zM15 9h1v1h-1zM22 9h1v1h-1zM23 9h1v1h-1zM24 9h1v1h-1zM1 10h1v1h-1zM2 10h1v1h-1zM3 10h1v1h-1zM4 10h1v1h-1zM5 10h1v1h-1zM6 10h1v1h-1zM7 10h1v1h-1zM8 10h1v1h-1zM9 10h1v1h-1zM10 10h1v1h-1zM11 10h1v1h-1zM12 10h1v1h-1zM13 10h1v1h-1zM14 10h1v1h-1zM15 10h1v1h-1zM16 10h1v1h-1zM17 10h1v1h-1zM18 10h1v1h-1zM19 10h1v1h-1zM20 10h1v1h-1zM21 10h1v1h-1zM22 10h1v1h-1zM23 10h1v1h-1zM24 10h1v1h-1zM25 10h1v1h-1zM26 10h1v1h-1z'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 12' shape-rendering='crispEdges'%3E%3Cpath fill='%231f7a00' d='M10 0h1v1h-1zM11 0h1v1h-1zM12 0h1v1h-1zM13 0h1v1h-1zM9 1h1v1h-1zM14 1h1v1h-1zM20 1h1v1h-1zM21 1h1v1h-1zM22 1h1v1h-1zM23 1h1v1h-1zM6 2h1v1h-1zM7 2h1v1h-1zM8 2h1v1h-1zM9 2h1v1h-1zM15 2h1v1h-1zM19 2h1v1h-1zM24 2h1v1h-1zM5 3h1v1h-1zM16 3h1v1h-1zM17 3h1v1h-1zM18 3h1v1h-1zM19 3h1v1h-1zM25 3h1v1h-1zM4 4h1v1h-1zM26 4h1v1h-1zM3 5h1v1h-1zM27 5h1v1h-1zM2 6h1v1h-1zM27 6h1v1h-1zM1 7h1v1h-1zM27 7h1v1h-1zM0 8h1v1h-1zM27 8h1v1h-1zM0 9h1v1h-1zM27 9h1v1h-1zM0 10h1v1h-1zM27 10h1v1h-1zM1 11h1v1h-1zM2 11h1v1h-1zM3 11h1v1h-1zM4 11h1v1h-1zM5 11h1v1h-1zM6 11h1v1h-1zM7 11h1v1h-1zM8 11h1v1h-1zM9 11h1v1h-1zM10 11h1v1h-1zM11 11h1v1h-1zM12 11h1v1h-1zM13 11h1v1h-1zM14 11h1v1h-1zM15 11h1v1h-1zM16 11h1v1h-1zM17 11h1v1h-1zM18 11h1v1h-1zM19 11h1v1h-1zM20 11h1v1h-1zM21 11h1v1h-1zM22 11h1v1h-1zM23 11h1v1h-1zM24 11h1v1h-1zM25 11h1v1h-1zM26 11h1v1h-1z'/%3E%3Cpath fill='%2380d010' d='M10 1h1v1h-1zM11 1h1v1h-1zM12 1h1v1h-1zM13 1h1v1h-1zM10 2h1v1h-1zM11 2h1v1h-1zM12 2h1v1h-1zM13 2h1v1h-1zM14 2h1v1h-1zM20 2h1v1h-1zM21 2h1v1h-1zM22 2h1v1h-1zM23 2h1v1h-1zM6 3h1v1h-1zM7 3h1v1h-1zM8 3h1v1h-1zM9 3h1v1h-1zM10 3h1v1h-1zM11 3h1v1h-1zM12 3h1v1h-1zM13 3h1v1h-1zM14 3h1v1h-1zM15 3h1v1h-1zM20 3h1v1h-1zM21 3h1v1h-1zM22 3h1v1h-1zM23 3h1v1h-1zM24 3h1v1h-1zM5 4h1v1h-1zM6 4h1v1h-1zM7 4h1v1h-1zM8 4h1v1h-1zM9 4h1v1h-1zM10 4h1v1h-1zM11 4h1v1h-1zM12 4h1v1h-1zM13 4h1v1h-1zM14 4h1v1h-1zM15 4h1v1h-1zM16 4h1v1h-1zM17 4h1v1h-1zM18 4h1v1h-1zM19 4h1v1h-1zM20 4h1v1h-1zM21 4h1v1h-1zM22 4h1v1h-1zM23 4h1v1h-1zM24 4h1v1h-1zM25 4h1v1h-1zM4 5h1v1h-1zM5 5h1v1h-1zM6 5h1v1h-1zM7 5h1v1h-1zM8 5h1v1h-1zM9 5h1v1h-1zM10 5h1v1h-1zM11 5h1v1h-1zM12 5h1v1h-1zM13 5h1v1h-1zM14 5h1v1h-1zM15 5h1v1h-1zM16 5h1v1h-1zM17 5h1v1h-1zM18 5h1v1h-1zM19 5h1v1h-1zM20 5h1v1h-1zM21 5h1v1h-1zM22 5h1v1h-1zM23 5h1v1h-1zM24 5h1v1h-1zM25 5h1v1h-1zM26 5h1v1h-1zM3 6h1v1h-1zM4 6h1v1h-1zM5 6h1v1h-1zM6 6h1v1h-1zM7 6h1v1h-1zM8 6h1v1h-1zM9 6h1v1h-1zM10 6h1v1h-1zM11 6h1v1h-1zM12 6h1v1h-1zM13 6h1v1h-1zM14 6h1v1h-1zM15 6h1v1h-1zM16 6h1v1h-1zM17 6h1v1h-1zM18 6h1v1h-1zM19 6h1v1h-1zM20 6h1v1h-1zM21 6h1v1h-1zM22 6h1v1h-1zM23 6h1v1h-1zM24 6h1v1h-1zM25 6h1v1h-1zM26 6h1v1h-1zM2 7h1v1h-1zM3 7h1v1h-1zM4 7h1v1h-1zM5 7h1v1h-1zM6 7h1v1h-1zM7 7h1v1h-1zM8 7h1v1h-1zM9 7h1v1h-1zM10 7h1v1h-1zM11 7h1v1h-1zM12 7h1v1h-1zM13 7h1v1h-1zM14 7h1v1h-1zM15 7h1v1h-1zM16 7h1v1h-1zM17 7h1v1h-1zM18 7h1v1h-1zM19 7h1v1h-1zM20 7h1v1h-1zM21 7h1v1h-1zM22 7h1v1h-1zM23 7h1v1h-1zM24 7h1v1h-1zM25 7h1v1h-1zM26 7h1v1h-1zM1 8h1v1h-1zM2 8h1v1h-1zM3 8h1v1h-1zM5 8h1v1h-1zM6 8h1v1h-1zM7 8h1v1h-1zM8 8h1v1h-1zM9 8h1v1h-1zM10 8h1v1h-1zM11 8h1v1h-1zM12 8h1v1h-1zM13 8h1v1h-1zM15 8h1v1h-1zM16 8h1v1h-1zM17 8h1v1h-1zM18 8h1v1h-1zM19 8h1v1h-1zM20 8h1v1h-1zM21 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM25 8h1v1h-1zM26 8h1v1h-1zM1 9h1v1h-1zM2 9h1v1h-1zM6 9h1v1h-1zM7 9h1v1h-1zM8 9h1v1h-1zM9 9h1v1h-1zM10 9h1v1h-1zM11 9h1v1h-1zM12 9h1v1h-1zM16 9h1v1h-1zM17 9h1v1h-1zM18 9h1v1h-1zM19 9h1v1h-1zM20 9h1v1h-1zM21 9h1v1h-1zM25 9h1v1h-1zM26 9h1v1h-1z'/%3E%3Cpath fill='%2348b000' d='M4 8h1v1h-1zM14 8h1v1h-1zM23 8h1v1h-1zM3 9h1v1h-1zM4 9h1v1h-1zM5 9h1v1h-1zM13 9h1v1h-1zM14 9h1v1h-1zM15 9h1v1h-1zM22 9h1v1h-1zM23 9h1v1h-1zM24 9h1v1h-1zM1 10h1v1h-1zM2 10h1v1h-1zM3 10h1v1h-1zM4 10h1v1h-1zM5 10h1v1h-1zM6 10h1v1h-1zM7 10h1v1h-1zM8 10h1v1h-1zM9 10h1v1h-1zM10 10h1v1h-1zM11 10h1v1h-1zM12 10h1v1h-1zM13 10h1v1h-1zM14 10h1v1h-1zM15 10h1v1h-1zM16 10h1v1h-1zM17 10h1v1h-1zM18 10h1v1h-1zM19 10h1v1h-1zM20 10h1v1h-1zM21 10h1v1h-1zM22 10h1v1h-1zM23 10h1v1h-1zM24 10h1v1h-1zM25 10h1v1h-1zM26 10h1v1h-1z'/%3E%3C/svg%3E");
+  --bg-pattern-size: 84px 36px, 84px 36px, 84px 36px, 84px 36px, 84px 36px;
+
+  --bg-pattern-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+
+  --bg-pattern-position: 6% 21%, 94% 47%, 16% 69%, 22% 100%, 83% 100%;
 }
 
 /* Custom 3D Drop-Shadow Blocks — Accurately reconstructs the original box-art look */
@@ -936,43 +988,47 @@
 }
 
 
-/* ── 16-Bit Cape ── Super Mario World. SMW sky-blue backdrop, question-block gold tiles, cape-red selections, coin-trail yellow. */
+/* ── 16-Bit Cape ── Super Mario World, evoked through colour and type, not
+   scenery: a bright sky that pales toward the horizon, chunky gold ?-blocks
+   with BLACK outlines and soft 16-bit shading, white lettering with a black
+   outline. Selection = cape red; found words = coin gold; dark-blue
+   message-box cards with a white frame; pipe-green Play. */
 .skin-cape-16bit {
   --skin-desc: "Cape charged. Yoshi saddled. Bonus room incoming.";
   --skin-name: "16-Bit Cape";
-  --bg-top:    #1430b0;
-  --bg-bottom: #0c20a0;
-  --surface:   #1c3cc0;
-  --border:    #3858e0;
-  --text:      #ffffff;
-  --text-dim:  #a0bcf8;
-  --accent:    #fcc800;
-  --action:    #fcc800;
-  --tile:      linear-gradient(145deg, #fcc800, #e0a000);
-  --tile-sel:  linear-gradient(145deg, #f83800, #c02800);
-  --path-start: #fcc800;
+  --bg-top: #3c78f0;
+  --bg-bottom: #2c64e0;
+  --surface: #10208c;
+  --border: #ffffff;
+  --text: #ffffff;
+  --text-dim: #e8f0ff;
+  --accent: #f8d820;
+  --action: #30b030;
+  --tile: linear-gradient(180deg, #f8e048, #f0b818);
+  --tile-sel: linear-gradient(180deg, #f86040, #c82810);
+  --path-start: #ffffff;
 
-  --tile-letter:          #5c2000;
-  --tile-selected-border: #ffffff;
+  --tile-letter: #ffffff;
+  --tile-selected-border: #000000;
   --tile-selected-letter: #ffffff;
-  --tile-selected-glow:   rgba(248, 56, 0, 0.45);
+  --tile-selected-glow: rgba(248, 96, 64, 0.35);
   --tile-font-family: 'DotGothic16', sans-serif;
   --tile-font-weight: 400;
   --tile-font-scale:  1.05;
-  --tile-radius:      4px;
+  --tile-radius: 9px;
 
   /* Explicit overrides */
-  --shell-bg: linear-gradient(180deg, rgba(20, 48, 176, 0.93), rgba(12, 32, 160, 0.97));
-  --shell-border: #3858e0;
+  --shell-bg: #10208c;
+  --shell-border: #ffffff;
   --shell-shadow: rgba(0, 0, 20, 0.4);
-  --primary-action-text: #1430b0;
-  --hint-solved-bg: #fcc800;
-  --hint-solved-border: #ffffff;
-  --hint-solved-letter: #5c2000;
+  --primary-action-text: #ffffff;
+  --hint-solved-bg: #f8d820;
+  --hint-solved-border: #000000;
+  --hint-solved-letter: #000000;
   --tile-deactivated-opacity: 0.4;
-  --path-color: #fcc800;
-  --path-grad-end: #e0a000;
-  --selected-letter-outline: #ffffff;
+  --path-color: #ffffff;
+  --path-grad-end: #f8d820;
+  --selected-letter-outline: #000000;
 
    /* Typography & shape */
    --wordmark-font-family: 'Dela Gothic One', sans-serif;
@@ -982,17 +1038,45 @@
    --title-text-transform: uppercase;
    --title-letter-spacing: 0.02em;
    --title-glow-alpha: 30%;
-   --glow-strength: 1.0;
+   --glow-strength: 0.4;
 
    /* Selection ribbon */
    --path-width: 9px;
    --path-cap: round;
    --path-opacity: 0.95;
-   --path-glow: 6;
+   --path-glow: 3;
+
+  /* Layers: SNES-shaded rounded blocks, bonus-room diamond lattice */
+  --tile-shadow: inset 3px 3px 0 rgba(255, 255, 255, 0.55), inset -3px -3px 0 rgba(170, 90, 0, 0.55);
+  --tile-selected-shadow: inset 3px 3px 0 rgba(255, 210, 190, 0.5), inset -3px -3px 0 rgba(110, 10, 0, 0.55);
+  --tile-overlay: none;
+  --primary-action-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.4), inset 0 -4px 0 rgba(0, 60, 0, 0.45), 0 0 0 2px #000;
+  --wordmark-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 4px 0 #000, 0 6px 0 #c82810;
+  --ui-radius: 8px;
+  --bg-pattern: linear-gradient(180deg, #2c64e0 0%, #4c8cf8 50%, #9cd4ff 100%);
+  --bg-pattern-size: 100% 100%;
+
+  --tile-border: #000000;
+  --tile-border-width: 2px;
+  --tile-letter-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 2px 0 #000, 0 -2px 0 #000, 2px 0 0 #000, -2px 0 0 #000;
+  --title-color: #ffffff;
+  --title-glow: #f8d820;
+  --title-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 3px 0 #000;
+  --wordmark-color: #f8d820;
+  --button-border: #ffffff;
+  --card-shadow: inset 0 0 0 2px #10208c, inset 0 0 0 3px #ffffff;
+  --hint-empty-bg: rgba(16, 32, 140, 0.55);
+  --hint-empty-border: #ffffff;
+  --hint-radius: 5px;
+  --bg-pattern-repeat: no-repeat;
 }
 
 
-/* ── Blue Blur ── Vibrant loops of checkerboard terracotta cells, deep cobalt selections, and radiant golden ring trails. */
+/* ── Blue Blur ── Sonic, Green Hill, mostly through colour: deep blue sky
+   paling to a bright horizon over a deeper sea, and the zone's one signature
+   shape — a grass lip over checkerboard soil along the bottom. Checkerboard
+   terracotta tiles, cobalt selection, ring-gold trail and buttons, yellow HUD
+   labels, a yellow wordmark outlined in deep blue. */
 .skin-blue-blur {
   --skin-desc: "Gotta go fast. Checkerboard loops, golden rings, no brakes.";
   --skin-name: "Blue Blur";
@@ -1001,7 +1085,7 @@
   --surface:   #051433;
   --border:    #2277ff;
   --text:      #ffffff;
-  --text-dim:  #8fa6d9;
+  --text-dim: #ffe14a;
   --accent:    #00ff66;
   --action:    #ffcc00;
   --tile:      linear-gradient(145deg, #d87838, #984818);
@@ -1045,6 +1129,26 @@
    --path-cap: round;
    --path-opacity: 0.95;
    --path-glow: 10;
+
+  /* Layers: checkerboard soil tiles, speed streaks, gold-ring bevel */
+  --tile-overlay: conic-gradient(rgba(0, 0, 0, 0.2) 25%, transparent 0 50%, rgba(0, 0, 0, 0.2) 0 75%, transparent 0) 0 0 / 50% 50%;
+  --tile-selected-overlay: none;
+  --tile-shadow: inset 0 3px 0 rgba(255, 220, 160, 0.3), inset 0 -3px 0 rgba(60, 20, 0, 0.5);
+  --tile-selected-shadow: inset 0 3px 0 rgba(160, 200, 255, 0.45), inset 0 -3px 0 rgba(0, 10, 80, 0.55);
+  --tile-letter-shadow: 0 2px 0 #4a2000;
+  --primary-action-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.5), inset 0 -4px 0 rgba(160, 100, 0, 0.55);
+  --wordmark-shadow: -2px -2px 0 #0022aa, 2px -2px 0 #0022aa, -2px 2px 0 #0022aa, 2px 2px 0 #0022aa, 0 -2px 0 #0022aa, 0 2px 0 #0022aa, -2px 0 0 #0022aa, 2px 0 0 #0022aa, 0 5px 0 #001066;
+  --bg-pattern: linear-gradient(180deg, #a0ec58 0 35%, #4cae22 35% 100%), conic-gradient(#d07830 25%, #8c4410 0 50%, #d07830 0 75%, #8c4410 0), linear-gradient(180deg, #0c3cc0 0%, #2c74ee 52%, #8cc8ff 72%, #2a70e8 72%, #1a50c0 100%);
+  --bg-pattern-size: 100% 14px, 52px 52px, 100% 100%;
+
+  --button-border: #ffcc00;
+  --hint-empty-bg: rgba(5, 20, 51, 0.78);
+  --wordmark-color: #ffe14a;
+  --title-color: #ffffff;
+  --title-shadow: -2px -2px 0 #0022aa, 2px -2px 0 #0022aa, -2px 2px 0 #0022aa, 2px 2px 0 #0022aa, 0 -2px 0 #0022aa, 0 2px 0 #0022aa, -2px 0 0 #0022aa, 2px 0 0 #0022aa, 0 3px 0 #001066;
+  --card-shadow: inset 0 -3px 0 rgba(255, 204, 0, 0.45);
+  --bg-pattern-position: 0 calc(100% - 52px), 0 100%, 0 0;
+  --bg-pattern-repeat: no-repeat, repeat-x, no-repeat;
 }
 
 /* ── Dragon Heat ── Nightlife underworld aesthetic featuring heavy asphalt blacks, fierce heat-action crimson selections, and neon-gold trails. */
@@ -1499,53 +1603,76 @@
    gentler than the brand's neon skins. Selected tiles light up lilac (the
    power LED); solved words settle to periwinkle (a nod to the blue face
    button). Silkscreen — a fine, clean pixel face — sells the 16-bit step up
-   from Dot Matrix's chunkier 8-bit type. Already bundled (no new font). */
+   from Dot Matrix's chunkier 8-bit type. Already bundled (no new font).
+   2026-10: now a LIGHT skin on the console's cool two-tone grey, rounded and
+   soft (vs Toaster's boxy warm grey): raised grey keys, convex lavender
+   selection, deep-purple found words with white type. */
 .skin-super-16-bit-lilac {
   --skin-desc: "Mode 7. Shoulder buttons. The purple brick that redefined everything.";
   --skin-name: "Super 16-Bit Lilac";
-  --bg-top:    #241f33;
-  --bg-bottom: #14111c;
-  --surface:   #1f1a2e;
-  --border:    #463a63;
-  --text:      #e6deff;
-  --text-dim:  #9a8fb8;
-  --accent:    #b486e8;
-  --action:    #b486e8;
-  --tile:      linear-gradient(145deg, #3a3350, #272036);
-  --tile-sel:  linear-gradient(145deg, #b486e8, #6d4fb0);
-  --path-start: #7fe0c0;
+  color-scheme: light;
+  --bg-top: #dcdbe3;
+  --bg-bottom: #c3c1cd;
+  --surface: #ecebf1;
+  --border: #a7a3b8;
+  --text: #2e2648;
+  --text-dim: #625a80;
+  --accent: #7b5cc8;
+  --action: #6d4fb0;
+  --tile: linear-gradient(180deg, #e6e4ec, #cfccd9);
+  --tile-sel: linear-gradient(180deg, #b49af0, #8a6cd8);
+  --path-start: #4b2f99;
 
-  --tile-border:          #4d4168;
-  --tile-letter:          #d8cfe8;
-  --tile-selected-border: #d8b8ff;
-  --tile-selected-glow:   rgba(180, 134, 232, 0.5);
+  --tile-border: #a7a3b8;
+  --tile-letter: #3a3058;
+  --tile-selected-border: #5a3fa6;
+  --tile-selected-glow: rgba(123, 92, 200, 0.4);
   /* Silkscreen for both tiles and wordmark (it ships weight 700 only). */
   --tile-font-family: 'Silkscreen', monospace;
   --tile-font-weight: 700;
   --tile-font-scale:  1.06;
-  --tile-radius:      10px;
+  --tile-radius: 14px;
 
   /* Explicit overrides */
-  --shell-bg: linear-gradient(180deg, rgba(34, 31, 51, 0.9), rgba(20, 17, 28, 0.95));
-  --shell-border: #463a63;
-  --primary-action-text: #1a0f2e;
-  --hint-solved-letter: #1a0f2e;
-  --hint-solved-border: #d8b8ff;
+  --shell-bg: linear-gradient(180deg, #f2f1f6, #dcdbe3);
+  --shell-border: #a7a3b8;
+  --primary-action-text: #ffffff;
+  --hint-solved-letter: #ffffff;
+  --hint-solved-border: #2e1a70;
   --tile-deactivated-opacity: 0.5;
-  --path-grad-end: #88b4f0;
+  --path-grad-end: #9a7ce8;
 
   --wordmark-font-family: 'Silkscreen', monospace;
   --wordmark-font-weight: 700;
   --wordmark-letter-spacing: 0.08em;
   --display-font-scale: var(--display-scale-silkscreen);
-  --glow-strength: 1.2;
+  --glow-strength: 0.6;
 
   /* Ribbon: lilac → pale lilac, soft bloom */
   --path-width: 9px;
   --path-cap: round;
   --path-opacity: 0.95;
-  --path-glow: 10;
-  --selected-letter-outline: #2a1a4a;
+  --path-glow: 5;
+  --selected-letter-outline: #3a1f8a;
+
+  /* Layers: concave keys / convex lilac buttons, console vent ribs */
+  --tile-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.75), inset 0 -3px 0 rgba(60, 50, 90, 0.16), 0 1px 2px rgba(60, 50, 90, 0.2);
+  --tile-selected-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.5), inset 0 -3px 0 rgba(50, 20, 120, 0.4), 0 2px 3px rgba(50, 20, 120, 0.3);
+  --primary-action-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35), inset 0 -3px 0 rgba(40, 15, 100, 0.45);
+  --card-shadow: 0 1px 2px rgba(60, 50, 90, 0.18);
+  --ui-radius: 12px;
+  --bg-pattern-size: auto;
+
+  --tile-selected-letter: #ffffff;
+  --shell-shadow: rgba(40, 30, 70, 0.2);
+  --hint-solved-bg: #4b2f99;
+  --hint-empty-bg: rgba(46, 38, 72, 0.06);
+  --hint-empty-border: #a7a3b8;
+  --title-color: #2e2648;
+  --title-glow: #7b5cc8;
+  --title-glow-alpha: 20%;
+  --wordmark-color: #5a3fa6;
+  --wordmark-shadow: 0 2px 0 #ffffff, 0 -1px 0 rgba(0, 0, 0, 0.25);
 }
 
 /* ── Toaster ──
@@ -1556,39 +1683,42 @@
    tiles snap to red (the power LED / the stripe lighting up); solved words
    emboss in the console's lighter grey trim. Press Start 2P tiles + Silkscreen
    wordmark — the same proven 8-bit pairing as Dot Matrix, recolored. Square
-   corners, near-flat glow, butt-cap ribbon keep it pixel-honest. No new font. */
+   corners, near-flat glow, butt-cap ribbon keep it pixel-honest. No new font.
+   2026-10: the ground is now the console's LIGHT GREY shell (with its ribbed
+   lid), tiles are the dark-grey lower deck, black for type — a LIGHT skin. */
 .skin-toaster {
   --skin-desc: "Blow on the cartridge. Gray brick. Red lettering. Pure legend.";
   --skin-name: "Toaster";
-  --bg-top:    #1c1c1e;
-  --bg-bottom: #0a0a0b;
-  --surface:   #232325;
-  --border:    #3a3a3e;
-  --text:      #e8e8ea;
-  --text-dim:  #9a9a9f;
+  color-scheme: light;
+  --bg-top: #cfcfcc;
+  --bg-bottom: #b9b9b5;
+  --surface: #dededb;
+  --border: #8c8c88;
+  --text: #141414;
+  --text-dim: #3c3c3a;
   --accent:    #e8281f;
   --action:    #e8281f;
-  --tile:      linear-gradient(145deg, #2c2c30, #1d1d20);
+  --tile: linear-gradient(180deg, #55555a, #3e3e42);
   --tile-sel:  linear-gradient(145deg, #e8281f, #9a0f0a);
-  --path-start: #e8e8ea;
+  --path-start: #141414;
 
-  --tile-border:          #45454a;
-  --tile-letter:          #d2d2d6;
-  --tile-selected-border: #ff6a5e;
+  --tile-border: #1a1a1c;
+  --tile-letter: #ecece8;
+  --tile-selected-border: #5a0806;
   --tile-selected-glow:   rgba(232, 40, 31, 0.55);
   /* Press Start 2P tiles (8-bit blocky) + Silkscreen wordmark. */
   --tile-font-family: 'Press Start 2P', monospace;
   --tile-font-weight: 400;
   --tile-font-scale:  0.62;
-  --tile-radius:      0px;
+  --tile-radius: 2px;
 
   /* Explicit overrides */
-  --shell-bg: linear-gradient(180deg, rgba(26, 26, 28, 0.92), rgba(12, 12, 13, 0.97));
-  --shell-border: #3a3a3e;
+  --shell-bg: linear-gradient(180deg, #e2e2df, #cfcfcc);
+  --shell-border: #8c8c88;
   --primary-action-text: #ffffff;
-  --hint-solved-border: #ff6a5e;
+  --hint-solved-border: #000000;
   --tile-deactivated-opacity: 0.45;
-  --path-grad-end: #b0b0b6;
+  --path-grad-end: #141414;
 
   --wordmark-font-family: 'Silkscreen', monospace;
   --wordmark-font-weight: 700;
@@ -1601,7 +1731,30 @@
   --path-cap: butt;
   --path-opacity: 1;
   --path-glow: 4;
-  --selected-letter-outline: #3a0604;
+  --selected-letter-outline: #5a0806;
+
+  /* Layers: ribbed console deck, cartridge-bevel tiles, red stripe on cards */
+  --tile-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.12), inset 0 -3px 0 rgba(0, 0, 0, 0.45), 0 2px 0 rgba(0, 0, 0, 0.25);
+  --tile-selected-shadow: inset 0 2px 0 rgba(255, 150, 140, 0.4), inset 0 -3px 0 rgba(80, 0, 0, 0.55);
+  --card-shadow: inset 0 -3px 0 #e8281f, 0 2px 0 rgba(0, 0, 0, 0.18);
+  --primary-action-shadow: inset 0 2px 0 rgba(255, 150, 140, 0.35), inset 0 -3px 0 rgba(80, 0, 0, 0.5);
+  --wordmark-shadow: 0 3px 0 #141414;
+  --ui-radius: 2px;
+  --hint-radius: 2px;
+  --bg-pattern: linear-gradient(180deg, #d6d6d3 0%, #c4c4c0 100%);
+  --bg-pattern-size: 100% 100%;
+
+  --shell-shadow: rgba(0, 0, 0, 0.25);
+  --hint-solved-bg: #141414;
+  --hint-solved-letter: #ffffff;
+  --hint-empty-bg: rgba(0, 0, 0, 0.08);
+  --hint-empty-border: #8c8c88;
+  --title-color: #141414;
+  --title-glow: #e8281f;
+  --title-glow-alpha: 0%;
+  --wordmark-color: #e8281f;
+
+  --bg-pattern-repeat: no-repeat;
 }
 
 /* ── Lord of Terror ──

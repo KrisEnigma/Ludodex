@@ -76,7 +76,7 @@ export const SKINS: SkinMeta[] = [
   { id: 'aero', name: 'Aero', productId: null, isLight: true },
   { id: 'star-hunter', name: 'Star Hunter', productId: null },
   { id: 'relic-gold', name: 'Hyrule Vault', productId: null },
-  { id: 'puff-star', name: 'Puff Star', productId: null },
+  { id: 'puff-star', name: 'Puff Star', productId: null, isLight: true },
   {
     id: 'mushroom-kingdom',
     name: 'Mushroom Kingdom',
@@ -114,8 +114,8 @@ export const SKINS: SkinMeta[] = [
     unlockHint: '10 pristine solves'
   },
   { id: 'bios', name: 'BIOS', productId: null },
-  { id: 'super-16-bit-lilac', name: 'Super 16-Bit Lilac', productId: null },
-  { id: 'toaster', name: 'Toaster', productId: null },
+  { id: 'super-16-bit-lilac', name: 'Super 16-Bit Lilac', productId: null, isLight: true },
+  { id: 'toaster', name: 'Toaster', productId: null, isLight: true },
   {
     id: 'lord-of-terror',
     name: 'Lord of Terror',

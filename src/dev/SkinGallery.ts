@@ -231,6 +231,7 @@ function injectStyles(): void {
   background-image: var(--bg-pattern, none), radial-gradient(circle at 50% 35%, var(--bg-center), var(--bg-edge));
   background-size: var(--bg-pattern-size, auto), auto;
   background-position: var(--bg-pattern-position, 0 0), 0 0;
+  background-repeat: var(--bg-pattern-repeat, repeat), repeat;
   color: var(--title-color);
   font-family: 'Space Mono', ui-monospace, monospace;
   border: 1px solid #23262f;
