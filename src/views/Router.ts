@@ -7,7 +7,7 @@ import { trackRoute } from '../services/SentryService';
 import { fireInterstitialIfPending } from '../services/AdService';
 import { pathForRoute } from '../services/DeepLinking';
 import { showConfirmModal } from '../components/Modal';
-import { closeAllOverlays, closeTopOverlay, installEscapeToClose } from '../components/overlayStack';
+import { closeAllOverlays, closeTopOverlay, installOverlayKeyboard } from '../components/overlayStack';
 import { t } from '../i18n';
 
 import { ArchiveView } from './ArchiveView';
@@ -83,8 +83,8 @@ export class Router {
     this.shell.className = 'app-shell';
     app.replaceChildren(this.shell);
 
-    // Escape closes the top sheet/dialog (all overlays, not just Modal).
-    installEscapeToClose();
+    // Escape closes the top sheet/dialog; Tab stays inside it (all overlays).
+    installOverlayKeyboard();
 
     // Listen for browser back/forward. With replaceState-based URL sync,
     // popstate only fires when the user actually presses the browser's

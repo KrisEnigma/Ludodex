@@ -46,7 +46,7 @@ export function showInfoModal(options: InfoModalOptions): Promise<void> {
       if (event.target === backdrop) settle();
     };
     const onKeyDown = (event: KeyboardEvent): void => {
-      // Escape is handled globally (overlayStack.installEscapeToClose).
+      // Escape is handled globally (overlayStack.installOverlayKeyboard).
       if (event.key === 'Enter') settle();
     };
 
@@ -121,7 +121,7 @@ export function showConfirmModal(options: ConfirmModalOptions): Promise<boolean>
     };
     // Keyboard: no Enter handler — the browser activates whichever button has
     // focus (Cancel for destructive dialogs). Escape → Cancel is handled
-    // globally by overlayStack.installEscapeToClose via trackOverlay below.
+    // globally by overlayStack.installOverlayKeyboard via trackOverlay below.
 
     cancelBtn.addEventListener('click', onCancel);
     confirmBtn.addEventListener('click', onConfirm);

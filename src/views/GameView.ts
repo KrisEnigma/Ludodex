@@ -108,12 +108,19 @@ export class GameView {
   private hintHoldSlot: HTMLElement | null = null;
   private outsidePointerDownHandler: ((event: PointerEvent) => void) | null = null;
   private pressedTileEl: HTMLElement | null = null;
+  private layoutCache: {
+    gridLeft: number;
+    gridTop: number;
+    centers: Map<Tile, { x: number; y: number }>;
+    hitRadius: number;
+  } | null = null;
   private readonly liveRegion: HTMLParagraphElement;
   // First-play tracking (docs/audit §6.2): true once this view has written the
   // attempt marker; leaving without solving then forfeits the first play.
   private attemptActive = false;
   private disposed = false;
   private readonly handleResize = (): void => {
+    if (this.layoutCache) this.refreshLayoutCache(); // resized mid-gesture
     this.redrawPath(this.inputManager.getChain());
   };
   private previousChainLength = 0;
@@ -772,6 +779,9 @@ export class GameView {
     this.gridWrap.addEventListener('pointerdown', (event) => {
       if (!event.isPrimary) return;
       this.gridWrap.setPointerCapture(event.pointerId);
+      // Measure once per gesture; pointermove then reads the cache instead of
+      // forcing layout for 16 tiles on every move.
+      this.refreshLayoutCache();
       const { x, y } = this.toLocalPoint(event.clientX, event.clientY);
       this.inputManager.onPointerDown(0, x, y);
     });
@@ -785,6 +795,7 @@ export class GameView {
     this.gridWrap.addEventListener('pointerup', (event) => {
       if (!event.isPrimary) return;
       this.inputManager.onPointerUp(0);
+      this.layoutCache = null;
       if (this.gridWrap.hasPointerCapture(event.pointerId)) {
         this.gridWrap.releasePointerCapture(event.pointerId);
       }
@@ -793,6 +804,7 @@ export class GameView {
     this.gridWrap.addEventListener('pointercancel', (event) => {
       if (!event.isPrimary) return;
       this.inputManager.onPointerCancel(0);
+      this.layoutCache = null;
       if (this.gridWrap.hasPointerCapture(event.pointerId)) {
         this.gridWrap.releasePointerCapture(event.pointerId);
       }
@@ -908,7 +920,30 @@ export class GameView {
     }
   }
 
+  /**
+   * Grid geometry snapshot, valid only while a pointer is down (set on
+   * pointerdown, cleared on up/cancel). Tiles don't move mid-gesture
+   * (touch-action: none, no tile transforms), so one measurement per gesture
+   * replaces ~33 layout reads per pointermove.
+   */
+  private refreshLayoutCache(): void {
+    const gridRect = this.gridWrap.getBoundingClientRect();
+    const centers = new Map<Tile, { x: number; y: number }>();
+    for (const [tile, el] of this.tileElements) {
+      const r = el.getBoundingClientRect();
+      centers.set(tile, { x: r.left + r.width / 2 - gridRect.left, y: r.top + r.height / 2 - gridRect.top });
+    }
+    this.layoutCache = {
+      gridLeft: gridRect.left,
+      gridTop: gridRect.top,
+      centers,
+      hitRadius: Math.max(20, (this.gridWrap.clientWidth / 4) * 0.38)
+    };
+  }
+
   private getTileCenter(tile: Tile): { x: number; y: number } {
+    const cached = this.layoutCache?.centers.get(tile);
+    if (cached) return cached;
     const tileEl = this.tileElements.get(tile);
     if (!tileEl) return { x: 0, y: 0 };
 
@@ -921,6 +956,9 @@ export class GameView {
   }
 
   private toLocalPoint(clientX: number, clientY: number): { x: number; y: number } {
+    if (this.layoutCache) {
+      return { x: clientX - this.layoutCache.gridLeft, y: clientY - this.layoutCache.gridTop };
+    }
     const rect = this.gridWrap.getBoundingClientRect();
     return {
       x: clientX - rect.left,
@@ -929,6 +967,7 @@ export class GameView {
   }
 
   private computeHitRadius(): number {
+    if (this.layoutCache) return this.layoutCache.hitRadius;
     const cell = this.gridWrap.clientWidth / 4;
     return Math.max(20, cell * 0.38);
   }

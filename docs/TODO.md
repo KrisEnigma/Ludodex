@@ -30,11 +30,12 @@ Deferred items from the Sep 2026 audit / fix pass. Details and rationale live in
 - [ ] Rename env vars if still using the old name: `VITE_REVENUECAT_API_KEY` →
       `VITE_RC_IOS_KEY` / `VITE_RC_ANDROID_KEY` (local `.env` and Cloudflare
       build settings).
-- [ ] Deploy the hardened Worker (`pnpm deploy`) and confirm: game still loads
+- [x] Deploy the hardened Worker (`pnpm run deploy`, Oct 1 2026) and confirm: game still loads
       puzzles; editor saves; `history/` snapshots appear in R2.
 - [ ] Replace non-commercial fonts (DooM, Diablo, AmazDooM) and rename
       trademarked skins (§3.2).
-- [ ] `og-image.png` is missing — every shared link has a broken preview (§2.5).
+- [x] `og-image.png` added (1200×630, Void style). After deploying, re-check link
+      previews (e.g. opengraph.xyz) — some apps cache old previews for days.
 
 ## Skin pass (planned)
 
@@ -56,6 +57,7 @@ Deferred items from the Sep 2026 audit / fix pass. Details and rationale live in
 - [ ] App icon change + its status/error messages.
 - [ ] iOS: iPhone stays portrait when rotated; iPad still rotates (Info.plist).
 - [ ] TalkBack / VoiceOver on device announce "Found WORD. x of y words." on finds.
+- [ ] Low-end Android: long swipes feel smooth (hit-testing now measures once per gesture).
 
 Live reload (Capacitor 8):
 `npx cap run android --live-reload --host localhost --port 5173 --forwardPorts 5173:5173`
