@@ -556,14 +556,16 @@
 }
 
 
-/* Ransom-note glyphs: letters tilt at varied angles, like letters clipped
+/* `:not(.skin-scope:not(.skin-X) *)` on bespoke rules: never style a preview
+   card of ANOTHER skin while this skin is active on <html>.
+   Ransom-note glyphs: letters tilt at varied angles, like letters clipped
    from a magazine (one typeface for legibility). Letters only (never .tile —
    stacking-context rule); the white cut-out stays reserved for selection. */
-.skin-phantom-thieves .tile:nth-child(4n+1) .tile-letter { transform: rotate(-5deg); }
-.skin-phantom-thieves .tile:nth-child(4n+2) .tile-letter { transform: rotate(4deg); }
-.skin-phantom-thieves .tile:nth-child(4n+3) .tile-letter { transform: rotate(-2deg); }
-.skin-phantom-thieves .tile:nth-child(4n)   .tile-letter { transform: rotate(6deg); }
-.skin-phantom-thieves .tile[data-state="selected"] .tile-letter { transform: rotate(0deg) scale(1.08); }
+.skin-phantom-thieves .tile:nth-child(4n+1) .tile-letter:not(.skin-scope:not(.skin-phantom-thieves) *) { transform: rotate(-5deg); }
+.skin-phantom-thieves .tile:nth-child(4n+2) .tile-letter:not(.skin-scope:not(.skin-phantom-thieves) *) { transform: rotate(4deg); }
+.skin-phantom-thieves .tile:nth-child(4n+3) .tile-letter:not(.skin-scope:not(.skin-phantom-thieves) *) { transform: rotate(-2deg); }
+.skin-phantom-thieves .tile:nth-child(4n) .tile-letter:not(.skin-scope:not(.skin-phantom-thieves) *) { transform: rotate(6deg); }
+.skin-phantom-thieves .tile[data-state="selected"] .tile-letter:not(.skin-scope:not(.skin-phantom-thieves) *) { transform: rotate(0deg) scale(1.08); }
 
 /* ── Catalyst ── Dystopian minimalist clean layout with sterile whites, slate typography, and high-velocity orange routes. */
 .skin-catalyst {
@@ -1073,6 +1075,9 @@
 
   --celebrate-color: #fcc044;
   --celebrate-shadow: 3px 3px 0 #000;
+
+  --wordmark-color: #fcecd2;
+  --wordmark-shadow: 3px 3px 0 #000, 4px 4px 0 #000;
 }
 
 /* Custom 3D Drop-Shadow Blocks — Accurately reconstructs the original box-art look */
@@ -1108,8 +1113,8 @@
 }
 
 /* Custom Sprite Outline for active gameplay letter matrices to emulate original outline typography */
-.skin-mushroom-kingdom .tile[data-state="idle"] .tile-letter,
-.skin-mushroom-kingdom .tile[data-state="selected"] .tile-letter {
+.skin-mushroom-kingdom .tile[data-state="idle"] .tile-letter:not(.skin-scope:not(.skin-mushroom-kingdom) *),
+.skin-mushroom-kingdom .tile[data-state="selected"] .tile-letter:not(.skin-scope:not(.skin-mushroom-kingdom) *) {
   text-shadow: 
     -2px -2px 0 #000000,  
      2px -2px 0 #000000,

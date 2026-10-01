@@ -538,7 +538,9 @@ function buildSettingsMarkup() {
       </div>
       <div class="settings-section">
         <h2 class="settings-section-heading">Skin</h2>
-        <div class="settings-skin-cards">${skinCards}
+        <div class="settings-skin-group">
+          <div class="settings-skin-cards">${skinCards}
+          </div>
         </div>
       </div>
       <div class="settings-section">

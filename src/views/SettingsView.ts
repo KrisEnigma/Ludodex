@@ -10,7 +10,7 @@ import {
 } from '../skins/registry';
 import { isSkinOwned, purchase, restorePurchases, getVisibleSkins } from '../services/IAPService';
 import { track, updateLocale, setPaidStatus } from '../services/AnalyticsService';
-import { getActiveSkinId, resetAllProgress, setActiveSkinId } from '../services/ProgressService';
+import { getActiveSkinId, getProgressSnapshot, getStreakStatus, resetAllProgress, setActiveSkinId } from '../services/ProgressService';
 import { getMonetizationContext } from '../services/MonetizationContext';
 import { isWebAvailable, PROMO_SKIN_ID } from '../skins/webConfig';
 import {
@@ -25,12 +25,37 @@ import { addDragToDismiss } from '../components/sheetDrag';
 import { createIcon } from '../components/icons';
 import { trackOverlay } from '../components/overlayStack';
 import { isSoundEnabled, playFind, setSoundEnabled } from '../services/SoundService';
-import { renderRibbon } from '../components/ribbon';
+import { buildSkinScreen } from '../components/SkinPreview';
 
 // Icon-flow trace logs: dev builds only (silent in production).
 const debugLog: (...args: unknown[]) => void = import.meta.env.DEV ? console.log.bind(console) : () => {};
 
 const context = getMonetizationContext();
+
+type SkinGroup = 'owned' | 'earn' | 'buy';
+const SKIN_GROUPS: SkinGroup[] = ['owned', 'earn', 'buy'];
+const GROUP_HEADING: Record<SkinGroup, StringKey> = {
+  owned: 'settings.skins_owned',
+  earn: 'settings.skins_earn',
+  buy: 'settings.skins_buy'
+};
+
+/** Progress toward an unlock achievement, from its id (solve_N / streak_N / pristine_N). */
+async function loadUnlockProgress(): Promise<Map<string, { n: number; total: number; kind: 'solved' | 'streak' | 'pristine' }>> {
+  const [snapshot, streak] = await Promise.all([getProgressSnapshot(), getStreakStatus()]);
+  const out = new Map<string, { n: number; total: number; kind: 'solved' | 'streak' | 'pristine' }>();
+  for (const skin of SKINS) {
+    const id = skin.unlockedByAchievement;
+    if (!id) continue;
+    const m = /^(solve|streak|pristine)_(\d+)$/.exec(id);
+    if (!m) continue;
+    const total = Number(m[2]);
+    const kind = m[1] === 'solve' ? 'solved' : (m[1] as 'streak' | 'pristine');
+    const n = kind === 'solved' ? snapshot.solvedCount : kind === 'streak' ? streak.effective : snapshot.pristineCount;
+    out.set(id, { n: Math.min(n, total), total, kind });
+  }
+  return out;
+}
 
 export class SettingsView {
   public readonly element: HTMLDivElement;
@@ -40,6 +65,10 @@ export class SettingsView {
   private readonly reminderButtons = new Map<boolean, HTMLButtonElement>();
   private readonly skinButtons = new Map<SkinId, HTMLButtonElement>();
   private readonly skinPills = new Map<SkinId, HTMLSpanElement>();
+  private readonly skinStatus = new Map<SkinId, { text: HTMLSpanElement; bar: HTMLSpanElement }>();
+  /** Picker groups, by how you get the skin: yours / earn (achievement) / buy (IAP). */
+  private readonly skinGroups = new Map<SkinGroup, { wrap: HTMLElement; cards: HTMLElement }>();
+  private unlockProgress = new Map<string, { n: number; total: number; kind: 'solved' | 'streak' | 'pristine' }>();
   private readonly unlockedBySkin = new Map<SkinId, boolean>();
   private activeSkinId: SkinId = getCurrentSkinId(); // DOM read — correct since main.ts applies skin before routing
   // From the monetization context (not Capacitor directly) so the Dev
@@ -121,67 +150,9 @@ export class SettingsView {
     closeBtn.addEventListener('click', () => this.closeSkinDetailSheet());
     header.append(nameEl, closeBtn);
 
-    // Mini game preview — `skin-scope skin-<id>` re-derives every skin var
-    // locally (see skins.css), no root mutation.
-    const previewScope = document.createElement('div');
-    previewScope.className = `skin-detail-preview-scope skin-scope skin-${skin.id}`;
-
-    // Skin name in the wordmark font
-    const previewTitle = document.createElement('div');
-    previewTitle.className = 'skin-detail-preview-title';
-    previewTitle.textContent = this.getSkinName(skin.id).toUpperCase();
-
-    // 4×4 mini game grid with SVG trail overlay.
-    // Path spells W→O→R→D→S across the grid so selected tiles + trail
-    // both render in the skin's colors.
-    const TILE_SIZE = 42;
-    const GAP = 6;
-    const STRIDE = TILE_SIZE + GAP;   // 48
-    const GRID_PX = 4 * TILE_SIZE + 3 * GAP; // 186
-
-    // Path includes diagonals: W→O→R→D diagonal run, then S→A turn
-    const pathCells: [number, number][] = [[0, 0], [1, 1], [2, 2], [3, 3], [3, 2], [2, 1]];
-    const selectedSet = new Set(pathCells.map(([r, c]) => `${r},${c}`));
-    const letters = ['W', 'G', 'T', 'L', 'P', 'O', 'E', 'B', 'M', 'A', 'R', 'F', 'C', 'N', 'S', 'D'];
-
-    const gridWrap = document.createElement('div');
-    gridWrap.className = 'skin-detail-preview-grid-wrap';
-
-    const grid = document.createElement('div');
-    grid.className = 'skin-detail-preview-grid';
-    for (let r = 0; r < 4; r++) {
-      for (let c = 0; c < 4; c++) {
-        const tile = document.createElement('span');
-        const sel = selectedSet.has(`${r},${c}`);
-        tile.className = `settings-skin-tile ${sel ? 'settings-skin-tile--selected' : 'settings-skin-tile--default'}`;
-        // Letter in a child span — mirrors the game's .tile / .tile-letter pattern
-        // so the trail SVG (z-index 10) renders above tile backgrounds while the
-        // letter (z-index 20) stays above the trail. The tile itself must NOT have
-        // z-index or it would form a stacking context and trap the letter inside it.
-        const letter = document.createElement('span');
-        letter.className = 'skin-detail-preview-letter';
-        letter.textContent = letters[r * 4 + c];
-        tile.append(letter);
-        grid.append(tile);
-      }
-    }
-
-    // SVG trail via the shared ribbon renderer (same look as in the game).
-    // Uses skin-detail-preview-path (not path-overlay) to avoid the z-index:10
-    // that would cover tile letters.
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('class', 'skin-detail-preview-path');
-    svg.setAttribute('viewBox', `0 0 ${GRID_PX} ${GRID_PX}`);
-    svg.setAttribute('aria-hidden', 'true');
-    const segGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    segGroup.setAttribute('class', 'path-segments');
-    renderRibbon(
-      segGroup,
-      pathCells.map(([r, c]) => ({ x: c * STRIDE + TILE_SIZE / 2, y: r * STRIDE + TILE_SIZE / 2 }))
-    );
-    svg.append(segGroup);
-    gridWrap.append(grid, svg);
-    previewScope.append(previewTitle, gridWrap);
+    // Mini game screen in this skin (shared with the picker cards, so the
+    // sheet, the cards and the game all match).
+    const previewScope = buildSkinScreen(skin.id, 'detail', this.getSkinName(skin.id).toUpperCase());
 
     // Description
     const descKey = `skin.${skin.id}.desc` as Parameters<typeof t>[0];
@@ -374,6 +345,7 @@ export class SettingsView {
       this.refreshIconButtons();
     }
     await this.refreshEntitlements();
+    this.unlockProgress = await loadUnlockProgress();
     // If the stored skin is no longer accessible (e.g. promo rotated out), revert and persist.
     if (!this.unlockedBySkin.get(this.activeSkinId)) {
       await this.setSkin('void');
@@ -650,18 +622,32 @@ export class SettingsView {
     heading.className = 'settings-section-heading';
     heading.textContent = t('settings.section_skin');
 
-    const cards = document.createElement('div');
-    cards.className = 'settings-skin-cards';
+    section.append(heading);
+
+    // Groups by how you get the skin; cards are sorted into them (and empty
+    // groups hidden) by refreshSkinCards() once entitlements are known.
+    for (const group of SKIN_GROUPS) {
+      const wrap = document.createElement('div');
+      wrap.className = 'settings-skin-group';
+      wrap.dataset.group = group;
+      const groupHeading = document.createElement('h4');
+      groupHeading.className = 'settings-skin-group-heading';
+      groupHeading.textContent = t(GROUP_HEADING[group]);
+      const cards = document.createElement('div');
+      cards.className = 'settings-skin-cards';
+      wrap.append(groupHeading, cards);
+      section.append(wrap);
+      this.skinGroups.set(group, { wrap, cards });
+    }
 
     const visible = getVisibleSkins();
     const regularSkins = !this.isNative ? visible.filter(s => s.id !== PROMO_SKIN_ID) : visible;
     const promoSkin = !this.isNative ? visible.find(s => s.id === PROMO_SKIN_ID) : undefined;
 
+    const ownedCards = this.skinGroups.get('owned')!.cards;
     for (const skin of regularSkins) {
-      cards.append(this.buildSkinCard(skin, false));
+      ownedCards.append(this.buildSkinCard(skin, false));
     }
-
-    section.append(heading, cards);
 
     if (promoSkin) {
       section.append(this.renderPromoSkinBlock(promoSkin));
@@ -721,25 +707,23 @@ export class SettingsView {
     card.dataset.skin = skin.id;
     if (isPromo) card.dataset.promo = 'true';
 
-    // Mini tile preview — scoped to this skin's CSS variables
-    const skinScope = document.createElement('div');
-    skinScope.className = `settings-skin-preview-scope skin-scope skin-${skin.id}`;
+    // Mini screen in the skin itself: backdrop, LUDODEX in its wordmark
+    // style, a 2×2 patch of real tiles with a diagonal selection + ribbon.
+    card.append(buildSkinScreen(skin.id, 'card', 'LUDODEX'));
 
-    const tileDefault = document.createElement('span');
-    tileDefault.className = 'settings-skin-tile settings-skin-tile--default';
-    tileDefault.textContent = 'A';
-
-    const tileSelected = document.createElement('span');
-    tileSelected.className = 'settings-skin-tile settings-skin-tile--selected';
-    tileSelected.textContent = 'A';
-
-    skinScope.append(tileDefault, tileSelected);
-    card.append(skinScope);
-
+    const foot = document.createElement('span');
+    foot.className = 'settings-skin-foot';
     const name = document.createElement('span');
     name.className = 'settings-skin-name';
     name.textContent = this.getSkinName(skin.id);
-    card.append(name);
+    const statusText = document.createElement('span');
+    statusText.className = 'settings-skin-status';
+    const bar = document.createElement('span');
+    bar.className = 'settings-skin-progress';
+    bar.append(document.createElement('span'));
+    foot.append(name, statusText, bar);
+    card.append(foot);
+    this.skinStatus.set(skin.id, { text: statusText, bar });
 
     // Badge indicator — content and type set in refreshSkinCards()
     const badge = document.createElement('span');
@@ -882,6 +866,30 @@ export class SettingsView {
       button.dataset.active = String(isActive);
       button.dataset.locked = String(!isUnlocked);
 
+      // Sort into its group (registry order is preserved by appending in order).
+      if (button.dataset.promo !== 'true') {
+        const group: SkinGroup = isUnlocked ? 'owned' : skin.unlockedByAchievement ? 'earn' : 'buy';
+        this.skinGroups.get(group)?.cards.append(button);
+      }
+
+      // Status line: in use / unlock progress / price.
+      const status = this.skinStatus.get(skin.id);
+      if (status) {
+        const progress = skin.unlockedByAchievement ? this.unlockProgress.get(skin.unlockedByAchievement) : undefined;
+        status.bar.hidden = true;
+        if (isActive) {
+          status.text.textContent = `✓ ${t('settings.skin_active')}`;
+        } else if (!isUnlocked && progress) {
+          status.text.textContent = t(`settings.skin_progress_${progress.kind}` as StringKey, { n: progress.n, total: progress.total });
+          status.bar.hidden = false;
+          (status.bar.firstElementChild as HTMLElement).style.width = `${(progress.n / progress.total) * 100}%`;
+        } else if (!isUnlocked && this.isNative && skin.productId) {
+          status.text.textContent = this.getPriceLabel(skin.id);
+        } else {
+          status.text.textContent = '';
+        }
+      }
+
       if (isActive) {
         badge.replaceChildren();
         badge.dataset.type = '';
@@ -897,6 +905,9 @@ export class SettingsView {
         badge.replaceChildren();
         badge.dataset.type = '';
       }
+    }
+    for (const { wrap, cards } of this.skinGroups.values()) {
+      wrap.hidden = cards.childElementCount === 0;
     }
   }
 

@@ -171,6 +171,17 @@ const VIEW_ONLY = new Set([
   'settings-skin-badge', 'settings-skin-promo-block', 'settings-skin-promo-divider',
 ]);
 
+/** Settings-only: the picker's mini-screen card internals (real .tile patch,
+ *  wordmark, progress line) are built in JS; the creator's settings preview
+ *  keeps the simplified swatch cards. Scoped to the settings screen so the
+ *  game screen still checks `tile` / `tile-letter` strictly. */
+const SETTINGS_PICKER_ONLY = new Set([
+  'settings-skin-foot', 'settings-skin-status', 'settings-skin-progress',
+  'settings-skin-group-heading',
+  'skin-screen', 'skin-screen-wordmark', 'skin-screen-tiles', 'skin-screen-path',
+  'tile', 'tile-letter',
+]);
+
 const SCREENS = [
   {
     screen: 'game',
@@ -194,7 +205,7 @@ const SCREENS = [
     screen: 'settings',
     creatorTag: 'settings-view',
     viewFile: 'SettingsView.ts',
-    skipClasses: new Set([...CREATOR_ONLY, ...VIEW_ONLY]),
+    skipClasses: new Set([...CREATOR_ONLY, ...VIEW_ONLY, ...SETTINGS_PICKER_ONLY]),
   },
   {
     screen: 'achievements',

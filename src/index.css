@@ -2661,16 +2661,179 @@ body::before {
   color: var(--button-text);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 12px 8px 10px;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
   font-family: inherit;
   font-size: var(--type-body-s);
   cursor: pointer;
   position: relative;
   text-align: center;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Picker groups (yours / earn / buy) */
+.settings-skin-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-skin-group[hidden] {
+  display: none;
+}
+
+.settings-skin-group + .settings-skin-group {
+  margin-top: 14px;
+}
+
+.settings-skin-group-heading {
+  margin: 0;
+  font-size: var(--type-caption);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--chrome-text);
+  opacity: 0.8;
+}
+
+.settings-skin-card .skin-screen { pointer-events: none; }
+
+/* ── Skin mini screen (components/SkinPreview): picker card + detail sheet ──
+   The backdrop lives on a ::before laid out at 1/--screen-scale size and
+   scaled down, so pixel-sized backdrop art keeps phone proportions. */
+.skin-screen {
+  --screen-scale: 0.4;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-edge);
+  color: var(--title-color);
+}
+
+.skin-screen::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: calc(100% / var(--screen-scale));
+  height: calc(100% / var(--screen-scale));
+  transform: scale(var(--screen-scale));
+  transform-origin: 0 0;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--bg-edge);
+  background-image: var(--bg-pattern, none), radial-gradient(circle at 50% 35%, var(--bg-center), var(--bg-edge));
+  background-size: var(--bg-pattern-size, auto), auto;
+  background-position: var(--bg-pattern-position, 0 0), 0 0;
+  background-repeat: var(--bg-pattern-repeat, repeat), repeat;
+}
+
+.skin-screen--card {
+  height: 104px;
+  gap: 7px;
+}
+
+.skin-screen--detail {
+  --screen-scale: 0.72;
+  gap: 12px;
+  padding: 18px 16px 20px;
+  border-radius: var(--ui-radius, 10px);
+  border: 1px solid var(--button-border);
+}
+
+.skin-screen-wordmark {
+  /* No overflow clipping here: it would crop the skin's wordmark shadows and
+     extrusions. Width is kept in check by the capped display scale below. */
+  font-family: var(--title-font-family, var(--wordmark-font-family, 'Space Mono', ui-monospace, monospace));
+  font-weight: var(--title-font-weight, var(--wordmark-font-weight, 700));
+  letter-spacing: var(--title-letter-spacing, var(--wordmark-letter-spacing, 0.18em));
+  text-transform: var(--title-text-transform, none);
+  /* Display-scale corrections, capped so very wide/large faces (AmazDooM at
+     ×2) still fit a card. */
+  font-size: calc(var(--wordmark-base, 13px) * min(var(--menu-logo-scale, var(--title-font-scale, var(--display-font-scale, 1))), 1.45));
+  line-height: 1.1;
+  white-space: nowrap;
+  color: var(--wordmark-color, var(--title-glow));
+  -webkit-text-stroke: var(--wordmark-stroke, 0 transparent);
+  text-shadow: var(--wordmark-shadow, 0 0 calc(8px * var(--glow-strength, 1)) color-mix(in srgb, var(--title-glow) 30%, transparent));
+}
+
+.skin-screen--detail .skin-screen-wordmark {
+  --wordmark-base: 17px;
+}
+
+.skin-screen-tiles {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--cols), var(--tile));
+  grid-auto-rows: var(--tile);
+  gap: var(--gap);
+}
+
+.skin-screen-tiles .tile {
+  font-size: calc(var(--tile) * 0.5 * var(--tile-font-scale, 1));
+  border-radius: calc(var(--tile-radius, 14px) * 0.5);
+}
+
+.skin-screen--detail .skin-screen-tiles .tile {
+  font-size: calc(var(--tile) * 0.42 * var(--tile-font-scale, 1));
+  border-radius: calc(var(--tile-radius, 14px) * 0.65);
+}
+
+.skin-screen-path {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.skin-screen-path .path-seg {
+  stroke-width: max(3px, calc(var(--path-width, 9px) * 0.5));
+}
+
+.skin-screen--detail .skin-screen-path .path-seg {
+  stroke-width: max(4px, calc(var(--path-width, 9px) * 0.7));
+}
+
+.settings-skin-foot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 8px 9px;
+}
+
+.settings-skin-status {
+  min-height: 1.3em;
+  font-size: var(--type-caption);
+  letter-spacing: 0.04em;
+  color: var(--chrome-text);
+}
+
+.settings-skin-status:empty {
+  display: none;
+}
+
+.settings-skin-progress {
+  width: 70%;
+  height: 3px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--chrome-text) 25%, transparent);
+  overflow: hidden;
+}
+
+.settings-skin-progress > span {
+  display: block;
+  height: 100%;
+  background: var(--title-glow);
 }
 
 .settings-skin-card[data-active='true'] {
@@ -2862,83 +3025,6 @@ body::before {
   flex-shrink: 0;
 }
 
-/* Preview area — `skin-scope skin-<id>` on this element re-derives every
-   skin variable locally (see the skin-scope note in skins.css). */
-.skin-detail-preview-scope {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  align-items: center;
-  padding: 16px 20px 14px;
-  border-radius: var(--ui-radius, 10px);
-  background: color-mix(in srgb, var(--bg-top, #0d1118) 85%, transparent);
-  border: 1px solid var(--button-border);
-}
-
-.skin-detail-preview-title {
-  font-family: var(--title-font-family, var(--wordmark-font-family, 'Space Mono', monospace));
-  font-weight: var(--title-font-weight, 700);
-  font-size: calc(17px * var(--display-font-scale, 1));
-  letter-spacing: var(--title-letter-spacing, var(--wordmark-letter-spacing, 0.18em));
-  text-transform: var(--title-text-transform, none);
-  color: var(--title-color);
-  text-shadow: 0 0 10px color-mix(in srgb, var(--title-glow) 40%, transparent);
-  text-align: center;
-  line-height: 1.1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-
-/* 4×4 mini game grid — acts as positioning context for the SVG trail overlay */
-.skin-detail-preview-grid-wrap {
-  position: relative;
-  width: 186px;
-  height: 186px;
-  flex-shrink: 0;
-}
-
-.skin-detail-preview-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 42px);
-  grid-template-rows: repeat(4, 42px);
-  gap: 6px;
-}
-
-/* Tiles must NOT have z-index — that would create a stacking context and trap
-   the letter inside it, preventing it from floating above the trail SVG.
-   Same rule as .tile in the game (see comment there). */
-.skin-detail-preview-scope .settings-skin-tile {
-  width: 42px;
-  height: 42px;
-  font-size: calc(17px * var(--tile-font-scale, 1));
-}
-
-/* Letter child — sits at z-index 20 in the grid-wrap stacking context,
-   above the trail SVG at z-index 10. Mirrors .tile-letter in the game. */
-.skin-detail-preview-letter {
-  position: relative;
-  z-index: 20;
-  pointer-events: none;
-}
-
-/* Trail SVG — z-index 10 in the grid-wrap context: above tile backgrounds
-   (no z-index) but below letter spans (z-index 20). */
-.skin-detail-preview-path {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  overflow: visible;
-  z-index: 10;
-}
-
-/* Scale stroke down slightly so it looks proportional on 42px tiles */
-.skin-detail-preview-path .path-seg {
-  stroke-width: max(5px, calc(var(--path-width, 9px) * 0.7));
-}
 
 .skin-detail-desc {
   font-size: var(--type-body-s);
@@ -3104,9 +3190,18 @@ body::before {
 .settings-skin-promo-block .settings-skin-card {
   width: 100%;
   flex-direction: row;
-  justify-content: flex-start;
-  padding: 12px 14px;
-  gap: 12px;
+  align-items: stretch;
+}
+
+/* Promo card: mini screen on the left half, name/status on the right. */
+.settings-skin-promo-block .skin-screen {
+  width: 50%;
+  flex: none;
+}
+
+.settings-skin-promo-block .settings-skin-foot {
+  flex: 1;
+  justify-content: center;
 }
 
 .settings-skin-promo-divider {

@@ -47,6 +47,12 @@ export const strings: Record<keyof typeof enStrings, string> = {
 
   // Settings panel
   'settings.skin_section': 'Skin',
+  'settings.skins_owned': 'Tuyas',
+  'settings.skins_earn': 'Por ganar',
+  'settings.skins_buy': 'Comprar',
+  'settings.skin_progress_solved': '{n}/{total} resueltos',
+  'settings.skin_progress_streak': 'Racha {n}/{total} días',
+  'settings.skin_progress_pristine': '{n}/{total} perfectos',
   'settings.skin_active': 'Activo',
   'settings.skin_unlock': 'Desbloquear',
   'settings.skin_use': 'Usar este skin',

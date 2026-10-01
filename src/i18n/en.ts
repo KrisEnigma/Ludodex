@@ -46,6 +46,12 @@ export const strings = {
 
   // Settings panel
   'settings.skin_section': 'Skin',
+  'settings.skins_owned': 'Yours',
+  'settings.skins_earn': 'Earn',
+  'settings.skins_buy': 'Buy',
+  'settings.skin_progress_solved': '{n}/{total} solved',
+  'settings.skin_progress_streak': '{n}/{total}-day streak',
+  'settings.skin_progress_pristine': '{n}/{total} flawless',
   'settings.skin_active': 'Active',
   'settings.skin_unlock': 'Unlock',
   'settings.skin_use': 'Use this skin',
