@@ -15,6 +15,9 @@ import { formatDuration, formatTimeUntilMidnight } from '../utils/format';
 
 const STREAK_BANNER_DISMISSED_KEY = 'streak_banner_dismissed';
 
+/** The wordmark sweep plays once per app launch, not on every return to the menu. */
+let wordmarkSweepPlayed = false;
+
 type MenuCallbacks = {
   onPlay: (payload: RoutePayloads['game']) => void;
   onOpenSettings: () => void;
@@ -72,7 +75,25 @@ export class MenuView {
 
     const logo = document.createElement('h1');
     logo.className = 'menu-logo';
-    logo.textContent = t('menu.brand');
+    // One span per letter so the launch sweep can light them in sequence,
+    // like a swipe trail running across the word (colours from the skin's
+    // ribbon gradient). Screen readers get the whole word via aria-label.
+    const brand = t('menu.brand');
+    logo.setAttribute('aria-label', brand);
+    const brandLetters = Array.from(brand);
+    brandLetters.forEach((ch, i) => {
+      const letter = document.createElement('span');
+      letter.className = 'menu-logo-letter';
+      letter.setAttribute('aria-hidden', 'true');
+      letter.textContent = ch;
+      letter.style.setProperty('--i', String(i));
+      letter.style.setProperty('--t', String(brandLetters.length > 1 ? i / (brandLetters.length - 1) : 0));
+      logo.append(letter);
+    });
+    if (!wordmarkSweepPlayed) {
+      wordmarkSweepPlayed = true;
+      logo.dataset.sweep = 'true';
+    }
 
     const statsStrip = document.createElement('div');
     statsStrip.className = 'stats-strip';

@@ -900,6 +900,11 @@
   animation: none !important;       /* Hard locks text rendering to prevent alignment issues */
 }
 
+/* Keep the cream fill + block shadow during the menu wordmark sweep: hop only. */
+.skin-mushroom-kingdom .menu-logo[data-sweep] .menu-logo-letter {
+  animation-name: menu-logo-hop;
+}
+
 .skin-mushroom-kingdom .header-timer,
 .skin-mushroom-kingdom .win-time {
   display: inline-flex;

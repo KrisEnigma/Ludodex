@@ -1583,10 +1583,50 @@ body {
   font-weight: var(--title-font-weight, var(--wordmark-font-weight, 700));
   letter-spacing: var(--title-letter-spacing, var(--wordmark-letter-spacing, 0.18em));
   line-height: 1.05;
-  margin: 0 0 22px;
-  font-size: calc(var(--type-display-s) * var(--menu-logo-scale, var(--title-font-scale, var(--wordmark-font-scale, var(--display-font-scale, 1)))));
+  margin: 4px 0 26px;
+  white-space: nowrap;
+  /* Larger than the other display titles: the wordmark is the menu's hero. */
+  font-size: calc(clamp(34px, 11vw, 46px) * var(--menu-logo-scale, var(--title-font-scale, var(--wordmark-font-scale, var(--display-font-scale, 1)))));
   color: var(--title-glow);
   text-shadow: 0 0 calc(14px * var(--glow-strength, 1)) color-mix(in srgb, var(--title-glow) 30%, transparent);
+}
+
+.menu-logo-letter {
+  display: inline-block;
+  /* This letter's colour along the skin's ribbon gradient (--t: 0 → 1). */
+  --letter-trail: color-mix(
+    in srgb,
+    var(--path-grad-end, var(--path-color, var(--title-glow))) calc(var(--t, 0) * 100%),
+    var(--path-grad-start, var(--path-color, var(--title-glow)))
+  );
+}
+
+/* Cancel the trailing letter-spacing so the word is optically centred. */
+.menu-logo-letter:last-child {
+  margin-right: calc(-1 * var(--title-letter-spacing, var(--wordmark-letter-spacing, 0.18em)));
+}
+
+/* Launch sweep: letters light up left to right in the ribbon colours, as if a
+   swipe ran across the word, then settle. One pass per app launch. */
+.menu-logo[data-sweep] .menu-logo-letter {
+  animation: menu-logo-sweep 560ms cubic-bezier(0.3, 0, 0.3, 1) both;
+  animation-delay: calc(280ms + var(--i, 0) * 75ms);
+}
+
+@keyframes menu-logo-sweep {
+  35% {
+    color: var(--letter-trail);
+    transform: translateY(-4px);
+    text-shadow: 0 0 calc(18px * var(--glow-strength, 1)) color-mix(in srgb, var(--letter-trail) 70%, transparent);
+  }
+}
+
+@keyframes menu-logo-hop {
+  35% { transform: translateY(-4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-logo[data-sweep] .menu-logo-letter { animation: none; }
 }
 
 /* ──────────── Win — Play Again row ──────────── */

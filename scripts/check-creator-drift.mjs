@@ -107,6 +107,8 @@ const VIEW_ONLY = new Set([
   // Post-creator additions to GameView not shown in preview
   'endgame-crt-line', 'endgame-scanlines', 'path-segments-outro',
   'game-instructions',
+  // Per-letter wordmark spans (built in JS for the launch sweep)
+  'menu-logo-letter',
   // Transient find fly-in clones (body-level, mid-animation only)
   'fly-letter',
   // Visually hidden screen-reader live region (no visual — nothing to preview)
