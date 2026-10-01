@@ -2800,8 +2800,8 @@ body {
   flex-shrink: 0;
 }
 
-/* Preview area — skin class on this element + @scope in skins.css re-anchors
-   all derived CSS vars locally, no root mutation needed. */
+/* Preview area — `skin-scope skin-<id>` on this element re-derives every
+   skin variable locally (see the skin-scope note in skins.css). */
 .skin-detail-preview-scope {
   display: flex;
   flex-direction: column;

@@ -509,7 +509,7 @@ function buildSettingsMarkup() {
     return `
           <button type="button" class="settings-skin-card"${isActive ? ' data-active="true"' : ''}>
             <div class="settings-skin-left">
-              <div class="settings-skin-preview-scope skin-${skin.id}">
+              <div class="settings-skin-preview-scope skin-scope skin-${skin.id}">
                 <div class="settings-skin-tile settings-skin-tile--default"></div>
                 <div class="settings-skin-tile settings-skin-tile--selected"></div>
               </div>

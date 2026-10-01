@@ -109,6 +109,9 @@ const VIEW_ONLY = new Set([
   'game-instructions',
   // Last-7-days streak strip (data-driven; creator preview stays simpler)
   'streak-week', 'streak-day', 'streak-day-box', 'streak-day-label',
+  // Skin-scope marker on preview wrappers (creator's copy sits inside a ${…}
+  // template, which the extractor skips)
+  'skin-scope',
   // Per-letter wordmark spans (built in JS for the launch sweep)
   'menu-logo-letter',
   // Transient find fly-in clones (body-level, mid-animation only)

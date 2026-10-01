@@ -121,10 +121,10 @@ export class SettingsView {
     closeBtn.addEventListener('click', () => this.closeSkinDetailSheet());
     header.append(nameEl, closeBtn);
 
-    // Mini game preview — scoped skin class re-anchors all derived CSS vars
-    // locally via @scope in skins.css (no root mutation).
+    // Mini game preview — `skin-scope skin-<id>` re-derives every skin var
+    // locally (see skins.css), no root mutation.
     const previewScope = document.createElement('div');
-    previewScope.className = `skin-detail-preview-scope skin-${skin.id}`;
+    previewScope.className = `skin-detail-preview-scope skin-scope skin-${skin.id}`;
 
     // Skin name in the wordmark font
     const previewTitle = document.createElement('div');
@@ -723,7 +723,7 @@ export class SettingsView {
 
     // Mini tile preview — scoped to this skin's CSS variables
     const skinScope = document.createElement('div');
-    skinScope.className = `settings-skin-preview-scope skin-${skin.id}`;
+    skinScope.className = `settings-skin-preview-scope skin-scope skin-${skin.id}`;
 
     const tileDefault = document.createElement('span');
     tileDefault.className = 'settings-skin-tile settings-skin-tile--default';

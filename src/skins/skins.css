@@ -50,7 +50,15 @@
 
 /* ────────────────────────────────────────────────────────────────────────── */
 
-:root {
+/* ── Skin scope ──────────────────────────────────────────────────────────────
+   The whole baseline (tokens + derived vars + typography/shape) is declared on
+   :root AND on every .skin-scope element. A preview card with
+   `skin-scope skin-<id>` therefore re-derives every variable from its own
+   skin's tokens instead of inheriting values already computed for the skin
+   on <html>. Skin classes come later in this file at equal specificity
+   (0,1,0), so their own tokens/overrides win on the same element. */
+:root,
+.skin-scope {
   color-scheme: dark;
 
   /* ── Semantic design tokens (Void baseline) ─────────────────────────────────
@@ -177,56 +185,6 @@
   --path-glow:    7;
 }
 
-/* ── Cascade shield via @scope ──────────────────────────────────────────────
-   Re-anchors the 7 derived tile vars directly on each skin preview card so
-   they resolve via the card's own semantic tokens instead of inheriting
-   evaluated values from the active skin on <html>.
-
-   :scope = .settings-skin-preview-scope (the scoping root).
-   Direct application beats inheritance, so var(--tile) resolves to the
-   skin class's own --tile token rather than whatever is active on <html>.
-   Specificity 0,0,1 — individual skin classes (0,1,0) win when they need
-   to override these defaults. */
-@scope (.settings-skin-preview-scope) {
-  :scope {
-    --tile-bg:              var(--tile);
-    --tile-border:          var(--border);
-    --tile-letter:          var(--text);
-    --tile-selected-bg:     var(--tile-sel);
-    --tile-selected-border: var(--accent);
-    --tile-selected-letter: #ffffff;
-    --tile-selected-glow:   color-mix(in srgb, var(--accent) 40%, transparent);
-  }
-}
-
-/* ── Detail sheet preview: same cascade-shield pattern, extended ───────────
-   Re-anchors tile, path, and title-typography derived vars so the detail
-   sheet tile preview + trail swatch show the skin's own colors even when a
-   different skin is active on <html>. */
-@scope (.skin-detail-preview-scope) {
-  :scope {
-    /* Tile colors */
-    --tile-bg:              var(--tile);
-    --tile-border:          var(--border);
-    --tile-letter:          var(--text);
-    --tile-selected-bg:     var(--tile-sel);
-    --tile-selected-border: var(--accent);
-    --tile-selected-letter: #ffffff;
-    --tile-selected-glow:   color-mix(in srgb, var(--accent) 40%, transparent);
-    /* Chrome */
-    --button-border:        var(--border);
-    /* Title typography */
-    --title-color:          var(--text);
-    --title-glow:           var(--accent);
-    --title-font-family:    var(--wordmark-font-family);
-    --title-font-weight:    var(--wordmark-font-weight);
-    --title-letter-spacing: var(--wordmark-letter-spacing);
-    /* Path / trail */
-    --path-color:           var(--action);
-    --path-grad-start:      var(--path-start);
-  }
-}
-
 /* Void — the :root default palette made explicit so preview-card var()
    references resolve to Void's own tokens regardless of the active skin. */
 .skin-void {
@@ -244,7 +202,7 @@
   --tile-sel:  linear-gradient(145deg, #0d3a42, #071e26);
   --path-start: #8a7bff;
   --path-grad-end: #00d4e8;
-  /* Deviations from @scope defaults */
+  /* Deviations from the baseline */
   --tile-selected-letter: #9af0ff;
   --tile-selected-glow:   rgba(0, 212, 232, 0.4);
   /* Tile typography & shape */
