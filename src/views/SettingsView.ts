@@ -177,7 +177,10 @@ export class SettingsView {
       useBtn.className = 'button-primary';
       useBtn.textContent = t('settings.skin_use');
       useBtn.addEventListener('click', () => {
-          void this.setSkin(skin.id).then(() => this.closeSkinDetailSheet());
+          void this.setSkin(skin.id).then(() => {
+            this.closeSkinDetailSheet();
+            this.onSkinChosen();
+          });
         });
       actions.append(useBtn);
     } else {
@@ -264,6 +267,7 @@ export class SettingsView {
   private async commitPreviewAndClose(): Promise<void> {
     // Sheet closes as part of commitPreview().
     await this.commitPreview();
+    this.onSkinChosen();
   }
 
   private async attemptPurchase(skin: SkinMeta): Promise<void> {
@@ -284,6 +288,7 @@ export class SettingsView {
         setPaidStatus(owned.length > 0, owned);
         await this.commitPreview();
         this.status.textContent = '';
+        this.onSkinChosen();
       } else {
         this.status.textContent = t('settings.purchase_not_unlocked');
         await this.exitPreview();
@@ -298,7 +303,8 @@ export class SettingsView {
 
   constructor(
     private readonly onBack: () => void,
-    private readonly onLanguageChange: () => void
+    private readonly onLanguageChange: () => void,
+    private readonly onSkinChosen: () => void = onBack
   ) {
     this.element = document.createElement('div');
     this.element.className = 'view settings-view';

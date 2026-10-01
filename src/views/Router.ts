@@ -353,7 +353,10 @@ export class Router {
       case 'settings': {
         const view = new SettingsView(
           () => this.pop(),
-          () => this.replace('settings')
+          () => this.replace('settings'),
+          // A newly chosen skin lands on the menu, where the wordmark sweep
+          // shows it off straight away.
+          () => this.popToRoot()
         );
         this.mount(view);
         return;
