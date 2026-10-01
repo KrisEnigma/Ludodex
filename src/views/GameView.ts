@@ -35,6 +35,7 @@ import type { RoutePayloads } from './Router';
 import type { WinPayload } from './types';
 import { formatDuration } from '../utils/format';
 import { playCollapse, playFind, playGlitch, playSelect } from '../services/SoundService';
+import { renderRibbon } from '../components/ribbon';
 
 type PartEntry = {
   id: string;
@@ -904,31 +905,9 @@ export class GameView {
     const rect = this.gridWrap.getBoundingClientRect();
     this.overlay.setAttribute('viewBox', `0 0 ${rect.width} ${rect.height}`);
 
-    // Rebuild the ribbon as one <line> per segment between consecutive tiles.
-    // Each segment carries --seg-t (its position along the swipe, 0→1); CSS
-    // turns that into the progress-gradient color, width, caps and glow from
-    // the active skin's variables. JS only supplies geometry + the fraction —
-    // never a color — so the look stays fully skin-driven.
-    while (this.pathSegments.firstChild) {
-      this.pathSegments.removeChild(this.pathSegments.firstChild);
-    }
-
-    if (chain.length < 2) {
-      return;
-    }
-
-    const points = chain.map((tile) => this.getTileCenter(tile));
-    const segCount = points.length - 1;
-    for (let i = 0; i < segCount; i++) {
-      const seg = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      seg.setAttribute('class', 'path-seg');
-      seg.setAttribute('x1', String(points[i].x));
-      seg.setAttribute('y1', String(points[i].y));
-      seg.setAttribute('x2', String(points[i + 1].x));
-      seg.setAttribute('y2', String(points[i + 1].y));
-      seg.style.setProperty('--seg-t', segCount > 1 ? String(i / (segCount - 1)) : '0');
-      this.pathSegments.appendChild(seg);
-    }
+    // One gradient per segment so colour flows continuously along the swipe
+    // (see components/ribbon.ts). Skin-driven colours; JS supplies geometry.
+    renderRibbon(this.pathSegments, chain.map((tile) => this.getTileCenter(tile)));
   }
 
   /**

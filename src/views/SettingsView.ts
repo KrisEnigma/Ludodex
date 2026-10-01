@@ -25,6 +25,7 @@ import { addDragToDismiss } from '../components/sheetDrag';
 import { createIcon } from '../components/icons';
 import { trackOverlay } from '../components/overlayStack';
 import { isSoundEnabled, playFind, setSoundEnabled } from '../services/SoundService';
+import { renderRibbon } from '../components/ribbon';
 
 // Icon-flow trace logs: dev builds only (silent in production).
 const debugLog: (...args: unknown[]) => void = import.meta.env.DEV ? console.log.bind(console) : () => {};
@@ -165,7 +166,7 @@ export class SettingsView {
       }
     }
 
-    // SVG trail: one <line> per segment, --seg-t drives the gradient tint.
+    // SVG trail via the shared ribbon renderer (same look as in the game).
     // Uses skin-detail-preview-path (not path-overlay) to avoid the z-index:10
     // that would cover tile letters.
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -174,19 +175,10 @@ export class SettingsView {
     svg.setAttribute('aria-hidden', 'true');
     const segGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     segGroup.setAttribute('class', 'path-segments');
-    const numSeg = pathCells.length - 1;
-    for (let i = 0; i < numSeg; i++) {
-      const [r1, c1] = pathCells[i];
-      const [r2, c2] = pathCells[i + 1];
-      const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      ln.setAttribute('class', 'path-seg');
-      ln.setAttribute('x1', String(c1 * STRIDE + TILE_SIZE / 2));
-      ln.setAttribute('y1', String(r1 * STRIDE + TILE_SIZE / 2));
-      ln.setAttribute('x2', String(c2 * STRIDE + TILE_SIZE / 2));
-      ln.setAttribute('y2', String(r2 * STRIDE + TILE_SIZE / 2));
-      ln.style.setProperty('--seg-t', String(numSeg > 1 ? i / (numSeg - 1) : 0));
-      segGroup.append(ln);
-    }
+    renderRibbon(
+      segGroup,
+      pathCells.map(([r, c]) => ({ x: c * STRIDE + TILE_SIZE / 2, y: r * STRIDE + TILE_SIZE / 2 }))
+    );
     svg.append(segGroup);
     gridWrap.append(grid, svg);
     previewScope.append(previewTitle, gridWrap);

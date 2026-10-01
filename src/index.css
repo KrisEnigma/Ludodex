@@ -1228,6 +1228,16 @@ body {
   );
 }
 
+/* Per-segment gradient stops (components/ribbon.ts): same skin endpoints and
+   blend as the segment tint, evaluated at each stop's position along the swipe. */
+.path-stop {
+  stop-color: color-mix(
+    in srgb,
+    var(--path-grad-end, var(--path-color)) calc(var(--stop-t, 0) * 100%),
+    var(--path-grad-start, var(--path-color))
+  );
+}
+
 .path-segments-outro .path-seg {
   transform-origin: center;
   animation: path-ribbon-outro 180ms cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
