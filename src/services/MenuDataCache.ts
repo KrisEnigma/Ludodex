@@ -13,10 +13,12 @@
 import {
   getFirstSolveTimes,
   getProgressSnapshot,
+  getRecentDays,
   getSolvedIds,
   getSolvedRatings,
   getSolvedTimes,
   getStreakStatus,
+  type RecentDay,
   type StreakStatus
 } from './ProgressService';
 
@@ -27,6 +29,7 @@ export type MenuData = {
   firstSolveTimes: Record<string, number | undefined>;
   solvedRatings: Record<string, number | undefined>;
   streakStatus: StreakStatus;
+  recentDays: RecentDay[];
 };
 
 let cache: MenuData | null = null;
@@ -42,9 +45,10 @@ function fetchFresh(): Promise<MenuData> {
     getSolvedTimes(),
     getFirstSolveTimes(),
     getSolvedRatings(),
-    getStreakStatus()
-  ]).then(([snapshot, solvedIds, solvedTimes, firstSolveTimes, solvedRatings, streakStatus]) => {
-    const data: MenuData = { snapshot, solvedIds, solvedTimes, firstSolveTimes, solvedRatings, streakStatus };
+    getStreakStatus(),
+    getRecentDays()
+  ]).then(([snapshot, solvedIds, solvedTimes, firstSolveTimes, solvedRatings, streakStatus, recentDays]) => {
+    const data: MenuData = { snapshot, solvedIds, solvedTimes, firstSolveTimes, solvedRatings, streakStatus, recentDays };
     cache = data;
     inFlight = null;
     return data;

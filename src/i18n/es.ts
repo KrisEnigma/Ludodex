@@ -30,6 +30,7 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'menu.stat_solved': 'Resueltos',
   'menu.stat_best': 'Mejor',
   'menu.stat_empty': '--',
+  'menu.week_aria': 'Últimos 7 días: {n} resueltos',
 
   // Menu - daily card
   'menu.daily_tag_today': 'PUZZLE DE HOY #{n}',

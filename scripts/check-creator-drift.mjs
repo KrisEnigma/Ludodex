@@ -107,6 +107,8 @@ const VIEW_ONLY = new Set([
   // Post-creator additions to GameView not shown in preview
   'endgame-crt-line', 'endgame-scanlines', 'path-segments-outro',
   'game-instructions',
+  // Last-7-days streak strip (data-driven; creator preview stays simpler)
+  'streak-week', 'streak-day', 'streak-day-box', 'streak-day-label',
   // Per-letter wordmark spans (built in JS for the launch sweep)
   'menu-logo-letter',
   // Transient find fly-in clones (body-level, mid-animation only)

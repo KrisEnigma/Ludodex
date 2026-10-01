@@ -281,6 +281,64 @@ function getBestTimeSec(solvedTimes: SolvedTimesMap): number | null {
 const FIRST_SOLVE_TIMES_KEY = 'ludodex.first_solve_times';
 const FIRST_PLAY_LOST_KEY = 'ludodex.first_play_lost';
 const ATTEMPT_KEY = 'ludodex.attempt';
+/** Local day stamps (YYYY-MM-DD) on which that day's daily was solved. */
+const DAILY_SOLVE_DATES_KEY = 'ludodex.daily_solve_dates';
+const DAILY_SOLVE_DATES_MAX = 60;
+
+export type RecentDayState = 'solved' | 'frozen' | 'missed' | 'pending';
+export type RecentDay = { date: string; state: RecentDayState; isToday: boolean };
+
+async function getDailySolveDates(): Promise<string[]> {
+  const { value } = await Preferences.get({ key: DAILY_SOLVE_DATES_KEY });
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return Array.isArray(parsed) ? parsed.filter((d): d is string => typeof d === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * The last `count` local days ending today, for the menu's streak strip.
+ * "Solved" = the daily was solved on its own day. Dates are recorded from now
+ * on; days before that are backfilled from the live streak (lastPlayedDate
+ * back `currentStreak` days), so existing players see their current run.
+ * Freeze-covered days show as "frozen". Today unsolved is "pending".
+ */
+export async function getRecentDays(count = 7, now: Date = new Date()): Promise<RecentDay[]> {
+  const [recorded, frozenDates, streak] = await Promise.all([
+    getDailySolveDates(),
+    getFreezeUsedDates(),
+    getStreakStatus(now)
+  ]);
+  const solved = new Set(recorded);
+  const frozen = new Set(frozenDates);
+
+  if (streak.effective > 0) {
+    const last = await getLastPlayedDate();
+    if (last) {
+      const cursor = new Date(`${toDayStamp(last)}T00:00:00`);
+      for (let i = 0; i < streak.effective; i++) {
+        const stamp = formatDateKey(cursor);
+        if (!frozen.has(stamp)) solved.add(stamp);
+        cursor.setDate(cursor.getDate() - 1);
+      }
+    }
+  }
+
+  const today = formatDateKey(now);
+  const days: RecentDay[] = [];
+  for (let offset = count - 1; offset >= 0; offset--) {
+    const stamp = formatDateKey(new Date(now.getFullYear(), now.getMonth(), now.getDate() - offset));
+    const isToday = stamp === today;
+    const state: RecentDayState = solved.has(stamp)
+      ? 'solved'
+      : frozen.has(stamp) ? 'frozen' : isToday ? 'pending' : 'missed';
+    days.push({ date: stamp, state, isToday });
+  }
+  return days;
+}
 
 type AttemptMarker = { puzzleId: string; startedAt: string };
 
@@ -406,7 +464,7 @@ export async function getStreakStatus(now: Date = new Date()): Promise<StreakSta
 
 import { resetHintData } from './HintService';
 import { resetEarnedAchievements } from './AchievementService';
-import { consumeFreeze, getFreezeCount, recordWinForFreeze, resetFreezeData, resetFreezeProgress } from './FreezeService';
+import { consumeFreeze, getFreezeCount, getFreezeUsedDates, recordWinForFreeze, resetFreezeData, resetFreezeProgress } from './FreezeService';
 
 export async function recordPuzzleCompletion(
   puzzleId: string,
@@ -555,7 +613,11 @@ export async function recordPuzzleCompletion(
   ];
 
   if (options.isTodaysDaily && !streakSuspect) {
+    const solveDates = await getDailySolveDates();
+    const todayStamp = toDayStamp(nowIso);
+    if (!solveDates.includes(todayStamp)) solveDates.push(todayStamp);
     writes.push(
+      Preferences.set({ key: DAILY_SOLVE_DATES_KEY, value: JSON.stringify(solveDates.slice(-DAILY_SOLVE_DATES_MAX)) }),
       Preferences.set({ key: LAST_PLAYED_DATE_KEY, value: nowIso }),
       Preferences.set({ key: CURRENT_STREAK_KEY, value: String(currentStreak) }),
       Preferences.set({ key: BEST_STREAK_KEY, value: String(bestStreak) })
@@ -590,6 +652,7 @@ export async function resetAllProgress(): Promise<void> {
   await Preferences.remove({ key: FIRST_SOLVE_TIMES_KEY });
   await Preferences.remove({ key: FIRST_PLAY_LOST_KEY });
   await Preferences.remove({ key: ATTEMPT_KEY });
+  await Preferences.remove({ key: DAILY_SOLVE_DATES_KEY });
   // Note: install date is intentionally NOT reset — it reflects when the
   // app was first installed and should survive a progress wipe.
   await resetHintData();

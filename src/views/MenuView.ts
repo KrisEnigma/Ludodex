@@ -1,8 +1,8 @@
 import { Preferences } from '@capacitor/preferences';
 import { createIcon } from '../components/icons';
 import { ensureBundledPuzzlesLoaded, getDailyPuzzle, getDayNumberSinceLaunch, getPuzzleForDay } from '../game/PuzzleLoader';
-import { t } from '../i18n';
-import { normalizeStarRating } from '../services/ProgressService';
+import { getLang, t } from '../i18n';
+import { normalizeStarRating, type RecentDay } from '../services/ProgressService';
 import { getMenuData } from '../services/MenuDataCache';
 import { t as tp } from '../utils/i18n';
 import type { RoutePayloads } from './Router';
@@ -146,6 +146,12 @@ export class MenuView {
 
     statsStrip.append(streakCard, solvedCard, bestCard);
 
+    // Last-7-days strip under the stats (filled in once data loads).
+    const streakWeek = document.createElement('div');
+    streakWeek.className = 'streak-week';
+    streakWeek.setAttribute('role', 'img');
+    streakWeek.dataset.loading = 'true';
+
     const dailyCard = document.createElement('div');
     dailyCard.className = 'daily-card';
 
@@ -260,7 +266,7 @@ export class MenuView {
       // then fires a background refresh. If fresh data arrives while we're still
       // mounted, applyData() is called again to update the UI.
       const applyData = async (): Promise<void> => {
-        const [{ snapshot, solvedIds, solvedTimes, firstSolveTimes, solvedRatings, streakStatus }, dismissedPref] =
+        const [{ snapshot, solvedIds, solvedTimes, firstSolveTimes, solvedRatings, streakStatus, recentDays }, dismissedPref] =
           await Promise.all([
             getMenuData(),
             Preferences.get({ key: STREAK_BANNER_DISMISSED_KEY })
@@ -282,6 +288,7 @@ export class MenuView {
           streakCard.removeAttribute('data-fire');
           streakFire.hidden = true;
         }
+        this.renderStreakWeek(streakWeek, recentDays);
         solvedValue.textContent = String(snapshot.solvedCount);
         bestValue.textContent = snapshot.bestTimeSec === null
           ? t('menu.stat_empty')
@@ -343,7 +350,7 @@ export class MenuView {
       }
     })();
 
-    this.element.append(topBar, logo, statsStrip, dailySection, footerActions);
+    this.element.append(topBar, logo, statsStrip, streakWeek, dailySection, footerActions);
   }
 
   private buildYesterdayCard(
@@ -399,6 +406,32 @@ export class MenuView {
     content.append(tag, title, status);
     card.append(content, chevron);
     return card;
+  }
+
+  private renderStreakWeek(container: HTMLElement, days: RecentDay[]): void {
+    delete container.dataset.loading;
+    container.replaceChildren();
+    const weekday = new Intl.DateTimeFormat(getLang(), { weekday: 'narrow' });
+    for (const day of days) {
+      const cell = document.createElement('span');
+      cell.className = 'streak-day';
+      cell.dataset.state = day.state;
+      if (day.isToday) cell.dataset.today = 'true';
+
+      const box = document.createElement('span');
+      box.className = 'streak-day-box';
+      if (day.state === 'solved') box.append(createIcon('check'));
+      if (day.state === 'frozen') box.append(createIcon('snowflake'));
+
+      const label = document.createElement('span');
+      label.className = 'streak-day-label';
+      label.textContent = weekday.format(new Date(`${day.date}T12:00:00`));
+
+      cell.append(box, label);
+      container.append(cell);
+    }
+    const solvedCount = days.filter((d) => d.state === 'solved').length;
+    container.setAttribute('aria-label', t('menu.week_aria', { n: solvedCount }));
   }
 
   private buildStreakLossBanner(brokenAt: number): HTMLElement {

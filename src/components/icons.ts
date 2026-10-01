@@ -1,4 +1,4 @@
-type IconName = 'trophy' | 'settings' | 'lock' | 'chevron-right' | 'dismiss' | 'flame' | 'bulb';
+type IconName = 'trophy' | 'settings' | 'lock' | 'chevron-right' | 'dismiss' | 'flame' | 'bulb' | 'check' | 'snowflake';
 
 type IconShape =
   | { type: 'path'; d: string; fillRule?: 'evenodd' | 'nonzero' }
@@ -42,6 +42,22 @@ const ICONS: Record<IconName, IconEntry> = {
   dismiss: { shapes: [
     { type: 'line', x1: 6, y1: 6, x2: 18, y2: 18 },
     { type: 'line', x1: 18, y1: 6, x2: 6, y2: 18 }
+  ]},
+  check: { shapes: [
+    { type: 'polyline', points: '5 12.5 10 17.5 19 7' }
+  ]},
+  /** Streak-freeze day marker: six arms, each with an outward V branch
+   *  (reads as a snowflake, not an asterisk, at small sizes). */
+  snowflake: { shapes: [
+    { type: 'line', x1: 12, y1: 3, x2: 12, y2: 21 },
+    { type: 'line', x1: 4.2, y1: 7.5, x2: 19.8, y2: 16.5 },
+    { type: 'line', x1: 4.2, y1: 16.5, x2: 19.8, y2: 7.5 },
+    { type: 'polyline', points: '9.6 4.6 12 7 14.4 4.6' },
+    { type: 'polyline', points: '4.4 10.4 7.7 9.5 6.8 6.2' },
+    { type: 'polyline', points: '6.8 17.8 7.7 14.5 4.4 13.6' },
+    { type: 'polyline', points: '14.4 19.4 12 17 9.6 19.4' },
+    { type: 'polyline', points: '19.6 13.6 16.3 14.5 17.2 17.8' },
+    { type: 'polyline', points: '17.2 6.2 16.3 9.5 19.6 10.4' }
   ]},
   /**
    * Filled flame with inner cutout (fill-rule: evenodd).

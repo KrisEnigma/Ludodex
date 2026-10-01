@@ -29,6 +29,7 @@ export const strings = {
   'menu.stat_solved': 'Solved',
   'menu.stat_best': 'Best',
   'menu.stat_empty': '--',
+  'menu.week_aria': 'Last 7 days: {n} solved',
 
   // Menu - daily card
   'menu.daily_tag_today': "TODAY'S PUZZLE #{n}",

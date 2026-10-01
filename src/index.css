@@ -1938,6 +1938,93 @@ body {
   align-items: center;
 }
 
+/* ── Last-7-days streak strip (menu, under the stats) ── */
+.streak-week {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: -8px 0 22px;
+  min-height: 48px; /* reserve space while loading: no layout shift */
+}
+
+.streak-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.streak-day-box {
+  width: 30px;
+  height: 30px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: var(--hint-empty-bg);
+  border: 1px solid var(--hint-empty-border);
+}
+
+.streak-day-box svg {
+  width: 17px;
+  height: 17px;
+  stroke-width: 2.6;
+}
+
+.streak-day[data-state="solved"] .streak-day-box {
+  background: var(--hint-solved-bg);
+  border-color: var(--hint-solved-border);
+  color: var(--hint-solved-letter);
+}
+
+.streak-day[data-state="frozen"] .streak-day-box {
+  background: color-mix(in srgb, var(--title-glow) 10%, var(--hint-empty-bg));
+  border: 1px dashed color-mix(in srgb, var(--title-glow) 60%, transparent);
+  color: var(--title-glow);
+}
+
+/* Finer, larger strokes so the branches stay legible at this size. */
+.streak-day[data-state="frozen"] .streak-day-box svg {
+  width: 21px;
+  height: 21px;
+  stroke-width: 1.7;
+}
+
+.streak-day[data-state="missed"] .streak-day-box {
+  opacity: 0.7;
+}
+
+/* Today, not yet solved: accent outline that breathes gently. */
+.streak-day[data-state="pending"] .streak-day-box {
+  border-color: var(--title-glow);
+  animation: streak-today-breathe 2.4s ease-in-out infinite;
+}
+
+@keyframes streak-today-breathe {
+  50% {
+    box-shadow: 0 0 calc(10px * var(--glow-strength, 1)) color-mix(in srgb, var(--title-glow) 45%, transparent);
+  }
+}
+
+.streak-day-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  color: var(--chrome-text);
+  opacity: 0.85;
+}
+
+.streak-day[data-today] .streak-day-label {
+  color: var(--title-glow);
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .streak-day[data-state="pending"] .streak-day-box { animation: none; }
+}
+
 /* Stats skeleton — shown while async data is in flight */
 .stat-card[data-loading="true"] .stat-value,
 .stat-card[data-loading="true"] .stat-label {
