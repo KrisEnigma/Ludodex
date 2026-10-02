@@ -12,6 +12,7 @@
 		50379B232058CBB4000EE86E /* capacitor.config.json in Resources */ = {isa = PBXBuildFile; fileRef = 50379B222058CBB4000EE86E /* capacitor.config.json */; };
 		504EC3081FED79650016851F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 504EC3071FED79650016851F /* AppDelegate.swift */; };
 		504EC3081FED79650016852B /* AlternateIconPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 504EC3081FED79650016852A /* AlternateIconPlugin.swift */; };
+		504EC3081FED79650016853B /* CloudSavePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 504EC3081FED79650016853A /* CloudSavePlugin.swift */; };
 		504EC3081FED796500168602 /* icon-neon-horizon@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3081FED796500168601 /* icon-neon-horizon@2x.png */; };
 		504EC3081FED796500168604 /* icon-neon-horizon@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3081FED796500168603 /* icon-neon-horizon@3x.png */; };
 		504EC3081FED796500168606 /* icon-dot-matrix@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3081FED796500168605 /* icon-dot-matrix@2x.png */; };
@@ -31,6 +32,7 @@
 		504EC3041FED79650016851F /* App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = App.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		504EC3071FED79650016851F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		504EC3081FED79650016852A /* AlternateIconPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlternateIconPlugin.swift; sourceTree = "<group>"; };
+		504EC3081FED79650016853A /* CloudSavePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSavePlugin.swift; sourceTree = "<group>"; };
 		504EC3081FED796500168601 /* icon-neon-horizon@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "icon-neon-horizon@2x.png"; path = "AlternateIcons/icon-neon-horizon@2x.png"; sourceTree = "<group>"; };
 		504EC3081FED796500168603 /* icon-neon-horizon@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "icon-neon-horizon@3x.png"; path = "AlternateIcons/icon-neon-horizon@3x.png"; sourceTree = "<group>"; };
 		504EC3081FED796500168605 /* icon-dot-matrix@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "icon-dot-matrix@2x.png"; path = "AlternateIcons/icon-dot-matrix@2x.png"; sourceTree = "<group>"; };
@@ -82,6 +84,7 @@
 				504EC3071FED79650016851F /* AppDelegate.swift */,
 				504EC3081FED796500168701 /* MyViewController.swift */,
 				504EC3081FED79650016852A /* AlternateIconPlugin.swift */,
+				504EC3081FED79650016853A /* CloudSavePlugin.swift */,
 				504EC3081FED796500168601 /* icon-neon-horizon@2x.png */,
 				504EC3081FED796500168603 /* icon-neon-horizon@3x.png */,
 				504EC3081FED796500168605 /* icon-dot-matrix@2x.png */,
@@ -189,6 +192,7 @@
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				504EC3081FED796500168702 /* MyViewController.swift in Sources */,
 				504EC3081FED79650016852B /* AlternateIconPlugin.swift in Sources */,
+				504EC3081FED79650016853B /* CloudSavePlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

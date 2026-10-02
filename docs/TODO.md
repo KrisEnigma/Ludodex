@@ -70,11 +70,16 @@ Team ID, cert fingerprints) are fine to commit.
     Domains** on the App ID (`app.ludodex.game`) in the developer portal.
   - Android: release signing SHA-256 (Play Console → App integrity) →
     `public/.well-known/assetlinks.json`.
+- [ ] **Cloud save (iOS)**: enable **iCloud** on the App ID with
+      **Key-value storage** (developer portal, and in Xcode → Signing &
+      Capabilities → + iCloud → tick "Key-value storage"). The entitlement is
+      already in `App.entitlements`.
 - [ ] **`public/app-ads.txt`** with the line AdMob gives you; set
       `https://ludodex.krisenigma.com` as the developer website in both stores.
 - [ ] **Privacy policy** (`public/privacy.html`): it covers AdMob
       interstitials, Sentry, PostHog, notifications. Add rewarded ads, the
-      consent form / "Ad privacy choices", and tracking (ATT).
+      consent form / "Ad privacy choices", tracking (ATT), and that the save
+      is backed up to the player's own iCloud / Google backup.
 - [ ] **iOS `PrivacyInfo.xcprivacy`** for the app (UserDefaults via
       Preferences is a "required reason" API; Google's and RevenueCat's SDKs
       ship their own manifests).
@@ -116,6 +121,12 @@ Team ID, cert fingerprints) are fine to commit.
       `/privacy` opens in the browser. Also after choosing an alternate app
       icon on Android (it disables `MainActivity`, which holds the link filter).
 - [ ] **Share** attaches the PNG card (and still sends text if it can't).
+- [ ] **Cloud save**: first build compiles `CloudSavePlugin.swift`. Solve a
+      puzzle, buy something, background the app; delete and reinstall (or a
+      second iPhone on the same Apple ID) → progress, streak, skin and hints
+      come back (may take a few seconds; the app reloads once). "Reset stats"
+      stays reset after a reinstall. Android: `adb shell bmgr backupnow
+      app.ludodex.game`, reinstall, check the save is restored.
 - [ ] Notifications fire and cancel.
 - [ ] Android hardware Back closes sheets/dialogs first.
 - [ ] Terminal & Phosphor stay locked until earned.
@@ -151,9 +162,8 @@ Live reload (when a device can connect):
       licence) for Lord of Terror's wordmark, then make it purchasable again
       (`productId` + `bundleProductId` in `src/skins/registry.ts`). Rip & Tear's
       DooM/AmazDooM fan fonts stay an accepted risk (no licensable original).
-- [ ] Cloud save so progress and purchased hints survive a reinstall
-      (iCloud key-value store on iOS; Android Auto Backup is on, add backup
-      rules and test restore).
+- [ ] Optional: live sync between devices (merge progress) on top of the
+      cloud backup.
 - [ ] Per-skin sound presets, find / endgame FX variants.
 
 ---
@@ -164,6 +174,9 @@ Live reload (when a device can connect):
   dev "Native player" mode fakes ads.
 - IAP: earn-or-buy skins, store prices, pending purchases, consumable ledger,
   cancel detection; RevenueCat 13.7 + Sentry Capacitor 4.4 (SPM).
+- Cloud save (restore on reinstall / new phone): iOS iCloud key-value store
+  via `CloudSavePlugin.swift` + `CloudSaveService.ts`; Android Auto Backup
+  scoped to the Preferences file.
 - Native share sends the PNG card; deep-link plumbing (scoped Android filter,
   iOS entitlements, AASA served as JSON).
 - Keyboard play (arrows + Space) and accessibility labels; hint UX and

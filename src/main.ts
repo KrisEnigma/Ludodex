@@ -12,6 +12,7 @@ import { applySkin, normalizeSkinId, onSkinChanged, SKINS } from './skins/regist
 import type { SkinId } from './skins/registry';
 import { initIAP, isSkinAccessibleSync } from './services/IAPService';
 import { initAds } from './services/AdService';
+import { initCloudSave } from './services/CloudSaveService';
 import { bootstrapProgress, getStoredSkinId, reconcileAbandonedAttempt } from './services/ProgressService';
 import { retroactivelyUnlockEarnedAchievements } from './services/AchievementService';
 import { initAnalytics, track, updateLocale } from './services/AnalyticsService';
@@ -36,6 +37,9 @@ async function boot(root: HTMLDivElement): Promise<void> {
   initAnalytics();
 
   // ── Critical path: everything needed before first render ──────────────────
+  // Cloud save first: on a fresh iOS install it restores progress, language
+  // and skin before anything reads them (no-op elsewhere; ≤1.5 s worst case).
+  await initCloudSave();
   await initI18n();
   i18nReady = true;
   updateLocale();

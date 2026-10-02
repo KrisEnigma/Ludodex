@@ -10,6 +10,7 @@ import {
 } from '../skins/registry';
 import { getPriceLabels, isSkinOwned, onPurchasesUpdated, purchase, restorePurchases, getVisibleSkins } from '../services/IAPService';
 import { isAdPrivacyOptionsRequired, showAdPrivacyOptions } from '../services/AdService';
+import { pushCloudSave } from '../services/CloudSaveService';
 import { track, updateLocale, setPaidStatus } from '../services/AnalyticsService';
 import { getActiveSkinId, getProgressSnapshot, getStreakStatus, resetAllProgress, setActiveSkinId } from '../services/ProgressService';
 import { getMonetizationContext } from '../services/MonetizationContext';
@@ -988,6 +989,8 @@ export class SettingsView {
         await resetAllProgress({ keepHints: true });
         // An earned skin that just re-locked can't stay active.
         if (!(await isSkinOwned(this.activeSkinId))) await setActiveSkinId('void');
+        // Make the reset stick: otherwise the cloud copy would restore it.
+        await pushCloudSave({ force: true });
         window.location.reload();
       })();
     });

@@ -8,5 +8,6 @@ public class MyViewController: CAPBridgeViewController {
         NSLog("MyViewController: capacitorDidLoad called")
         bridge?.registerPluginType(AlternateIconPlugin.self)
         NSLog("MyViewController: AlternateIconPlugin registered")
+        bridge?.registerPluginType(CloudSavePlugin.self)
     }
 }

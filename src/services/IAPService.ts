@@ -4,6 +4,7 @@ import { Purchases, type CustomerInfo } from '@revenuecat/purchases-capacitor';
 import { track } from './AnalyticsService';
 import { getMonetizationContext } from './MonetizationContext';
 import { grantHints } from './HintService';
+import { scheduleCloudSave } from './CloudSaveService';
 import { isEarned } from './AchievementService';
 import { SKINS, type SkinId, type SkinMeta } from '../skins/registry';
 import { isWebAvailable, WEB_SKIN_IDS, PROMO_SKIN_ID } from '../skins/webConfig';
@@ -206,6 +207,7 @@ async function runCredit(info: CustomerInfo): Promise<number> {
     // duplicating one on every launch.
     await Preferences.set({ key: CREDITED_TX_KEY, value: JSON.stringify([...seen]) });
     await grantHints(granted);
+    scheduleCloudSave();
     track('iap_consumable_credited', { hints: granted });
   }
   return granted;
@@ -335,6 +337,7 @@ export async function purchase(
     // Consumables (hint packs, the Starter Pack's hints) are granted here via
     // the ledger, never by callers, so a purchase is credited exactly once.
     await creditConsumables(customerInfo);
+    scheduleCloudSave();
     track('iap_purchased', { product_id: productId, source });
     return { status: 'success', productId };
   } catch (err: unknown) {

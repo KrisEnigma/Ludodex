@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+: Google cloud backup and device-to-device transfer.
+     Only the game save (Capacitor Preferences → shared prefs
+     "CapacitorStorage") is backed up; it's restored automatically when the
+     app is reinstalled or set up on a new phone. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="sharedpref" path="CapacitorStorage.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="sharedpref" path="CapacitorStorage.xml" />
+    </device-transfer>
+</data-extraction-rules>

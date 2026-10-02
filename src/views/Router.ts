@@ -5,6 +5,7 @@ import type { Puzzle } from '../types/puzzle';
 import { track } from '../services/AnalyticsService';
 import { trackRoute } from '../services/SentryService';
 import { afterFullScreenAd, fireInterstitialIfPending, initAds } from '../services/AdService';
+import { scheduleCloudSave } from '../services/CloudSaveService';
 import { pathForRoute } from '../services/DeepLinking';
 import { showConfirmModal } from '../components/Modal';
 import { closeAllOverlays, closeTopOverlay, installOverlayKeyboard } from '../components/overlayStack';
@@ -347,6 +348,7 @@ export class Router {
         return;
       }
       case 'win': {
+        scheduleCloudSave(); // a solve is the moment worth backing up
         const view = new WinView(current.payload, this, () => {
           this.pop();
         });
