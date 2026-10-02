@@ -96,7 +96,7 @@ Deferred items from the Sep 2026 audit / fix pass. Details and rationale live in
       `assetlinks.json` (Play Console → App integrity), enable Associated Domains
       for the App ID, deploy, then test on device.
 - [ ] Share on native sends the PNG card (Filesystem cache → Share `files`).
-      Needs `pnpm add @capacitor/filesystem` + `npx cap sync`; check on device.
+      `@capacitor/filesystem` installed; run `npx cap sync`, then check on device.
 - [ ] Terminal & Phosphor locked on a real native build.
 - [ ] App icon change + its status/error messages.
 - [ ] iOS: iPhone stays portrait when rotated; iPad still rotates (Info.plist).
