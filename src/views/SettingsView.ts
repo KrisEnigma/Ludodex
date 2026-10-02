@@ -8,7 +8,7 @@ import {
   type SkinId,
   type SkinMeta
 } from '../skins/registry';
-import { isSkinOwned, purchase, restorePurchases, getVisibleSkins } from '../services/IAPService';
+import { getPriceLabels, isSkinOwned, onPurchasesUpdated, purchase, restorePurchases, getVisibleSkins } from '../services/IAPService';
 import { isAdPrivacyOptionsRequired, showAdPrivacyOptions } from '../services/AdService';
 import { track, updateLocale, setPaidStatus } from '../services/AnalyticsService';
 import { getActiveSkinId, getProgressSnapshot, getStreakStatus, resetAllProgress, setActiveSkinId } from '../services/ProgressService';
@@ -70,6 +70,8 @@ export class SettingsView {
   /** Picker groups, by how you get the skin: yours / earn (achievement) / buy (IAP). */
   private readonly skinGroups = new Map<SkinGroup, { wrap: HTMLElement; cards: HTMLElement }>();
   private unlockProgress = new Map<string, { n: number; total: number; kind: 'solved' | 'streak' | 'pristine' }>();
+  /** Store price labels by product id (native). */
+  private priceLabels = new Map<string, string>();
   private readonly unlockedBySkin = new Map<SkinId, boolean>();
   private activeSkinId: SkinId = getCurrentSkinId(); // DOM read — correct since main.ts applies skin before routing
   // From the monetization context (not Capacitor directly) so the Dev
@@ -196,7 +198,8 @@ export class SettingsView {
         earnRow.textContent = t('settings.skin_earn_hint', { hint: hintText });
         actions.append(earnRow);
       }
-      if (this.isNative && skin.productId && !skin.unlockHint) {
+      // Earnable skins can also be bought outright (earn it, or unlock now).
+      if (this.isNative && skin.productId) {
         const buyBtn = document.createElement('button');
         buyBtn.type = 'button';
         buyBtn.className = 'button-primary';
@@ -278,7 +281,17 @@ export class SettingsView {
     this.status.textContent = t('settings.purchase_in_progress', { name: this.getSkinName(skin.id) });
 
     try {
-      await purchase(skin.productId, 'skin_preview');
+      const result = await purchase(skin.productId, 'skin_preview');
+      if (result.status === 'pending') {
+        this.status.textContent = t('settings.purchase_pending');
+        await this.exitPreview();
+        return;
+      }
+      if (result.status === 'cancelled') {
+        this.status.textContent = '';
+        await this.exitPreview();
+        return;
+      }
       await this.refreshEntitlements();
 
       if (this.unlockedBySkin.get(skin.id)) {
@@ -352,6 +365,17 @@ export class SettingsView {
       this.refreshIconButtons();
     }
     await this.refreshEntitlements();
+    if (this.isNative) {
+      this.priceLabels = await getPriceLabels();
+      // Ask to Buy approved / pending payment cleared while Settings is open.
+      const off = onPurchasesUpdated(() => {
+        if (!this.element.isConnected) {
+          off();
+          return;
+        }
+        void this.refreshEntitlements().then(() => this.refreshSkinCards());
+      });
+    }
     this.unlockProgress = await loadUnlockProgress();
     // If the stored skin is no longer accessible (e.g. promo rotated out), revert and persist.
     if (!this.unlockedBySkin.get(this.activeSkinId)) {
@@ -927,9 +951,10 @@ export class SettingsView {
     }
   }
 
+  /** Local-currency store price (USD fallback until the store answers). */
   private getPriceLabel(skinId: SkinId): string {
-    if (skinId === 'void') return '';
-    return '$0.99';
+    const productId = SKINS.find((s) => s.id === skinId)?.productId;
+    return productId ? this.priceLabels.get(productId) ?? '' : '';
   }
 
   private getSkinName(skinId: SkinId): string {

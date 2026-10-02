@@ -82,6 +82,23 @@ Deferred items from the Sep 2026 audit / fix pass. Details and rationale live in
       Yours / Earn / Buy with unlock progress.
 - [ ] Optional later: per-skin sound presets (§2.4), find / endgame FX variants.
 
+## IAP (code done Oct 1 2026, §3.3)
+
+- [x] Paid skins: "earn it, or unlock now" (Buy shows alongside the earn
+      goal); store prices in local currency (USD fallback). Lord of Terror is
+      earn-only and out of the bundle until its font is licensed.
+- [x] Consumables credited once per store transaction (ledger in Preferences);
+      Ask to Buy / pending payments handled (`pending` status, credited when
+      they clear via the customer-info listener). Fixed cancel detection
+      (RevenueCat code "1", was never matched).
+- [ ] Kris: `pnpm install` (RevenueCat 13.7, Sentry Capacitor 4.4 + browser
+      10.69 — both ship Package.swift, so they link under Capacitor 8 SPM),
+      `npx cap sync`, check `ios/App/CapApp-SPM/Package.swift` lists them.
+- [ ] Device: buy a skin, a hint pack, the Starter Pack (30 hints exactly once),
+      Ask to Buy in sandbox, restore.
+- Purchased hints stay local: a reinstall doesn't bring them back (by design
+      for now; the ledger baselines on first run so old purchases aren't re-granted).
+
 ## Device-only checks (need an unmanaged machine)
 
 - [ ] Android hardware Back closes sheets/dialogs first (Dev overlay ◀ Back

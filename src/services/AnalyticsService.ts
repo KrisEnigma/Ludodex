@@ -137,6 +137,8 @@ export type AnalyticsEvent =
   | 'iap_restore_tapped'
   | 'iap_offered'                 // product surfaced to user (store opened / modal shown)
   | 'iap_purchased'               // purchase succeeded (new, richer event)
+  | 'iap_purchase_pending'        // Ask to Buy / deferred payment
+  | 'iap_consumable_credited'     // hints granted from the transaction ledger
   | 'iap_declined'                // user dismissed without buying
   | 'iap_failed'                  // purchase attempt failed (new, richer event)
 

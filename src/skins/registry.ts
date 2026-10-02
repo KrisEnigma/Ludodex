@@ -121,8 +121,8 @@ export const SKINS: SkinMeta[] = [
   {
     id: 'lord-of-terror',
     name: 'Lord of Terror',
-    productId: 'skin_lord_of_terror',
-    bundleProductId: 'skin_bundle',
+    // Earn-only until the wordmark font is licensed (docs/TODO.md).
+    productId: null,
     unlockedByAchievement: 'streak_7',
     unlockHint: '7-day streak'
   },

@@ -59,9 +59,9 @@
     "@fontsource/unbounded": "^5.2.8",
     "@fontsource/unifrakturmaguntia": "^5.2.8",
     "@fontsource/vt323": "^5.2.7",
-    "@revenuecat/purchases-capacitor": "9.2.2",
-    "@sentry/browser": "8.55.0",
-    "@sentry/capacitor": "^1.5.0",
+    "@revenuecat/purchases-capacitor": "^13.7.0",
+    "@sentry/browser": "10.69.0",
+    "@sentry/capacitor": "^4.4.0",
     "posthog-js": "^1.379.2"
   },
   "devDependencies": {

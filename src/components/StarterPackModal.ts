@@ -14,7 +14,7 @@
  *
  * ## Atomic grant on purchase
  *  - Calls purchase(PRODUCT_IDS.STARTER_PACK, 'starter_pack').
- *  - On success: immediately grants 30 hints via grantHints().
+ *  - Hints (30) are credited by IAPService's consumable ledger on success.
  *    The remove_ads entitlement and Neon Horizon skin are recorded by RevenueCat
  *    and reflected the next time isOwned() is called (SettingsView, AdService).
  */
@@ -26,7 +26,6 @@ import {
   getProductInfo,
   PRODUCT_IDS,
 } from '../services/IAPService';
-import { grantHints } from '../services/HintService';
 import { getStarterPackMsRemaining } from '../services/StarterPackService';
 import { trackOverlay } from './overlayStack';
 
@@ -135,11 +134,11 @@ export async function showStarterPackModal(): Promise<void> {
 
         const result = await purchase(PRODUCT_IDS.STARTER_PACK, 'starter_pack');
 
-        if (result.status === 'success') {
-          // Atomic hint grant — RevenueCat handles the entitlement for
-          // remove_ads and skin_neon_horizon; hints live in local storage.
-          await grantHints(30);
-          track('starter_pack_purchased', {});
+        if (result.status === 'success' || result.status === 'pending') {
+          // The 30 hints are credited by IAPService's consumable ledger (now,
+          // or when a pending payment clears); RevenueCat holds remove_ads and
+          // the skin entitlement.
+          if (result.status === 'success') track('starter_pack_purchased', {});
           close();
         } else if (result.status === 'cancelled') {
           track('starter_pack_declined', {});

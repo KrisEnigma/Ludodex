@@ -241,6 +241,9 @@ export async function showHintStore(
             balanceCount.textContent = String(newBalance);
             onHintsGranted?.(granted);
             close();
+          } else if (result.status === 'pending') {
+            // Ask to Buy / deferred payment: hints arrive when it clears.
+            buyBtn.textContent = t('hint_store.pending');
           } else {
             buyBtn.disabled = false;
           }

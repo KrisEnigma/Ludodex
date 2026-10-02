@@ -1,5 +1,6 @@
 import { Capacitor } from '@capacitor/core';
-import { Purchases } from '@revenuecat/purchases-capacitor';
+import { Preferences } from '@capacitor/preferences';
+import { Purchases, type CustomerInfo } from '@revenuecat/purchases-capacitor';
 import { track } from './AnalyticsService';
 import { getMonetizationContext } from './MonetizationContext';
 import { grantHints } from './HintService';
@@ -19,7 +20,8 @@ if (import.meta.env.DEV) {
   import('../dev/DevOverlay').then(m => m.initDevOverlay());
 }
 
-export type PurchaseStatus = 'success' | 'cancelled' | 'failed' | 'unavailable';
+/** 'pending' = Ask to Buy / deferred payment: it completes (or not) later. */
+export type PurchaseStatus = 'success' | 'cancelled' | 'pending' | 'failed' | 'unavailable';
 
 export type PurchaseResult = {
   status: PurchaseStatus;
@@ -65,6 +67,7 @@ export const PRODUCT_IDS = {
   SKIN_NEON_HORIZON:  'skin_neon_horizon',
   SKIN_GAMEBOY:       'skin_gameboy',
   SKIN_RING_OF_LIGHT: 'skin_ring_of_light',
+  // Not sold for now (non-commercial font, see docs/TODO.md); earn-only.
   SKIN_LORD_OF_TERROR:'skin_lord_of_terror',
   SKIN_MUSHROOM_KINGDOM: 'skin_mushroom_kingdom',
   // Multi-skin bundle (referenced by skins' bundleProductId). Owning it unlocks
@@ -140,6 +143,72 @@ export async function initIAP(): Promise<void> {
     return;
   }
   await Purchases.configure({ apiKey });
+
+  // Purchases can land outside purchase(): Ask to Buy approved later, a
+  // pending Android payment clearing, a crash between charge and grant.
+  // Every customer-info update re-checks the consumable ledger and tells the
+  // UI so newly owned skins unlock.
+  await Purchases.addCustomerInfoUpdateListener((info) => {
+    void creditConsumables(info).then(() => purchaseListeners.forEach((fn) => fn()));
+  });
+  try {
+    const { customerInfo } = await Purchases.getCustomerInfo();
+    await creditConsumables(customerInfo);
+  } catch (err) {
+    console.warn('[IAPService] initial customer info failed', err);
+  }
+}
+
+// ── Consumable ledger ─────────────────────────────────────────────────────────
+// Hints are local, so each consumable transaction is credited exactly once,
+// keyed by its store transaction id. The first run only records a baseline
+// (transactions from before this ledger existed are not re-granted).
+
+const CREDITED_TX_KEY = 'ludodex.iap.credited_tx';
+const purchaseListeners = new Set<() => void>();
+
+/** Called when purchases change outside the normal flow (e.g. Ask to Buy approved). */
+export function onPurchasesUpdated(fn: () => void): () => void {
+  purchaseListeners.add(fn);
+  return () => purchaseListeners.delete(fn);
+}
+
+let crediting: Promise<number> = Promise.resolve(0);
+
+/** Grant hints for consumable transactions not credited yet. Returns hints granted. */
+function creditConsumables(info: CustomerInfo): Promise<number> {
+  crediting = crediting.then(() => runCredit(info), () => runCredit(info));
+  return crediting;
+}
+
+async function runCredit(info: CustomerInfo): Promise<number> {
+  const txs = (info.nonSubscriptionTransactions ?? []).filter((tx) => HINT_PACK_GRANTS[tx.productIdentifier]);
+  const { value } = await Preferences.get({ key: CREDITED_TX_KEY });
+  if (value === null) {
+    await Preferences.set({ key: CREDITED_TX_KEY, value: JSON.stringify(txs.map((tx) => tx.transactionIdentifier)) });
+    return 0;
+  }
+  let credited: string[] = [];
+  try {
+    credited = JSON.parse(value) as string[];
+  } catch {
+    credited = [];
+  }
+  const seen = new Set(credited);
+  let granted = 0;
+  for (const tx of txs) {
+    if (seen.has(tx.transactionIdentifier)) continue;
+    granted += HINT_PACK_GRANTS[tx.productIdentifier] ?? 0;
+    seen.add(tx.transactionIdentifier);
+  }
+  if (granted > 0) {
+    // Record first, then grant: a crash in between loses a grant rather than
+    // duplicating one on every launch.
+    await Preferences.set({ key: CREDITED_TX_KEY, value: JSON.stringify([...seen]) });
+    await grantHints(granted);
+    track('iap_consumable_credited', { hints: granted });
+  }
+  return granted;
 }
 
 export async function isOwned(productId: string): Promise<boolean> {
@@ -217,6 +286,14 @@ export async function listProducts(): Promise<ProductInfo[]> {
   }
 }
 
+/** Store price labels by product id (local currency), with USD fallbacks. */
+export async function getPriceLabels(): Promise<Map<string, string>> {
+  const labels = new Map<string, string>();
+  for (const info of Object.values(FALLBACK_CATALOG)) labels.set(info.id, info.fallbackPriceLabel);
+  for (const info of await listProducts()) labels.set(info.id, info.priceLabel);
+  return labels;
+}
+
 export async function getProductInfo(productId: string): Promise<ProductInfo | null> {
   const products = await listProducts();
   if (products.length > 0) {
@@ -254,13 +331,22 @@ export async function purchase(
       track('iap_purchase_failed', { product_id: productId, reason: result.reason, source });
       return result;
     }
-    await Purchases.purchasePackage({ aPackage: pkg });
+    const { customerInfo } = await Purchases.purchasePackage({ aPackage: pkg });
+    // Consumables (hint packs, the Starter Pack's hints) are granted here via
+    // the ledger, never by callers, so a purchase is credited exactly once.
+    await creditConsumables(customerInfo);
     track('iap_purchased', { product_id: productId, source });
     return { status: 'success', productId };
   } catch (err: unknown) {
-    const code: string = (err as { code?: string })?.code ?? '';
-    if (code === 'PURCHASE_CANCELLED') {
+    const e = err as { code?: string; userCancelled?: boolean | null };
+    const code: string = e?.code ?? '';
+    // RevenueCat error codes: "1" PURCHASE_CANCELLED_ERROR, "20" PAYMENT_PENDING_ERROR.
+    if (e?.userCancelled || code === '1') {
       return { status: 'cancelled', productId };
+    }
+    if (code === '20') {
+      track('iap_purchase_pending', { product_id: productId, source });
+      return { status: 'pending', productId };
     }
     const result = { status: 'failed' as const, productId, reason: code || 'unknown' };
     track('iap_purchase_failed', { product_id: productId, reason: result.reason, source });
@@ -277,11 +363,8 @@ export async function purchaseHintPack(
   source: PurchaseSource = 'hint_store'
 ): Promise<PurchaseResult> {
   const result = await purchase(productId, source);
-  if (result.status === 'success') {
-    const count = HINT_PACK_GRANTS[productId] ?? 0;
-    if (count > 0) {
-      await grantHints(count);
-    }
+  if (result.status === 'success' || result.status === 'pending') {
+    // Hints were credited inside purchase() (or will be, once pending clears).
     // iap_purchased is already tracked inside purchase(); don't double-count.
   } else if (result.status === 'cancelled') {
     track('iap_declined', { product_id: productId, source });
