@@ -337,7 +337,7 @@ function mount(): void {
   sep4.className = 'dev-tool-sep';
   sep4.setAttribute('aria-hidden', 'true');
 
-  // ⟲ Reset — same wipe as the hidden Settings gesture (resetAllProgress),
+  // ⟲ Reset — full wipe incl. hints (Settings "Reset stats" keeps hints),
   // then reload. Keeps language, skin, tutorial-seen and dev settings.
   const resetBtn = document.createElement('button');
   resetBtn.type = 'button';

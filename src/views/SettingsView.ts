@@ -817,7 +817,6 @@ export class SettingsView {
     const version = document.createElement('span');
     version.className = 'settings-about-version';
     version.textContent = t('settings.version', { version: import.meta.env.VITE_APP_VERSION ?? '0.1.0' });
-    this.setupResetProgressGesture(version);
 
     const credit = document.createElement('span');
     credit.className = 'settings-about-credit';
@@ -850,7 +849,7 @@ export class SettingsView {
     aboutSection.className = 'settings-about-section';
     aboutSection.append(linksRow);
 
-    section.append(heading, version, credit, aboutSection);
+    section.append(heading, version, credit, aboutSection, this.renderResetButton());
     return section;
   }
 
@@ -934,41 +933,28 @@ export class SettingsView {
     return normalizeRegistrySkinId(value);
   }
 
-  // Hidden Reset Progress flow
-  private setupResetProgressGesture(target: HTMLElement): void {
-    let resetTimeout: number | null = null;
-
-    const resetHandler = async (): Promise<void> => {
-      const confirmed = await showConfirmModal({
-        title: t('dialog.reset_progress_title'),
-        body: t('dialog.reset_progress_body'),
-        confirmLabel: t('dialog.reset_progress_confirm'),
-        cancelLabel: t('common.cancel'),
-        destructive: true
-      });
-
-      if (confirmed) {
-        await resetAllProgress();
+  /** Player-facing reset: clears stats/streaks/achievements, keeps hints. */
+  private renderResetButton(): HTMLElement {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'settings-reset-button button-tertiary';
+    button.textContent = t('settings.reset_stats');
+    button.addEventListener('click', () => {
+      void (async () => {
+        const confirmed = await showConfirmModal({
+          title: t('dialog.reset_progress_title'),
+          body: t('dialog.reset_progress_body'),
+          confirmLabel: t('dialog.reset_progress_confirm'),
+          cancelLabel: t('common.cancel'),
+          destructive: true
+        });
+        if (!confirmed) return;
+        await resetAllProgress({ keepHints: true });
+        // An earned skin that just re-locked can't stay active.
+        if (!(await isSkinOwned(this.activeSkinId))) await setActiveSkinId('void');
         window.location.reload();
-      }
-    };
-
-    target.addEventListener('pointerdown', () => {
-      resetTimeout = window.setTimeout(resetHandler, 3000); // 3-second long press
+      })();
     });
-
-    target.addEventListener('pointerup', () => {
-      if (resetTimeout !== null) {
-        window.clearTimeout(resetTimeout);
-        resetTimeout = null;
-      }
-    });
-
-    target.addEventListener('pointerleave', () => {
-      if (resetTimeout !== null) {
-        window.clearTimeout(resetTimeout);
-        resetTimeout = null;
-      }
-    });
+    return button;
   }
 }

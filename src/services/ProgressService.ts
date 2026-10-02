@@ -642,7 +642,11 @@ export async function recordPuzzleCompletion(
   };
 }
 
-export async function resetAllProgress(): Promise<void> {
+/**
+ * Wipes progress. The dev overlay wipes everything; the Settings "Reset
+ * stats" button passes `keepHints` so purchased hints survive.
+ */
+export async function resetAllProgress(options: { keepHints?: boolean } = {}): Promise<void> {
   await Promise.all(PROGRESS_KEYS.map((key) => Preferences.remove({ key })));
   await Preferences.remove({ key: SOLVED_RATINGS_KEY });
   await Preferences.remove({ key: PRISTINE_COUNT_KEY });
@@ -655,7 +659,7 @@ export async function resetAllProgress(): Promise<void> {
   await Preferences.remove({ key: DAILY_SOLVE_DATES_KEY });
   // Note: install date is intentionally NOT reset — it reflects when the
   // app was first installed and should survive a progress wipe.
-  await resetHintData();
+  await resetHintData({ keepBalance: options.keepHints });
   await resetEarnedAchievements();
   await resetFreezeData();
 }

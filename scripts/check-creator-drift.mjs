@@ -149,7 +149,7 @@ const VIEW_ONLY = new Set([
   'button-primary', 'button-secondary', 'button-tertiary',
   'legal-link', 'legal-link-divider',
   'settings-about', 'settings-about-credit', 'settings-about-section',
-  'settings-about-version', 'settings-legal-links',
+  'settings-about-version', 'settings-legal-links', 'settings-reset-button',
   'settings-reminder-hint', 'settings-restore',
   'settings-skin-web-cta', 'settings-skin-web-cta-label', 'settings-skin-web-cta-links',
   'skin-preview-banner', 'skin-preview-banner-actions', 'skin-preview-banner-buy',

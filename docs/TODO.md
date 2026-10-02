@@ -16,9 +16,10 @@ Deferred items from the Sep 2026 audit / fix pass. Details and rationale live in
       (The reward-grant check itself was fixed — it now uses the Rewarded event.)
 - [x] **Confetti after leaving Win** keeps falling (up to 7 s) over the next
       screen on Play again / Done. Decided (Oct 1 2026): keep it.
-- [ ] **Hidden "Reset progress" gesture** (3 s hold on the version text in
-      Settings → About) ships in production and also wipes purchased hints.
-      Keep, move behind a visible button, or remove from production?
+- [x] **Hidden "Reset progress" gesture** replaced (Oct 1 2026) by a visible
+      "Reset stats" button under Settings → About, with a confirm. Keeps the
+      hint balance (incl. purchased) and today's ad-grant count; an earned skin
+      that re-locks falls back to Void. The dev overlay ⟲ Reset still wipes all.
 - [x] **Play button label on no-puzzle days** now shows a live "Next puzzle in
       h:mm:ss" (inactive style); the card head drops its duplicate countdown.
 

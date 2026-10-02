@@ -192,11 +192,17 @@ export async function clearPuzzleReveals(puzzleId: string): Promise<void> {
   await Preferences.remove({ key: `${HINT_REVEALS_PREFIX}${puzzleId}` });
 }
 
-/** Removes all hint state. Called from ProgressService.resetAllProgress. */
-export async function resetHintData(): Promise<void> {
+/**
+ * Removes hint state. Called from ProgressService.resetAllProgress.
+ * `keepBalance` (the player-facing "Reset stats") keeps the hint balance —
+ * which includes purchased hints — and today's ad-grant count; only the
+ * per-puzzle reveals go.
+ */
+export async function resetHintData(options: { keepBalance?: boolean } = {}): Promise<void> {
   const { keys } = await Preferences.keys();
   const toRemove = keys.filter(
-    k => k === HINT_STATE_KEY || k === AD_HINT_GRANTS_KEY || k.startsWith(HINT_REVEALS_PREFIX)
+    k => k.startsWith(HINT_REVEALS_PREFIX) ||
+      (!options.keepBalance && (k === HINT_STATE_KEY || k === AD_HINT_GRANTS_KEY))
   );
   await Promise.all(toRemove.map(key => Preferences.remove({ key })));
 }
