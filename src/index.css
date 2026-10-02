@@ -2498,6 +2498,10 @@ body::before {
   color: var(--chrome-text);
 }
 
+.daily-play-button[data-countdown='true'] {
+  font-variant-numeric: tabular-nums;
+}
+
 .daily-play-button {
   width: 100%;
   margin-top: 16px;

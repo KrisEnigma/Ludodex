@@ -39,6 +39,7 @@ export const strings: Record<keyof typeof enStrings, string> = {
   'menu.daily_tag_today': 'PUZZLE DE HOY #{n}',
   'menu.daily_next_in': 'PRÓXIMO EN {time}',
   'menu.daily_play': '▶ Jugar',
+  'menu.daily_next_puzzle_in': 'Próximo puzzle en {time}',
   'menu.daily_play_again': '✓ Resuelto · Volver a jugar',
   'menu.daily_no_puzzle_title': 'Nuevo puzzle próximamente',
   'menu.daily_no_puzzle_meta': 'Vuelve mañana',

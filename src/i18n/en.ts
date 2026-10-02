@@ -38,6 +38,7 @@ export const strings = {
   'menu.daily_tag_today': "TODAY'S PUZZLE #{n}",
   'menu.daily_next_in': 'NEXT IN {time}',
   'menu.daily_play': '▶ Play',
+  'menu.daily_next_puzzle_in': 'Next puzzle in {time}',
   'menu.daily_play_again': '✓ Solved · Play again',
   'menu.daily_no_puzzle_title': 'New puzzle coming soon',
   'menu.daily_no_puzzle_meta': 'Check back tomorrow',

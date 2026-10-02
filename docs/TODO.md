@@ -14,13 +14,13 @@ Deferred items from the Sep 2026 audit / fix pass. Details and rationale live in
         Info.plist, real `APPLICATION_ID` in AndroidManifest (currently Google
         test IDs). Same applies to "Remove Ads" copy in the Starter Pack.
       (The reward-grant check itself was fixed — it now uses the Rewarded event.)
-- [ ] **Confetti after leaving Win** keeps falling (up to 7 s) over the next
-      screen on Play again / Done. Stop it on leave, or keep it?
+- [x] **Confetti after leaving Win** keeps falling (up to 7 s) over the next
+      screen on Play again / Done. Decided (Oct 1 2026): keep it.
 - [ ] **Hidden "Reset progress" gesture** (3 s hold on the version text in
       Settings → About) ships in production and also wipes purchased hints.
       Keep, move behind a visible button, or remove from production?
-- [ ] **Play button label on no-puzzle days** still says "▶ Play" (disabled).
-      Show the countdown instead?
+- [x] **Play button label on no-puzzle days** now shows a live "Next puzzle in
+      h:mm:ss" (inactive style); the card head drops its duplicate countdown.
 
 ## Before launch
 

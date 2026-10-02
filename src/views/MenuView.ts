@@ -207,8 +207,15 @@ export class MenuView {
     const dailyPlayButton = document.createElement('button');
     dailyPlayButton.type = 'button';
     dailyPlayButton.className = 'daily-play-button button-primary';
-    dailyPlayButton.textContent = t('menu.daily_play');
+    // No puzzle today: the inactive button carries the live countdown (and the
+    // card head drops its own copy so the time isn't shown twice).
+    const nextPuzzleLabel = (): string => t('menu.daily_next_puzzle_in', { time: formatTimeUntilMidnight() });
+    dailyPlayButton.textContent = gamePayload ? t('menu.daily_play') : nextPuzzleLabel();
     dailyPlayButton.disabled = gamePayload === null;
+    if (!gamePayload) {
+      dailyPlayButton.dataset.countdown = 'true';
+      countdownEl.hidden = true;
+    }
 
     if (gamePayload) {
       dailyPlayButton.addEventListener('click', (event) => {
@@ -280,6 +287,7 @@ export class MenuView {
         return;
       }
       countdownEl.textContent = t('menu.daily_next_in', { time: formatTimeUntilMidnight() });
+      if (!gamePayload) dailyPlayButton.textContent = nextPuzzleLabel();
     }, 1000);
 
     void (async () => {
