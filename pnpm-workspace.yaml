@@ -1,3 +1,8 @@
+# Single-package repo. pnpm 10 (Cloudflare's build image) refuses a
+# workspace file without a packages list.
+packages:
+  - '.'
+
 patchedDependencies:
   '@capacitor-community/admob@8.0.0': patches/@capacitor-community__admob@8.0.0.patch
 
