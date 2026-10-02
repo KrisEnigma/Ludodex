@@ -1,5 +1,7 @@
 import { Preferences } from '@capacitor/preferences';
-import { t, type StringKey } from '../i18n';
+import { getLang, t, type StringKey } from '../i18n';
+import { createIcon } from '../components/icons';
+import { renderRibbon } from '../components/ribbon';
 import { track } from '../services/AnalyticsService';
 
 const TUTORIAL_KEY = 'tutorial_seen';
@@ -7,7 +9,7 @@ const TUTORIAL_KEY = 'tutorial_seen';
 type Step = {
   titleKey: StringKey;
   bodyKey: StringKey;
-  svg: string;
+  demo: () => HTMLElement;
 };
 
 /**
@@ -15,10 +17,8 @@ type Step = {
  * (gated by the `tutorial_seen` preference) and on demand from the
  * menu footer's HOW TO PLAY link.
  *
- * Each step has a title, a body paragraph, and an illustrative SVG.
- * The SVGs are theme-aware — colors come from CSS variables
- * (--title-glow, --tile-bg, --tile-border, etc.) so the same illustration
- * shifts cyan / pink / lime as the player swaps skins.
+ * Each step has a title, a body paragraph, and an illustration built from
+ * the real game pieces, so it always looks like the player's current skin.
  */
 export class HowToPlayView {
   public readonly element: HTMLDivElement;
@@ -30,10 +30,10 @@ export class HowToPlayView {
     private readonly onFinish: () => void
   ) {
     this.steps = [
-      { titleKey: 'how_to_play.step1_title', bodyKey: 'how_to_play.step1_body', svg: this.svgSwipeToSpell() },
-      { titleKey: 'how_to_play.step2_title', bodyKey: 'how_to_play.step2_body', svg: this.svgTheme() },
-      { titleKey: 'how_to_play.step3_title', bodyKey: 'how_to_play.step3_body', svg: this.svgHint() },
-      { titleKey: 'how_to_play.step4_title', bodyKey: 'how_to_play.step4_body', svg: this.svgStreak() }
+      { titleKey: 'how_to_play.step1_title', bodyKey: 'how_to_play.step1_body', demo: () => this.demoSwipe() },
+      { titleKey: 'how_to_play.step2_title', bodyKey: 'how_to_play.step2_body', demo: () => this.demoTheme() },
+      { titleKey: 'how_to_play.step3_title', bodyKey: 'how_to_play.step3_body', demo: () => this.demoHint() },
+      { titleKey: 'how_to_play.step4_title', bodyKey: 'how_to_play.step4_body', demo: () => this.demoStreak() }
     ];
 
     this.element = document.createElement('div');
@@ -42,6 +42,7 @@ export class HowToPlayView {
   }
 
   private render(): void {
+    this.stopDemo();
     this.element.innerHTML = '';
     const step = this.steps[this.current];
     const isLast = this.current === this.steps.length - 1;
@@ -75,7 +76,7 @@ export class HowToPlayView {
     // ── Illustration ─────────────────────────────────────────────────────
     const visual = document.createElement('div');
     visual.className = 'how-to-play-visual';
-    visual.innerHTML = step.svg;
+    visual.append(step.demo());
 
     // ── Title + body ─────────────────────────────────────────────────────
     const title = document.createElement('h2');
@@ -148,219 +149,207 @@ export class HowToPlayView {
     this.onFinish();
   }
 
-  // ── SVG illustrations ──────────────────────────────────────────────────
-  // All colors come from CSS variables so the illustrations re-skin with
-  // the active theme. The shared `viewBox="0 0 200 160"` gives each step
-  // a consistent footprint; the parent .how-to-play-visual sizes them.
+  // ── Illustrations ────────────────────────────────────────────────────────
+  // Built from the REAL game pieces (.tile + ribbon, .hint-slot, the bulb
+  // counter, the streak strip), so every skin's tiles, gradients, bevels and
+  // trail show exactly as in play. Steps 1 and 3 loop a short demo
+  // (static under reduced motion); timers stop when the step changes.
 
-  /**
-   * Step 1: a 2×2 mini-grid with letters "L U D O" and a glowing path
-   * traced through them. Showcases the signature swipe trail in the
-   * skin's accent color — the most identity-establishing visual the
-   * tutorial can lead with.
-   */
-  private svgSwipeToSpell(): string {
-    const tileSize = 44;
-    const gap = 10;
-    const startX = 100 - tileSize - gap / 2;
-    const startY = 80 - tileSize - gap / 2;
-    const center = (col: number, row: number): [number, number] => [
-      startX + col * (tileSize + gap) + tileSize / 2,
-      startY + row * (tileSize + gap) + tileSize / 2
-    ];
-    const tiles: [number, number, string][] = [
-      [0, 0, 'L'],
-      [1, 0, 'U'],
-      [0, 1, 'D'],
-      [1, 1, 'O'],
-    ];
-    const pathPoints = [center(0, 0), center(1, 0), center(0, 1), center(1, 1)];
-    const pathD = pathPoints
-      .map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${x} ${y}`)
-      .join(' ');
+  private demoTimers: number[] = [];
 
-    return `<svg viewBox="0 0 200 160" fill="none" aria-hidden="true">
-      <!-- Tiles -->
-      ${tiles
-        .map(([col, row, letter]) => {
-          const x = startX + col * (tileSize + gap);
-          const y = startY + row * (tileSize + gap);
-          const cx = x + tileSize / 2;
-          const cy = y + tileSize / 2;
-          return `
-            <rect x="${x}" y="${y}" width="${tileSize}" height="${tileSize}"
-                  rx="8" fill="var(--tile-selected-bg)" stroke="var(--tile-selected-border)" stroke-width="1.5" />
-            <text x="${cx}" y="${cy + 7}" text-anchor="middle"
-                  fill="var(--tile-selected-letter)" font-size="20"
-                  font-family="Space Mono, monospace" font-weight="700">${letter}</text>
-          `;
-        })
-        .join('')}
-      <!-- Swipe trail: halo + core mirrors the in-game .path-halo / .path-core treatment -->
-      <path d="${pathD}" stroke="var(--path-color)" stroke-opacity="0.25"
-            stroke-width="14" stroke-linecap="round" stroke-linejoin="round" />
-      <path d="${pathD}" stroke="var(--path-color)" stroke-opacity="0.95"
-            stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
-    </svg>`;
+  private later(fn: () => void, ms: number): void {
+    const id = window.setTimeout(() => {
+      this.demoTimers = this.demoTimers.filter((x) => x !== id);
+      if (this.element.isConnected) fn();
+    }, ms);
+    this.demoTimers.push(id);
   }
 
-  /**
-   * Step 2: an abstract theme banner above two solid-filled word-slot
-   * rows. Communicates the shape of "theme + answers" without spelling
-   * out a specific theme or specific answers — the original version
-   * showed a real puzzle's theme and characters, which spoiled it for
-   * new players.
-   */
-  private svgTheme(): string {
-    const block = (x: number, y: number): string => `
-      <rect x="${x}" y="${y}" width="18" height="22" rx="4"
-            fill="var(--hint-solved-bg)"
-            stroke="var(--hint-solved-border)" />
-    `;
-    // Abstract row counts — solid blocks, no letters. The shape of an
-    // answer row + a theme banner is enough to communicate the rule;
-    // any specific text risks colliding with a real puzzle.
-    const row1Count = 5;
-    const row2Count = 4;
-    const r1Width = row1Count * 18 + (row1Count - 1) * 2;
-    const r2Width = row2Count * 18 + (row2Count - 1) * 2;
-    const r1X = (200 - r1Width) / 2;
-    const r2X = (200 - r2Width) / 2;
-
-    return `<svg viewBox="0 0 200 160" fill="none" aria-hidden="true">
-      <!-- Theme banner: pill shape suggesting a header above the answers -->
-      <rect x="32" y="22" width="136" height="26" rx="13"
-            fill="color-mix(in srgb, var(--title-glow) 14%, transparent)"
-            stroke="color-mix(in srgb, var(--title-glow) 40%, transparent)" />
-      <!-- Three abstract "title" dashes inside the banner -->
-      <rect x="56" y="32" width="22" height="6" rx="2" fill="var(--title-glow)" opacity="0.85" />
-      <rect x="86" y="32" width="34" height="6" rx="2" fill="var(--title-glow)" opacity="0.85" />
-      <rect x="128" y="32" width="16" height="6" rx="2" fill="var(--title-glow)" opacity="0.85" />
-      <!-- Two solid answer rows (no letters → no spoilers) -->
-      ${Array.from({ length: row1Count }, (_, i) => block(r1X + i * 20, 70)).join('')}
-      ${Array.from({ length: row2Count }, (_, i) => block(r2X + i * 20, 102)).join('')}
-    </svg>`;
+  private stopDemo(): void {
+    this.demoTimers.forEach((id) => window.clearTimeout(id));
+    this.demoTimers = [];
   }
 
-  /**
-   * Step 3: a row of empty hint slots (the squares that sit below the
-   * grid showing each answer's letter pattern) with one slot being
-   * press-and-held by a finger. That slot shows the charging halo +
-   * a letter rising into it, matching the actual hint mechanic — the
-   * player holds a slot to reveal a letter there, not the bulb in
-   * the header.
-   *
-   * The bulb counter in the header is shown small and decorative,
-   * making it clear it's an indicator, not a tap target.
-   */
-  private svgHint(): string {
-    const slotW = 22;
-    const slotH = 28;
-    const gap = 4;
-    const slotCount = 5;
-    const rowWidth = slotCount * slotW + (slotCount - 1) * gap;
-    const startX = (200 - rowWidth) / 2;
-    const slotY = 64;
-    const heldIndex = 2; // middle slot is the one being held
-
-    const slots = Array.from({ length: slotCount }, (_, i) => {
-      const x = startX + i * (slotW + gap);
-      const isHeld = i === heldIndex;
-      return `
-        <rect x="${x}" y="${slotY}" width="${slotW}" height="${slotH}" rx="5"
-              fill="${isHeld ? 'var(--hint-solved-bg)' : 'var(--hint-empty-bg)'}"
-              stroke="${isHeld ? 'var(--hint-solved-border)' : 'var(--hint-empty-border)'}" />
-        ${
-          isHeld
-            ? `<text x="${x + slotW / 2}" y="${slotY + slotH / 2 + 5}" text-anchor="middle"
-                  fill="var(--hint-solved-letter)" font-size="14"
-                  font-family="Space Mono, monospace" font-weight="700">A</text>`
-            : ''
-        }
-      `;
-    }).join('');
-
-    const heldSlotX = startX + heldIndex * (slotW + gap);
-    const heldCenterX = heldSlotX + slotW / 2;
-    const heldCenterY = slotY + slotH / 2;
-
-    return `<svg viewBox="0 0 200 160" fill="none" aria-hidden="true">
-      <!-- Small bulb counter pill (decorative — shows the resource exists in the header) -->
-      <g transform="translate(76 18)">
-        <rect width="48" height="22" rx="11"
-              fill="var(--button-bg)" stroke="var(--button-border)" />
-        <!-- bulb icon — matches icons.ts 'bulb', stroked, 24×24 scaled to fit pill -->
-        <g transform="translate(6 4) scale(0.58)" fill="none" stroke="var(--title-glow)"
-           stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M9 16 C 9 12 6 11 6 8 C 6 4.7 8.7 2 12 2 C 15.3 2 18 4.7 18 8 C 18 11 15 12 15 16 Z" />
-          <path d="M9 19 L 15 19" />
-        </g>
-        <text x="32" y="16" fill="var(--title-glow)"
-              font-size="12" font-family="Space Mono, monospace" font-weight="700">3</text>
-      </g>
-
-      <!-- Charging halo behind the held slot — mirrors the in-game
-           .hint-slot[data-revealing]::after radial gradient. -->
-      <circle cx="${heldCenterX}" cy="${heldCenterY}" r="26"
-              fill="var(--path-color)" opacity="0.18" />
-
-      <!-- Slot row -->
-      ${slots}
-
-      <!-- Finger indicator: a circle pressing on the held slot. -->
-      <circle cx="${heldCenterX + 10}" cy="${heldCenterY + 14}" r="11"
-              fill="color-mix(in srgb, var(--title-color) 75%, transparent)"
-              stroke="var(--title-color)" stroke-width="1.5" />
-      <circle cx="${heldCenterX + 10}" cy="${heldCenterY + 14}" r="5"
-              fill="var(--title-glow)" opacity="0.7" />
-
-      <!-- "Hold" caption beneath -->
-      <text x="100" y="134" text-anchor="middle" fill="var(--chrome-text)"
-            font-size="10" font-family="Space Mono, monospace" letter-spacing="1.5"
-            font-weight="700">HOLD TO REVEAL</text>
-    </svg>`;
+  private reducedMotion(): boolean {
+    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
   }
 
-  /**
-   * Step 4: a row of seven calendar squares with the last four filled,
-   * suggesting a four-day streak and the path forward. A flame icon
-   * anchors the metaphor; uses the in-app flame glyph rather than the
-   * older hand-drawn path so it stays consistent across the product.
-   */
-  private svgStreak(): string {
-    const days = [false, false, false, true, true, true, true];
-    const boxSize = 18;
-    const gap = 4;
-    const rowWidth = days.length * boxSize + (days.length - 1) * gap;
-    const startX = (200 - rowWidth) / 2;
+  /** Step 1: a 2×2 "LUDO" patch; a swipe traces L → U → D → O on a loop. */
+  private demoSwipe(): HTMLElement {
+    const wrap = document.createElement('div');
+    wrap.className = 'htp-demo htp-swipe';
+    const board = document.createElement('div');
+    board.className = 'htp-board';
+    const tiles = ['L', 'U', 'D', 'O'].map((ch) => {
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      tile.dataset.state = 'idle';
+      const letter = document.createElement('span');
+      letter.className = 'tile-letter';
+      letter.textContent = ch;
+      tile.append(letter);
+      board.append(tile);
+      return tile;
+    });
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'htp-path');
+    svg.setAttribute('viewBox', '0 0 128 128');
+    const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    group.setAttribute('class', 'path-segments');
+    svg.append(group);
+    board.append(svg);
+    wrap.append(board);
 
-    return `<svg viewBox="0 0 200 160" fill="none" aria-hidden="true">
-      <!-- Flame icon — matches icons.ts 'flame': filled with evenodd inner cutout -->
-      <g transform="translate(77 16) scale(1.67)" fill="var(--title-glow)" stroke="none">
-        <path fill-rule="evenodd"
-              d="M 21 16 C 20 20.5 16.5 22 13 22 C 9.5 22 6 20.5 5.5 16 C 4 10.5 13.5 8.5 10 1.5 C 10 1.5 15 3.5 17 9 C 17.5 9.5 18.5 7.5 17.5 6 C 21 9.5 22 14 21 16 Z M 11 20 C 10 18.5 10.5 16 12 15 C 11.5 14.5 11.5 13.5 12.5 13.5 C 14 14.5 15.5 17 15 20 C 14.5 21.5 12 21.5 11 20 Z" />
-      </g>
-      <!-- Day row: filled = solved, empty = upcoming -->
-      ${days
-        .map((filled, i) => {
-          const x = startX + i * (boxSize + gap);
-          return `
-            <rect x="${x}" y="80" width="${boxSize}" height="${boxSize}" rx="4"
-                  fill="${filled ? 'var(--hint-solved-bg)' : 'var(--hint-empty-bg)'}"
-                  stroke="${filled ? 'var(--hint-solved-border)' : 'var(--hint-empty-border)'}" />
-            ${
-              filled
-                ? `<text x="${x + boxSize / 2}" y="${
-                    80 + boxSize / 2 + 4
-                  }" text-anchor="middle" fill="var(--hint-solved-letter)" font-size="11" font-family="Space Mono, monospace" font-weight="700">✓</text>`
-                : ''
-            }
-          `;
-        })
-        .join('')}
-      <text x="100" y="124" text-anchor="middle" fill="var(--chrome-text)"
-            font-size="11" font-family="Space Mono, monospace" letter-spacing="1.5"
-            font-weight="700">4-DAY STREAK</text>
-    </svg>`;
+    // Tile centres in the 128×128 board (2 × 60px tiles, 8px gap).
+    const centre = [{ x: 30, y: 30 }, { x: 98, y: 30 }, { x: 30, y: 98 }, { x: 98, y: 98 }];
+    const order = [0, 1, 2, 3];
+    const showUpTo = (k: number): void => {
+      tiles.forEach((tile, i) => { tile.dataset.state = order.slice(0, k + 1).includes(i) ? 'selected' : 'idle'; });
+      renderRibbon(group, order.slice(0, k + 1).map((i) => centre[i]));
+    };
+    if (this.reducedMotion()) {
+      showUpTo(order.length - 1);
+      return wrap;
+    }
+    const cycle = (): void => {
+      tiles.forEach((tile) => { tile.dataset.state = 'idle'; });
+      renderRibbon(group, []);
+      order.forEach((_, k) => this.later(() => showUpTo(k), 500 + k * 380));
+      this.later(cycle, 500 + order.length * 380 + 1400);
+    };
+    cycle();
+    return wrap;
+  }
+
+  /** Step 2: a sample theme title above one found answer and one to find. */
+  private demoTheme(): HTMLElement {
+    const wrap = document.createElement('div');
+    wrap.className = 'htp-demo htp-theme';
+    const title = document.createElement('div');
+    title.className = 'view-title htp-theme-title';
+    title.textContent = t('how_to_play.sample_theme');
+    const rows = document.createElement('div');
+    rows.className = 'hints htp-rows';
+    rows.append(this.hintRow('KART', true), this.hintRow('DRIFT', false));
+    wrap.append(title, rows);
+    return wrap;
+  }
+
+  private hintRow(word: string, solved: boolean): HTMLElement {
+    const row = document.createElement('div');
+    row.className = 'hint-row';
+    row.dataset.solved = String(solved);
+    for (const ch of word) row.append(this.hintSlot(solved ? ch : '', solved));
+    return row;
+  }
+
+  private hintSlot(ch: string, filled: boolean): HTMLElement {
+    const slot = document.createElement('span');
+    slot.className = 'hint-slot';
+    slot.dataset.filled = String(filled);
+    const letter = document.createElement('span');
+    letter.className = 'hint-slot-letter';
+    letter.textContent = ch;
+    slot.append(letter);
+    return slot;
+  }
+
+  /** Step 3: the bulb counter and a row of slots; one charges and fills. */
+  private demoHint(): HTMLElement {
+    const wrap = document.createElement('div');
+    wrap.className = 'htp-demo htp-hint';
+
+    const counter = document.createElement('div');
+    counter.className = 'game-hint-counter';
+    const icon = document.createElement('span');
+    icon.className = 'game-hint-counter-icon';
+    icon.append(createIcon('bulb'));
+    const count = document.createElement('span');
+    count.className = 'game-hint-counter-count';
+    count.textContent = '3';
+    counter.append(icon, count);
+
+    const row = document.createElement('div');
+    row.className = 'hints htp-rows';
+    const hintRow = document.createElement('div');
+    hintRow.className = 'hint-row';
+    hintRow.dataset.solved = 'false';
+    const slots = [0, 1, 2, 3, 4].map(() => this.hintSlot('', false));
+    slots.forEach((sl) => hintRow.append(sl));
+    row.append(hintRow);
+
+    const caption = document.createElement('div');
+    caption.className = 'htp-caption';
+    caption.textContent = t('game.hint_charging');
+
+    wrap.append(counter, row, caption);
+
+    const held = slots[2];
+    const letter = held.querySelector<HTMLElement>('.hint-slot-letter')!;
+    const reveal = (): void => {
+      delete held.dataset.revealing;
+      held.dataset.filled = 'true';
+      letter.textContent = 'A';
+      count.textContent = '2';
+      caption.textContent = t('game.hint_revealed');
+    };
+    if (this.reducedMotion()) {
+      reveal();
+      return wrap;
+    }
+    const cycle = (): void => {
+      held.dataset.filled = 'false';
+      letter.textContent = '';
+      count.textContent = '3';
+      caption.textContent = t('game.hint_charging');
+      this.later(() => {
+        held.dataset.revealing = 'true';
+        counter.dataset.charging = 'true';
+      }, 700);
+      this.later(() => {
+        delete counter.dataset.charging;
+        reveal();
+        held.dataset.justRevealed = 'true';
+        this.later(() => { delete held.dataset.justRevealed; }, 400);
+      }, 1700);
+      this.later(cycle, 3800);
+    };
+    cycle();
+    return wrap;
+  }
+
+  /** Step 4: the menu's 7-day strip with a four-day run. */
+  private demoStreak(): HTMLElement {
+    const wrap = document.createElement('div');
+    wrap.className = 'htp-demo htp-streak';
+    const flame = document.createElement('span');
+    flame.className = 'htp-flame';
+    flame.append(createIcon('flame'));
+    const week = document.createElement('div');
+    week.className = 'streak-week';
+    const states = ['missed', 'missed', 'missed', 'solved', 'solved', 'solved', 'solved'];
+    const weekday = new Intl.DateTimeFormat(getLang(), { weekday: 'narrow' });
+    const today = new Date();
+    states.forEach((state, i) => {
+      const cell = document.createElement('span');
+      cell.className = 'streak-day';
+      cell.dataset.state = state;
+      if (i === states.length - 1) cell.dataset.today = 'true';
+      const box = document.createElement('span');
+      box.className = 'streak-day-box';
+      if (state === 'solved') box.append(createIcon('check'));
+      const label = document.createElement('span');
+      label.className = 'streak-day-label';
+      const d = new Date(today);
+      d.setDate(d.getDate() - (states.length - 1 - i));
+      label.textContent = weekday.format(d);
+      cell.append(box, label);
+      week.append(cell);
+    });
+    const caption = document.createElement('div');
+    caption.className = 'htp-caption';
+    caption.textContent = t('how_to_play.streak_caption', { n: 4 });
+    wrap.append(flame, week, caption);
+    return wrap;
   }
 }

@@ -552,8 +552,78 @@
   border: 1px solid color-mix(in srgb, var(--title-glow) 22%, transparent);
 }
 
-.hint-charge-bar-wrap.is-charging {
+.hint-charge-bar-wrap.is-charging,
+.hint-charge-bar-wrap.is-revealed {
   opacity: 1;
+}
+
+.hint-charge-bar-wrap.is-revealed .hint-charge-bar-fill {
+  width: 100%;
+}
+
+/* Bulb tapped with hints left: how-to tip in the same spot as the charge
+   pill, plus a short glow on the empty slots. */
+.hint-tip {
+  position: absolute;
+  bottom: -37px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 31;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: max-content;
+  max-width: min(92vw, 360px);
+  padding: 4px 6px 4px 14px;
+  border-radius: 18px;
+  text-align: center;
+  font-size: var(--type-caption);
+  letter-spacing: 0.03em;
+  color: var(--title-color);
+  background: var(--button-bg);
+  border: 1px solid color-mix(in srgb, var(--title-glow) 55%, var(--button-border));
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+
+.hint-tip.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.hint-tip-store {
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--title-glow);
+  background: transparent;
+  color: var(--title-glow);
+  cursor: pointer;
+}
+
+.hints[data-coach='true'] .hint-slot:not([data-filled='true']) {
+  animation: hint-slot-coach 900ms ease-in-out 2;
+}
+
+@keyframes hint-slot-coach {
+  50% {
+    border-color: var(--title-glow);
+    box-shadow: 0 0 calc(10px * var(--glow-strength, 1)) color-mix(in srgb, var(--title-glow) 60%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hints[data-coach='true'] .hint-slot:not([data-filled='true']) {
+    animation: none;
+    border-color: var(--title-glow);
+  }
 }
 
 .hint-charge-label {
@@ -3914,10 +3984,76 @@ body::before {
   margin: 4px 0 8px;
 }
 
-.how-to-play-visual svg {
+/* Tutorial demos: built from the real game pieces (tiles, ribbon, hint
+   slots, counter, streak strip) so they always wear the current skin. */
+.htp-demo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  min-height: 150px;
+  justify-content: center;
+}
+
+.htp-board {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, 60px);
+  grid-auto-rows: 60px;
+  gap: 8px;
+}
+
+.htp-board .tile {
+  font-size: calc(30px * var(--tile-font-scale, 1));
+  border-radius: calc(var(--tile-radius, 14px) * 0.75);
+}
+
+.htp-path {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: auto;
-  display: block;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.htp-path .path-seg {
+  stroke-width: max(5px, calc(var(--path-width, 9px) * 0.8));
+}
+
+.htp-theme-title {
+  margin: 0;
+  font-size: var(--type-h3);
+}
+
+.htp-demo .hints {
+  width: auto;
+  margin: 0;
+  padding: 0;
+  zoom: 1.2;
+}
+
+.htp-hint .game-hint-counter {
+  margin: 0;
+}
+
+.htp-caption {
+  font-size: var(--type-caption);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  min-height: 1.4em;
+}
+
+.htp-flame {
+  display: inline-flex;
+  color: var(--title-glow);
+}
+
+.htp-flame .icon {
+  width: 40px;
+  height: 40px;
 }
 
 .how-to-play-title {

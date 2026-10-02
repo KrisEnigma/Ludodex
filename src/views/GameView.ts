@@ -114,6 +114,12 @@ export class GameView {
   private hintCounterEl!: HTMLElement;
   private hintCounterCount!: HTMLElement;
   private chargeBarWrapEl!: HTMLDivElement;
+  private chargeBarLabelEl!: HTMLSpanElement;
+  private chargeLabelTimer: number | null = null;
+  /** "Hold an empty slot…" tip shown when the bulb is tapped with hints left. */
+  private hintTipEl!: HTMLDivElement;
+  private hintTipTimer: number | null = null;
+  private hintsEl!: HTMLDivElement;
   private hintHoldTimer: number | null = null;
   private hintHoldSlot: HTMLElement | null = null;
   private outsidePointerDownHandler: ((event: PointerEvent) => void) | null = null;
@@ -188,15 +194,15 @@ export class GameView {
     this.hintCounterCount.textContent = '5';
     this.hintCounterEl.append(hintIcon, this.hintCounterCount);
 
-    // Tapping the counter always opens the Hint Store — whether empty (get more)
-    // or not (top up proactively).
+    // Tapping the counter: with hints left, show HOW to use one (a tip under
+    // the board + the empty slots glow); the store is a link in that tip.
+    // With none left, open the store directly.
     this.hintCounterEl.addEventListener('click', () => {
-      void showHintStore('loss_recovery', (granted) => {
-        if (granted > 0) {
-          this.hintsRemaining += granted;
-          this.updateHintCounter();
-        }
-      });
+      if (this.hintsRemaining > 0 && !this.solved) {
+        this.showHintTip();
+      } else {
+        this.openHintStore();
+      }
     });
 
     // Puzzle number is intentionally NOT shown in the game chrome —
@@ -276,6 +282,7 @@ export class GameView {
     const chargeBarLabel = document.createElement('span');
     chargeBarLabel.className = 'hint-charge-label';
     chargeBarLabel.textContent = t('game.hint_charging');
+    this.chargeBarLabelEl = chargeBarLabel;
     const chargeBarTrack = document.createElement('div');
     chargeBarTrack.className = 'hint-charge-bar-track';
     const chargeBarFill = document.createElement('div');
@@ -284,10 +291,27 @@ export class GameView {
     chargeBarWrap.append(chargeBarLabel, chargeBarTrack);
     this.chargeBarWrapEl = chargeBarWrap;
 
-    this.gridWrap.append(gridEl, this.overlay, chargeBarWrap, this.findCounter);
+    const hintTip = document.createElement('div');
+    hintTip.className = 'hint-tip';
+    hintTip.setAttribute('role', 'status');
+    const hintTipText = document.createElement('span');
+    hintTipText.textContent = t('game.hint_tip');
+    const hintTipStore = document.createElement('button');
+    hintTipStore.type = 'button';
+    hintTipStore.className = 'hint-tip-store';
+    hintTipStore.textContent = t('game.hint_tip_store');
+    hintTipStore.addEventListener('click', () => {
+      this.hideHintTip();
+      this.openHintStore();
+    });
+    hintTip.append(hintTipText, hintTipStore);
+    this.hintTipEl = hintTip;
+
+    this.gridWrap.append(gridEl, this.overlay, chargeBarWrap, hintTip, this.findCounter);
 
     const hints = document.createElement('div');
     hints.className = 'hints';
+    this.hintsEl = hints;
 
     const answers = [...puzzle.answers].sort((a, b) => a.display.localeCompare(b.display));
     // Many answers → more slot rows; CSS switches to compact slots so the
@@ -418,7 +442,7 @@ export class GameView {
       if (this.solved) return;
       if (this.gridWrap.contains(event.target as Node)) return;
       // Interactive game controls, modals, and bottom sheets must not clear the active chain.
-      if ((event.target as Element).closest?.('.hints, .game-hint-counter, .header-menu-button, .modal-backdrop, .modal, .sheet-backdrop, .skin-detail-backdrop')) return;
+      if ((event.target as Element).closest?.('.hints, .game-hint-counter, .hint-tip, .header-menu-button, .modal-backdrop, .modal, .sheet-backdrop, .skin-detail-backdrop')) return;
       if (this.inputManager.getChain().length === 0) return;
       this.inputManager.clearChain();
     };
@@ -509,16 +533,15 @@ export class GameView {
       this.hintCounterEl.dataset.errorShake = 'true';
       window.setTimeout(() => this.hintCounterEl.removeAttribute('data-error-shake'), 400);
 
-      await showHintStore('loss_recovery', (granted) => {
-        if (granted > 0) {
-          this.hintsRemaining += granted;
-          this.updateHintCounter();
-        }
-      });
+      this.openHintStore();
       return;
     }
 
     event.preventDefault();
+    this.hideHintTip();
+    if (this.chargeLabelTimer !== null) window.clearTimeout(this.chargeLabelTimer);
+    this.chargeBarWrapEl.classList.remove('is-revealed');
+    this.chargeBarLabelEl.textContent = t('game.hint_charging');
     slot.dataset.revealing = 'true';
     this.hintCounterEl.dataset.charging = 'true';
     this.chargeBarWrapEl.classList.add('is-charging');
@@ -533,6 +556,32 @@ export class GameView {
     }
     delete this.hintCounterEl.dataset.charging;
     this.chargeBarWrapEl.classList.remove('is-charging');
+  }
+
+  private openHintStore(): void {
+    void showHintStore('loss_recovery', (granted) => {
+      if (granted > 0) {
+        this.hintsRemaining += granted;
+        this.updateHintCounter();
+      }
+    });
+  }
+
+  /** Teach the hint gesture: tip under the board, empty slots glow briefly. */
+  private showHintTip(): void {
+    this.hintTipEl.classList.add('is-visible');
+    this.hintsEl.dataset.coach = 'false';
+    void this.hintsEl.offsetWidth; // restart the glow
+    this.hintsEl.dataset.coach = 'true';
+    if (this.hintTipTimer !== null) window.clearTimeout(this.hintTipTimer);
+    this.hintTipTimer = window.setTimeout(() => this.hideHintTip(), 3600);
+  }
+
+  private hideHintTip(): void {
+    this.hintTipEl.classList.remove('is-visible');
+    delete this.hintsEl.dataset.coach;
+    if (this.hintTipTimer !== null) window.clearTimeout(this.hintTipTimer);
+    this.hintTipTimer = null;
   }
 
   private startHintHold(slot: HTMLElement): void {
@@ -577,7 +626,15 @@ export class GameView {
     slot.dataset.revealed = 'true';
     slot.dataset.filled = 'true';
     delete this.hintCounterEl.dataset.charging;
+    // The pill confirms the reveal for a moment, then fades.
+    this.chargeBarLabelEl.textContent = t('game.hint_revealed');
     this.chargeBarWrapEl.classList.remove('is-charging');
+    this.chargeBarWrapEl.classList.add('is-revealed');
+    if (this.chargeLabelTimer !== null) window.clearTimeout(this.chargeLabelTimer);
+    this.chargeLabelTimer = window.setTimeout(() => {
+      this.chargeBarWrapEl.classList.remove('is-revealed');
+      this.chargeLabelTimer = null;
+    }, 800);
 
     // Reveal pop animation on the slot.
     slot.removeAttribute('data-just-revealed');
@@ -741,6 +798,8 @@ export class GameView {
     }
     this.stopTimer();
     this.cancelHintHold();
+    this.hideHintTip();
+    if (this.chargeLabelTimer !== null) window.clearTimeout(this.chargeLabelTimer);
     window.removeEventListener('resize', this.handleResize);
     if (this.outsidePointerDownHandler) {
       document.removeEventListener('pointerdown', this.outsidePointerDownHandler, true);
@@ -796,6 +855,9 @@ export class GameView {
   private bindPointerEvents(): void {
     this.gridWrap.addEventListener('pointerdown', (event) => {
       if (!event.isPrimary) return;
+      // The hint tip lives inside gridWrap; capturing its pointer would
+      // retarget the click to gridWrap and swallow the "Get more" button.
+      if ((event.target as Element).closest?.('.hint-tip')) return;
       this.gridWrap.setPointerCapture(event.pointerId);
       // Measure once per gesture; pointermove then reads the cache instead of
       // forcing layout for 16 tiles on every move.
