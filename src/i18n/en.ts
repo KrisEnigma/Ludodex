@@ -66,6 +66,7 @@ export const strings = {
     'settings.skin_preview_banner_title': 'Previewing {name} — not yet unlocked',
   'settings.restore_purchases': 'Restore purchases',
   'settings.reset_stats': 'Reset stats',
+  'settings.ad_privacy': 'Ad privacy choices',
   'settings.badge_free': 'Free',
   'settings.badge_owned': 'Owned',
   'settings.purchase_in_progress': 'Purchasing {name}...',

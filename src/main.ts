@@ -11,6 +11,7 @@ import { getLang, initI18n } from './i18n';
 import { applySkin, normalizeSkinId, onSkinChanged, SKINS } from './skins/registry';
 import type { SkinId } from './skins/registry';
 import { initIAP, isSkinAccessibleSync } from './services/IAPService';
+import { initAds } from './services/AdService';
 import { bootstrapProgress, getStoredSkinId, reconcileAbandonedAttempt } from './services/ProgressService';
 import { retroactivelyUnlockEarnedAchievements } from './services/AchievementService';
 import { initAnalytics, track, updateLocale } from './services/AnalyticsService';
@@ -130,6 +131,11 @@ async function boot(root: HTMLDivElement): Promise<void> {
     } catch {
       // Keep web/dev startup resilient when native billing is unavailable.
     }
+
+    // Ads (native): consent → ATT → AdMob. First-time players get this at
+    // the end of the tutorial instead (Router), so the prompts never cover
+    // onboarding.
+    if (tutorial.value === 'true') void initAds();
 
     // Re-arm the daily reminder if the player opted in previously (native-only,
     // never prompts — see NotificationService.initDailyNotification).

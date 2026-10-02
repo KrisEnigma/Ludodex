@@ -28,7 +28,7 @@ import {
   consumeAdHintSlot,
   grantHints
 } from '../services/HintService';
-import { showRewardedAdForHint, canShowAds } from '../services/AdService';
+import { showRewardedAdForHint, canShowAds, isAdsReady } from '../services/AdService';
 import { addDragToDismiss } from './sheetDrag';
 import { trackOverlay } from './overlayStack';
 import { buildInstallCta } from './InstallCta';
@@ -147,7 +147,8 @@ export async function showHintStore(
 
     // Rewarded ad CTA (native only, when slots remain)
     let adRow: HTMLElement | null = null;
-    if (ctx.canShowRewardedAds && adHintsLeft > 0) {
+    // Only when consent is settled and AdMob is up — never a dead button.
+    if (ctx.canShowRewardedAds && isAdsReady() && adHintsLeft > 0) {
       adRow = document.createElement('button');
       adRow.className = 'hint-store-ad-cta button-secondary';
       (adRow as HTMLButtonElement).type = 'button';

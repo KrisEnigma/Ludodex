@@ -15,9 +15,9 @@
             android:value="ca-app-pub-3940256099942544~3347511713"/>
 
         <!--
-            Suppress AdMob's auto-init ContentProvider until AdMob is fully
-            configured (real app ID, UMP consent flow, AdMob.initialize() call).
-            Remove this block when wiring up ads for real.
+            Keep AdMob's auto-init ContentProvider off: the app starts the SDK
+            itself (AdService.initAds) and only requests ads after the UMP
+            consent flow says it may.
         -->
         <provider
             android:name="com.google.android.gms.ads.MobileAdsInitProvider"

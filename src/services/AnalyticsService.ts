@@ -148,6 +148,7 @@ export type AnalyticsEvent =
   // ── Ads ────────────────────────────────────────────────────────────────────
   | 'ad_impression'               // legacy alias kept for backward compat
   | 'interstitial_shown'          // placement: 'win_exit'
+  | 'ads_consent_blocked'         // UMP says ads can't be requested this session
   | 'interstitial_skipped_remove_ads'
 
   // ── Share ──────────────────────────────────────────────────────────────────

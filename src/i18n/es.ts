@@ -67,6 +67,7 @@ export const strings: Record<keyof typeof enStrings, string> = {
     'settings.skin_preview_banner_title': 'Vista previa de {name} — aún no desbloqueado',
   'settings.restore_purchases': 'Restaurar compras',
   'settings.reset_stats': 'Restablecer estadísticas',
+  'settings.ad_privacy': 'Privacidad de anuncios',
   'settings.badge_free': 'Gratis',
   'settings.badge_owned': 'Comprado',
   'settings.purchase_in_progress': 'Comprando {name}...',

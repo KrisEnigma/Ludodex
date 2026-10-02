@@ -32,7 +32,13 @@
  */
 
 import { Preferences } from '@capacitor/preferences';
-import { AdMob, AdmobConsentStatus, RewardAdPluginEvents } from '@capacitor-community/admob';
+import { Capacitor } from '@capacitor/core';
+import {
+  AdMob,
+  AdmobConsentStatus,
+  InterstitialAdPluginEvents,
+  RewardAdPluginEvents,
+} from '@capacitor-community/admob';
 import { isOwned, PRODUCT_IDS } from './IAPService';
 import { getMonetizationContext } from './MonetizationContext';
 import { track } from './AnalyticsService';
@@ -60,9 +66,13 @@ const TEST_REWARDED_IOS         = 'ca-app-pub-3940256099942544/1712485313';
 // ── Session state (resets on cold start) ──────────────────────────────────────
 
 let initialized    = false;
+let initPromise: Promise<void> | null = null;
+let privacyOptionsRequired = false;
 let preparing      = false;
 let interstitialReady = false;
 let sessionAdCount = 0;
+/** Settles when the current win-exit interstitial check (and any ad) is over. */
+let fullScreenAdGate: Promise<unknown> = Promise.resolve();
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -139,48 +149,122 @@ async function writePendingInterstitial(pending: boolean): Promise<void> {
 // ── Public API ────────────────────────────────────────────────────────────────
 
 /**
- * Initialize AdMob. Call from main.ts after Sentry, before Router.
- * No-op on web.
+ * DEV "Native player" mode (Dev overlay): the browser reports a native
+ * context but the AdMob plugin is inert, so ads are faked with a plain
+ * full-screen card. Lets the cadence, the Remove Ads skip and the rewarded
+ * grant be tested without a device. Compiled out of production.
  */
-export async function initAds(): Promise<void> {
+function isDevFakeAds(): boolean {
+  return import.meta.env.DEV && getMonetizationContext().isNative && !Capacitor.isNativePlatform();
+}
+
+function showDevFakeAd(kind: 'interstitial' | 'rewarded'): Promise<void> {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.setAttribute('role', 'dialog');
+    overlay.style.cssText =
+      'position:fixed;inset:0;z-index:10000;display:flex;flex-direction:column;align-items:center;' +
+      'justify-content:center;gap:16px;background:#111;color:#fff;font:600 16px system-ui,sans-serif;';
+    const label = document.createElement('div');
+    label.textContent = kind === 'rewarded' ? 'TEST REWARDED AD' : 'TEST INTERSTITIAL AD';
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.textContent = kind === 'rewarded' ? 'Close (reward earned)' : 'Close';
+    close.style.cssText = 'padding:10px 18px;border-radius:8px;border:1px solid #fff;background:none;color:#fff;font:inherit;';
+    close.addEventListener('click', () => {
+      overlay.remove();
+      resolve();
+    });
+    overlay.append(label, close);
+    document.body.append(overlay);
+  });
+}
+
+/**
+ * Initialize AdMob: consent first, then ads. Idempotent — safe to call from
+ * both boot (returning players) and the end of onboarding (first launch).
+ * No-op on web.
+ *
+ * Order (Google UMP + Apple ATT guidance):
+ *  1. AdMob.initialize — the plugin wires its consent executor here; it does
+ *     not request any ads.
+ *  2. UMP consent info; show the GDPR form when required (EEA/UK).
+ *  3. iOS ATT prompt if not determined yet (no-op on Android).
+ *  4. Ads are enabled only when UMP says `canRequestAds`.
+ */
+export function initAds(): Promise<void> {
+  if (!initPromise) initPromise = runInitAds();
+  return initPromise;
+}
+
+async function runInitAds(): Promise<void> {
   const ctx = getMonetizationContext();
   if (!ctx.isNative) return;
+  if (isDevFakeAds()) {
+    initialized = true;
+    return;
+  }
 
   try {
-    // Initialize AdMob.
     await AdMob.initialize({
       initializeForTesting: shouldUseTestAds(),
     });
-
-    // iOS ATT (App Tracking Transparency) — separate call from initialize.
-    // No-op on Android; safe to call unconditionally.
-    try {
-      await AdMob.requestTrackingAuthorization();
-    } catch {
-      // Non-fatal: device may not support ATT (Android, older iOS).
-    }
-
-    // EU/UK GDPR UMP consent flow. Check whether consent is required;
-    // if so, show the form and wait for the user to respond before marking
-    // ads as initialized. This ensures we never serve ads without consent.
-    try {
-      const consentInfo = await AdMob.requestConsentInfo({
-        tagForUnderAgeOfConsent: false,
-      });
-      if (consentInfo.status === AdmobConsentStatus.REQUIRED) {
-        await AdMob.showConsentForm();
-      }
-    } catch (consentErr) {
-      // Consent errors are non-fatal — some regions/devices don't support UMP.
-      // We still proceed with initialization so ads work outside of GDPR regions.
-      console.warn('[AdService] UMP consent flow failed (non-fatal)', consentErr);
-    }
-
-    initialized = true;
-    void prepareInterstitialIfNeeded();
   } catch (err) {
     console.warn('[AdService] AdMob.initialize failed', err);
-    // Don't set initialized = true — ads stay disabled for this session.
+    return; // ads stay disabled for this session
+  }
+
+  let canRequestAds = true;
+  try {
+    let consentInfo = await AdMob.requestConsentInfo({ tagForUnderAgeOfConsent: false });
+    if (consentInfo.status === AdmobConsentStatus.REQUIRED && consentInfo.isConsentFormAvailable) {
+      consentInfo = await AdMob.showConsentForm();
+    }
+    canRequestAds = consentInfo.canRequestAds;
+    privacyOptionsRequired =
+      String(consentInfo.privacyOptionsRequirementStatus) === 'REQUIRED';
+  } catch (consentErr) {
+    // UMP can fail offline or on unsupported devices. Outside the EEA ads
+    // may still be requested; inside it, UMP's own state keeps them
+    // non-personalised.
+    console.warn('[AdService] UMP consent flow failed (non-fatal)', consentErr);
+  }
+
+  if (ctx.platform === 'ios') {
+    try {
+      const { status } = await AdMob.trackingAuthorizationStatus();
+      if (status === 'notDetermined') await AdMob.requestTrackingAuthorization();
+    } catch {
+      // Older iOS without ATT: nothing to ask.
+    }
+  }
+
+  if (!canRequestAds) {
+    track('ads_consent_blocked', {});
+    return;
+  }
+  initialized = true;
+  void prepareInterstitialIfNeeded();
+}
+
+/** True once consent is settled and ads may be requested this session. */
+export function isAdsReady(): boolean {
+  return initialized;
+}
+
+/**
+ * EEA/UK players must be able to change their ad consent later (UMP
+ * "privacy options entry point"). Settings shows a button when this is true.
+ */
+export function isAdPrivacyOptionsRequired(): boolean {
+  return privacyOptionsRequired;
+}
+
+export async function showAdPrivacyOptions(): Promise<void> {
+  try {
+    await AdMob.showPrivacyOptionsForm();
+  } catch (err) {
+    console.warn('[AdService] showPrivacyOptionsForm failed', err);
   }
 }
 
@@ -233,7 +317,23 @@ export async function recordSolveForInterstitial(): Promise<void> {
  *
  * Returns true if an ad was shown, false otherwise.
  */
-export async function fireInterstitialIfPending(): Promise<boolean> {
+export function fireInterstitialIfPending(): Promise<boolean> {
+  const run = runFireInterstitial();
+  // Set synchronously, so a view mounted in the same tick already waits.
+  fullScreenAdGate = run.catch(() => false);
+  return run;
+}
+
+/**
+ * Resolves once no interstitial is on screen. The Router waits on this
+ * before starting a newly shown view, so e.g. Play Again's puzzle timer
+ * doesn't run underneath the ad.
+ */
+export function afterFullScreenAd(): Promise<void> {
+  return fullScreenAdGate.then(() => undefined);
+}
+
+async function runFireInterstitial(): Promise<boolean> {
   const ctx = getMonetizationContext();
   if (!ctx.canShowInterstitials) return false;
 
@@ -251,16 +351,35 @@ export async function fireInterstitialIfPending(): Promise<boolean> {
     return false;
   }
 
+  // Consent not settled / refused, or AdMob failed to start.
+  if (!initialized) return false;
+
   sessionAdCount += 1;
   track('interstitial_shown', { placement: 'win_exit', session_ad_count: sessionAdCount });
+
+  if (isDevFakeAds()) {
+    await showDevFakeAd('interstitial');
+    return true;
+  }
 
   await prepareInterstitialIfNeeded();
   if (interstitialReady) {
     interstitialReady = false;
+    // showInterstitial resolves once the ad is presented; wait for it to be
+    // dismissed (or to fail) so callers know when the screen is theirs again.
+    const handles: Array<{ remove: () => Promise<void> }> = [];
     try {
+      const closed = new Promise<void>((resolve) => {
+        void AdMob.addListener(InterstitialAdPluginEvents.Dismissed, () => resolve()).then((h) => handles.push(h));
+        void AdMob.addListener(InterstitialAdPluginEvents.FailedToShow, () => resolve()).then((h) => handles.push(h));
+        window.setTimeout(resolve, 90_000); // never block the app on a lost event
+      });
       await AdMob.showInterstitial();
+      await closed;
     } catch (err) {
       console.warn('[AdService] showInterstitial failed', err);
+    } finally {
+      handles.forEach((h) => void h.remove());
     }
     void prepareInterstitialIfNeeded(); // pre-load next
   }
@@ -283,6 +402,11 @@ export async function showRewardedAdForHint(): Promise<'rewarded' | 'skipped' | 
   const ctx = getMonetizationContext();
   if (!ctx.canShowRewardedAds) return 'unavailable';
   if (!initialized) return 'unavailable';
+
+  if (isDevFakeAds()) {
+    await showDevFakeAd('rewarded');
+    return 'rewarded';
+  }
 
   try {
     await AdMob.prepareRewardVideoAd({

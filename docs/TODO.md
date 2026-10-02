@@ -5,15 +5,40 @@ Deferred items from the Sep 2026 audit / fix pass. Details and rationale live in
 
 ## Decisions needed
 
-- [ ] **"Watch ad → +1 hint" button shows on native but does nothing** (§3.3).
-      `initAds()` is never called, so `showRewardedAdForHint()` always returns
-      `'unavailable'` and the tap is silent. Options:
-      - hide it behind a feature flag (e.g. `VITE_ADS_ENABLED`) until ads are wired, or
-      - wire ads properly: UMP consent → ATT prompt → `AdMob.initialize`, real ad
-        unit IDs, `NSUserTrackingUsageDescription` + `SKAdNetworkItems` in
-        Info.plist, real `APPLICATION_ID` in AndroidManifest (currently Google
-        test IDs). Same applies to "Remove Ads" copy in the Starter Pack.
-      (The reward-grant check itself was fixed — it now uses the Rewarded event.)
+- [x] **Ads wired (code, Oct 1 2026)** (§3.3). Rewarded "+1 hint" and win-exit
+      interstitials (every 2nd solve, max 2 per launch, skipped with Remove Ads).
+      `initAds()`: AdMob.initialize → UMP consent (form if required) → iOS ATT →
+      ads only if `canRequestAds`. Runs at boot for returning players and at the
+      end of the tutorial on first launch. The "Watch ad" button only shows once
+      ads are ready; Settings shows "Ad privacy choices" when UMP requires it.
+      The next screen's timer waits until an interstitial is dismissed. Info.plist
+      has `NSUserTrackingUsageDescription` + Google's SKAdNetwork list.
+      Dev "Native player" mode fakes both ad types with a plain card.
+
+### Ads — release checklist (Kris, needs accounts / device)
+
+- [ ] AdMob: create the two apps (iOS, Android) and four ad units (rewarded +
+      interstitial per platform).
+- [ ] Put the real **app IDs** (`ca-app-pub-…~…`) in `AndroidManifest.xml`
+      (`APPLICATION_ID`) and `Info.plist` (`GADApplicationIdentifier`). They're
+      public identifiers, not secrets.
+- [ ] Release build env: `VITE_ADMOB_USE_TEST_IDS=false` + the four
+      `VITE_ADMOB_*` unit IDs (see `.env.example`).
+- [ ] AdMob → Privacy & messaging: publish a **GDPR message** (EEA/UK) and an
+      **IDFA explainer** (iOS). Without the GDPR message, EEA users get no ads.
+- [ ] `app-ads.txt` at https://ludodex.krisenigma.com/app-ads.txt with the
+      line AdMob gives you (`public/app-ads.txt`), and the same domain as the
+      developer website in both stores.
+- [ ] Privacy policy (/privacy): mention AdMob, advertising ID, consent.
+- [ ] App Store privacy labels + Play Data safety form: AdMob data (device
+      ID, advertising data, diagnostics); "tracking" = yes on iOS if ATT allowed.
+- [ ] iOS `PrivacyInfo.xcprivacy` for the app (Google's SDK ships its own).
+- [ ] Optional: Spanish ATT text via `es.lproj/InfoPlist.strings` (needs adding
+      to the Xcode project).
+- [ ] Device test: consent form with `debugGeography: EEA` + test device ID,
+      ATT prompt, rewarded grants exactly 1 hint, interstitial every 2nd solve,
+      Remove Ads skips it, Play Again timer starts after the ad closes.
+
 - [x] **Confetti after leaving Win** keeps falling (up to 7 s) over the next
       screen on Play again / Done. Decided (Oct 1 2026): keep it.
 - [x] **Hidden "Reset progress" gesture** replaced (Oct 1 2026) by a visible

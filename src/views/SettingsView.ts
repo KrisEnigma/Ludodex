@@ -9,6 +9,7 @@ import {
   type SkinMeta
 } from '../skins/registry';
 import { isSkinOwned, purchase, restorePurchases, getVisibleSkins } from '../services/IAPService';
+import { isAdPrivacyOptionsRequired, showAdPrivacyOptions } from '../services/AdService';
 import { track, updateLocale, setPaidStatus } from '../services/AnalyticsService';
 import { getActiveSkinId, getProgressSnapshot, getStreakStatus, resetAllProgress, setActiveSkinId } from '../services/ProgressService';
 import { getMonetizationContext } from '../services/MonetizationContext';
@@ -849,7 +850,17 @@ export class SettingsView {
     aboutSection.className = 'settings-about-section';
     aboutSection.append(linksRow);
 
-    section.append(heading, version, credit, aboutSection, this.renderResetButton());
+    section.append(heading, version, credit, aboutSection);
+    // EEA/UK (UMP): players must be able to revisit their ad consent.
+    if (this.isNative && isAdPrivacyOptionsRequired()) {
+      const privacy = document.createElement('button');
+      privacy.type = 'button';
+      privacy.className = 'settings-reset-button button-tertiary';
+      privacy.textContent = t('settings.ad_privacy');
+      privacy.addEventListener('click', () => void showAdPrivacyOptions());
+      section.append(privacy);
+    }
+    section.append(this.renderResetButton());
     return section;
   }
 

@@ -4,7 +4,7 @@ import { App as CapacitorApp } from '@capacitor/app';
 import type { Puzzle } from '../types/puzzle';
 import { track } from '../services/AnalyticsService';
 import { trackRoute } from '../services/SentryService';
-import { fireInterstitialIfPending } from '../services/AdService';
+import { afterFullScreenAd, fireInterstitialIfPending, initAds } from '../services/AdService';
 import { pathForRoute } from '../services/DeepLinking';
 import { showConfirmModal } from '../components/Modal';
 import { closeAllOverlays, closeTopOverlay, installOverlayKeyboard } from '../components/overlayStack';
@@ -65,7 +65,11 @@ export class Router {
         // replaced before these frames ran, so a disposed view never starts
         // work. rAF doesn't run while the page is hidden, so a view mounted
         // in the background is "shown" when the page becomes visible.
-        if (this.currentView === view && element.isConnected) view.onShown?.();
+        // A win-exit interstitial may be up: start the view (timers etc.)
+        // only once it's dismissed.
+        void afterFullScreenAd().then(() => {
+          if (this.currentView === view && element.isConnected) view.onShown?.();
+        });
       });
     });
   }
@@ -129,10 +133,17 @@ export class Router {
       payload: (payload ?? this.defaultPayload(route)) as RoutePayloads[T]
     };
 
+    const replaced = this.stack[this.stack.length - 1];
     if (this.stack.length === 0) {
       this.stack.push(next as AnyRouteEntry);
     } else {
       this.stack[this.stack.length - 1] = next as AnyRouteEntry;
+    }
+
+    // Leaving the win screen by replacement (Play Again → game) is a win exit
+    // too: fire the pending interstitial before the next view renders.
+    if (replaced?.name === 'win' && route !== 'win') {
+      void fireInterstitialIfPending();
     }
 
     trackRoute(route, 'replace');
@@ -306,14 +317,6 @@ export class Router {
     // Clear any view-specific back-button override before building the new view.
     this.currentBackAction = null;
 
-    // When replacing a win route with a new route (Play Again → new game),
-    // fire the pending interstitial on the transition.
-    const prev = this.stack[this.stack.length - 2];
-    const isReplacingWin = prev?.name === 'win' && current.name !== 'win';
-    if (isReplacingWin) {
-      void fireInterstitialIfPending();
-    }
-
     switch (current.name) {
       case 'menu': {
         const view = new MenuView({
@@ -376,6 +379,9 @@ export class Router {
         const view = new HowToPlayView(payload, () => {
           if (payload.fromOnboarding) {
             this.replace('menu');
+            // First launch: ask for ad consent / tracking once the player
+            // has seen how to play, not over the splash.
+            void initAds();
           } else {
             this.pop();
           }
