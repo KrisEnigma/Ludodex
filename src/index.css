@@ -563,6 +563,30 @@
 
 /* Bulb tapped with hints left: how-to tip in the same spot as the charge
    pill, plus a short glow on the empty slots. */
+.grid:focus {
+  outline: none; /* the cursor ring on a tile shows where keys go */
+}
+
+button.game-hint-counter {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.game-hint-counter:focus-visible {
+  outline: 2px solid var(--title-glow);
+  outline-offset: 2px;
+}
+
+.tile[data-kbd-focus='true'] {
+  outline: 3px solid var(--title-glow);
+  outline-offset: 3px;
+}
+
+.hint-slot:focus-visible {
+  outline: 3px solid var(--title-glow);
+  outline-offset: 2px;
+}
+
 .hint-tip {
   position: absolute;
   bottom: -37px;
@@ -588,6 +612,11 @@
   opacity: 0;
   pointer-events: none;
   transition: opacity 160ms ease;
+}
+
+.hint-tip:not(.is-visible) {
+  visibility: hidden; /* out of the Tab order while invisible */
+  transition: opacity 160ms ease, visibility 0s linear 160ms;
 }
 
 .hint-tip.is-visible {

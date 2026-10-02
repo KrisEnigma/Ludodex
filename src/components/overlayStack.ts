@@ -93,6 +93,12 @@ export function closeTopOverlay(): boolean {
   return true;
 }
 
+/** True while any sheet/dialog is open (game keys stay out of its way). */
+export function hasOpenOverlay(): boolean {
+  prune();
+  return entries.length > 0;
+}
+
 /** Close every open overlay, top-most first. */
 export function closeAllOverlays(): void {
   while (closeTopOverlay()) {

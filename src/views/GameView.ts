@@ -6,6 +6,7 @@ import { Tile } from '../game/Tile';
 import { applySolvedPart, buildTileOwnership, type PartOwnershipEntry, type TileOwnershipState } from '../game/tileOwnership';
 import { showConfirmModal } from '../components/Modal';
 import { recordSolveForInterstitial } from '../services/AdService';
+import { hasOpenOverlay } from '../components/overlayStack';
 import { invalidateMenuCache } from '../services/MenuDataCache';
 import { showHintStore } from '../components/HintStoreSheet';
 import {
@@ -73,6 +74,10 @@ export class GameView {
   private readonly overlay: SVGSVGElement;
   private readonly pathSegments: SVGGElement;
   private readonly tileElements = new Map<Tile, HTMLDivElement>();
+  /** Keyboard play: the tile the arrow keys are on (shown only after a key). */
+  private kbdFocus: Tile | null = null;
+  private keyHandler: ((event: KeyboardEvent) => void) | null = null;
+  private focusHandler: (() => void) | null = null;
   private readonly tileByCoord = new Map<string, Tile>();
   private readonly pendingVisualDeactivationCoords = new Set<string>();
   private readonly selectedTiles = new Set<Tile>();
@@ -184,7 +189,10 @@ export class GameView {
     });
 
     // Hint counter UI
-    this.hintCounterEl = document.createElement('div');
+    // A real button, so the keyboard reaches the hint tip / store too.
+    const hintCounterButton = document.createElement('button');
+    hintCounterButton.type = 'button';
+    this.hintCounterEl = hintCounterButton;
     this.hintCounterEl.className = 'game-hint-counter';
     const hintIcon = document.createElement('span');
     hintIcon.className = 'game-hint-counter-icon';
@@ -241,6 +249,19 @@ export class GameView {
     const gridEl = document.createElement('div');
     gridEl.className = 'grid';
     gridEl.id = 'grid';
+    gridEl.setAttribute('role', 'group');
+    gridEl.setAttribute('aria-label', t('game.grid_aria'));
+    // One Tab stop for the board; arrows move the cursor ring inside it.
+    gridEl.tabIndex = 0;
+    gridEl.addEventListener('focus', () => {
+      // Keyboard focus only — a click/tap focuses the board too, but must
+      // not pop the cursor ring up.
+      if (!gridEl.matches(':focus-visible')) return;
+      if (!this.kbdFocus) {
+        const chain = this.inputManager.getChain();
+        this.setKbdFocus(chain[chain.length - 1] ?? this.tileByCoord.get('a1') ?? null);
+      }
+    });
 
     this.allTiles = [];
 
@@ -253,8 +274,10 @@ export class GameView {
         tile.dataset.row = String(row);
         tile.dataset.col = String(col);
         tile.dataset.state = 'idle';
+        tile.setAttribute('aria-label', t('game.tile_aria', { letter: model.letter, row: row + 1, col: col + 1 }));
         const letterSpan = document.createElement('span');
         letterSpan.className = 'tile-letter';
+        letterSpan.setAttribute('aria-hidden', 'true');
         letterSpan.textContent = model.letter;
         tile.append(letterSpan);
         gridEl.appendChild(tile);
@@ -382,6 +405,9 @@ export class GameView {
 
       hints.appendChild(row);
     }
+    // The hint slots' single Tab stop starts on the first slot.
+    const firstSlot = hints.querySelector<HTMLElement>('.hint-slot');
+    if (firstSlot) firstSlot.tabIndex = 0;
 
     this.ownershipState = buildTileOwnership(ownershipEntries);
 
@@ -426,6 +452,7 @@ export class GameView {
     });
 
     this.bindPointerEvents();
+    this.bindKeyboard();
     // Outside-grid deselection: any pointerdown not on the grid clears the active
     // chain. Attached to `document` (capture phase) instead of `this.element` so it
     // catches taps anywhere on the page — including header buttons, modals that
@@ -501,6 +528,27 @@ export class GameView {
     // filled or revealed (see revealSlot / restoreHintReveals / onWordFound).
     slot.append(letterSpan);
 
+    // Keyboard: Tab to a slot, hold Space/Enter (same 1 s charge as a press).
+    // Roving tabindex: the slots are one Tab stop; arrows move inside them.
+    slot.tabIndex = -1;
+    slot.addEventListener('focus', () => {
+      for (const el of this.hintSlotEls()) el.tabIndex = el === slot ? 0 : -1;
+    });
+    slot.setAttribute('role', 'button');
+    slot.setAttribute('aria-label', t('game.hint_slot_aria'));
+    slot.addEventListener('keydown', (e) => {
+      if (e.key.startsWith('Arrow')) {
+        this.moveFromHintSlot(slot, e.key);
+        e.preventDefault();
+        return;
+      }
+      if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) void this.onHintSlotPointerDown(e, slot);
+      if (e.key === ' ' || e.key === 'Enter') e.preventDefault();
+    });
+    slot.addEventListener('keyup', (e) => {
+      if (e.key === ' ' || e.key === 'Enter') this.onHintSlotPointerEnd(slot);
+    });
+    slot.addEventListener('blur', () => this.onHintSlotPointerEnd(slot));
     slot.addEventListener('pointerdown', (e) => this.onHintSlotPointerDown(e, slot));
     slot.addEventListener('pointerup', () => this.onHintSlotPointerEnd(slot));
     slot.addEventListener('pointerleave', () => this.onHintSlotPointerEnd(slot));
@@ -510,7 +558,7 @@ export class GameView {
     return slot;
   }
 
-  private async onHintSlotPointerDown(event: PointerEvent, slot: HTMLElement): Promise<void> {
+  private async onHintSlotPointerDown(event: Event, slot: HTMLElement): Promise<void> {
     if (slot.dataset.revealed === 'true') return;
     if (this.solved) return;
     // Slots belonging to an already-found word are not hintable. Checks both
@@ -662,6 +710,7 @@ export class GameView {
     const prev = this.prevHintsRemaining;
     const curr = this.hintsRemaining;
     this.hintCounterCount.textContent = String(curr);
+    this.hintCounterEl.setAttribute('aria-label', t('game.hints_left_aria', { n: curr }));
     if (curr <= 0) {
       this.hintCounterEl.dataset.state = 'empty';
     } else {
@@ -801,6 +850,10 @@ export class GameView {
     this.hideHintTip();
     if (this.chargeLabelTimer !== null) window.clearTimeout(this.chargeLabelTimer);
     window.removeEventListener('resize', this.handleResize);
+    if (this.keyHandler) document.removeEventListener('keydown', this.keyHandler);
+    this.keyHandler = null;
+    if (this.focusHandler) document.removeEventListener('focusin', this.focusHandler);
+    this.focusHandler = null;
     if (this.outsidePointerDownHandler) {
       document.removeEventListener('pointerdown', this.outsidePointerDownHandler, true);
       this.outsidePointerDownHandler = null;
@@ -852,9 +905,136 @@ export class GameView {
     this.onMenu();
   }
 
+  /**
+   * Keyboard play (desktop web, hardware keyboards). Space/Enter acts exactly
+   * like a tap on the cursor tile, so selection, find-on-spell and the
+   * mistake bookkeeping are the touch rules unchanged. No letter typing —
+   * picking the tile is part of the puzzle.
+   *   arrows      → move the keyboard cursor; Space/Enter taps it
+   *   Backspace   → undo the last letter;  Escape → clear
+   */
+  private bindKeyboard(): void {
+    this.keyHandler = (event) => {
+      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+      if (this.solved || !this.element.isConnected || hasOpenOverlay()) return;
+      const target = event.target as HTMLElement | null;
+      const onControl = !!target?.closest?.('button, a, input, textarea, select, [role="button"]');
+      const key = event.key;
+
+      if (key === 'Backspace') {
+        const chain = this.inputManager.getChain();
+        const last = chain[chain.length - 1];
+        if (last) this.tapTile(last); // tapping the last tile removes it
+        event.preventDefault();
+        return;
+      }
+      if (key === 'Escape') {
+        if (this.inputManager.getChain().length > 0) {
+          this.inputManager.clearChain();
+          event.preventDefault();
+        }
+        return;
+      }
+      if (onControl) return; // Space/Enter/arrows keep their normal meaning on buttons
+      const moves: Record<string, [number, number]> = {
+        ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1]
+      };
+      if (moves[key]) {
+        const [dr, dc] = moves[key];
+        const from = this.kbdFocus ?? this.inputManager.getChain().at(-1) ?? this.tileByCoord.get('a1') ?? null;
+        if (!from) return;
+        if (this.kbdFocus && dr === 1 && from.row === 3) {
+          // Off the bottom of the board → into the hint slots below.
+          const slots = this.hintSlotEls();
+          const target = this.nearestByX(slots.filter((el) => this.lineOf(el, slots) === 0), this.tileElements.get(from));
+          if (target) {
+            this.setKbdFocus(null);
+            target.focus();
+          }
+          event.preventDefault();
+          return;
+        }
+        const row = Math.min(3, Math.max(0, from.row + (this.kbdFocus ? dr : 0)));
+        const col = Math.min(3, Math.max(0, from.col + (this.kbdFocus ? dc : 0)));
+        this.setKbdFocus(this.allTiles.find((tl) => tl.row === row && tl.col === col) ?? null);
+        event.preventDefault();
+        return;
+      }
+      if ((key === ' ' || key === 'Enter') && this.kbdFocus) {
+        this.tapTile(this.kbdFocus);
+        event.preventDefault();
+      }
+    };
+    document.addEventListener('keydown', this.keyHandler);
+    // Tab (or a click) moved focus to a hint slot / button: the board cursor
+    // is no longer where the keys go, so hide it.
+    this.focusHandler = () => {
+      if (!(document.activeElement as HTMLElement | null)?.classList.contains('grid')) this.setKbdFocus(null);
+    };
+    document.addEventListener('focusin', this.focusHandler);
+  }
+
+  private hintSlotEls(): HTMLElement[] {
+    return [...this.hintsEl.querySelectorAll<HTMLElement>('.hint-slot')];
+  }
+
+  /** Visual line index of a slot (rows wrap, so group by top edge). */
+  private lineOf(el: HTMLElement, slots: HTMLElement[]): number {
+    const tops = [...new Set(slots.map((s) => Math.round(s.getBoundingClientRect().top)))].sort((a, b) => a - b);
+    return tops.indexOf(Math.round(el.getBoundingClientRect().top));
+  }
+
+  private nearestByX<T extends HTMLElement>(els: T[], ref: HTMLElement | undefined): T | undefined {
+    if (!ref || els.length === 0) return els[0];
+    const r = ref.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const dist = (el: HTMLElement): number => {
+      const b = el.getBoundingClientRect();
+      return Math.abs(b.left + b.width / 2 - cx);
+    };
+    return els.reduce((best, el) => (dist(el) < dist(best) ? el : best));
+  }
+
+  /** Arrow keys on a focused hint slot: move between slots, Up off the top returns to the board. */
+  private moveFromHintSlot(slot: HTMLElement, key: string): void {
+    const slots = this.hintSlotEls();
+    const i = slots.indexOf(slot);
+    if (key === 'ArrowLeft' || key === 'ArrowRight') {
+      slots[i + (key === 'ArrowLeft' ? -1 : 1)]?.focus();
+      return;
+    }
+    const line = this.lineOf(slot, slots) + (key === 'ArrowUp' ? -1 : 1);
+    if (line < 0) {
+      const bottomRow = this.allTiles.filter((tl) => tl.row === 3);
+      const els = bottomRow.map((tl) => this.tileElements.get(tl)!).filter(Boolean);
+      const el = this.nearestByX(els, slot);
+      const tile = bottomRow.find((tl) => this.tileElements.get(tl) === el) ?? null;
+      this.setKbdFocus(tile);
+      this.gridWrap.querySelector<HTMLElement>('.grid')?.focus({ preventScroll: true });
+      return;
+    }
+    this.nearestByX(slots.filter((el) => this.lineOf(el, slots) === line), slot)?.focus();
+  }
+
+  /** Feed a tap on `tile` through the normal pointer pipeline. */
+  private tapTile(tile: Tile): void {
+    this.refreshLayoutCache();
+    const { x, y } = this.getTileCenter(tile);
+    this.inputManager.onPointerDown(0, x, y);
+    this.inputManager.onPointerUp(0);
+    this.layoutCache = null;
+  }
+
+  private setKbdFocus(tile: Tile | null, visible = true): void {
+    if (this.kbdFocus) this.tileElements.get(this.kbdFocus)?.removeAttribute('data-kbd-focus');
+    this.kbdFocus = tile;
+    if (tile && visible) this.tileElements.get(tile)?.setAttribute('data-kbd-focus', 'true');
+  }
+
   private bindPointerEvents(): void {
     this.gridWrap.addEventListener('pointerdown', (event) => {
       if (!event.isPrimary) return;
+      if (this.kbdFocus) this.setKbdFocus(null); // pointer play hides the keyboard cursor
       // The hint tip lives inside gridWrap; capturing its pointer would
       // retarget the click to gridWrap and swallow the "Get more" button.
       if ((event.target as Element).closest?.('.hint-tip')) return;
