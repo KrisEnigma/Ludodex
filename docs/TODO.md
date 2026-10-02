@@ -1,125 +1,175 @@
-# Ludodex — TODO (parked for later)
+# Ludodex — path to publish
 
-Deferred items from the Sep 2026 audit / fix pass. Details and rationale live in
-`docs/audit-2026-09-30.md` (section noted per item).
+Everything left is manual: accounts, IDs, content, device checks, store
+listings. Work top to bottom; each section unblocks the next. The code side is
+done (see "Done" at the end). Rationale for older items lives in
+`docs/audit-2026-09-30.md`.
 
-## Decisions needed
+Secrets never go in the repo or in chat: signing keys, keystore passwords,
+account logins. Public IDs (AdMob app/unit IDs, RevenueCat public SDK keys,
+Team ID, cert fingerprints) are fine to commit.
 
-- [x] **Ads wired (code, Oct 1 2026)** (§3.3). Rewarded "+1 hint" and win-exit
-      interstitials (every 2nd solve, max 2 per launch, skipped with Remove Ads).
-      `initAds()`: AdMob.initialize → UMP consent (form if required) → iOS ATT →
-      ads only if `canRequestAds`. Runs at boot for returning players and at the
-      end of the tutorial on first launch. The "Watch ad" button only shows once
-      ads are ready; Settings shows "Ad privacy choices" when UMP requires it.
-      The next screen's timer waits until an interstitial is dismissed. Info.plist
-      has `NSUserTrackingUsageDescription` + Google's SKAdNetwork list.
-      Dev "Native player" mode fakes both ad types with a plain card.
+---
 
-### Ads — release checklist (Kris, needs accounts / device)
+## 1. Content
 
-- [ ] AdMob: create the two apps (iOS, Android) and four ad units (rewarded +
-      interstitial per platform).
-- [ ] Put the real **app IDs** (`ca-app-pub-…~…`) in `AndroidManifest.xml`
-      (`APPLICATION_ID`) and `Info.plist` (`GADApplicationIdentifier`). They're
-      public identifiers, not secrets.
-- [ ] Release build env: `VITE_ADMOB_USE_TEST_IDS=false` + the four
-      `VITE_ADMOB_*` unit IDs (see `.env.example`).
-- [ ] AdMob → Privacy & messaging: publish a **GDPR message** (EEA/UK) and an
-      **IDFA explainer** (iOS). Without the GDPR message, EEA users get no ads.
-- [ ] `app-ads.txt` at https://ludodex.krisenigma.com/app-ads.txt with the
-      line AdMob gives you (`public/app-ads.txt`), and the same domain as the
-      developer website in both stores.
-- [ ] Privacy policy (/privacy): mention AdMob, advertising ID, consent.
-- [ ] App Store privacy labels + Play Data safety form: AdMob data (device
-      ID, advertising data, diagnostics); "tracking" = yes on iOS if ATT allowed.
-- [ ] iOS `PrivacyInfo.xcprivacy` for the app (Google's SDK ships its own).
-- [ ] Optional: Spanish ATT text via `es.lproj/InfoPlist.strings` (needs adding
-      to the Xcode project).
-- [ ] Device test: consent form with `debugGeography: EEA` + test device ID,
-      ATT prompt, rewarded grants exactly 1 hint, interstitial every 2nd solve,
-      Remove Ads skips it, Play Again timer starts after the ad closes.
-
-- [x] **Confetti after leaving Win** keeps falling (up to 7 s) over the next
-      screen on Play again / Done. Decided (Oct 1 2026): keep it.
-- [x] **Hidden "Reset progress" gesture** replaced (Oct 1 2026) by a visible
-      "Reset stats" button under Settings → About, with a confirm. Keeps the
-      hint balance (incl. purchased) and today's ad-grant count; an earned skin
-      that re-locks falls back to Void. The dev overlay ⟲ Reset still wipes all.
-- [x] **Play button label on no-puzzle days** now shows a live "Next puzzle in
-      h:mm:ss" (inactive style); the card head drops its duplicate countdown.
-
-## Before launch
-
-- [ ] Add the missing Spanish puzzle text **in the editor** (local
+- [ ] Write the puzzles: at least 60 ahead of launch, plus a 7-day starter
+      archive (launch day = day 8).
+- [ ] Spanish puzzle text for every puzzle, **in the editor** (local
       `puzzles.json` is overwritten from prod on build). Then flip the Spanish
       check in `scripts/validate-puzzles.ts` from WARN to ERROR.
-- [ ] Rename env vars if still using the old name: `VITE_REVENUECAT_API_KEY` →
-      `VITE_RC_IOS_KEY` / `VITE_RC_ANDROID_KEY` (local `.env` and Cloudflare
-      build settings).
-- [x] Deploy the hardened Worker (`pnpm run deploy`, Oct 1 2026) and confirm: game still loads
-      puzzles; editor saves; `history/` snapshots appear in R2.
-- [x] Non-commercial fonts (DooM, AmazDooM → Rip & Tear; Diablo → Lord of
-      Terror): **kept as-is by decision (Oct 1 2026)**, accepted risk. Revisit once
-      the app earns ~$50: Lord of Terror → license Exocet Heavy (Emigre app +
-      web licence; the real Diablo base face, O-with-cross included). Rip & Tear
-      has no licensable original (custom logo art); fan fonts only.
-- [x] Renamed trademarked skins (Oct 1 2026): Hyrule Vault → Ancient Shrine,
-      Mushroom Kingdom → Pipe Dream, Phantom Thieves → Masquerade, Cyber
-      Shinobi → Night Blade (ids unchanged). Paleblood, Lord of Terror, Rip & Tear and
-      Blue Blur stay (not trademarks).
-- [x] Skin descriptions that quoted games rewritten to evoke instead (EN + ES).
-- [x] `og-image.png` added (1200×630, Void style). After deploying, re-check link
-      previews (e.g. opengraph.xyz) — some apps cache old previews for days.
+- [ ] Pick the launch date and set `VITE_LAUNCH_DATE` = launch − 7 days
+      (local `.env` and the Cloudflare build settings).
 
-## Skin pass (done Oct 1 2026)
+## 2. Accounts and agreements
 
-- [x] Disabled buttons: one dashed-outline "inactive" look for every skin (Play
-      on no-puzzle days, busy purchase buttons); the Share "Copied!" flash keeps
-      its enabled look (`data-flash`).
-- [x] §2.4, revised with Kris: all 33 skins kept and individually reworked
-      (evoke through colour/type, no overlays on text or selections); layer
-      tokens; dev skin gallery (`?skins`); picker = mini-screen cards grouped
-      Yours / Earn / Buy with unlock progress.
-- [ ] Optional later: per-skin sound presets (§2.4), find / endgame FX variants.
+- [ ] **Apple Developer Program** (paid). In App Store Connect: sign the Paid
+      Apps agreement, add tax and banking (purchases don't work without it).
+- [ ] **Google Play Console** developer account. Personal accounts created
+      after Nov 2023 must run a **closed test with 12+ testers for 14 days**
+      before production access, so start this early.
+- [ ] **AdMob** account (link it to both stores' apps once they exist).
+- [ ] **RevenueCat** project with an iOS and an Android app.
+- [ ] Optional: **Sentry** project (crash reports) and **PostHog** project
+      (analytics). Leave the env vars blank to ship without them.
 
-## IAP (code done Oct 1 2026, §3.3)
+## 3. Store products
 
-- [x] Paid skins: "earn it, or unlock now" (Buy shows alongside the earn
-      goal); store prices in local currency (USD fallback). Lord of Terror is
-      earn-only and out of the bundle until its font is licensed.
-- [x] Consumables credited once per store transaction (ledger in Preferences);
-      Ask to Buy / pending payments handled (`pending` status, credited when
-      they clear via the customer-info listener). Fixed cancel detection
-      (RevenueCat code "1", was never matched).
-- [ ] Kris: `pnpm install` (RevenueCat 13.7, Sentry Capacitor 4.4 + browser
-      10.69 — both ship Package.swift, so they link under Capacitor 8 SPM),
-      `npx cap sync`, check `ios/App/CapApp-SPM/Package.swift` lists them.
-- [ ] Device: buy a skin, a hint pack, the Starter Pack (30 hints exactly once),
-      Ask to Buy in sandbox, restore.
-- Purchased hints stay local: a reinstall doesn't bring them back (by design
-      for now; the ledger baselines on first run so old purchases aren't re-granted).
+- [ ] Create the products in **App Store Connect** and **Play Console**, ids
+      exactly as in `src/services/IAPService.ts` → `PRODUCT_IDS`:
+  - consumables: `hints_10`, `hints_50`, `hints_200`, `starter_pack`
+  - non-consumables: `remove_ads`, `skin_neon_horizon`, `skin_gameboy`,
+    `skin_ring_of_light`, `skin_mushroom_kingdom`, `skin_bundle`
+  - not sold for now: `skin_lord_of_terror` (font licence, see §8)
+  - fallback prices in code: hints $0.99 / $2.99 / $7.99, starter pack
+    $2.99, remove ads $2.99, skins $1.99, bundle $2.99
+- [ ] **RevenueCat**: import the products; create one **entitlement per
+      non-consumable, named exactly like the product id** (the code checks
+      `entitlements.active[productId]`). Starter pack grants the `remove_ads`
+      and `skin_neon_horizon` entitlements. Put **every** product, consumables
+      included, in the **current offering** (purchase looks packages up there).
 
-## Device-only checks (need an unmanaged machine)
+## 4. Fill in IDs and config
 
-- [ ] Android hardware Back closes sheets/dialogs first (Dev overlay ◀ Back
-      covers the logic in the browser).
-- [ ] Notifications fire / cancel.
-- [ ] Purchases + restore (RevenueCat), rewarded ad grants a hint.
-- [ ] Deep links / App Links open the app. Code side done (Oct 1 2026):
-      Android intent filter limited to `/`, `/<day>`, `/p/…`; iOS
-      `App.entitlements` (applinks:ludodex.krisenigma.com) wired in both build
-      configs; `public/.well-known/apple-app-site-association` (served as JSON by
-      the Worker). Kris: replace `REPLACE_WITH_TEAM_ID` (AASA) and the SHA-256 in
-      `assetlinks.json` (Play Console → App integrity), enable Associated Domains
-      for the App ID, deploy, then test on device.
-- [ ] Share on native sends the PNG card (Filesystem cache → Share `files`).
-      `@capacitor/filesystem` installed; run `npx cap sync`, then check on device.
-- [ ] Terminal & Phosphor locked on a real native build.
+- [ ] **AdMob**: create two apps (iOS, Android) and four ad units (rewarded +
+      interstitial per platform).
+  - App IDs (`ca-app-pub-…~…`) → `android/app/src/main/AndroidManifest.xml`
+    (`com.google.android.gms.ads.APPLICATION_ID`) and `ios/App/App/Info.plist`
+    (`GADApplicationIdentifier`).
+  - Unit IDs → the four `VITE_ADMOB_*` vars; set `VITE_ADMOB_USE_TEST_IDS=false`
+    for release builds only.
+  - Privacy & messaging: publish a **GDPR message** (EEA/UK; without it EEA
+    users get no ads) and an **IDFA explainer** (iOS).
+- [ ] **RevenueCat** public SDK keys → `VITE_RC_IOS_KEY` (`appl_…`),
+      `VITE_RC_ANDROID_KEY` (`goog_…`). Rename any old `VITE_REVENUECAT_API_KEY`
+      in local `.env` and Cloudflare build settings.
+- [ ] Optional: `VITE_SENTRY_DSN`, `VITE_POSTHOG_KEY`.
+- [ ] **Deep links**
+  - iOS: Apple Team ID → replace `REPLACE_WITH_TEAM_ID` in
+    `public/.well-known/apple-app-site-association`; enable **Associated
+    Domains** on the App ID (`app.ludodex.game`) in the developer portal.
+  - Android: release signing SHA-256 (Play Console → App integrity) →
+    `public/.well-known/assetlinks.json`.
+- [ ] **`public/app-ads.txt`** with the line AdMob gives you; set
+      `https://ludodex.krisenigma.com` as the developer website in both stores.
+- [ ] **Privacy policy** (`public/privacy.html`): it covers AdMob
+      interstitials, Sentry, PostHog, notifications. Add rewarded ads, the
+      consent form / "Ad privacy choices", and tracking (ATT).
+- [ ] **iOS `PrivacyInfo.xcprivacy`** for the app (UserDefaults via
+      Preferences is a "required reason" API; Google's and RevenueCat's SDKs
+      ship their own manifests).
+- [ ] Optional: Spanish ATT prompt text via `es.lproj/InfoPlist.strings`
+      (add the file to the Xcode project).
+- [ ] Deploy the Worker + web build (`pnpm run deploy`) so the `.well-known`
+      files, `app-ads.txt` and the privacy page are live. Re-check link
+      previews (e.g. opengraph.xyz).
+
+## 5. Native builds
+
+- [ ] `pnpm install && npx cap sync` after any dependency change; check
+      `ios/App/CapApp-SPM/Package.swift` lists RevenueCat and Sentry.
+- [ ] **iOS**: set your signing team in Xcode (Signing & Capabilities), confirm
+      the Associated Domains capability shows `applinks:ludodex.krisenigma.com`.
+      Archive → upload to App Store Connect → **TestFlight** (no USB needed;
+      TestFlight uses the purchase sandbox).
+- [ ] **Android**: create an upload keystore (keep it and its passwords out of
+      the repo, back it up), build a signed release AAB, upload to **Play
+      internal testing**, then the 12-tester closed test. Add yourself as a
+      **license tester** so purchases don't charge. Bump `versionCode` in
+      `android/app/build.gradle` on every upload. Optional: turn on
+      `minifyEnabled` once a release build is verified.
+- [ ] If the work Mac blocks signing or uploads: a cloud build (Codemagic,
+      Xcode Cloud, GitHub Actions) with the signing keys stored as that
+      service's secrets, never in the repo.
+
+## 6. Device checks (TestFlight / internal testing)
+
+- [ ] **Ads**: consent form shows in the EEA (test with
+      `debugGeography: EEA` + your test device ID), ATT prompt after the
+      tutorial; rewarded ad grants exactly 1 hint; interstitial every 2nd
+      solve, max 2 per launch; Remove Ads skips it; Play Again's timer starts
+      only after the ad closes; "Ad privacy choices" appears in Settings (EEA).
+- [ ] **Purchases**: buy a skin, a hint pack and the Starter Pack (exactly 30
+      hints, once); Ask to Buy / pending payment in sandbox unlocks later;
+      restore purchases on a second device; prices show in local currency.
+- [ ] **Deep links**: a `/<day>` link opens that puzzle in the app;
+      `/privacy` opens in the browser. Also after choosing an alternate app
+      icon on Android (it disables `MainActivity`, which holds the link filter).
+- [ ] **Share** attaches the PNG card (and still sends text if it can't).
+- [ ] Notifications fire and cancel.
+- [ ] Android hardware Back closes sheets/dialogs first.
+- [ ] Terminal & Phosphor stay locked until earned.
 - [ ] App icon change + its status/error messages.
-- [ ] iOS: iPhone stays portrait when rotated; iPad still rotates (Info.plist).
-- [ ] TalkBack / VoiceOver on device announce "Found WORD. x of y words." on finds.
-- [ ] Low-end Android: long swipes feel smooth (hit-testing now measures once per gesture).
+- [ ] iPhone stays portrait; iPad still rotates.
+- [ ] VoiceOver / TalkBack: board, tiles and hint slots are labelled; finds
+      announce "Found WORD. x of y words."
+- [ ] Low-end Android: long swipes feel smooth.
 
-Live reload (Capacitor 8):
+Live reload (when a device can connect):
 `npx cap run android --live-reload --host localhost --port 5173 --forwardPorts 5173:5173`
 (USB) or `--host <mac-ip>` (Wi-Fi).
+
+## 7. Store listings and review
+
+- [ ] Both stores: name, subtitle / short description, full description
+      (EN + ES), keywords, category (Word / Puzzle), support URL, privacy
+      policy URL (`https://ludodex.krisenigma.com/privacy`), screenshots for
+      the required device sizes, app icon.
+- [ ] **App Store**: privacy labels (AdMob: device ID, advertising data,
+      diagnostics; tracking = yes if ATT can be granted; plus Sentry/PostHog if
+      enabled), age rating, IAP products attached to the first version with
+      review screenshots.
+- [ ] **Play**: Data safety form (same data as above), content rating
+      questionnaire, target audience, "Contains ads" declaration, ads ID
+      declaration.
+- [ ] Submit for review; once approved, release on the launch date so day 8
+      lines up with `VITE_LAUNCH_DATE`.
+
+## 8. After launch / optional
+
+- [ ] Once the app earns ~$50: license **Exocet Heavy** (Emigre app + web
+      licence) for Lord of Terror's wordmark, then make it purchasable again
+      (`productId` + `bundleProductId` in `src/skins/registry.ts`). Rip & Tear's
+      DooM/AmazDooM fan fonts stay an accepted risk (no licensable original).
+- [ ] Cloud save so progress and purchased hints survive a reinstall
+      (iCloud key-value store on iOS; Android Auto Backup is on, add backup
+      rules and test restore).
+- [ ] Per-skin sound presets, find / endgame FX variants.
+
+---
+
+## Done (Oct 1–2 2026, for reference)
+
+- Ads wired: consent → ATT → AdMob; rewarded hint + win-exit interstitials;
+  dev "Native player" mode fakes ads.
+- IAP: earn-or-buy skins, store prices, pending purchases, consumable ledger,
+  cancel detection; RevenueCat 13.7 + Sentry Capacitor 4.4 (SPM).
+- Native share sends the PNG card; deep-link plumbing (scoped Android filter,
+  iOS entitlements, AASA served as JSON).
+- Keyboard play (arrows + Space) and accessibility labels; hint UX and
+  tutorial rebuilt from real game pieces.
+- Skin pass (33 skins), 4 trademarked skins renamed, quoted descriptions
+  rewritten; fonts kept by decision.
+- Visible "Reset stats" (keeps hints); live countdown on no-puzzle days;
+  confetti after Win kept by decision.
+- Hardened Worker deployed; `og-image.png` added.
