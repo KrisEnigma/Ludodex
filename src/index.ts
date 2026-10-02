@@ -196,6 +196,12 @@ export default {
       if (url.pathname === '/editor' || url.pathname === '/editor/' || url.pathname === '/editor.html') {
         return env.ASSETS.fetch(new Request(new URL('/editor/index.html', request.url), request));
       }
+      if (url.pathname === '/.well-known/apple-app-site-association') {
+        // Extensionless file: Apple expects it served as JSON, no redirects.
+        const res = await env.ASSETS.fetch(request);
+        if (!res.ok) return res;
+        return new Response(res.body, { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
       if (url.pathname === '/privacy') {
         return env.ASSETS.fetch(new Request(new URL('/privacy.html', request.url), request));
       }

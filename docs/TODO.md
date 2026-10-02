@@ -88,7 +88,15 @@ Deferred items from the Sep 2026 audit / fix pass. Details and rationale live in
       covers the logic in the browser).
 - [ ] Notifications fire / cancel.
 - [ ] Purchases + restore (RevenueCat), rewarded ad grants a hint.
-- [ ] Deep links / App Links open the app.
+- [ ] Deep links / App Links open the app. Code side done (Oct 1 2026):
+      Android intent filter limited to `/`, `/<day>`, `/p/…`; iOS
+      `App.entitlements` (applinks:ludodex.krisenigma.com) wired in both build
+      configs; `public/.well-known/apple-app-site-association` (served as JSON by
+      the Worker). Kris: replace `REPLACE_WITH_TEAM_ID` (AASA) and the SHA-256 in
+      `assetlinks.json` (Play Console → App integrity), enable Associated Domains
+      for the App ID, deploy, then test on device.
+- [ ] Share on native sends the PNG card (Filesystem cache → Share `files`).
+      Needs `pnpm add @capacitor/filesystem` + `npx cap sync`; check on device.
 - [ ] Terminal & Phosphor locked on a real native build.
 - [ ] App icon change + its status/error messages.
 - [ ] iOS: iPhone stays portrait when rotated; iPad still rotates (Info.plist).

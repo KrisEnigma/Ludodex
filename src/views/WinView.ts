@@ -1,4 +1,5 @@
 import { Share } from '@capacitor/share';
+import { Directory, Filesystem } from '@capacitor/filesystem';
 import { createIcon } from '../components/icons';
 import { getPuzzleById } from '../game/PuzzleLoader';
 import { showConfetti } from '../components/Confetti';
@@ -538,6 +539,28 @@ function buildInstallCtaRow(): HTMLElement {
   });
 }
 
+/** Write the share card PNG to the app cache; returns its file URL, or null. */
+async function writeShareCardToCache(shareCard: Promise<Blob | null>, dayNumber: number): Promise<string[] | null> {
+  try {
+    const blob = await shareCard;
+    if (!blob) return null;
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(blob);
+    });
+    const { uri } = await Filesystem.writeFile({
+      path: `ludodex-${dayNumber}.png`,
+      data: dataUrl.slice(dataUrl.indexOf(',') + 1), // base64 payload only
+      directory: Directory.Cache,
+    });
+    return [uri];
+  } catch {
+    return null;
+  }
+}
+
 async function shareWin(payload: WinPayload, buttonEl: HTMLButtonElement, shareCard: Promise<Blob | null>): Promise<void> {
   track('share_button_tapped', { day: payload.dayNumber });
 
@@ -555,10 +578,13 @@ async function shareWin(payload: WinPayload, buttonEl: HTMLButtonElement, shareC
   const { isNative } = getMonetizationContext();
 
   if (isNative) {
-    // Native iOS/Android: route through the Capacitor plugin.
+    // Native iOS/Android: the share card goes along as a real image. The
+    // plugin only takes file URLs, so the PNG is written to the app cache
+    // first; if that fails the text still goes out on its own.
+    const files = await writeShareCardToCache(shareCard, payload.dayNumber);
     try {
-      await Share.share({ title, text: fullText });
-      track('share_string_generated', { share_method: 'native_share' });
+      await Share.share({ title, text: fullText, ...(files ? { files } : {}) });
+      track('share_string_generated', { share_method: files ? 'native_share_image' : 'native_share' });
     } catch {
       // Share cancelled or unavailable — no fallback needed on native.
     }

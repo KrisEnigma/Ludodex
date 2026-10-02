@@ -53,6 +53,20 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https"
                       android:host="ludodex.krisenigma.com" />
+                <!-- Only game URLs open the app: home, /<day>, /p/<preview>.
+                     /privacy, /terms, /editor and /api stay in the browser.
+                     (pathPattern has no digit class, hence one line per digit.) -->
+                <data android:path="/" />
+                <data android:pathPrefix="/p/" />
+                <data android:pathPattern="/1.*" />
+                <data android:pathPattern="/2.*" />
+                <data android:pathPattern="/3.*" />
+                <data android:pathPattern="/4.*" />
+                <data android:pathPattern="/5.*" />
+                <data android:pathPattern="/6.*" />
+                <data android:pathPattern="/7.*" />
+                <data android:pathPattern="/8.*" />
+                <data android:pathPattern="/9.*" />
             </intent-filter>
 
         </activity>

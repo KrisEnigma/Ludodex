@@ -1,0 +1,41 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": [
+          "REPLACE_WITH_TEAM_ID.app.ludodex.game"
+        ],
+        "components": [
+          {
+            "/": "/api/*",
+            "exclude": true
+          },
+          {
+            "/": "/editor*",
+            "exclude": true
+          },
+          {
+            "/": "/privacy",
+            "exclude": true
+          },
+          {
+            "/": "/terms",
+            "exclude": true
+          },
+          {
+            "/": "/",
+            "comment": "home"
+          },
+          {
+            "/": "/p/*",
+            "comment": "preview puzzles"
+          },
+          {
+            "/": "/*",
+            "comment": "day links /<n>"
+          }
+        ]
+      }
+    ]
+  }
+}
