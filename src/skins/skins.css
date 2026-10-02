@@ -374,7 +374,7 @@
 
 /* ── Maze Chase ── Classic arcade cabinet aesthetic with deep maze black, electric blue borders, and neon ghost paths. */
 .skin-maze-chase {
-  --skin-desc: "Wakka wakka. Watch the corners.";
+  --skin-desc: "Every dot counts. Keep moving, and mind the corners.";
   --skin-name: "Maze Chase";
   --bg-top:    #000000;
   --bg-bottom: #050508;
@@ -484,8 +484,8 @@
 
 /* ── Phantom Thieves ── Picaresque style featuring raw crimson red, stark solid blacks, and cutout whites. */
 .skin-phantom-thieves {
-  --skin-desc: "Change of heart imminent. It's showtime.";
-  --skin-name: "Phantom Thieves";
+  --skin-desc: "Calling card sent. Masks on. Style is not optional.";
+  --skin-name: "Masquerade";
   --bg-top: #c4001c;
   --bg-bottom: #5a000c;
   --surface:   #000000;
@@ -635,7 +635,7 @@
    type, and blood that is dark and wet rather than bright. All colour and
    glow — no drawn moon. */
 .skin-paleblood {
-  --skin-desc: "Seek Paleblood to transcend the hunt.";
+  --skin-desc: "The night is long and the moon is wrong. Keep hunting.";
   --skin-name: "Paleblood";
   --bg-top: #2a2520;
   --bg-bottom: #0e0c0b;
@@ -789,7 +789,7 @@
 
 /* ── Star Hunter ── Deep subterranean alien caverns with high-contrast power-suit energy blooms. */
 .skin-star-hunter {
-  --skin-desc: "Power Suit locked. Alone on the surface. Navigation online.";
+  --skin-desc: "Alone on an alien surface. Scan everything. Trust nothing.";
   --skin-name: "Star Hunter";
   --bg-top:    #0d0816;
   --bg-bottom: #030206;
@@ -856,7 +856,7 @@
    glow. (Was a mix of eras: Ocarina green + Triforce gold.) */
 .skin-relic-gold {
   --skin-desc: "Ancient stone. Blue light. The shrine is waiting.";
-  --skin-name: "Hyrule Vault";
+  --skin-name: "Ancient Shrine";
   --bg-top: #1a2026;
   --bg-bottom: #0a0d10;
   --surface: #151b20;
@@ -930,7 +930,7 @@
    navy ink (the eyes), WARP-STAR YELLOW selection, shoe-red trail and
    buttons, a bubbly pink wordmark with a white outline. A LIGHT skin. */
 .skin-puff-star {
-  --skin-desc: "Inhale. Copy. Float. Dream Land awaits.";
+  --skin-desc: "Soft clouds, round heroes, and a sky made of candy.";
   --skin-name: "Puff Star";
   color-scheme: light;
   --bg-top: #ffe6f1;
@@ -1004,8 +1004,8 @@
 /* ── Mushroom Kingdom ── Flat NES overworld. Sky blue field, brick terracotta UI,
    warp-pipe green actions, question-block tiles, coin-gold accent. */
 .skin-mushroom-kingdom {
-  --skin-desc: "World 1-1. The coins are in the tiles.";
-  --skin-name: "Mushroom Kingdom";
+  --skin-desc: "Bricks, coins, blue skies. Any tile might hide something.";
+  --skin-name: "Pipe Dream";
   color-scheme: dark;
 
   /* ── 10 semantic tokens ── */
@@ -1133,7 +1133,7 @@
    outline. Selection = cape red; found words = coin gold; dark-blue
    message-box cards with a white frame; pipe-green Play. */
 .skin-cape-16bit {
-  --skin-desc: "Cape charged. Yoshi saddled. Bonus room incoming.";
+  --skin-desc: "Cape on, dino saddled. There's a secret exit somewhere.";
   --skin-name: "16-Bit Cape";
   --bg-top: #3c78f0;
   --bg-bottom: #2c64e0;
@@ -1220,7 +1220,7 @@
    terracotta tiles, cobalt selection, ring-gold trail and buttons, yellow HUD
    labels, a yellow wordmark outlined in deep blue. */
 .skin-blue-blur {
-  --skin-desc: "Gotta go fast. Checkerboard loops, golden rings, no brakes.";
+  --skin-desc: "Loops, rings, no brakes. Speed is the whole point.";
   --skin-name: "Blue Blur";
   --bg-top:    #2277ff;
   --bg-bottom: #0044cc;
@@ -1295,7 +1295,7 @@
 
 /* ── Dragon Heat ── Nightlife underworld aesthetic featuring heavy asphalt blacks, fierce heat-action crimson selections, and neon-gold trails. */
 .skin-dragon-heat {
-  --skin-desc: "Kamurocho, 3 AM. Neon on wet asphalt. Someone's about to start a fight.";
+  --skin-desc: "Red-light district, 3 AM. Neon on wet asphalt. Someone's about to start a fight.";
   --skin-name: "Dragon Heat";
   --bg-top:    #140204;
   --bg-bottom: #000000;
@@ -1363,7 +1363,7 @@
    outlines and a hard offset shadow, hot-pink tags for the selection, lime
    for finished pieces, a magenta→cyan spray trail. A LIGHT skin (was dark). */
 .skin-radio-tag {
-  --skin-desc: "Grind the rails. Tag every wall. Stay off the GGs' radar.";
+  --skin-desc: "Grind the rails. Tag every wall. Stay one step ahead of the cops.";
   --skin-name: "Radio Tag";
   color-scheme: light;
 
@@ -1440,7 +1440,7 @@
 /* ── Cyber Shinobi ── Shinobi III. Deep shadow-purple night, crimson-strike selections, ninjutsu-red trail. Angular precision. */
 .skin-cyber-shinobi {
   --skin-desc: "Shadow protocol active. Strike fast. Leave nothing behind.";
-  --skin-name: "Cyber Shinobi";
+  --skin-name: "Night Blade";
   --bg-top:    #0a0025;
   --bg-bottom: #050012;
   --surface:   #120030;
@@ -1961,7 +1961,7 @@
    guide's first pick for fantasy) keeps the single-letter tiles legible and
    gothic. Strong bloom sells the hellfire. */
 .skin-lord-of-terror {
-  --skin-desc: "Stay a while and listen. Tristram is calling.";
+  --skin-desc: "The cathedral goes down forever. Something waits at the bottom.";
   --skin-name: "Lord of Terror";
   --bg-top:    #1c0805;
   --bg-bottom: #0a0302;
@@ -2032,7 +2032,7 @@
    main.ts + package.json). NOTE: light theme, so every color is inverted from
    the dark skins — title/letters are dark, surfaces are light. */
 .skin-test-chamber {
-  --skin-desc: "This was a triumph. The science demanded it.";
+  --skin-desc: "White panels, cold science, and a testing schedule that never ends.";
   --skin-name: "Test Chamber";
   color-scheme: light;
 
@@ -2396,7 +2396,7 @@
    Toxic green for found words (Doom radiation barrel). Flat, harsh — Doom didn't bloom.
    Press Start 2P for tiles (same era as Dot Matrix is fine — palette sells the difference). */
 .skin-rip-tear {
-  --skin-desc: "Rip and tear until it is done.";
+  --skin-desc: "Shotgun loaded. Demons everywhere. No time for talking.";
   --skin-name: "Rip & Tear";
   --bg-top:    #0d0d0b;
   --bg-bottom: #050505;
@@ -2537,7 +2537,7 @@
    the dead). Crimson energy on the path. Orbitron — bold, confident, fits
    Hades' sleek mythological UI perfectly. */
 .skin-blood-darkness {
-  --skin-desc: "Zagreus never stops. Neither do you. One more escape attempt begins.";
+  --skin-desc: "The underworld won't let you leave. Try again. And again.";
   --skin-name: "Blood & Darkness";
   --bg-top:    #0e0b18;
   --bg-bottom: #070509;

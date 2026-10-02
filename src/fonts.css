@@ -18,13 +18,13 @@
 @import '@fontsource/almendra/latin-700.css';           /* Paleblood, Relic Gold (tiles) */
 @import '@fontsource/unifrakturmaguntia/latin-400.css'; /* Paleblood (wordmark) */
 @import '@fontsource/comfortaa/latin-700.css';          /* Aero (tiles) */
-@import '@fontsource/audiowide/latin-400.css';          /* Aero (wordmark), Cyber Shinobi (tiles) */
+@import '@fontsource/audiowide/latin-400.css';          /* Aero (wordmark), Night Blade (tiles) */
 @import '@fontsource/share-tech-mono/latin-400.css';    /* Star Hunter, Polygon (tiles) */
 @import '@fontsource/russo-one/latin-400.css';          /* Star Hunter, Crimson (wordmark) */
 @import '@fontsource/cinzel-decorative/latin-700.css';  /* Relic Gold (wordmark) */
 @import '@fontsource/titan-one/latin-400.css';          /* Puff Star (wordmark) */
-@import '@fontsource/pixelify-sans/latin-700.css';      /* Mushroom Kingdom skin (tiles) */
-@import '@fontsource/bungee/latin-400.css';             /* Mushroom Kingdom (wordmark) */
+@import '@fontsource/pixelify-sans/latin-700.css';      /* Pipe Dream skin (tiles) */
+@import '@fontsource/bungee/latin-400.css';             /* Pipe Dream (wordmark) */
 @import '@fontsource/dotgothic16/latin-400.css';        /* 16-Bit Cape (tiles) */
 @import '@fontsource/dela-gothic-one/latin-400.css';    /* 16-Bit Cape (wordmark) */
 @import '@fontsource/rubik-mono-one/latin-400.css';     /* Blue Blur (tiles) */
@@ -33,12 +33,12 @@
 @import '@fontsource/teko/latin-600.css';               /* Dragon Heat (wordmark) */
 @import '@fontsource/permanent-marker/latin-400.css';   /* Radio Tag (tiles) */
 @import '@fontsource/luckiest-guy/latin-400.css';       /* Radio Tag (wordmark) */
-@import '@fontsource/electrolize/latin-400.css';        /* Cyber Shinobi (wordmark) */
+@import '@fontsource/electrolize/latin-400.css';        /* Night Blade (wordmark) */
 @import '@fontsource/major-mono-display/latin-400.css'; /* (available, unused by shipped skins) */
 @import '@fontsource/exo-2/latin-700.css';              /* Spirit (wordmark) */
 @import '@fontsource/unbounded/latin-700.css';          /* Crimson (tiles) */
-@import '@fontsource/squada-one/latin-400.css';         /* Mushroom Kingdom (wordmark) */
-@import '@fontsource/anton/latin-400.css';              /* Phantom Thieves */
+@import '@fontsource/squada-one/latin-400.css';         /* Pipe Dream (wordmark) */
+@import '@fontsource/anton/latin-400.css';              /* Masquerade */
 @import '@fontsource/press-start-2p/latin-400.css';     /* Dot Matrix, Toaster */
 @import '@fontsource/silkscreen/latin-700.css';         /* Dot Matrix, Toaster (wordmark) */
 @import '@fontsource/vt323/latin-400.css';              /* Terminal, Phosphor, BIOS */

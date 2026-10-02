@@ -817,7 +817,7 @@ body {
   color: var(--title-color);
   background-color: var(--bg-edge);
   /* Optional skin-wide text drop (e.g. NES-style shadow so white UI text stays
-     readable over Mushroom Kingdom's clouds). Elements with their own
+     readable over Pipe Dream's clouds). Elements with their own
      text-shadow (tiles, titles…) override it. */
   text-shadow: var(--text-shadow, none);
   -webkit-font-smoothing: antialiased;

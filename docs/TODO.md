@@ -58,11 +58,16 @@ Deferred items from the Sep 2026 audit / fix pass. Details and rationale live in
       build settings).
 - [x] Deploy the hardened Worker (`pnpm run deploy`, Oct 1 2026) and confirm: game still loads
       puzzles; editor saves; `history/` snapshots appear in R2.
-- [ ] Replace non-commercial fonts (DooM, Diablo, AmazDooM) and rename
-      trademarked skins (§3.2).
-- [ ] Rewrite skin descriptions that quote games verbatim ("This was a triumph",
-      "Stay a while and listen", "Rip and tear until it is done", "Gotta go fast",
-      "Seek Paleblood…", "It's showtime", "Wakka wakka"…) — evoke, don't quote.
+- [x] Non-commercial fonts (DooM, AmazDooM → Rip & Tear; Diablo → Lord of
+      Terror): **kept as-is by decision (Oct 1 2026)**, accepted risk. Revisit once
+      the app earns ~$50: Lord of Terror → license Exocet Heavy (Emigre app +
+      web licence; the real Diablo base face, O-with-cross included). Rip & Tear
+      has no licensable original (custom logo art); fan fonts only.
+- [x] Renamed trademarked skins (Oct 1 2026): Hyrule Vault → Ancient Shrine,
+      Mushroom Kingdom → Pipe Dream, Phantom Thieves → Masquerade, Cyber
+      Shinobi → Night Blade (ids unchanged). Paleblood, Lord of Terror, Rip & Tear and
+      Blue Blur stay (not trademarks).
+- [x] Skin descriptions that quoted games rewritten to evoke instead (EN + ES).
 - [x] `og-image.png` added (1200×630, Void style). After deploying, re-check link
       previews (e.g. opengraph.xyz) — some apps cache old previews for days.
 
