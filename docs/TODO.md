@@ -158,6 +158,12 @@ Live reload (when a device can connect):
 
 ## 8. After launch / optional
 
+- [ ] Drop `patches/@capacitor-community__admob@8.0.0.patch` (and its line in
+      `pnpm-workspace.yaml`) once AdMob ships a release without
+      `proguard-android.txt` (still there in 8.1.0). The AGP "option setting …
+      is deprecated" warnings come from Capacitor 8's compatibility flags in
+      `android/gradle.properties`; leave them until Capacitor's next major.
+
 - [ ] Once the app earns ~$50: license **Exocet Heavy** (Emigre app + web
       licence) for Lord of Terror's wordmark, then make it purchasable again
       (`productId` + `bundleProductId` in `src/skins/registry.ts`). Rip & Tear's

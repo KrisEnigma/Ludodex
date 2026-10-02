@@ -1,3 +1,6 @@
+patchedDependencies:
+  '@capacitor-community/admob@8.0.0': patches/@capacitor-community__admob@8.0.0.patch
+
 allowBuilds:
   '@sentry/capacitor': true
   core-js: true
