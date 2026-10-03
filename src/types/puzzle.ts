@@ -22,6 +22,9 @@ export type RawPuzzle = {
   hint: LocalizedString | null;
   filler?: Record<string, string>;
   data: Record<string, string>;
+  /** Editor work in progress: never scheduled or parsed by the game. Drafts
+   *  always sit after every published puzzle (the order is the schedule). */
+  draft?: boolean;
 };
 
 export type PuzzlePart = {

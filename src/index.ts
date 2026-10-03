@@ -74,6 +74,7 @@ function validateCatalog(parsed: unknown): string[] {
   }
   const errors: string[] = [];
   const seen = new Set<string>();
+  let seenDraft = false;
   parsed.forEach((item, i) => {
     const tag = `#${i}`;
     if (typeof item !== 'object' || item === null || Array.isArray(item)) {
@@ -89,6 +90,17 @@ function validateCatalog(parsed: unknown): string[] {
     seen.add(p.id);
     if (typeof p.data !== 'object' || p.data === null || Array.isArray(p.data)) {
       errors.push(`${tag} (${p.id}): "data" must be an object`);
+      return;
+    }
+    // Drafts (editor work in progress) are saved as-is; the game skips them.
+    // They must all come after the published puzzles, since list order is
+    // the daily schedule and publishing a draft must only ever append.
+    if (p.draft === true) {
+      seenDraft = true;
+      return;
+    }
+    if (seenDraft) {
+      errors.push(`${tag} (${p.id}): published puzzle after a draft (drafts must be last)`);
       return;
     }
     try {

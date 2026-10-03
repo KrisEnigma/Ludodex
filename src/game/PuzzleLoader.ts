@@ -159,7 +159,9 @@ export function getLoadedPuzzleSource(): 'remote' | 'cache' | 'bundled' {
 }
 
 function parseRawPuzzles(raw: RawPuzzle[]): Puzzle[] {
-  const parsed = raw.map(parsePuzzle);
+  // Editor drafts are half-made levels: skip them entirely (they're always
+  // after every published puzzle, so the day schedule is unaffected).
+  const parsed = raw.filter((p) => !p.draft).map(parsePuzzle);
   if (parsed.length === 0) {
     throw new Error('Puzzle source was empty');
   }

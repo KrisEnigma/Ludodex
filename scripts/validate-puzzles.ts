@@ -13,8 +13,19 @@ const VALID_DIFFICULTIES = ['easy', 'medium', 'hard'];
 let errors = 0;
 let warnings = 0;
 
+let seenDraft = false;
 for (const raw of puzzles as unknown as RawPuzzle[]) {
   const tag = `[${raw.id}]`;
+  if (raw.draft) {
+    seenDraft = true;
+    console.log(`DRAFT ${tag} skipped`);
+    continue;
+  }
+  if (seenDraft) {
+    console.error(`ERROR ${tag} published puzzle after a draft (drafts must be last)`);
+    errors++;
+    continue;
+  }
 
   try {
     if (!raw.id) throw new Error('Missing id');

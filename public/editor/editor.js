@@ -41,7 +41,11 @@ async function apiList() {
   return Array.isArray(body) ? body : (body.puzzles || []);
 }
 async function apiPut(puzzles) {
-  const res = await fetch(API_URL, { method: 'PUT', headers: authHeaders(), body: JSON.stringify(puzzles, null, 2) });
+  // List order is the daily schedule; drafts (skipped by the game) must stay
+  // after every published level so publishing one only ever appends.
+  const ordered = [...puzzles.filter(p => !p.draft), ...puzzles.filter(p => p.draft)];
+  if (puzzles === serverPuzzles) serverPuzzles = ordered;
+  const res = await fetch(API_URL, { method: 'PUT', headers: authHeaders(), body: JSON.stringify(ordered, null, 2) });
   return readApiJson(res);
 }
 
@@ -279,25 +283,51 @@ function openGridEditor(id) {
   S.words = parsed.words;
   S.letters = parsed.letters;
   S.drawIdx = null; S.drawFromGrid = false; S.path = []; S.newWord = '';
-  gridSavedSnapshot = JSON.stringify(buildDataFromS());
+  gridMetaOriginal = JSON.parse(JSON.stringify(pickMeta(p)));
+  gridSavedSnapshot = editorSnapshot();
+  undoStack = [];
+  restoreLocalDraft(p);
   $('library-view').classList.add('hidden');
   $('grid-view').classList.remove('hidden');
-  $('ge-name').textContent = p.name?.en || p.name?.es || 'Untitled';
-  $('ge-id').textContent = p.id;
+  renderGeTitle();
+  renderDetails();
+  $('ge-details').open = !!p.draft && !p.name?.en;   // new level: start on its name
   window.scrollTo(0, 0);
   renderGrid(); renderDrawBanner(); renderGridHint(); renderLegend(); renderWords(); updateGridValidation();
   saveGridDraft();
 }
 
+/* Back to the library. Unsaved work → Save / Discard / Stay. */
+async function leaveGridEditor() {
+  if (gridDirty()) {
+    const choice = await promptChoice({
+      title: 'Unsaved changes',
+      message: 'Save this level before leaving?',
+      confirmText: 'Save', altText: 'Discard', cancelText: 'Stay',
+    });
+    if (choice === 'cancel') return;
+    if (choice === 'confirm') { const ok = await saveGrid(); if (!ok) return; }
+    else discardGridChanges();
+  }
+  closeGridEditor();
+}
+
+function discardGridChanges() {
+  const p = serverPuzzles.find(x => x.id === gridEditId);
+  if (!p) return;
+  if (gridIsNew) { serverPuzzles = serverPuzzles.filter(x => x !== p); return; }
+  Object.assign(p, JSON.parse(JSON.stringify(gridMetaOriginal)));
+}
+
 function closeGridEditor() {
-  gridEditId = null;
+  gridEditId = null; gridIsNew = false; undoStack = [];
   $('grid-view').classList.add('hidden');
   $('library-view').classList.remove('hidden');
   try { localStorage.removeItem(GRID_KEY); } catch(e) {}
   renderLibrary();
 }
 
-function gridDirty() { return gridEditId && JSON.stringify(buildDataFromS()) !== gridSavedSnapshot; }
+function gridDirty() { return !!gridEditId && (gridIsNew || editorSnapshot() !== gridSavedSnapshot); }
 
 function updateGridValidation() {
   const chip = $('ge-validation');
@@ -305,10 +335,13 @@ function updateGridValidation() {
   if (!serverPuzzles.find(x => x.id === gridEditId)) return;
   const v = validateGrid();
   const dirty = gridDirty();
+  const p = serverPuzzles.find(x => x.id === gridEditId);
+  const saveLabel = $('ge-save-label');
+  if (saveLabel) saveLabel.textContent = p?.draft ? 'Save draft' : 'Save';
   if (!v.ok) {
     chip.className = 'save-chip save-chip--dirty';
     chip.innerHTML = `<span class="dot"></span>${v.errs.length} issue${v.errs.length !== 1 ? 's' : ''}`;
-    chip.title = v.errs.join(' · ');
+    chip.title = 'Tap to see what’s missing';
   } else if (dirty) {
     chip.className = 'save-chip save-chip--dirty';
     chip.innerHTML = '<span class="dot"></span>Unsaved';
@@ -322,18 +355,47 @@ function updateGridValidation() {
 
 async function saveGrid() {
   const p = serverPuzzles.find(x => x.id === gridEditId);
-  if (!p) return;
+  if (!p) return false;
+  if (!p.draft) {
+    // A published level is live in the schedule: it has to be complete.
+    const problems = [...validateGrid().errs, ...metaProblems(p)];
+    if (problems.length) {
+      const asDraft = await promptConfirm({
+        title: 'Not ready to publish',
+        message: problems.join(' · ') + '. Save it as a draft instead? Drafts never reach players.',
+        confirmText: 'Save as draft',
+      });
+      if (!asDraft) return false;
+      p.draft = true;
+      renderDetails();
+    }
+  }
   const { data } = buildDataFromS();
   p.data = data;
   delete p.filler;
+  // new levels get a real id from their name the first time they're saved
+  if (gridIsNew && p.id.startsWith('new-puzzle') && p.name?.en) {
+    const newId = uniqueSlug(slugify(p.name.en));
+    try { localStorage.removeItem(GRID_KEY); } catch(e) {}
+    p.id = newId; gridEditId = newId;
+  }
   serverStatus('Saving…', 'busy');
   try {
     await apiPut(serverPuzzles);
-    gridSavedSnapshot = JSON.stringify(buildDataFromS());
+    gridIsNew = false;
+    gridMetaOriginal = JSON.parse(JSON.stringify(pickMeta(p)));
+    gridSavedSnapshot = editorSnapshot();
+    try { localStorage.removeItem(GRID_KEY); } catch(e) {}
     serverStatus(`Saved · ${p.id}`, 'ok');
+    renderGeTitle();
     updateGridValidation();
-    toast('Grid saved');
-  } catch(e) { serverStatus('Save failed', 'err'); }
+    toast(p.draft ? 'Draft saved' : 'Saved');
+    return true;
+  } catch(e) {
+    serverStatus('Save failed', 'err');
+    toast('Save failed: ' + e.message, 'err');
+    return false;
+  }
 }
 
 function copyGridJSON() {
@@ -384,7 +446,13 @@ function testGridInGame() {
 }
 
 function saveGridDraft() {
-  try { localStorage.setItem(GRID_KEY, JSON.stringify({ id: gridEditId, words: S.words, letters: S.letters })); } catch(e) {}
+  if (!gridEditId) return;
+  const p = serverPuzzles.find(x => x.id === gridEditId);
+  // only keep a local copy while there's something unsaved
+  try {
+    if (gridDirty()) localStorage.setItem(GRID_KEY, JSON.stringify({ id: gridEditId, words: S.words, letters: S.letters, meta: p ? pickMeta(p) : null, isNew: gridIsNew }));
+    else localStorage.removeItem(GRID_KEY);
+  } catch(e) {}
 }
 
 /* ============================================================
@@ -392,6 +460,7 @@ function saveGridDraft() {
    ============================================================ */
 function renderGridAll() {
   renderGrid(); renderDrawBanner(); renderGridHint(); renderLegend(); renderWords(); updateGridValidation(); saveGridDraft();
+  const u = $('ge-undo'); if (u) u.disabled = undoStack.length === 0;
 }
 
 const SVG_DRAW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
@@ -406,6 +475,7 @@ function renderGrid() {
 
   const drawing = S.drawIdx !== null || S.drawFromGrid;
   wrap.classList.toggle('is-drawing', drawing);
+  $('grid-view')?.classList.toggle('is-drawing', drawing);   // phone: focus mode, whole grid on screen
   wrap.innerHTML = '';
 
   CELL_ORDER.forEach(cell => {
@@ -509,6 +579,7 @@ function transformPath(path, mapFn) {
 }
 
 function applyGridTransform(label, mapFn) {
+  pushUndo();
   if (S.drawIdx !== null || S.drawFromGrid) { S.drawIdx = null; S.drawFromGrid = false; S.path = []; }
 
   S.words = S.words.map(w => ({ ...w, path: transformPath(w.path || '', mapFn) }));
@@ -541,6 +612,7 @@ function flipGridVertical() {
 }
 
 function onCellInput(cell, inp) {
+  pushUndo();
   const ch = (inp.value || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(-1);
   if (ch) S.letters[cell] = ch; else delete S.letters[cell];
   _focusCell = ch ? (nextCellOf(cell) || cell) : cell;   // advance after a char
@@ -551,7 +623,7 @@ function onCellKeydown(cell, inp, e) {
   if (e.key === 'Backspace' && inp.value === '') {
     e.preventDefault();
     const prev = CELL_ORDER[i - 1];
-    if (prev) { delete S.letters[prev]; _focusCell = prev; renderGridAll(); }
+    if (prev) { pushUndo(); delete S.letters[prev]; _focusCell = prev; renderGridAll(); }
   } else if (e.key === 'ArrowRight') { e.preventDefault(); _focusCell = CELL_ORDER[i + 1] || cell; renderGridAll(); }
   else if (e.key === 'ArrowLeft')  { e.preventDefault(); _focusCell = CELL_ORDER[i - 1] || cell; renderGridAll(); }
   else if (e.key === 'ArrowDown')  { e.preventDefault(); _focusCell = CELL_ORDER[i + 4] || cell; renderGridAll(); }
@@ -579,6 +651,7 @@ function onTileUp() {
     if (letters.some(ch => !ch)) { toast('Path must stay on filled letters', 'err'); renderDrawBanner(); return; }
     const display = letters.join('');
     if (S.words.some(w => w.display === display)) { toast('That word already exists', 'err'); renderDrawBanner(); return; }
+    pushUndo();
     S.words.push({ id: `word${Date.now()}`, display, path: S.path.join(''), color: WC[S.words.length % WC.length] });
     S.drawFromGrid = false;
     S.path = [];
@@ -593,6 +666,7 @@ function onTileUp() {
   const need = word.display.replace(/ /g,'').length;
   if (S.path.length === need) {
     // assign this word's letters to its path cells (shared cells are fine)
+    pushUndo();
     const ls = word.display.replace(/ /g,'').split('');
     S.path.forEach((c, i) => { S.letters[c] = ls[i]; });
     word.path = S.path.join('');
@@ -690,7 +764,7 @@ function renderWords() {
     const statusTxt = done ? '✓ placed' : `${cells}/${need}`;
     const active = S.drawIdx === i;
     return `
-    <div class="word-row${active ? ' word-row--active' : ''}" style="--wc:${w.color}">
+    <div class="word-row${active ? ' word-row--active' : ''}" style="--wc:${w.color}" onclick="if(!event.target.closest('button'))startDraw(${i})">
       <span class="word-dot" style="background:${w.color}"></span>
       <span class="word-name">${escapeHtml(w.display)}</span>
       <span class="word-status ${statusCls}">${statusTxt}</span>
@@ -710,6 +784,7 @@ function addWord() {
   const raw = ($('nw')?.value || S.newWord).trim().toUpperCase();
   if (!raw) return;
   if (S.words.some(w => w.display === raw)) { S.newWord = ''; if ($('nw')) $('nw').value = ''; toast('That word already exists', 'err'); return; }
+  pushUndo();
   S.words.push({ id: `word${Date.now()}`, display: raw, path: '', color: WC[S.words.length % WC.length] });
   S.newWord = ''; if ($('nw')) $('nw').value = '';
   S.drawFromGrid = false;
@@ -731,6 +806,7 @@ function startDrawFromGrid() {
 function removeWord(i) {
   // remove the word + its path; the letters stay on the grid (you can reuse
   // them for another word). Uncovered letters show as “filler” until used.
+  pushUndo();
   S.words.splice(i, 1);
   if (S.drawIdx === i) { S.drawIdx = null; S.path = []; }
   else if (S.drawIdx > i) S.drawIdx--;
@@ -740,6 +816,7 @@ function clearWordPath(i) {
   // clear the path only — the letters stay on the grid
   const w = S.words[i];
   if (!w) return;
+  pushUndo();
   w.path = '';
   if (S.drawIdx === i) S.path = [];
   renderGridAll();
@@ -902,7 +979,7 @@ function renderListItem(p, i) {
   const expanded = expandedId === p.id;
 const canMove = !listQuery;
   const total = serverPuzzles.length;
-  const v = validatePuzzle(p);
+  const v = p.draft ? { ok: true, errs: [] } : validatePuzzle(p);
   const statusDot = v.ok
     ? `<span class="row-status is-ok" title="Ready"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>`
     : `<span class="row-status is-warn" title="${escapeHtml(v.errs.join(' · '))}">${v.errs.length}</span>`;
@@ -918,7 +995,7 @@ const canMove = !listQuery;
       </span>
       <span class="list-num">${i + 1}</span>
       ${statusDot}
-      <span class="list-name">${name ? escapeHtml(name) : '<span class="noname">Untitled</span>'}</span>
+      <span class="list-name" onclick="openGridEditor('${escapeHtml(p.id)}')">${name ? escapeHtml(name) : '<span class="noname">Untitled</span>'}${p.draft ? ' <span class="badge badge-draft">Draft</span>' : ''}</span>
       <div class="list-badges">
         ${cat ? `<span class="badge badge-cat">${escapeHtml(cat[0].toUpperCase() + cat.slice(1))}</span>` : ''}
         <span class="badge badge-${diff}">${diff[0].toUpperCase()}${diff.slice(1)}</span>
@@ -1072,20 +1149,17 @@ async function metaDelete(id) {
   catch(e) { serverStatus('Delete failed', 'err'); serverPuzzles.push(p); renderLibrary(); }
 }
 
-async function newLevel() {
+function newLevel() {
   const p = {
-    id: uniqueSlug('new-puzzle'), category: '', difficulty: 'medium',
+    id: uniqueSlug('new-puzzle'), category: '', difficulty: 'medium', draft: true,
     name: { en: '', es: '' }, hint: { en: '', es: '' }, date: null, series: null, data: {},
   };
   serverPuzzles.push(p);
-  expandedId = p.id;
   listQuery = ''; const si = $('list-search-input'); if (si) si.value = '';
-  renderLibrary();
-  try { await apiPut(serverPuzzles); } catch(e) {}
-  toast('New level created — set its details');
-  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-  const el = document.querySelector(`.list-item[data-id="${CSS.escape(p.id)}"]`);
-  if (el) el.querySelector('input')?.focus();
+  openGridEditor(p.id);
+  gridIsNew = true;
+  updateGridValidation();
+  setTimeout(() => $('det-name-en')?.focus(), 50);
 }
 
 async function saveOrder() {
@@ -1101,6 +1175,7 @@ function moveLevel(idx, dir) {
   if (listQuery) return;
   const j = idx + dir;
   if (j < 0 || j >= serverPuzzles.length) return;
+  if (!!serverPuzzles[idx].draft !== !!serverPuzzles[j].draft) { toast('Drafts stay after published levels', 'err'); return; }
   const tmp = serverPuzzles[idx]; serverPuzzles[idx] = serverPuzzles[j]; serverPuzzles[j] = tmp;
   orderDirty = true;
   renderLibrary();
@@ -1136,6 +1211,7 @@ function onDrop(e) {
   const targetIdx = +e.currentTarget.dataset.idx;
   e.currentTarget.classList.remove('drag-over');
   if (dragSrcIdx === null || dragSrcIdx === targetIdx) return;
+  if (!!serverPuzzles[dragSrcIdx].draft !== !!serverPuzzles[targetIdx].draft) { toast('Drafts stay after published levels', 'err'); return; }
   const moved = serverPuzzles.splice(dragSrcIdx, 1)[0];
   serverPuzzles.splice(targetIdx, 0, moved);
   dragSrcIdx = null; orderDirty = true;
@@ -1174,3 +1250,162 @@ function comboPick(field, id, val) {
   if (dd) dd.style.display = 'none';
 }
 function comboHide() { document.querySelectorAll('.combo-dropdown').forEach(d => d.style.display = 'none'); }
+
+
+/* ============================================================
+   EDITOR COMFORT — details, undo, leave guard, issues
+   ============================================================ */
+let gridIsNew = false;
+let gridMetaOriginal = {};
+let undoStack = [];
+
+function pickMeta(p) {
+  return { name: p.name || {}, hint: p.hint || {}, category: p.category || '', difficulty: p.difficulty || 'medium',
+           series: p.series || null, date: p.date || null, draft: !!p.draft };
+}
+function editorSnapshot() {
+  const p = serverPuzzles.find(x => x.id === gridEditId);
+  return JSON.stringify({ data: buildDataFromS().data, meta: p ? pickMeta(p) : null });
+}
+
+/* what a level needs before it can be published */
+function metaProblems(p) {
+  const out = [];
+  if (!p.name?.en) out.push('No English name');
+  if (!p.category) out.push('No category');
+  return out;
+}
+
+function pushUndo() {
+  undoStack.push(JSON.stringify({ words: S.words, letters: S.letters }));
+  if (undoStack.length > 60) undoStack.shift();
+}
+function undo() {
+  const prev = undoStack.pop();
+  if (!prev) return;
+  const st = JSON.parse(prev);
+  S.words = st.words; S.letters = st.letters;
+  S.drawIdx = null; S.drawFromGrid = false; S.path = [];
+  renderGridAll();
+}
+
+function restoreLocalDraft(p) {
+  try {
+    const raw = localStorage.getItem(GRID_KEY);
+    if (!raw) return;
+    const d = JSON.parse(raw);
+    if (d.id !== p.id) return;
+    S.words = d.words || S.words; S.letters = d.letters || S.letters;
+    if (d.meta) Object.assign(p, JSON.parse(JSON.stringify(d.meta)));
+    if (d.isNew) gridIsNew = true;
+    toast('Restored unsaved changes');
+  } catch(e) {}
+}
+
+function renderGeTitle() {
+  const p = serverPuzzles.find(x => x.id === gridEditId);
+  if (!p) return;
+  $('ge-name').textContent = p.name?.en || p.name?.es || 'Untitled';
+  $('ge-id').textContent = p.draft ? 'draft' : p.id;
+  const peek = $('ge-details-peek');
+  if (peek) peek.innerHTML = `${p.draft ? '<span class="badge badge-draft">Draft</span>' : '<span class="badge badge-live">Published</span>'}${p.category ? ` <span class="badge badge-cat">${escapeHtml(p.category)}</span>` : ''}`;
+}
+
+function openDetails() {
+  const d = $('ge-details'); if (!d) return;
+  d.open = true;
+  scrollToEl(d, 70);
+}
+
+function detailsUpdate(field, value) {
+  const p = serverPuzzles.find(x => x.id === gridEditId);
+  if (!p) return;
+  const [a, b] = field.split('.');
+  if (b) { p[a] = { ...(p[a] || {}), [b]: value }; } else p[a] = value;
+  renderGeTitle(); updateGridValidation(); saveGridDraft();
+}
+
+function setDraft(isDraft) {
+  const p = serverPuzzles.find(x => x.id === gridEditId);
+  if (!p) return;
+  if (!isDraft) {
+    const problems = [...validateGrid().errs, ...metaProblems(p)];
+    if (problems.length) { showIssues('Can’t publish yet'); return; }
+  }
+  p.draft = isDraft;
+  renderDetails(); renderGeTitle(); updateGridValidation(); saveGridDraft();
+  if (!isDraft) toast('Will publish on Save — it joins the end of the schedule');
+}
+
+function renderDetails() {
+  const body = $('ge-details-body');
+  const p = serverPuzzles.find(x => x.id === gridEditId);
+  if (!body || !p) return;
+  const n = p.name || {}, h = p.hint || {};
+  const diff = p.difficulty || 'medium';
+  const field = (id, label, lang, key, val, ph) =>
+    `<div class="form-field"><label class="form-label" for="${id}">${label}${lang ? ` <span class="lang">${lang}</span>` : ''}</label>
+     <input class="field" id="${id}" type="text" value="${escapeHtml(val || '')}" placeholder="${ph}" oninput="detailsUpdate('${key}',this.value)" autocomplete="off"></div>`;
+  body.innerHTML = `
+    <div class="det-status diff-seg" role="group" aria-label="Status">
+      <button type="button" class="diff-opt${p.draft ? ' is-active' : ''}" data-diff="medium" onclick="setDraft(true)">Draft</button>
+      <button type="button" class="diff-opt${!p.draft ? ' is-active' : ''}" data-diff="easy" onclick="setDraft(false)">Published</button>
+    </div>
+    <p class="det-note">${p.draft ? 'Drafts never reach players. Publish when the grid is complete.' : 'Live in the daily schedule (position ' + (serverPuzzles.filter(x => !x.draft).indexOf(p) + 1) + ').'}</p>
+    <div class="form-grid">
+      ${field('det-name-en', 'Name', 'EN', 'name.en', n.en, 'e.g. Dark Souls Bosses')}
+      ${field('det-name-es', 'Name', 'ES', 'name.es', n.es, 'Nombre en español')}
+      ${field('det-hint-en', 'Hint', 'EN', 'hint.en', h.en, 'Shown under the title')}
+      ${field('det-hint-es', 'Hint', 'ES', 'hint.es', h.es, 'Pista')}
+      <div class="form-field"><label class="form-label" for="det-cat">Category</label>
+        <select class="field" id="det-cat" onchange="detailsUpdate('category',this.value)">
+          <option value="">— pick one —</option>
+          ${CATEGORIES.map(c => `<option value="${c}"${p.category === c ? ' selected' : ''}>${c[0].toUpperCase()}${c.slice(1)}</option>`).join('')}
+        </select></div>
+      <div class="form-field"><label class="form-label">Difficulty</label>
+        <div class="diff-seg" role="group">${DIFFS.map(d => `<button type="button" class="diff-opt${diff === d ? ' is-active' : ''}" data-diff="${d}" onclick="detailsUpdate('difficulty','${d}');renderDetails()">${d}</button>`).join('')}</div></div>
+    </div>
+    <div class="det-tools">
+      <button type="button" class="btn btn-ghost btn-sm" onclick="copyPreviewLink()">Copy preview link</button>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="copyGridJSON()">Copy JSON</button>
+    </div>`;
+}
+
+/* the chip (and blocked publish) explain what's missing — no hover needed */
+function showIssues(title) {
+  const p = serverPuzzles.find(x => x.id === gridEditId);
+  if (!p) return;
+  const problems = [...validateGrid().errs, ...metaProblems(p)];
+  if (!problems.length) { toast(gridDirty() ? 'Ready — just unsaved' : 'All good'); return; }
+  promptConfirm({ title: title || `${problems.length} thing${problems.length !== 1 ? 's' : ''} to fix`, message: problems.join(' · '), confirmText: 'OK', cancelText: 'Close' });
+}
+
+/* three-way dialog: resolves 'confirm' | 'alt' | 'cancel' */
+function promptChoice(state) {
+  return new Promise(resolve => {
+    const mount = $('dialog-mount');
+    const done = v => { mount.innerHTML = ''; resolve(v); };
+    mount.innerHTML = `
+    <div class="dialog-backdrop" role="dialog" aria-modal="true">
+      <div class="dialog" onclick="event.stopPropagation()">
+        <p class="dialog-title">${escapeHtml(state.title)}</p>
+        <p class="dialog-msg">${escapeHtml(state.message)}</p>
+        <div class="dialog-actions">
+          <button class="btn btn-ghost" data-v="cancel">${escapeHtml(state.cancelText)}</button>
+          <button class="btn btn-danger" data-v="alt">${escapeHtml(state.altText)}</button>
+          <button class="btn btn-success" data-v="confirm">${escapeHtml(state.confirmText)}</button>
+        </div>
+      </div>
+    </div>`;
+    mount.querySelectorAll('[data-v]').forEach(btn => btn.addEventListener('click', () => done(btn.dataset.v)));
+    mount.querySelector('.dialog-backdrop').addEventListener('click', e => {
+      if (e.target.classList.contains('dialog-backdrop')) done('cancel');
+    });
+  });
+}
+
+window.addEventListener('beforeunload', e => { if (gridDirty()) { e.preventDefault(); e.returnValue = ''; } });
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && gridEditId && !e.target.closest('input,textarea')) { e.preventDefault(); undo(); }
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's' && gridEditId) { e.preventDefault(); saveGrid(); }
+});
